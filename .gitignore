@@ -1,0 +1,128 @@
+# ══════════════════════════════════════════
+#   BrandAI — .gitignore complet
+# ══════════════════════════════════════════
+
+# ── SECRETS — JAMAIS sur Git ──────────────
+.env
+.env.local
+.env.development
+.env.production
+*.env
+
+# ── PYTHON ────────────────────────────────
+# Environnements virtuels
+backend-api/venv/
+backend-ai/venv/
+venv/
+env/
+.venv/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Tests et coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Alembic
+backend-api/alembic/versions/*.pyc
+
+# Logs Python
+*.log
+
+# ── NODE / REACT ──────────────────────────
+# Dépendances
+frontend/node_modules/
+node_modules/
+
+# Build
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# Cache
+frontend/.eslintcache
+*.tsbuildinfo
+
+# ── BASE DE DONNÉES ───────────────────────
+*.sqlite3
+*.db
+*.sql.bak
+postgres-data/
+
+# ── IDE ───────────────────────────────────
+# VSCode
+.vscode/
+!.vscode/extensions.json
+
+# Cursor
+.cursor/
+
+# JetBrains / PyCharm
+.idea/
+*.iml
+*.iws
+
+# ── OS ────────────────────────────────────
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ── DONNÉES & FICHIERS LOURDS ─────────────
+# Données agents
+backend-ai/data/datasets/*.csv
+backend-ai/data/datasets/*.json
+backend-ai/data/memory/
+
+# Modèles IA locaux (si Ollama)
+*.gguf
+*.bin
+models/
+
+# Fichiers uploadés
+uploads/
+*.pdf
+*.docx
+
+# ── DOCKER (si tu l'ajoutes plus tard) ────
+docker-compose.override.yml
+.docker/
+
+# ── DIVERS ────────────────────────────────
+# Fichiers temporaires
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Jupyter (si utilisé pour tests)
+.ipynb_checkpoints/
+*.ipynb
+
+# LangSmith / LangChain cache
+.langchain/
+langchain_cache/
