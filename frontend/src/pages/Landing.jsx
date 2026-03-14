@@ -80,7 +80,7 @@ export function Landing() {
                   </div>
                 </div>
                 <div className={`hidden transition-all duration-700 delay-200 lg:block ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}>
-                  <Card className="border border-[#E5E7EB] bg-white" hover={false}>
+                  <Card className="border border-[#E5E7EB] bg-white shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(124,58,237,0.04)]" hover={false}>
                     <div className="rounded-lg border border-[#E5E7EB] bg-white p-4">
                       <p className="mb-3 text-sm font-medium text-[#6B7280]">Pipeline IA — aperçu</p>
                       <div className="space-y-2">
@@ -129,7 +129,7 @@ export function Landing() {
               </p>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {AGENTS_CARDS.map(({ Icon, name, description }) => (
-                  <Card key={name} className="border border-[#E5E7EB] bg-white hover:border-[#A78BFA] hover:-translate-y-[2px]">
+                  <Card key={name} className="border border-[#E5E7EB] bg-white shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(124,58,237,0.04)] hover:border-[#A78BFA] hover:-translate-y-[2px]">
                     <div className="mb-3 flex items-start justify-between gap-2">
                       <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED]">
                         <Icon className="h-5 w-5" />
@@ -142,7 +142,7 @@ export function Landing() {
                 ))}
               </div>
               {/* Marketing Strategy wide banner */}
-              <div className="mt-8 flex flex-col items-center gap-6 rounded-[12px] border border-[#DDD6FE] bg-[#F5F3FF] p-6 md:flex-row md:items-center md:justify-between md:px-8 md:py-6">
+              <div className="mt-8 flex flex-col items-center gap-6 rounded-[12px] border border-[#DDD6FE] bg-[#F5F3FF] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(124,58,237,0.04)] md:flex-row md:items-center md:justify-between md:px-8 md:py-6">
                 <div className="flex items-center gap-6">
                   <span className="flex h-[36px] w-[36px] shrink-0 items-center justify-center text-[28px]">
                     <HiOutlineChartBarSquare className="h-9 w-9 text-[#7C3AED]" />

@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { HiOutlineBolt } from "react-icons/hi2";
 import { Button } from "../ui/Button";
 import { UserAvatar } from "../ui/UserAvatar";
 import { useAuth } from "../../hooks/useAuth";
@@ -11,9 +10,8 @@ export function Navbar({ variant = "landing" }) {
   return (
     <header className="sticky top-0 z-50 border-b border-[#E5E7EB] bg-white/80 backdrop-blur-sm">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-4 md:px-6">
-        <Link to="/" className="flex items-center gap-2 text-[#111827] transition-colors hover:text-[#7C3AED]">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED]"><HiOutlineBolt className="h-5 w-5" /></span>
-          <span className="font-semibold">BrandAI</span>
+        <Link to="/" className="flex items-center text-[#111827] transition-opacity hover:opacity-80">
+          <img src="/logo%20brand%20ai.png" alt="BrandAI" className="h-9 w-auto object-contain" />
         </Link>
         {variant === "landing" ? (
           <nav className="flex items-center gap-3">

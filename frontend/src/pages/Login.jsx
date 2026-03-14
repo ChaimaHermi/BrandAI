@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { HiOutlineBolt, HiOutlineEnvelope, HiOutlineLockClosed } from "react-icons/hi2";
+import { HiOutlineEnvelope, HiOutlineLockClosed } from "react-icons/hi2";
 import { FcGoogle } from "react-icons/fc";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -26,9 +26,9 @@ export function Login() {
     <div className="relative min-h-screen bg-white">
       <BlobBackground opacity={0.35} className="pointer-events-none z-0" />
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-[420px]" hover={false}>
+        <Card className="w-full max-w-[420px] shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(124,58,237,0.04)]" hover={false}>
           <div className="flex flex-col items-center text-center">
-            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED]"><HiOutlineBolt className="h-7 w-7" /></span>
+            <img src="/logo%20brand%20ai.png" alt="BrandAI" className="mb-4 h-14 w-auto object-contain" />
             <h1 className="mb-2 text-xl font-semibold text-[#111827]">Bienvenue sur BrandAI</h1>
             <p className="mb-6 text-[#6B7280]">Connectez-vous pour continuer</p>
           </div>

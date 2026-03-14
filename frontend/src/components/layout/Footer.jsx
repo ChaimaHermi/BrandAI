@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { HiOutlineBolt } from "react-icons/hi2";
 
 export function Footer() {
   return (
@@ -8,11 +7,8 @@ export function Footer() {
       <div className="mx-auto max-w-[1200px] px-4 md:px-6">
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row md:items-center">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED]">
-              <HiOutlineBolt className="h-4 w-4" />
-            </span>
-            <Link to="/" className="font-semibold text-[#111827] hover:text-[#7C3AED]">
-              BrandAI
+            <Link to="/" className="flex items-center font-semibold text-[#111827] transition-opacity hover:opacity-80">
+              <img src="/logo%20brand%20ai.png" alt="BrandAI" className="h-8 w-auto object-contain" />
             </Link>
             <span className="text-[#6B7280]">·</span>
             <span className="text-sm text-[#6B7280]">From idea to market.</span>
