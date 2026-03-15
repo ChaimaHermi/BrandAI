@@ -21,27 +21,30 @@
 #    app.listen(8000)
 # ==============================================================
 
+
+
+
+
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-
-# Import des modèles OBLIGATOIRE avant create_all
-# Sans ça, SQLAlchemy ne connaît pas les tables à créer
-import app.models.user  # noqa: F401
-
-# Import des routers
+import app.models.user  # noqa
 from app.api.routes import auth
 
-
-# ── Création de l'app ─────────────────────────────────────────
 app = FastAPI(
     title="BrandAI API",
-    description="Backend de la plateforme BrandAI — IA Générative & Agentique",
+    description="Backend BrandAI",
     version="1.0.0",
-    # Swagger UI disponible sur : http://localhost:8000/docs
-    # ReDoc disponible sur      : http://localhost:8000/redoc
+)
+
+# SessionMiddleware OBLIGATOIRE pour authlib
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY,
 )
 
 
@@ -52,28 +55,25 @@ app = FastAPI(
 #
 # ANALOGUE EXPRESS :
 #   app.use(cors({ origin: 'http://localhost:5173' }))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        settings.FRONTEND_URL,       # depuis .env
-        "http://localhost:5173",     # fallback
+        settings.FRONTEND_URL,
+        "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
-    allow_credentials=True,          # autorise le header Authorization
-    allow_methods=["*"],             # GET, POST, PUT, DELETE, etc.
-    allow_headers=["*"],             # Content-Type, Authorization, etc.
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-
-
 # ── Création des tables au démarrage ─────────────────────────
 # SQLAlchemy crée les tables manquantes automatiquement.
 # En production on utilisera Alembic pour les migrations.
 @app.on_event("startup")
 async def startup():
     Base.metadata.create_all(bind=engine)
-    print("✅ Tables créées / vérifiées")
-
-
+    print("✅ BrandAI API démarrée")
 # ── Enregistrement des routers ────────────────────────────────
 # prefix="/api" → toutes les routes commencent par /api/...
 # Résultat :
@@ -82,15 +82,9 @@ async def startup():
 #   GET  /api/auth/me
 app.include_router(auth.router, prefix="/api")
 
-
 # ── Route de santé ────────────────────────────────────────────
 # GET /health → vérifie que l'API est en ligne
 # Utile pour les outils de monitoring
 @app.get("/health", tags=["Santé"])
 def health_check():
-    return {
-        "status": "ok",
-        "app": "BrandAI API",
-        "version": "1.0.0",
-        "env": settings.APP_ENV,
-    }
+    return {"status": "ok", "app": "BrandAI API"}

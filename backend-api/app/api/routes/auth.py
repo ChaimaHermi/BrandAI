@@ -23,15 +23,20 @@
 #    })
 # ==============================================================
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.oauth import oauth
+from app.core.config import settings
+from app.core.security import create_access_token
 from app.api.deps import get_current_user
 from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
 from app.schemas.user import UserOut
 from app.models.user import User
 from app.services.auth_service import register_user, login_user
+from app.utils.helpers import format_user_response
 
 
 # APIRouter = équivalent de express.Router()
@@ -159,3 +164,77 @@ def get_me(
     - 401 : token manquant ou invalide
     """
     return current_user
+
+
+# ── Routes Google OAuth ───────────────────────────────────────
+
+@router.get("/google", summary="Connexion avec Google")
+async def google_login(request: Request):
+    """
+    Redirige l'utilisateur vers la page de connexion Google.
+    Le frontend appelle cette URL directement.
+    """
+    redirect_uri = settings.GOOGLE_REDIRECT_URI
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+
+@router.get("/google/callback", summary="Callback Google OAuth")
+async def google_callback(request: Request, db: Session = Depends(get_db)):
+    """
+    Google rappelle cette route avec un code.
+    On échange ce code contre les infos utilisateur.
+    Puis on crée/connecte l'utilisateur et on redirige le frontend.
+    """
+    try:
+        # 1. Échanger le code contre un token Google
+        token = await oauth.google.authorize_access_token(request)
+
+        # 2. Récupérer les infos de l'utilisateur depuis Google
+        user_info = token.get("userinfo")
+        if not user_info:
+            # Fallback : appeler l'API Google manuellement
+            user_info = await oauth.google.userinfo(token=token)
+
+        google_id = user_info.get("sub")       # ID unique Google
+        email     = user_info.get("email")
+        name      = user_info.get("name")
+        picture   = user_info.get("picture")   # URL photo de profil
+
+        # 3. Chercher l'utilisateur par google_id
+        user = db.query(User).filter(User.google_id == google_id).first()
+
+        if not user:
+            # 4a. Chercher par email (compte existant sans Google)
+            user = db.query(User).filter(User.email == email).first()
+
+            if user:
+                # Lier le compte Google au compte existant
+                user.google_id = google_id
+                user.avatar_url = picture
+                db.commit()
+                db.refresh(user)
+            else:
+                # 4b. Créer un nouveau compte
+                user = User(
+                    name=name,
+                    email=email,
+                    google_id=google_id,
+                    avatar_url=picture,
+                    hashed_password=None,  # pas de mot de passe pour Google
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+
+        # 5. Générer le JWT BrandAI
+        jwt_token = create_access_token(user.id)
+
+        # 6. Rediriger le frontend avec le token dans l'URL
+        frontend_url = f"{settings.FRONTEND_CALLBACK_URL}?token={jwt_token}"
+        return RedirectResponse(url=frontend_url)
+
+    except Exception as e:
+        # En cas d'erreur → rediriger vers login avec message
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/login?error=google_auth_failed"
+        )

@@ -6,6 +6,7 @@ import { PublicRoute } from "./components/PublicRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import { GoogleCallback } from "./pages/GoogleCallback";
 import Dashboard from "./pages/Dashboard";
 import NewProject from "./pages/NewProject";
 import Results from "./pages/Results";
@@ -18,6 +19,7 @@ function App() {
           <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/auth/callback" element={<PublicRoute><GoogleCallback /></PublicRoute>} />
           <Route
             path="/dashboard"
             element={

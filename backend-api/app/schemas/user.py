@@ -40,6 +40,7 @@ class UserOut(BaseModel):
     name: str
     email: EmailStr
     created_at: datetime
+    avatar_url: str | None = None
 
     # model_config with from_attributes=True permet à Pydantic
     # de lire les données depuis un objet SQLAlchemy (pas seulement un dict)

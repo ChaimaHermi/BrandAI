@@ -26,14 +26,33 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 // ==============================================================
 
 /**
+ * Erreur API avec status HTTP pour gérer les cas 401, 404, etc.
+ */
+class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+/**
  * Parse la réponse fetch et lève une erreur si status >= 400
  * Le backend FastAPI renvoie toujours { "detail": "message" } pour les erreurs
+ * L'erreur inclut status pour permettre un traitement spécifique (ex: 401)
  */
+function extractDetailMessage(detail) {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail[0]?.msg) return detail[0].msg;
+  if (Array.isArray(detail) && detail[0]?.message) return detail[0].message;
+  return "Une erreur est survenue";
+}
+
 async function handleResponse(res) {
   const data = await res.json();
   if (!res.ok) {
-    // FastAPI renvoie { "detail": "message d'erreur" }
-    throw new Error(data.detail || "Une erreur est survenue");
+    const message = extractDetailMessage(data.detail) || "Une erreur est survenue";
+    throw new ApiError(message, res.status);
   }
   return data;
 }
