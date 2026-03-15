@@ -7,7 +7,7 @@ const ICON_MAP = { idea: HiOutlineLightBulb, market: HiOutlineMagnifyingGlass, b
 export function AgentCard({ agent, status, isActive, onClick }) {
   const Icon = ICON_MAP[agent.icon] || HiOutlineLightBulb;
 
-  const baseClass = "flex w-full items-center gap-3 rounded-[10px] border p-3 text-left transition-all duration-200";
+  const baseClass = "flex w-full items-center gap-2.5 rounded-[8px] border p-2.5 text-left transition-all duration-200";
   const statusClasses = {
     done: "border-l-[3px] border-l-[#7C3AED] bg-[#F5F3FF] border-[#E5E7EB]",
     running: "border-[1.5px] border-[#7C3AED] bg-white",
@@ -22,20 +22,20 @@ export function AgentCard({ agent, status, isActive, onClick }) {
       className={`${baseClass} ${statusClasses[status]} ${activeClass} hover:border-[#A78BFA]`}
     >
       <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${
           status === "done" ? "bg-[#DDD6FE] text-[#7C3AED]" : status === "running" ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-[#E5E7EB] text-[#9CA3AF]"
         }`}
       >
-        {status === "done" ? <HiOutlineCheckCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+        {status === "done" ? <HiOutlineCheckCircle className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-[#111827]">{agent.name}</p>
+        <p className="text-sm font-medium text-[#111827]">{agent.name}</p>
         <div className="mt-0.5">
-          {status === "done" && <Badge variant="success">Terminé</Badge>}
-          {status === "running" && <Badge variant="violet">En cours</Badge>}
+          {status === "done" && <Badge variant="success" className="text-[10px]">Terminé</Badge>}
+          {status === "running" && <Badge variant="violet" className="text-[10px]">En cours</Badge>}
           {status === "waiting" && (
-            <span className="flex items-center gap-1 text-xs text-[#9CA3AF]">
-              <HiOutlineClock className="h-3.5 w-3.5" /> En attente
+            <span className="flex items-center gap-0.5 text-[11px] text-[#9CA3AF]">
+              <HiOutlineClock className="h-3 w-3" /> En attente
             </span>
           )}
         </div>

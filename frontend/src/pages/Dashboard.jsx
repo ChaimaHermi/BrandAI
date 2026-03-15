@@ -1,69 +1,180 @@
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { HiOutlineFolder, HiOutlinePlus } from "react-icons/hi2";
+import {
+  HiOutlineClipboardDocumentList,
+  HiOutlineArrowPath,
+  HiOutlineCheckCircle,
+  HiOutlinePlus,
+} from "react-icons/hi2";
 import { Navbar } from "../components/layout/Navbar";
 import { Card } from "../components/ui/Card";
-import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
-import { PROJECTS } from "../data/mockData";
+import {
+  IdeasTable,
+  IdeasTableSkeleton,
+  IdeasFilters,
+  Pagination,
+} from "../components/dashboard";
+import { apiGetIdeas, getErrorMessage } from "../services/ideaApi";
+import { useAuth } from "../hooks/useAuth";
 
-const totalProjects = PROJECTS.length;
-const runningCount = PROJECTS.filter((p) => p.status === "running").length;
-const completedCount = PROJECTS.filter((p) => p.status === "completed").length;
+const IDEAS_PER_PAGE = 5;
 
 export function Dashboard() {
+  const { token } = useAuth();
+  const [ideas, setIdeas] = useState([]);
+  const [totalFromApi, setTotalFromApi] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiGetIdeas(token);
+        if (!cancelled) {
+          setIdeas(data.ideas || []);
+          setTotalFromApi(data.total ?? (data.ideas || []).length);
+          setError("");
+        }
+      } catch (err) {
+        if (!cancelled) setError(getErrorMessage(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token]);
+
+  const filteredIdeas = useMemo(() => {
+    let list = [...ideas];
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (i) =>
+          (i.name || "").toLowerCase().includes(q) ||
+          (i.sector || "").toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter) {
+      list = list.filter((i) => i.status === statusFilter);
+    }
+    return list;
+  }, [ideas, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredIdeas.length / IDEAS_PER_PAGE));
+  const pageIdeas = useMemo(() => {
+    const start = (currentPage - 1) * IDEAS_PER_PAGE;
+    return filteredIdeas.slice(start, start + IDEAS_PER_PAGE);
+  }, [filteredIdeas, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [currentPage, totalPages]);
+
+  const totalCount = totalFromApi || ideas.length;
+  const runningCount = ideas.filter((i) => i.status === "running").length;
+  const doneCount = ideas.filter((i) => i.status === "done").length;
+
   return (
     <div className="min-h-screen bg-white">
       <div className="flex min-h-screen flex-col">
         <Navbar variant="app" />
-        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-8 md:px-6 md:py-12">
-          <h1 className="mb-8 text-2xl font-semibold text-[#111827]">Tableau de bord</h1>
-          <div className="mb-10 grid gap-6 sm:grid-cols-3">
-            <div className="rounded-[12px] border border-[#E5E7EB] border-l-[3px] border-l-[#7C3AED] bg-[#F9FAFB] p-6">
-              <p className="text-sm text-[#6B7280]">Total projets</p>
-              <p className="mt-1 text-2xl font-semibold text-[#111827]">{totalProjects}</p>
+        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-8 md:px-6 md:py-10">
+          <h1 className="mb-6 text-xl font-semibold text-[#111827]">Tableau de bord</h1>
+
+          <div className="mb-8 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-[10px] border border-[#E5E7EB] border-l-[3px] border-l-[#7C3AED] bg-[#F9FAFB] p-4">
+              <p className="flex items-center gap-2 text-sm text-[#6B7280]">
+                <HiOutlineClipboardDocumentList className="h-4 w-4" aria-hidden />
+                Total idées
+              </p>
+              <p className="mt-1 text-xl font-semibold text-[#111827]">{totalCount}</p>
             </div>
-            <div className="rounded-[12px] border border-[#E5E7EB] border-l-[3px] border-l-[#7C3AED] bg-[#F9FAFB] p-6">
-              <p className="text-sm text-[#6B7280]">En cours</p>
-              <p className="mt-1 text-2xl font-semibold text-[#7C3AED]">{runningCount}</p>
+            <div className="rounded-[10px] border border-[#E5E7EB] border-l-[3px] border-l-[#7C3AED] bg-[#F9FAFB] p-4">
+              <p className="flex items-center gap-2 text-sm text-[#6B7280]">
+                <HiOutlineArrowPath className="h-4 w-4" aria-hidden />
+                En cours
+              </p>
+              <p className="mt-1 text-xl font-semibold text-[#7C3AED]">{runningCount}</p>
             </div>
-            <div className="rounded-[12px] border border-[#E5E7EB] border-l-[3px] border-l-[#16A34A] bg-[#F9FAFB] p-6">
-              <p className="text-sm text-[#6B7280]">Complétés</p>
-              <p className="mt-1 text-2xl font-semibold text-[#16A34A]">{completedCount}</p>
+            <div className="rounded-[10px] border border-[#E5E7EB] border-l-[3px] border-l-[#16A34A] bg-[#F9FAFB] p-4">
+              <p className="flex items-center gap-2 text-sm text-[#6B7280]">
+                <HiOutlineCheckCircle className="h-4 w-4" aria-hidden />
+                Terminées
+              </p>
+              <p className="mt-1 text-xl font-semibold text-[#16A34A]">{doneCount}</p>
             </div>
           </div>
+
           <section>
-            <h2 className="mb-4 text-lg font-semibold text-[#111827]">Mes projets</h2>
-            {PROJECTS.length > 0 ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {PROJECTS.map((project) => (
-                  <Link key={project.id} to={`/projects/${project.id}`}>
-                    <Card
-                      hover={false}
-                      className={`h-full border border-[#E5E7EB] bg-white transition-all duration-200 hover:border-[#A78BFA] hover:-translate-y-[1px] ${project.status === "running" ? "border-2 border-[#7C3AED]" : ""}`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-2xl">{project.emoji}</span>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="truncate font-semibold text-[#111827]">{project.name}</h3>
-                          <p className="mt-0.5 line-clamp-2 text-sm text-[#6B7280]">{project.description}</p>
-                          <div className="mt-3 flex items-center justify-between gap-2">
-                            <span className="text-xs text-[#6B7280]">{new Date(project.date).toLocaleDateString("fr-FR")}</span>
-                            <Badge variant={project.status === "completed" ? "success" : project.status === "running" ? "violet" : "waiting"}>{project.status === "completed" ? "Complété" : project.status === "running" ? "En cours" : "En attente"}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-lg font-semibold text-[#111827]">Mes idées</h2>
+            </div>
+
+            {error && (
+              <div className="mb-4 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
               </div>
-            ) : (
-              <Card className="flex flex-col items-center justify-center py-16 text-center" hover={false}>
-                <HiOutlineFolder className="mb-4 h-16 w-16 text-[#6B7280]" />
-                <h3 className="mb-2 font-semibold text-[#111827]">Aucun projet</h3>
-                <p className="mb-6 max-w-sm text-[#6B7280]">Créez votre premier projet pour générer votre marque avec l'IA.</p>
-                <Link to="/projects/new"><Button variant="primary" className="gap-2"><HiOutlinePlus className="h-5 w-5" /> Nouveau projet</Button></Link>
+            )}
+
+            {loading ? (
+              <IdeasTableSkeleton />
+            ) : ideas.length === 0 ? (
+              <Card
+                hover={false}
+                className="flex flex-col items-center justify-center border-2 border-dashed border-[#E5E7EB] bg-white py-16 text-center"
+              >
+                <div className="mb-4 h-20 w-20 rounded-lg border-2 border-dashed border-[#E5E7EB] bg-[#F9FAFB]" aria-hidden />
+                <h3 className="mb-2 font-semibold text-[#111827]">Aucune idée pour le moment</h3>
+                <p className="mb-6 max-w-sm text-sm text-[#6B7280]">
+                  Commencez par soumettre votre première idée de projet
+                </p>
+                <Link to="/ideas/new">
+                  <Button variant="primary" className="gap-2">
+                    <HiOutlinePlus className="h-5 w-5" />
+                    Soumettre une idée
+                  </Button>
+                </Link>
               </Card>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <IdeasFilters
+                    search={search}
+                    onSearchChange={setSearch}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={(v) => {
+                      setStatusFilter(v);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                {filteredIdeas.length === 0 ? (
+                  <Card hover={false} className="border border-[#E5E7EB] py-12 text-center">
+                    <p className="text-[#6B7280]">Aucune idée ne correspond à votre recherche ou filtre.</p>
+                  </Card>
+                ) : (
+                  <IdeasTable ideas={pageIdeas} />
+                )}
+                <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
+                  <p className="text-sm text-[#6B7280]">
+                    {filteredIdeas.length === 0
+                      ? "Aucun résultat"
+                      : `${(currentPage - 1) * IDEAS_PER_PAGE + 1}-${Math.min(currentPage * IDEAS_PER_PAGE, filteredIdeas.length)} sur ${filteredIdeas.length}`}
+                  </p>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              </>
             )}
           </section>
         </main>

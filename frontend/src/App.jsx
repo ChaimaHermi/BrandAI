@@ -8,8 +8,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { GoogleCallback } from "./pages/GoogleCallback";
 import Dashboard from "./pages/Dashboard";
-import NewProject from "./pages/NewProject";
 import Results from "./pages/Results";
+import { SubmitIdea } from "./pages/SubmitIdea";
+import { IdeaDetail } from "./pages/IdeaDetail";
 
 function App() {
   return (
@@ -28,11 +29,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/projects/new" element={<Navigate to="/ideas/new" replace />} />
           <Route
-            path="/projects/new"
+            path="/ideas/new"
             element={
               <ProtectedRoute>
-                <NewProject />
+                <SubmitIdea />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ideas/:id"
+            element={
+              <ProtectedRoute>
+                <IdeaDetail />
               </ProtectedRoute>
             }
           />

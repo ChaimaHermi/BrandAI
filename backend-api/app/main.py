@@ -33,7 +33,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 from app.core.database import Base, engine
 import app.models.user  # noqa
-from app.api.routes import auth
+from app.api.routes import auth , ideas 
 
 app = FastAPI(
     title="BrandAI API",
@@ -81,6 +81,7 @@ async def startup():
 #   POST /api/auth/login
 #   GET  /api/auth/me
 app.include_router(auth.router, prefix="/api")
+app.include_router(ideas.router, prefix="/api")
 
 # ── Route de santé ────────────────────────────────────────────
 # GET /health → vérifie que l'API est en ligne
