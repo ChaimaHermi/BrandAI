@@ -137,6 +137,7 @@ export function IdeaDetail() {
   const [activeAgent, setActiveAgent] = useState("idea");
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [inputText, setInputText] = useState("");
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const {
     messages,
     isStreaming,
@@ -148,6 +149,7 @@ export function IdeaDetail() {
     sendAnswer,
   } = useChatStream(idea, token);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   useEffect(() => {
     if (!id || !token) return;
@@ -520,8 +522,18 @@ export function IdeaDetail() {
             </div>
 
             <AgentStatusBar steps={agentSteps} />
-            <div className="flex min-h-0 flex-1 flex-col">
-              <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <div
+                ref={messagesContainerRef}
+                className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
+                onScroll={() => {
+                  const el = messagesContainerRef.current;
+                  if (!el) return;
+                  const atBottom =
+                    el.scrollTop + el.clientHeight >= el.scrollHeight - 32;
+                  setIsAtBottom(atBottom);
+                }}
+              >
                 {messages.length === 0 && (
                   <div className="flex h-full flex-col items-center justify-center text-center text-xs text-[#6B7280]">
                     <HiOutlineChatBubbleLeftRight
@@ -549,6 +561,20 @@ export function IdeaDetail() {
 
                 <div ref={messagesEndRef} />
               </div>
+
+              {!isAtBottom && messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    messagesEndRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                    })
+                  }
+                  className="absolute bottom-20 right-6 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-[#4B5563] shadow-md ring-1 ring-[#E5E7EB] hover:bg-[#F3F4F6]"
+                >
+                  Revenir en bas
+                </button>
+              )}
 
               <form
                 onSubmit={handleSend}

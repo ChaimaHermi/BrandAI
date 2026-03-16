@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { UserAvatar } from "../ui/UserAvatar";
+import { AgentAvatar } from "./AgentAvatar";
 
 function formatTime(ts) {
   if (!ts) return "";
@@ -180,11 +181,7 @@ export function ChatMessage({ message, user }) {
 
   return (
     <div className="flex items-end gap-2">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#7C3AED] text-xs">
-        <span role="img" aria-label="clarifier">
-          🔍
-        </span>
-      </div>
+      <AgentAvatar agentType="idea_clarifier" size={28} />
       <div className="max-w-[80%]">
         <p className="mb-1 text-[11px] font-semibold text-[#7C3AED]">
           Idea Clarifier
