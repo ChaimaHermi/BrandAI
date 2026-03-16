@@ -1,157 +1,243 @@
 import React, { useState } from "react";
-import { AgentAvatar, getAgentMeta } from "./AgentAvatar";
 import { UserAvatar } from "../ui/UserAvatar";
-import { ClarityScore } from "./ClarityScore";
-import { Badge } from "../ui/Badge";
 
-function formatTime(dateLike) {
-  if (!dateLike) return "";
-  const d = typeof dateLike === "string" ? new Date(dateLike) : dateLike;
-  if (Number.isNaN(d.getTime())) return "";
+function formatTime(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
   return d.toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-function ConfidenceBadge({ level }) {
-  if (!level) return null;
-  let label = "Confiance moyenne";
-  let classes = "bg-[#FEF3C7] text-[#B45309]";
-
-  if (level === "high") {
-    label = "Confiance élevée";
-    classes = "bg-[#DCFCE7] text-[#15803D]";
-  } else if (level === "low") {
-    label = "Confiance faible";
-    classes = "bg-red-100 text-red-600";
-  }
-
+function ClarityBar({ score }) {
+  if (typeof score !== "number") return null;
+  const color =
+    score >= 80 ? "#16A34A" : score >= 55 ? "#7C3AED" : "#DC2626";
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${classes}`}>
-      {label}
-    </span>
+    <div className="mt-2 flex items-center gap-2 rounded-[6px] bg-[#F9FAFB] p-2.5">
+      <span className="text-[10px] font-medium text-[#6B7280]">
+        Clarity Score
+      </span>
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]">
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${score}%`, background: color }}
+        />
+      </div>
+      <span className="text-[11px] font-semibold" style={{ color }}>
+        {score}/100
+      </span>
+    </div>
   );
 }
 
-export function ChatMessage({ message, currentUser }) {
+function Section({ label, value }) {
+  if (!value) return null;
+  return (
+    <div className="rounded-[6px] bg-[#F9FAFB] p-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+        {label}
+      </p>
+      <p className="mt-0.5 text-[13px] text-[#111827]">→ {value}</p>
+    </div>
+  );
+}
+
+function ClarifiedSections({ data }) {
+  const sections = data.sections || {};
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      <Section label="Ce que vous proposez" value={sections.what} />
+      <Section label="Pour qui ?" value={sections.who} />
+      <Section label="Le problème résolu" value={sections.problem} />
+      <ClarityBar score={data.score} />
+    </div>
+  );
+}
+
+function QuestionBlocks({ questions }) {
+  if (!Array.isArray(questions) || questions.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      {questions.map((q, i) => (
+        <div
+          key={i}
+          className="flex gap-2 rounded-[6px] bg-[#EDE9FE] p-2.5 text-[13px] text-[#111827]"
+        >
+          <span className="text-[11px] font-semibold text-[#4C1D95]">
+            {i + 1}.
+          </span>
+          <span>{q}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const CATEGORY_LABELS = {
+  fraud: "Fraude / Arnaque",
+  illegal: "Activité illégale",
+  harmful: "Contenu dangereux",
+  default: "Non conforme aux CGU",
+};
+
+function RefusedBlock({ data }) {
+  const categoryLabel =
+    CATEGORY_LABELS[data.reason_category] || CATEGORY_LABELS.default;
+  const partial = data.partial_understanding || {};
+
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      <div className="flex items-center gap-2 rounded-[6px] border border-red-200 bg-red-50 px-3 py-2">
+        <span className="text-base text-red-500">⚠</span>
+        <span className="text-sm font-medium text-red-700">Idée refusée</span>
+        <span className="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-[11px] text-red-600">
+          {categoryLabel}
+        </span>
+      </div>
+
+      {partial.what && (
+        <div className="rounded-[6px] bg-[#F9FAFB] p-2.5">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-[#9CA3AF]">
+            Ce que j&apos;ai compris
+          </p>
+          <p className="mt-0.5 text-[13px] text-[#374151]">
+            → {partial.what}
+          </p>
+        </div>
+      )}
+      {partial.who && (
+        <div className="rounded-[6px] bg-[#F9FAFB] p-2.5">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-[#9CA3AF]">
+            Pour qui ?
+          </p>
+          <p className="mt-0.5 text-[13px] text-[#374151]">
+            → {partial.who}
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 rounded-[6px] bg-[#F9FAFB] p-2.5">
+        <span className="text-[11px] text-[#6B7280]">Clarity</span>
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]">
+          <div
+            className="h-full rounded-full bg-red-400"
+            style={{ width: "0%" }}
+          />
+        </div>
+        <span className="text-[12px] font-medium text-red-500">
+          0/100 — Refusé
+        </span>
+      </div>
+
+      <div className="rounded-[6px] border border-red-200 bg-red-50 p-2.5">
+        <p className="text-[12px] text-red-700">
+          {data.refusal_message}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 rounded-[6px] border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2">
+        <span className="text-red-500">✗</span>
+        <div>
+          <p className="text-[12px] font-medium text-[#374151]">
+            Pipeline impossible
+          </p>
+          <p className="text-[11px] text-[#9CA3AF]">
+            Objectif : 80/100 pour lancer • Statut actuel : Refusé
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ChatMessage({ message, user }) {
+  const [xaiOpen, setXaiOpen] = useState(false);
   if (!message) return null;
 
-  const isUser = message.role === "user";
-
-  const [showReasoning, setShowReasoning] = useState(false);
-
-  if (isUser) {
+  if (message.role === "user") {
     return (
-      <div className="flex justify-end gap-2">
+      <div className="flex items-end justify-end gap-2">
         <div className="flex max-w-[75%] flex-col items-end">
-          <div className="rounded-2xl rounded-br-sm bg-[#7C3AED] px-4 py-2.5 text-sm text-white shadow-sm">
-            <p className="whitespace-pre-wrap break-words">{message.text}</p>
+          <div className="rounded-[16px_16px_4px_16px] bg-[#7C3AED] px-4 py-2.5 text-sm text-white shadow-sm">
+            <p className="whitespace-pre-wrap break-words">
+              {message.content}
+            </p>
           </div>
-          <span className="mt-1 text-[10px] text-[#9CA3AF]">
-            {formatTime(message.createdAt)}
-          </span>
+          <p className="mt-1 text-[10px] text-[#9CA3AF]">
+            {formatTime(message.timestamp)}
+          </p>
         </div>
         <div className="mt-0.5">
-          <UserAvatar user={currentUser} size={28} />
+          <UserAvatar user={user} size={28} />
         </div>
       </div>
     );
   }
 
-  const agentType = message.agentType || "idea_clarifier";
-  const meta = getAgentMeta(agentType);
   const structured = message.structured || {};
-  const text = message.streamedText || "";
 
   return (
-    <div className="flex items-start gap-3">
-      <AgentAvatar agentType={agentType} size={32} />
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-[#111827]">{meta.label}</p>
-          <Badge variant="violet" className="text-[10px]">
-            IA
-          </Badge>
-        </div>
-        <div className="mt-1 rounded-2xl rounded-tl-sm border border-l-4 border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#111827]">
-          <p className="text-[11px] font-medium text-[#4B5563]">
-            Voici ce que j&apos;ai compris de votre idée :
+    <div className="flex items-end gap-2">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#7C3AED] text-xs">
+        <span role="img" aria-label="clarifier">
+          🔍
+        </span>
+      </div>
+      <div className="max-w-[80%]">
+        <p className="mb-1 text-[11px] font-semibold text-[#7C3AED]">
+          Idea Clarifier
+        </p>
+        <div className="rounded-[4px_16px_16px_16px] border border-[#E5E7EB] border-l-[3px] border-l-[#7C3AED] bg-white px-4 py-3 text-sm text-[#111827]">
+          <p className="whitespace-pre-wrap text-[13px]">
+            {message.content}
+            {message.isStreaming && (
+              <span className="animate-pulse text-[#7C3AED]">▌</span>
+            )}
           </p>
 
-          <div className="mt-2 space-y-2 text-xs leading-relaxed">
-            <div>
-              <p className="font-semibold text-[#4B5563]">
-                Ce que vous proposez
-              </p>
-              <p className="mt-0.5 text-[#111827]">
-                {structured.understanding?.what}
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-[#4B5563]">Pour qui ?</p>
-              <p className="mt-0.5 text-[#111827]">
-                {structured.understanding?.who}
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-[#4B5563]">Le problème résolu</p>
-              <p className="mt-0.5 text-[#111827]">
-                {structured.understanding?.problem}
-              </p>
-            </div>
-            {Array.isArray(structured.questions) &&
-              structured.questions.length > 0 && (
-                <div>
-                  <p className="font-semibold text-[#4B5563]">
-                    Questions de clarification
-                  </p>
-                  <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-[#111827]">
-                    {structured.questions.map((q, idx) => (
-                      <li key={idx}>{q}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-          </div>
+          {structured.type === "clarified" && !message.isStreaming && (
+            <ClarifiedSections data={structured} />
+          )}
 
-          <ClarityScore score={structured.clarity_score} />
+          {structured.type === "questions" && !message.isStreaming && (
+            <QuestionBlocks questions={structured.questions} />
+          )}
 
-          <div className="mt-3 rounded-[8px] bg-[#F9FAFB] p-2.5">
-            <div className="flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => setShowReasoning((v) => !v)}
-                className="text-[11px] font-medium text-[#4F46E5] hover:underline"
-              >
-                {showReasoning ? "Masquer le raisonnement" : "Pourquoi cette réponse ?"}
-              </button>
-              <ConfidenceBadge level={structured.confidence} />
-            </div>
-            {showReasoning && (
-              <div className="mt-2 text-[11px] text-[#4B5563]">
-                <p>{structured.reasoning}</p>
-                {Array.isArray(structured.sources_used) &&
-                  structured.sources_used.length > 0 && (
-                    <p className="mt-1">
-                      <span className="font-medium">Données utilisées : </span>
-                      {structured.sources_used.join(", ")}
-                    </p>
-                  )}
-              </div>
-            )}
-          </div>
-
-          {text && (
-            <p className="mt-2 whitespace-pre-wrap text-[11px] text-[#6B7280]">
-              {text}
-              <span className="inline-block w-1 animate-pulse bg-[#9CA3AF] align-middle" />
-            </p>
+          {structured.type === "refused" && !message.isStreaming && (
+            <RefusedBlock data={structured} />
           )}
         </div>
-        <span className="mt-1 inline-block text-[10px] text-[#9CA3AF]">
-          {formatTime(message.createdAt)}
-        </span>
+
+        {structured.type === "clarified" && (
+          <>
+            <button
+              type="button"
+              onClick={() => setXaiOpen((v) => !v)}
+              className="mt-1 inline-flex items-center gap-1 rounded border border-[#E5E7EB] bg-white px-2 py-1 text-[11px] text-[#6B7280] hover:text-[#7C3AED]"
+            >
+              Pourquoi cette réponse ?
+            </button>
+            {xaiOpen && (
+              <div className="mt-1 rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-3 text-[11px] text-[#6B7280]">
+                <p>
+                  J&apos;ai analysé votre description pour identifier clairement le
+                  problème, la cible et la solution. Le score reflète à quel
+                  point ces trois dimensions sont complètes.
+                </p>
+                <p className="mt-1">
+                  <span className="font-medium">Sources utilisées :</span>{" "}
+                  description soumise, secteur et nom du projet.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        <p className="mt-1 text-[10px] text-[#9CA3AF]">
+          {formatTime(message.timestamp)}
+        </p>
       </div>
     </div>
   );

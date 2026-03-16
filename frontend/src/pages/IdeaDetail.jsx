@@ -6,6 +6,7 @@ import {
   HiOutlineTrash,
   HiOutlineCheckCircle,
   HiOutlineLightBulb,
+  HiOutlineRocketLaunch,
 } from "react-icons/hi2";
 import { Navbar } from "../components/layout/Navbar";
 import { Card } from "../components/ui/Card";
@@ -15,6 +16,7 @@ import { Badge } from "../components/ui/Badge";
 import { ChatMessage } from "../components/chat/ChatMessage";
 import { TypingIndicator } from "../components/chat/TypingIndicator";
 import { AgentAvatar } from "../components/chat/AgentAvatar";
+import { AgentStatusBar } from "../components/chat/AgentStatusBar";
 import { useChatStream } from "../hooks/useChatStream";
 import {
   apiGetIdea,
@@ -134,8 +136,17 @@ export function IdeaDetail() {
   const [deleting, setDeleting] = useState(false);
   const [activeAgent, setActiveAgent] = useState("idea");
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const { messages, isStreaming, sendMessage } = useChatStream();
-  const hasInjectedInitial = useRef(false);
+  const [inputText, setInputText] = useState("");
+  const {
+    messages,
+    isStreaming,
+    clarityScore,
+    isReady,
+    isRefused,
+    agentSteps,
+    startConversation,
+    sendAnswer,
+  } = useChatStream(idea, token);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -176,20 +187,17 @@ export function IdeaDetail() {
   const currentData = results[activeAgent];
   const currentStatus = statuses[activeAgent] || "waiting";
 
-  const lastClarifierMessage = useMemo(
-    () =>
-      [...messages]
-        .reverse()
-        .find(
-          (m) =>
-            m.role === "agent" &&
-            (m.agentType === "idea_clarifier" || !m.agentType),
-        ),
-    [messages],
-  );
+  useEffect(() => {
+    if (idea && idea.status === "pending") {
+      startConversation();
+    }
+  }, [idea?.id]);
 
-  const clarityScore = lastClarifierMessage?.structured?.clarity_score ?? null;
-  const canLaunchPipeline = typeof clarityScore === "number" && clarityScore >= 80;
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const handleDelete = async () => {
     if (!id || !token) return;
@@ -247,6 +255,9 @@ export function IdeaDetail() {
   const descriptionLong = description.length > 120;
   const handleSend = (event) => {
     event.preventDefault();
+    if (!inputText.trim() || isStreaming) return;
+    sendAnswer(inputText.trim());
+    setInputText("");
   };
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -424,18 +435,34 @@ export function IdeaDetail() {
             </div>
 
             <div className="mt-2">
-              <Button
-                variant="primary"
-                fullWidth
-                disabled={!canLaunchPipeline || isStreaming}
-                className="gap-1.5 py-2 text-xs"
-              >
-                Lancer le pipeline complet
-              </Button>
-              {!canLaunchPipeline && (
-                <p className="mt-1 text-[10px] text-[#9CA3AF]">
-                  Disponible une fois la clarté de l&apos;idée ≥ 80/100.
-                </p>
+              {isRefused ? (
+                <Button
+                  variant="primary"
+                  fullWidth
+                  disabled
+                  className="gap-1.5 py-2 text-xs cursor-not-allowed bg-red-500 opacity-70 hover:bg-red-500"
+                >
+                  ✗ Pipeline bloqué — idée refusée
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    disabled={!isReady || isStreaming}
+                    className="gap-1.5 py-2 text-xs"
+                  >
+                    <HiOutlineRocketLaunch className="h-3.5 w-3.5" />
+                    {isReady
+                      ? "Lancer le pipeline complet"
+                      : `Affiner encore (${clarityScore || 0}/100)`}
+                  </Button>
+                  {!isReady && (
+                    <p className="mt-1 text-[10px] text-[#9CA3AF]">
+                      Disponible une fois la clarté de l&apos;idée ≥ 80/100.
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
@@ -492,6 +519,7 @@ export function IdeaDetail() {
               <Badge className="text-[10px]">IA</Badge>
             </div>
 
+            <AgentStatusBar steps={agentSteps} />
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
                 {messages.length === 0 && (
@@ -512,10 +540,12 @@ export function IdeaDetail() {
                 )}
 
                 {messages.map((msg) => (
-                  <ChatMessage key={msg.id} message={msg} currentUser={user} />
+                  <ChatMessage key={msg.id} message={msg} user={user} />
                 ))}
 
-                {isStreaming && <TypingIndicator />}
+                {isStreaming && !messages.some((m) => m.isStreaming) && (
+                  <TypingIndicator />
+                )}
 
                 <div ref={messagesEndRef} />
               </div>
@@ -527,16 +557,14 @@ export function IdeaDetail() {
                 <div className="rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-2">
                   <textarea
                     rows={2}
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
                     placeholder="Répondez aux questions de l’agent ou précisez votre idée…"
                     className="max-h-40 w-full resize-none border-none text-xs text-[#111827] outline-none placeholder:text-[#9CA3AF]"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        const value = e.currentTarget.value;
-                        if (value.trim()) {
-                          sendMessage(value, "idea_clarifier");
-                          e.currentTarget.value = "";
-                        }
+                        handleSend(e);
                       }
                     }}
                     disabled={isStreaming}
