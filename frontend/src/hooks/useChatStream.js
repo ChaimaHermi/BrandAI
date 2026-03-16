@@ -48,82 +48,61 @@ export function useChatStream(idea, token) {
     ]);
   }, []);
 
-  const streamText = useCallback((fullText, onComplete) => {
+  const streamWords = useCallback((fullText, onComplete) => {
     if (!fullText || typeof fullText !== "string") {
       if (onComplete) onComplete(null);
-      return;
+      return null;
     }
-    const cleanText = String(fullText)
-      .replace(/undefined$/gi, "")
-      .replace(/\s+$/, "")
-      .trim()
-      .replace(/\s*undefined\s*/gi, " ")
-      .replace(/\s*null\s*/gi, " ")
+
+    const clean = fullText
+      .replace(/\bundefined\b/g, "")
+      .replace(/\s{2,}/g, " ")
       .trim();
-    if (!cleanText) {
+
+    if (!clean) {
       if (onComplete) onComplete(null);
-      return;
+      return null;
     }
 
-    const words = cleanText.trim().split(/\s+/);
-    const minWords = 2;
-
-    if (words.length <= minWords) {
-      const msgId = Date.now() + Math.random();
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: msgId,
-          role: "agent",
-          content: cleanText,
-          isStreaming: false,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-      if (onComplete) onComplete(msgId);
-      return msgId;
-    }
-
-    const prefix = words.slice(0, minWords).join(" ") + " ";
-    const rest = cleanText.slice(prefix.length);
+    const words = clean.split(" ");
     const msgId = Date.now() + Math.random();
 
-    setIsStreaming(true);
     setMessages((prev) => [
       ...prev,
       {
         id: msgId,
         role: "agent",
-        content: prefix,
+        content: "",
         isStreaming: true,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
       },
     ]);
 
     let i = 0;
-    const chars = rest.split("");
 
     const tick = () => {
-      if (i < chars.length) {
+      if (i < words.length) {
+        const word = words[i];
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === msgId ? { ...m, content: m.content + chars[i] } : m,
+            m.id === msgId
+              ? { ...m, content: m.content + (i === 0 ? "" : " ") + word }
+              : m,
           ),
         );
-        i += 1;
-        streamTimerRef.current = setTimeout(tick, Math.random() * 15 + 8);
+        i++;
+        streamTimerRef.current = setTimeout(tick, 40 + Math.random() * 40);
       } else {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === msgId ? { ...m, isStreaming: false } : m,
           ),
         );
-        setIsStreaming(false);
         if (onComplete) onComplete(msgId);
       }
     };
 
-    streamTimerRef.current = setTimeout(tick, 50);
+    tick();
     return msgId;
   }, []);
 
@@ -164,6 +143,16 @@ export function useChatStream(idea, token) {
 
         if (!rawData) continue;
 
+        const isCompleteJson =
+          (rawData.startsWith("{") && rawData.endsWith("}")) ||
+          (rawData.startsWith("[") && rawData.endsWith("]")) ||
+          (!rawData.startsWith("{") && !rawData.startsWith("["));
+
+        if (!isCompleteJson) {
+          buffer = block + "\n\n" + buffer;
+          continue;
+        }
+
         let parsed;
         try {
           parsed = JSON.parse(rawData);
@@ -177,15 +166,21 @@ export function useChatStream(idea, token) {
 
     while (true) {
       const { done, value } = await reader.read();
+
       if (done) {
+        buffer += decoder.decode();
         if (buffer.trim()) {
           buffer += "\n\n";
           processBuffer();
         }
         break;
       }
+
       buffer += decoder.decode(value, { stream: true });
-      processBuffer();
+
+      if (buffer.includes("\n\n")) {
+        processBuffer();
+      }
     }
   }, []);
 
@@ -289,7 +284,7 @@ export function useChatStream(idea, token) {
         });
         setIsRefused(true);
         const formatted = formatAgentResponse(result);
-        streamText(formatted.text, (msgId) => {
+        streamWords(formatted.text, (msgId) => {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === msgId
@@ -322,10 +317,9 @@ export function useChatStream(idea, token) {
           question: formatted.questions?.[0] ?? null,
         });
         setPendingQuestions(formatted.questions);
-        let intro = (formatted.text || "").trim();
-        if (intro.startsWith("'")) intro = "J" + intro;
-        streamText(
-          intro,
+        const introText = "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :";
+        streamWords(
+          introText,
           (msgId) => {
             setMessages((prev) =>
               prev.map((m) =>
@@ -353,8 +347,10 @@ export function useChatStream(idea, token) {
         setClarifiedIdea(formatted.clarifiedIdea);
         if (score >= 80) setIsReady(true);
 
-        const introClarified = "Voici la description structurée de votre projet :";
-        streamText(
+        const introClarified = score >= 80
+          ? "Votre idée est bien structurée ! Voici ce que j'ai compris :"
+          : "Voici ce que j'ai compris de votre idée :";
+        streamWords(
           introClarified,
           (msgId) => {
             const sec = result.clarified_idea || {};
@@ -383,7 +379,7 @@ export function useChatStream(idea, token) {
         );
       } else {
         const fallbackText = formatted?.text != null ? String(formatted.text) : "Réponse reçue.";
-        streamText(fallbackText);
+        streamWords(fallbackText);
       }
     } catch (err) {
       setIsStreaming(false);
@@ -393,7 +389,7 @@ export function useChatStream(idea, token) {
         "Une erreur s'est produite. Vérifiez que le service IA est démarré (port 8001).",
       );
     }
-  }, [idea, token, addMessage, addStep, replaceLastLoadingStep, clearSteps, streamText, formatAgentResponse]);
+  }, [idea, token, addMessage, addStep, replaceLastLoadingStep, clearSteps, streamWords, formatAgentResponse]);
 
   const sendAnswer = useCallback(
     async (userText) => {
@@ -434,7 +430,7 @@ export function useChatStream(idea, token) {
           setClarifiedIdea(formatted.clarifiedIdea);
           if ((formatted.score || 0) >= 80) setIsReady(true);
 
-          streamText(
+          streamWords(
             "Merci pour ces précisions ! Voici votre idée structurée :",
             (msgId) => {
               setMessages((prev) =>
@@ -451,10 +447,9 @@ export function useChatStream(idea, token) {
           );
         } else if (formatted.type === "questions") {
           setPendingQuestions(formatted.questions);
-          let intro = (formatted.text || "").trim();
-          if (intro.startsWith("'")) intro = "J" + intro;
-          streamText(
-            intro,
+          const introText = "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :";
+          streamWords(
+            introText,
             (msgId) => {
               setMessages((prev) =>
                 prev.map((m) =>
@@ -473,7 +468,7 @@ export function useChatStream(idea, token) {
           );
         } else {
           const fallbackText = formatted?.text != null ? String(formatted.text) : "Réponse reçue.";
-          streamText(fallbackText);
+          streamWords(fallbackText);
         }
       } catch (err) {
         setIsStreaming(false);
@@ -485,7 +480,7 @@ export function useChatStream(idea, token) {
       token,
       isStreaming,
       addMessage,
-      streamText,
+      streamWords,
       formatAgentResponse,
     ],
   );

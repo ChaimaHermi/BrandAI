@@ -70,15 +70,6 @@ export function AgentStatusBar({ steps }) {
               </div>
             )}
 
-            {step.detail?.question && (
-              <div
-                className="font-mono text-[11px] italic mt-0.5 pl-6 text-[#7C3AED]"
-                style={{ paddingLeft: "24px", marginTop: "3px", color: "#a78bfa" }}
-              >
-                &quot;{step.detail.question}&quot;
-              </div>
-            )}
-
             {step.detail?.model != null && (
               <div
                 className="font-mono text-[11px] mt-0.5 pl-6 text-[#6B7280]"
