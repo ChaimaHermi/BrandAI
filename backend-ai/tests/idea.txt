@@ -1,0 +1,7 @@
+Une marketplace en ligne qui connecte les producteurs locaux tunisiens
+et les consommateurs soucieux de l'environnement.
+Le problème est qu'il est impossible de trouver des produits locaux
+durables en ligne de façon centralisée.
+La solution est une plateforme avec une carte interactive des producteurs,
+un score CO2 calculé par IA pour chaque produit, et des livraisons
+groupées par zone géographique pour réduire les émissions.
