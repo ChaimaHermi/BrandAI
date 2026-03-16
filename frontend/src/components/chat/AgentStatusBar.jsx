@@ -46,4 +46,3 @@ export function AgentStatusBar({ steps }) {
 }
 
 export default AgentStatusBar;
-

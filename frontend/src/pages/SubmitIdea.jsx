@@ -25,7 +25,7 @@ const SECTOR_OPTIONS = [
 
 const MAX_DESC_LENGTH = 500;
 const inputFocusClass =
-  "w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-2.5 text-[#111827] placeholder:text-[#6B7280] focus:border-[#7C3AED] focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.1)]";
+  "w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#111827] placeholder:text-[#6B7280] focus:border-[#7C3AED] focus:outline-none focus:ring-1 focus:ring-[#7C3AED]";
 
 export function SubmitIdea() {
   const [name, setName] = useState("");
@@ -74,45 +74,45 @@ export function SubmitIdea() {
   const descNearLimit = descCount > 450;
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="flex min-h-screen flex-col">
-        <Navbar variant="app" />
-        <main className="mx-auto w-full max-w-[560px] flex-1 px-4 py-8 md:py-12">
-          <h1 className="mb-8 text-2xl font-semibold text-[#111827]">Nouvelle idée</h1>
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
+      <Navbar variant="app" />
+      <main className="flex flex-1 overflow-hidden">
+        <div className="mx-auto w-full max-w-[1400px] px-6 py-4 flex flex-1 items-center justify-center">
+          <div className="w-full max-w-[700px] bg-white rounded-xl border border-[#E5E7EB] shadow-sm p-6 space-y-4">
+            <h1 className="text-xl font-semibold text-[#111827]">Nouvelle idée</h1>
 
-          {/* Step indicator */}
-          <div className="mb-8 flex items-center gap-0">
-            <div className="flex flex-col items-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7C3AED] text-sm font-medium text-white" aria-hidden>1</div>
-              <span className="mt-1.5 flex items-center gap-1 text-xs font-medium text-[#7C3AED]">
-                <HiOutlineLightBulb className="h-3.5 w-3.5" aria-hidden />
-                Votre idée
-              </span>
+            {/* Step indicator */}
+            <div className="flex items-center gap-0">
+              <div className="flex flex-col items-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7C3AED] text-sm font-medium text-white" aria-hidden>1</div>
+                <span className="mt-1.5 flex items-center gap-1 text-xs font-medium text-[#7C3AED]">
+                  <HiOutlineLightBulb className="h-3.5 w-3.5" aria-hidden />
+                  Votre idée
+                </span>
+              </div>
+              <div className="h-0.5 w-8 flex-1 min-w-[24px] bg-[#E5E7EB]" />
+              <div className="flex flex-col items-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5E7EB] text-sm font-medium text-[#9CA3AF]" aria-hidden>2</div>
+                <span className="mt-1.5 flex items-center gap-1 text-xs text-[#9CA3AF]">
+                  <HiOutlineChatBubbleLeftRight className="h-3.5 w-3.5" aria-hidden />
+                  Affiner avec l&apos;agent
+                </span>
+              </div>
+              <div className="h-0.5 w-8 flex-1 min-w-[24px] bg-[#E5E7EB]" />
+              <div className="flex flex-col items-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5E7EB] text-sm font-medium text-[#9CA3AF]" aria-hidden>3</div>
+                <span className="mt-1.5 flex items-center gap-1 text-xs text-[#9CA3AF]">
+                  <HiOutlineRocketLaunch className="h-3.5 w-3.5" aria-hidden />
+                  Lancer le pipeline
+                </span>
+              </div>
             </div>
-            <div className="h-0.5 w-8 flex-1 min-w-[24px] bg-[#E5E7EB]" />
-            <div className="flex flex-col items-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5E7EB] text-sm font-medium text-[#9CA3AF]" aria-hidden>2</div>
-              <span className="mt-1.5 flex items-center gap-1 text-xs text-[#9CA3AF]">
-                <HiOutlineChatBubbleLeftRight className="h-3.5 w-3.5" aria-hidden />
-                Affiner avec l&apos;agent
-              </span>
-            </div>
-            <div className="h-0.5 w-8 flex-1 min-w-[24px] bg-[#E5E7EB]" />
-            <div className="flex flex-col items-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5E7EB] text-sm font-medium text-[#9CA3AF]" aria-hidden>3</div>
-              <span className="mt-1.5 flex items-center gap-1 text-xs text-[#9CA3AF]">
-                <HiOutlineRocketLaunch className="h-3.5 w-3.5" aria-hidden />
-                Lancer le pipeline
-              </span>
-            </div>
-          </div>
 
-          <Card hover={false} className="border border-[#E5E7EB] bg-white">
-            <div className="mb-6">
+            <div>
               <span className="inline-flex rounded-full bg-[#7C3AED] px-2.5 py-0.5 text-xs font-medium text-white">Étape 1 sur 3</span>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
               {/* Nom */}
               <div>
                 <label htmlFor="idea-name" className="mb-1.5 block text-sm font-medium text-[#111827]">Nom de votre idée</label>
@@ -131,7 +131,7 @@ export function SubmitIdea() {
               </div>
 
               {/* Secteur + Public cible (2-col grid) */}
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="idea-sector" className="mb-1.5 block text-sm font-medium text-[#111827]">Secteur</label>
                   <select
@@ -167,8 +167,7 @@ export function SubmitIdea() {
                   value={description}
                   onChange={handleDescriptionChange}
                   placeholder="Décrivez votre idée : quel problème résout-elle ? pour qui ? comment ?"
-                  rows={5}
-                  className={`resize-none ${inputFocusClass}`}
+                  className={`resize-none h-[120px] ${inputFocusClass}`}
                 />
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <p className="text-xs text-[#6B7280]">Minimum 20 caractères · Soyez précis, l&apos;agent s&apos;en chargera</p>
@@ -187,7 +186,7 @@ export function SubmitIdea() {
                 </div>
               )}
 
-              <Button type="submit" variant="primary" fullWidth disabled={!canSubmit} className="gap-2 py-3">
+              <Button type="submit" variant="primary" fullWidth disabled={!canSubmit} className="gap-2 h-9 px-4 text-sm rounded-lg">
                 {loading ? (
                   <>
                     <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden />
@@ -201,9 +200,9 @@ export function SubmitIdea() {
                 )}
               </Button>
             </form>
-          </Card>
-        </main>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

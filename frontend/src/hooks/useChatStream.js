@@ -25,6 +25,16 @@ export function useChatStream(idea, token) {
     });
   }, []);
 
+  const replaceLastLoadingStep = useCallback((status, text) => {
+    setAgentSteps((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.status === "loading") {
+        return [...prev.slice(0, -1), { id: Date.now() + Math.random(), status, text }];
+      }
+      return [...prev, { id: Date.now() + Math.random(), status, text }];
+    });
+  }, []);
+
   const addMessage = useCallback((role, content, extra = {}) => {
     setMessages((prev) => [
       ...prev,
@@ -39,23 +49,52 @@ export function useChatStream(idea, token) {
   }, []);
 
   const streamText = useCallback((fullText, onComplete) => {
-    if (!fullText) return;
-    setIsStreaming(true);
+    const safeText = (typeof fullText === "string" ? fullText : String(fullText ?? ""))
+      .replace(/\s*undefined\s*/gi, " ")
+      .replace(/\s*null\s*/gi, " ")
+      .trim();
+    if (!safeText) {
+      if (onComplete) onComplete(null);
+      return;
+    }
+
+    const words = safeText.trim().split(/\s+/);
+    const minWords = 2;
+
+    if (words.length <= minWords) {
+      const msgId = Date.now() + Math.random();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: msgId,
+          role: "agent",
+          content: safeText,
+          isStreaming: false,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      if (onComplete) onComplete(msgId);
+      return msgId;
+    }
+
+    const prefix = words.slice(0, minWords).join(" ") + " ";
+    const rest = safeText.slice(prefix.length);
     const msgId = Date.now() + Math.random();
 
+    setIsStreaming(true);
     setMessages((prev) => [
       ...prev,
       {
         id: msgId,
         role: "agent",
-        content: "",
+        content: prefix,
         isStreaming: true,
         timestamp: new Date().toISOString(),
       },
     ]);
 
     let i = 0;
-    const chars = fullText.split("");
+    const chars = rest.split("");
 
     const tick = () => {
       if (i < chars.length) {
@@ -65,8 +104,7 @@ export function useChatStream(idea, token) {
           ),
         );
         i += 1;
-        const delay = 10 + Math.random() * 20;
-        streamTimerRef.current = setTimeout(tick, delay);
+        streamTimerRef.current = setTimeout(tick, Math.random() * 15 + 8);
       } else {
         setMessages((prev) =>
           prev.map((m) =>
@@ -78,15 +116,19 @@ export function useChatStream(idea, token) {
       }
     };
 
-    tick();
+    streamTimerRef.current = setTimeout(tick, 50);
     return msgId;
   }, []);
 
   const formatAgentResponse = useCallback((result) => {
-    if (result.questions && result.questions.length > 0) {
+    const rawQuestions = result.questions || [];
+    const questions = rawQuestions.filter(
+      (q) => q != null && String(q).trim() !== ""
+    );
+    if (questions.length > 0) {
       return {
         type: "questions",
-        questions: result.questions,
+        questions,
         text: "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :",
       };
     }
@@ -108,21 +150,28 @@ export function useChatStream(idea, token) {
     }
 
     if (result.safe === false) {
+      const fallback =
+        "Ce projet ne peut pas être traité par BrandAI pour des raisons de sécurité.";
+      let raw =
+        result.refusal_message != null && typeof result.refusal_message === "string"
+          ? result.refusal_message
+          : fallback;
+      raw = String(raw).trim();
+      const refusalMessage = raw
+        .replace(/\s*undefined\s*$/i, "")
+        .replace(/\s*null\s*$/i, "")
+        .trim() || fallback;
       return {
         type: "refused",
         reason_category: result.reason_category,
-        refusal_message:
-          result.refusal_message ||
-          "Ce projet ne peut pas être traité par BrandAI pour des raisons de sécurité.",
+        refusal_message: refusalMessage,
         partial_understanding: {
           what: result.partial_what ?? null,
           who: result.partial_who ?? null,
           problem: result.partial_problem ?? null,
         },
         score: 0,
-        text:
-          result.refusal_message ||
-          "Ce projet ne peut pas être traité par BrandAI pour des raisons de sécurité.",
+        text: refusalMessage,
       };
     }
 
@@ -158,44 +207,54 @@ export function useChatStream(idea, token) {
       setIsStreaming(false);
 
       if (!result.safe) {
-        addStep("error", `✗ Projet refusé — ${result.reason_category || "default"}`);
+        setAgentSteps((prev) => {
+          const rest = prev.slice(0, -1);
+          return [
+            ...rest,
+            {
+              id: Date.now() + Math.random(),
+              status: "error",
+              text: `✗ Projet refusé — ${result.reason_category || "sécurité"}`,
+            },
+          ];
+        });
         setIsRefused(true);
         const formatted = formatAgentResponse(result);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + Math.random(),
-            role: "agent",
-            content: formatted.text,
-            isStreaming: false,
-            timestamp: new Date().toISOString(),
-            structured: {
-              type: "refused",
-              reason_category: formatted.reason_category,
-              refusal_message: formatted.refusal_message,
-              partial_understanding: formatted.partial_understanding || {},
-              score: 0,
-            },
-          },
-        ]);
+        streamText(formatted.text, (msgId) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId
+                ? {
+                    ...m,
+                    structured: {
+                      type: "refused",
+                      reason_category: formatted.reason_category,
+                      refusal_message: formatted.refusal_message,
+                      partial_understanding: formatted.partial_understanding || {},
+                      score: 0,
+                    },
+                  }
+                : m,
+            ),
+          );
+        });
         return;
       }
 
-      addStep("success", "✓ Sécurité — projet conforme");
+      replaceLastLoadingStep("success", "✓ Sécurité — projet conforme");
       addStep("loading", "Analyse de la description...");
       await new Promise((r) => setTimeout(r, 300));
 
       const formatted = formatAgentResponse(result);
 
       if (formatted.type === "questions") {
-        addStep("info", `✓ Analyse — ${formatted.questions.length} dimension(s) manquante(s)`);
+        replaceLastLoadingStep("info", `✓ Analyse — ${formatted.questions.length} dimension(s) manquante(s)`);
         addStep("info", `${formatted.questions.length} question(s) nécessaire(s)`);
         setPendingQuestions(formatted.questions);
-        const questionText = formatted.questions
-          .map((q, i) => `${i + 1}. ${q}`)
-          .join("\n");
+        let intro = (formatted.text || "").trim();
+        if (intro.startsWith("'")) intro = "J" + intro;
         streamText(
-          `${formatted.text}\n\n${questionText}`,
+          intro,
           (msgId) => {
             setMessages((prev) =>
               prev.map((m) =>
@@ -213,19 +272,27 @@ export function useChatStream(idea, token) {
           },
         );
       } else if (formatted.type === "clarified") {
-        addStep("success", "✓ Analyse — description complète");
+        replaceLastLoadingStep("success", "✓ Analyse — description complète");
         addStep("loading", "Génération du JSON structuré...");
         await new Promise((r) => setTimeout(r, 200));
-        addStep("success", "✓ JSON généré");
+        replaceLastLoadingStep("success", "✓ JSON généré");
 
         const score = result.clarified_idea?.clarity_score ?? formatted.score ?? 0;
         setClarityScore(score);
         setClarifiedIdea(formatted.clarifiedIdea);
         if (score >= 80) setIsReady(true);
 
+        const introClarified = "Voici la description structurée de votre projet :";
         streamText(
-          "Voici la description structurée de votre projet :",
+          introClarified,
           (msgId) => {
+            const sec = result.clarified_idea || {};
+            const sections = formatted.sections || {
+              what: sec.solution_description ?? null,
+              who: sec.target_users ?? null,
+              problem: sec.problem ?? null,
+              pitch: sec.short_pitch ?? null,
+            };
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === msgId
@@ -235,12 +302,7 @@ export function useChatStream(idea, token) {
                         type: "clarified",
                         ...formatted,
                         score,
-                        sections: formatted.sections || {
-                          what: result.clarified_idea?.solution_description,
-                          who: result.clarified_idea?.target_users,
-                          problem: result.clarified_idea?.problem,
-                          pitch: result.clarified_idea?.short_pitch,
-                        },
+                        sections,
                       },
                     }
                   : m,
@@ -249,7 +311,8 @@ export function useChatStream(idea, token) {
           },
         );
       } else {
-        streamText(formatted.text);
+        const fallbackText = formatted?.text != null ? String(formatted.text) : "Réponse reçue.";
+        streamText(fallbackText);
       }
     } catch (err) {
       setIsStreaming(false);
@@ -259,7 +322,7 @@ export function useChatStream(idea, token) {
         "Une erreur s'est produite. Vérifiez que le service IA est démarré (port 8001).",
       );
     }
-  }, [idea, token, addMessage, addStep, clearSteps, streamText, formatAgentResponse]);
+  }, [idea, token, addMessage, addStep, replaceLastLoadingStep, clearSteps, streamText, formatAgentResponse]);
 
   const sendAnswer = useCallback(
     async (userText) => {
@@ -268,10 +331,7 @@ export function useChatStream(idea, token) {
       addMessage("user", userText.trim());
       setIsStreaming(true);
 
-      const answers =
-        pendingQuestions && pendingQuestions.length > 0
-          ? pendingQuestions.map(() => userText.trim())
-          : [userText.trim()];
+      const answers = [userText.trim()];
 
       try {
         const response = await fetch(`${AI_URL}/clarifier/answer`, {
@@ -320,11 +380,10 @@ export function useChatStream(idea, token) {
           );
         } else if (formatted.type === "questions") {
           setPendingQuestions(formatted.questions);
-          const questionText = formatted.questions
-            .map((q, i) => `${i + 1}. ${q}`)
-            .join("\n");
+          let intro = (formatted.text || "").trim();
+          if (intro.startsWith("'")) intro = "J" + intro;
           streamText(
-            `${formatted.text}\n\n${questionText}`,
+            intro,
             (msgId) => {
               setMessages((prev) =>
                 prev.map((m) =>
@@ -342,7 +401,8 @@ export function useChatStream(idea, token) {
             },
           );
         } else {
-          streamText(formatted.text);
+          const fallbackText = formatted?.text != null ? String(formatted.text) : "Réponse reçue.";
+          streamText(fallbackText);
         }
       } catch (err) {
         setIsStreaming(false);
@@ -353,7 +413,6 @@ export function useChatStream(idea, token) {
       idea,
       token,
       isStreaming,
-      pendingQuestions,
       addMessage,
       streamText,
       formatAgentResponse,
