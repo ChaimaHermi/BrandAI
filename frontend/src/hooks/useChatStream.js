@@ -15,23 +15,23 @@ export function useChatStream(idea, token) {
 
   const clearSteps = useCallback(() => setAgentSteps([]), []);
 
-  const addStep = useCallback((status, text) => {
+  const addStep = useCallback((status, text, detail) => {
     setAgentSteps((prev) => {
       const last = prev[prev.length - 1];
       if (last && last.text === text && last.status === "loading") {
-        return [...prev.slice(0, -1), { ...last, status, text }];
+        return [...prev.slice(0, -1), { ...last, status, text, detail: detail ?? last.detail }];
       }
-      return [...prev, { id: Date.now() + Math.random(), status, text }];
+      return [...prev, { id: Date.now() + Math.random(), status, text, detail }];
     });
   }, []);
 
-  const replaceLastLoadingStep = useCallback((status, text) => {
+  const replaceLastLoadingStep = useCallback((status, text, detail) => {
     setAgentSteps((prev) => {
       const last = prev[prev.length - 1];
       if (last && last.status === "loading") {
-        return [...prev.slice(0, -1), { id: Date.now() + Math.random(), status, text }];
+        return [...prev.slice(0, -1), { id: Date.now() + Math.random(), status, text, detail }];
       }
-      return [...prev, { id: Date.now() + Math.random(), status, text }];
+      return [...prev, { id: Date.now() + Math.random(), status, text, detail }];
     });
   }, []);
 
@@ -49,16 +49,23 @@ export function useChatStream(idea, token) {
   }, []);
 
   const streamText = useCallback((fullText, onComplete) => {
-    const safeText = (typeof fullText === "string" ? fullText : String(fullText ?? ""))
+    if (!fullText || typeof fullText !== "string") {
+      if (onComplete) onComplete(null);
+      return;
+    }
+    const cleanText = String(fullText)
+      .replace(/undefined$/gi, "")
+      .replace(/\s+$/, "")
+      .trim()
       .replace(/\s*undefined\s*/gi, " ")
       .replace(/\s*null\s*/gi, " ")
       .trim();
-    if (!safeText) {
+    if (!cleanText) {
       if (onComplete) onComplete(null);
       return;
     }
 
-    const words = safeText.trim().split(/\s+/);
+    const words = cleanText.trim().split(/\s+/);
     const minWords = 2;
 
     if (words.length <= minWords) {
@@ -68,7 +75,7 @@ export function useChatStream(idea, token) {
         {
           id: msgId,
           role: "agent",
-          content: safeText,
+          content: cleanText,
           isStreaming: false,
           timestamp: new Date().toISOString(),
         },
@@ -78,7 +85,7 @@ export function useChatStream(idea, token) {
     }
 
     const prefix = words.slice(0, minWords).join(" ") + " ";
-    const rest = safeText.slice(prefix.length);
+    const rest = cleanText.slice(prefix.length);
     const msgId = Date.now() + Math.random();
 
     setIsStreaming(true);
@@ -118,6 +125,68 @@ export function useChatStream(idea, token) {
 
     streamTimerRef.current = setTimeout(tick, 50);
     return msgId;
+  }, []);
+
+  const readSSEStream = useCallback(async (url, body, onEvent) => {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`HTTP ${response.status}: ${text}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    const processBuffer = () => {
+      const blocks = buffer.split("\n\n");
+      buffer = blocks.pop() ?? "";
+
+      for (const block of blocks) {
+        const trimmed = block.trim();
+        if (!trimmed) continue;
+
+        let eventType = "message";
+        let rawData = "";
+
+        for (const line of trimmed.split("\n")) {
+          if (line.startsWith("event:")) {
+            eventType = line.slice(6).trim();
+          } else if (line.startsWith("data:")) {
+            rawData = line.slice(5).trim();
+          }
+        }
+
+        if (!rawData) continue;
+
+        let parsed;
+        try {
+          parsed = JSON.parse(rawData);
+        } catch {
+          parsed = rawData;
+        }
+
+        onEvent(eventType, parsed);
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        if (buffer.trim()) {
+          buffer += "\n\n";
+          processBuffer();
+        }
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      processBuffer();
+    }
   }, []);
 
   const formatAgentResponse = useCallback((result) => {
@@ -249,7 +318,9 @@ export function useChatStream(idea, token) {
 
       if (formatted.type === "questions") {
         replaceLastLoadingStep("info", `✓ Analyse — ${formatted.questions.length} dimension(s) manquante(s)`);
-        addStep("info", `${formatted.questions.length} question(s) nécessaire(s)`);
+        addStep("info", `${formatted.questions.length} question(s) nécessaire(s)`, {
+          question: formatted.questions?.[0] ?? null,
+        });
         setPendingQuestions(formatted.questions);
         let intro = (formatted.text || "").trim();
         if (intro.startsWith("'")) intro = "J" + intro;
@@ -430,6 +501,7 @@ export function useChatStream(idea, token) {
     agentSteps,
     startConversation,
     sendAnswer,
+    readSSEStream,
   };
 }
 
