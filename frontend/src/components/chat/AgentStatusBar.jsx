@@ -38,46 +38,67 @@ export function AgentStatusBar({ steps }) {
                 }`}
               >
                 {step.text}
+                {step.detail?.sector && ` · ${step.detail.sector}`}
+                {step.detail?.confidence != null && ` · confiance ${step.detail.confidence}%`}
               </span>
             </div>
 
             {step.detail?.dimensions && (
               <div
-                className="flex gap-3 mt-0.5 pl-6 font-mono text-[11px]"
-                style={{ paddingLeft: "24px", marginTop: "3px" }}
+                style={{
+                  paddingLeft: "20px",
+                  marginTop: "2px",
+                  display: "flex",
+                  gap: "12px",
+                  fontFamily: "monospace",
+                  fontSize: "11px",
+                }}
               >
-                <span
-                  style={{
-                    color: step.detail.dimensions.problem ? "#34d399" : "#f87171",
-                  }}
-                >
-                  {step.detail.dimensions.problem ? "✓" : "✗"} problème
-                </span>
-                <span
-                  style={{
-                    color: step.detail.dimensions.target ? "#34d399" : "#f87171",
-                  }}
-                >
-                  {step.detail.dimensions.target ? "✓" : "✗"} cible
-                </span>
-                <span
-                  style={{
-                    color: step.detail.dimensions.solution ? "#34d399" : "#f87171",
-                  }}
-                >
-                  {step.detail.dimensions.solution ? "✓" : "✗"} solution
-                </span>
+                {[
+                  { key: "problem", label: "problème" },
+                  { key: "target", label: "cible" },
+                  { key: "solution", label: "solution" },
+                ].map(({ key, label }) => (
+                  <span
+                    key={key}
+                    style={{
+                      color: step.detail.dimensions[key] ? "#34d399" : "#f87171",
+                    }}
+                  >
+                    {step.detail.dimensions[key] ? "✓" : "✗"} {label}
+                  </span>
+                ))}
               </div>
             )}
 
-            {step.detail?.model != null && (
+            {(step.detail?.score != null || step.detail?.model) && (
               <div
-                className="font-mono text-[11px] mt-0.5 pl-6 text-[#6B7280]"
-                style={{ paddingLeft: "24px", marginTop: "3px", color: "#64748b" }}
+                style={{
+                  paddingLeft: "20px",
+                  marginTop: "2px",
+                  fontFamily: "monospace",
+                  fontSize: "11px",
+                  color: "#64748b",
+                  display: "flex",
+                  gap: "10px",
+                }}
               >
-                ⏱ {step.detail.model}
-                {step.detail.key != null && ` · clé ${step.detail.key}`}
-                {step.detail.ms != null && ` · ${step.detail.ms}ms`}
+                {step.detail?.score != null && (
+                  <span
+                    style={{
+                      color:
+                        step.detail.score >= 80 ? "#34d399" : "#f59e0b",
+                    }}
+                  >
+                    score : {step.detail.score}/100
+                  </span>
+                )}
+                {step.detail?.model && (
+                  <span>{step.detail.model}</span>
+                )}
+                {step.detail?.elapsed_ms != null && (
+                  <span>{step.detail.elapsed_ms}ms</span>
+                )}
               </div>
             )}
           </div>

@@ -52,7 +52,9 @@ Analyse l'INTENTION RÉELLE du projet, pas les mots utilisés.
 Réponds uniquement en JSON sans texte avant ou après :
 {
   "safe": true ou false,
-  "reason_category": null | "fraud" | "illegal" | "harmful"
+  "reason_category": null | "fraud" | "illegal" | "harmful",
+  "sector": "secteur du projet (ex: tech, ecommerce, sante)",
+  "confidence": 0 à 100
 }
 
 Refuse uniquement si le projet vise clairement à :
@@ -176,7 +178,16 @@ class IdeaClarifierAgent(BaseAgent):
                     "refusal_message": get_refusal_message(category),
                 }
 
-            return {"safe": True}
+            sector = (result.get("sector") or "").strip() or None
+            confidence = result.get("confidence")
+            if confidence is not None:
+                try:
+                    confidence = int(confidence)
+                    if confidence < 0 or confidence > 100:
+                        confidence = None
+                except (TypeError, ValueError):
+                    confidence = None
+            return {"safe": True, "sector": sector, "confidence": confidence}
 
         except Exception as e:
             # Erreur LLM → on laisse passer par défaut

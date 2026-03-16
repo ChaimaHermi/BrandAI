@@ -15,14 +15,11 @@ export function useChatStream(idea, token) {
 
   const clearSteps = useCallback(() => setAgentSteps([]), []);
 
-  const addStep = useCallback((status, text, detail) => {
-    setAgentSteps((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.text === text && last.status === "loading") {
-        return [...prev.slice(0, -1), { ...last, status, text, detail: detail ?? last.detail }];
-      }
-      return [...prev, { id: Date.now() + Math.random(), status, text, detail }];
-    });
+  const addStep = useCallback((status, text, detail = {}) => {
+    setAgentSteps((prev) => [
+      ...prev,
+      { id: Date.now() + Math.random(), status, text, detail },
+    ]);
   }, []);
 
   const replaceLastLoadingStep = useCallback((status, text, detail) => {
@@ -106,10 +103,14 @@ export function useChatStream(idea, token) {
     return msgId;
   }, []);
 
-  const readSSEStream = useCallback(async (url, body, onEvent) => {
+  const readSSEStream = useCallback(async (url, body, onEvent, options = {}) => {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
     });
 
@@ -242,48 +243,16 @@ export function useChatStream(idea, token) {
     return { type: "unknown", text: "Réponse reçue." };
   }, []);
 
-  const startConversation = useCallback(async () => {
-    if (!idea || !idea.id) return;
-
-    clearSteps();
-    addMessage("user", idea.description || "");
-    addStep("loading", "Vérification de sécurité en cours...");
-    setIsStreaming(true);
-
-    try {
-      const response = await fetch(`${AI_URL}/clarifier/start`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          idea_id: idea.id,
-          name: idea.name,
-          sector: idea.sector,
-          description: idea.description,
-          target_audience: idea.target_audience || "",
-        }),
-      });
-
-      if (!response.ok) throw new Error("Erreur serveur IA");
-      const result = await response.json();
+  const applyClarifierResult = useCallback(
+    (result, options = {}) => {
       setIsStreaming(false);
-
-      if (!result.safe) {
-        setAgentSteps((prev) => {
-          const rest = prev.slice(0, -1);
-          return [
-            ...rest,
-            {
-              id: Date.now() + Math.random(),
-              status: "error",
-              text: `✗ Projet refusé — ${result.reason_category || "sécurité"}`,
-            },
-          ];
-        });
+      if (result.error) {
+        addStep("error", result.error);
+        return;
+      }
+      const formatted = formatAgentResponse(result);
+      if (formatted.type === "refused") {
         setIsRefused(true);
-        const formatted = formatAgentResponse(result);
         streamWords(formatted.text, (msgId) => {
           setMessages((prev) =>
             prev.map((m) =>
@@ -304,83 +273,92 @@ export function useChatStream(idea, token) {
         });
         return;
       }
-
-      replaceLastLoadingStep("success", "✓ Sécurité — projet conforme");
-      addStep("loading", "Analyse de la description...");
-      await new Promise((r) => setTimeout(r, 300));
-
-      const formatted = formatAgentResponse(result);
-
       if (formatted.type === "questions") {
-        replaceLastLoadingStep("info", `✓ Analyse — ${formatted.questions.length} dimension(s) manquante(s)`);
-        addStep("info", `${formatted.questions.length} question(s) nécessaire(s)`, {
-          question: formatted.questions?.[0] ?? null,
-        });
         setPendingQuestions(formatted.questions);
         const introText = "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :";
-        streamWords(
-          introText,
-          (msgId) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === msgId
-                  ? {
-                      ...m,
-                      structured: {
-                        type: "questions",
-                        questions: formatted.questions,
-                      },
-                    }
-                  : m,
-              ),
-            );
-          },
-        );
-      } else if (formatted.type === "clarified") {
-        replaceLastLoadingStep("success", "✓ Analyse — description complète");
-        addStep("loading", "Génération du JSON structuré...");
-        await new Promise((r) => setTimeout(r, 200));
-        replaceLastLoadingStep("success", "✓ JSON généré");
-
+        streamWords(introText, (msgId) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId
+                ? { ...m, structured: { type: "questions", questions: formatted.questions } }
+                : m,
+            ),
+          );
+        });
+        return;
+      }
+      if (formatted.type === "clarified") {
+        setPendingQuestions([]);
         const score = result.clarified_idea?.clarity_score ?? formatted.score ?? 0;
         setClarityScore(score);
         setClarifiedIdea(formatted.clarifiedIdea);
         if (score >= 80) setIsReady(true);
-
-        const introClarified = score >= 80
-          ? "Votre idée est bien structurée ! Voici ce que j'ai compris :"
-          : "Voici ce que j'ai compris de votre idée :";
-        streamWords(
-          introClarified,
-          (msgId) => {
-            const sec = result.clarified_idea || {};
-            const sections = formatted.sections || {
-              what: sec.solution_description ?? null,
-              who: sec.target_users ?? null,
-              problem: sec.problem ?? null,
-              pitch: sec.short_pitch ?? null,
-            };
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === msgId
-                  ? {
-                      ...m,
-                      structured: {
-                        type: "clarified",
-                        ...formatted,
-                        score,
-                        sections,
-                      },
-                    }
-                  : m,
-              ),
-            );
-          },
-        );
-      } else {
-        const fallbackText = formatted?.text != null ? String(formatted.text) : "Réponse reçue.";
-        streamWords(fallbackText);
+        const introClarified = options.fromAnswer
+          ? "Merci pour ces précisions ! Voici votre idée structurée :"
+          : score >= 80
+            ? "Votre idée est bien structurée ! Voici ce que j'ai compris :"
+            : "Voici ce que j'ai compris de votre idée :";
+        streamWords(introClarified, (msgId) => {
+          const sec = result.clarified_idea || {};
+          const sections = formatted.sections || {
+            what: sec.solution_description ?? null,
+            who: sec.target_users ?? null,
+            problem: sec.problem ?? null,
+            pitch: sec.short_pitch ?? null,
+          };
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId
+                ? { ...m, structured: { type: "clarified", ...formatted, score, sections } }
+                : m,
+            ),
+          );
+        });
+        return;
       }
+      streamWords(formatted?.text != null ? String(formatted.text) : "Réponse reçue.");
+    },
+    [addStep, formatAgentResponse, streamWords],
+  );
+
+  const handleSSEEvent = useCallback(
+    (eventType, data, options = {}) => {
+      if (eventType === "step") {
+        addStep(data.status, data.message, {
+          sector: data.sector ?? null,
+          confidence: data.confidence ?? null,
+          dimensions: data.dimensions ?? null,
+          score: data.score ?? null,
+          model: data.model ?? null,
+          elapsed_ms: data.elapsed_ms ?? null,
+        });
+      } else if (eventType === "result") {
+        applyClarifierResult(data, options);
+      }
+    },
+    [addStep, applyClarifierResult],
+  );
+
+  const startConversation = useCallback(async () => {
+    if (!idea || !idea.id) return;
+
+    clearSteps();
+    addMessage("user", idea.description || "");
+    setIsStreaming(true);
+
+    try {
+      await readSSEStream(
+        `${AI_URL}/clarifier/start/stream`,
+        {
+          idea_id: idea.id,
+          name: idea.name,
+          sector: idea.sector,
+          description: idea.description,
+          target_audience: idea.target_audience || "",
+        },
+        (eventType, data) => handleSSEEvent(eventType, data, {}),
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+      );
     } catch (err) {
       setIsStreaming(false);
       addStep("error", "✗ Erreur serveur IA");
@@ -389,7 +367,7 @@ export function useChatStream(idea, token) {
         "Une erreur s'est produite. Vérifiez que le service IA est démarré (port 8001).",
       );
     }
-  }, [idea, token, addMessage, addStep, replaceLastLoadingStep, clearSteps, streamWords, formatAgentResponse]);
+  }, [idea, token, addMessage, addStep, clearSteps, readSSEStream, handleSSEEvent]);
 
   const sendAnswer = useCallback(
     async (userText) => {
@@ -397,92 +375,30 @@ export function useChatStream(idea, token) {
 
       addMessage("user", userText.trim());
       setIsStreaming(true);
+      setPendingQuestions([]);
 
       const answers = [userText.trim()];
 
       try {
-        const response = await fetch(`${AI_URL}/clarifier/answer`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
+        await readSSEStream(
+          `${AI_URL}/clarifier/answer/stream`,
+          {
             idea_id: idea.id,
             name: idea.name,
             sector: idea.sector,
             description: idea.description,
             target_audience: idea.target_audience || "",
             answers,
-          }),
-        });
-
-        if (!response.ok) throw new Error("Erreur serveur IA");
-        const result = await response.json();
-
-        setIsStreaming(false);
-        setPendingQuestions([]);
-
-        const formatted = formatAgentResponse(result);
-
-        if (formatted.type === "clarified") {
-          setClarityScore(formatted.score || 0);
-          setClarifiedIdea(formatted.clarifiedIdea);
-          if ((formatted.score || 0) >= 80) setIsReady(true);
-
-          streamWords(
-            "Merci pour ces précisions ! Voici votre idée structurée :",
-            (msgId) => {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === msgId
-                    ? {
-                        ...m,
-                        structured: { type: "clarified", ...formatted },
-                      }
-                    : m,
-                ),
-              );
-            },
-          );
-        } else if (formatted.type === "questions") {
-          setPendingQuestions(formatted.questions);
-          const introText = "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :";
-          streamWords(
-            introText,
-            (msgId) => {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === msgId
-                    ? {
-                        ...m,
-                        structured: {
-                          type: "questions",
-                          questions: formatted.questions,
-                        },
-                      }
-                    : m,
-                ),
-              );
-            },
-          );
-        } else {
-          const fallbackText = formatted?.text != null ? String(formatted.text) : "Réponse reçue.";
-          streamWords(fallbackText);
-        }
+          },
+          (eventType, data) => handleSSEEvent(eventType, data, { fromAnswer: true }),
+          { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+        );
       } catch (err) {
         setIsStreaming(false);
         addMessage("agent", "Erreur lors du traitement. Réessayez.");
       }
     },
-    [
-      idea,
-      token,
-      isStreaming,
-      addMessage,
-      streamWords,
-      formatAgentResponse,
-    ],
+    [idea, token, isStreaming, addMessage, readSSEStream, handleSSEEvent],
   );
 
   return {
