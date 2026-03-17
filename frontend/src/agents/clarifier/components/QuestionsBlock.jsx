@@ -14,18 +14,19 @@ export default function QuestionsBlock({
   return (
     <div
       style={{
-        background: "var(--color-background-primary)",
-        border: "0.5px solid var(--color-border-tertiary)",
-        borderRadius: "var(--border-radius-lg)",
+        background: "white",
+        border: "0.5px solid #AFA9EC",
+        borderRadius: 14,
         overflow: "hidden",
-        animation: "slideIn 0.3s ease",
+        boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
+        animation: "slideUp 0.35s ease",
       }}
     >
       <div
         style={{
           padding: "8px 14px",
-          borderBottom: "0.5px solid var(--color-border-tertiary)",
-          background: "var(--color-background-secondary)",
+          borderBottom: "0.5px solid #AFA9EC",
+          background: "linear-gradient(135deg,#EEEDFE,#f3f0ff)",
           display: "flex",
           alignItems: "center",
           gap: 8,
@@ -33,12 +34,21 @@ export default function QuestionsBlock({
       >
         <div
           style={{
-            width: 6,
-            height: 6,
+            width: 18,
+            height: 18,
             borderRadius: "50%",
-            background: "#7F77DD",
+            background: "linear-gradient(135deg,#7F77DD,#534AB7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 2px 6px rgba(124,58,237,0.3)",
+            fontSize: 10,
+            fontWeight: 700,
+            color: "white",
           }}
-        />
+        >
+          ?
+        </div>
         <span
           style={{
             fontSize: 11,
@@ -116,6 +126,7 @@ export default function QuestionsBlock({
                   color: "var(--color-text-primary)",
                   boxSizing: "border-box",
                   lineHeight: 1.5,
+                  transition: "border-color 0.2s",
                 }}
               />
             </div>

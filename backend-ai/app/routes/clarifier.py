@@ -93,8 +93,10 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
         yield sse_event("step", {
             "status":     "success",
             "message":    "3 questions générées",
-            "elapsed_ms": elapsed_ms,
+            "sector":     state.sector or safety.get("sector") or "",
+            "confidence": safety.get("confidence", 0),
             "model":      agent.llm_rotator.current_info(),
+            "elapsed_ms": elapsed_ms,
         })
 
         print(
@@ -154,11 +156,16 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
 
         elapsed_ms = int((time.time() - start_time) * 1000)
         score = result.get("score", 0)
-
         yield sse_event("step", {
             "status":     "success",
             "message":    f"Idée clarifiée — score {score}/100",
             "score":      score,
+            "dimensions": {
+                "problem":  bool(result.get("problem")),
+                "target":   bool(result.get("target_users")),
+                "solution": bool(result.get("solution_description")),
+            },
+            "sector":     result.get("sector", ""),
             "model":      agent.llm_rotator.current_info(),
             "elapsed_ms": elapsed_ms,
         })
