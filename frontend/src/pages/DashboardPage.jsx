@@ -6,21 +6,21 @@ import {
   HiOutlineCheckCircle,
   HiOutlinePlus,
 } from "react-icons/hi2";
-import { Navbar } from "../components/layout/Navbar";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
+import { Navbar } from "@/components/layout/Navbar";
+import { Card } from "@/shared/ui/Card";
+import { Button } from "@/shared/ui/Button";
 import {
   IdeasTable,
   IdeasTableSkeleton,
   IdeasFilters,
   Pagination,
-} from "../components/dashboard";
-import { apiGetIdeas, apiDeleteIdea, getErrorMessage } from "../services/ideaApi";
-import { useAuth } from "../hooks/useAuth";
+} from "@/components/dashboard";
+import { apiGetIdeas, apiDeleteIdea, getErrorMessage } from "@/services/ideaApi";
+import { useAuth } from "@/shared/hooks/useAuth";
 
 const IDEAS_PER_PAGE = 5;
 
-export function Dashboard() {
+export default function DashboardPage() {
   const { token } = useAuth();
   const [ideas, setIdeas] = useState([]);
   const [totalFromApi, setTotalFromApi] = useState(0);
@@ -58,7 +58,7 @@ export function Dashboard() {
       list = list.filter(
         (i) =>
           (i.name || "").toLowerCase().includes(q) ||
-          (i.sector || "").toLowerCase().includes(q)
+          (i.sector || "").toLowerCase().includes(q),
       );
     }
     if (statusFilter) {
@@ -215,4 +215,3 @@ export function Dashboard() {
   );
 }
 
-export default Dashboard;

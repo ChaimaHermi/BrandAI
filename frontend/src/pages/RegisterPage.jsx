@@ -1,21 +1,3 @@
-// ==============================================================
-//  frontend/src/pages/Register.jsx
-//  RÔLE : Page d'inscription connectée au vrai backend
-//
-//  VALIDATION CÔTÉ CLIENT (on blur) :
-//    - name : min 2 caractères, pas de chiffres
-//    - email : format email valide (regex)
-//    - password : min 6 caractères, 1 majuscule, 1 chiffre
-//    - confirm : doit correspondre exactement au password
-//
-//  FEEDBACK VISUEL :
-//    - Champ valide → bordure verte + icône check
-//    - Champ invalide → bordure rouge + icône X
-//    - Indicateur de force du mot de passe (Faible/Moyen/Fort)
-//    - Toggle show/hide password
-//    - Spinner dans le bouton pendant l'API call
-// ==============================================================
-
 import React, { useState, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -28,15 +10,15 @@ import {
   HiXCircle,
 } from "react-icons/hi2";
 import { FcGoogle } from "react-icons/fc";
-import { BlobBackground } from "../components/ui/BlobBackground";
-import { Toast } from "../components/ui/Toast";
-import { useAuth } from "../hooks/useAuth";
-import { apiRegister } from "../services/authApi";
+import { BlobBackground } from "@/components/ui/BlobBackground";
+import { Toast } from "@/shared/ui/Toast";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { apiRegister } from "@/services/authApi";
 
-// ── Validateurs (exécutés on blur) ─────────────────────────────
 const validateNameField = (value, fieldLabel) => {
   if (!value.trim()) return "";
-  if (value.trim().length < 2) return `Le ${fieldLabel} doit contenir au moins 2 caractères.`;
+  if (value.trim().length < 2)
+    return `Le ${fieldLabel} doit contenir au moins 2 caractères.`;
   if (/\d/.test(value)) return `Le ${fieldLabel} ne doit pas contenir de chiffres.`;
   return "";
 };
@@ -44,15 +26,19 @@ const validateNameField = (value, fieldLabel) => {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const validateEmail = (value) => {
   if (!value.trim()) return "";
-  if (!EMAIL_REGEX.test(value.trim())) return "Veuillez entrer une adresse email valide.";
+  if (!EMAIL_REGEX.test(value.trim()))
+    return "Veuillez entrer une adresse email valide.";
   return "";
 };
 
 const validatePassword = (value) => {
   if (!value) return "";
-  if (value.length < 6) return "Le mot de passe doit contenir au moins 6 caractères.";
-  if (!/[A-Z]/.test(value)) return "Le mot de passe doit contenir au moins une majuscule.";
-  if (!/\d/.test(value)) return "Le mot de passe doit contenir au moins un chiffre.";
+  if (value.length < 6)
+    return "Le mot de passe doit contenir au moins 6 caractères.";
+  if (!/[A-Z]/.test(value))
+    return "Le mot de passe doit contenir au moins une majuscule.";
+  if (!/\d/.test(value))
+    return "Le mot de passe doit contenir au moins un chiffre.";
   return "";
 };
 
@@ -62,10 +48,6 @@ const validateConfirm = (confirm, password) => {
   return "";
 };
 
-// ── Indicateur de force du mot de passe ─────────────────────────
-// 1 condition (length ≥ 6) → Faible (rouge)
-// 2 conditions (+ majuscule) → Moyen (orange)
-// 3 conditions (+ chiffre) → Fort (vert)
 function getPasswordStrength(password) {
   if (!password) return { level: 0, label: "", color: "" };
   let met = 0;
@@ -77,7 +59,7 @@ function getPasswordStrength(password) {
   return { level: 3, label: "Fort", color: "bg-green-500" };
 }
 
-export function Register() {
+export default function RegisterPage() {
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
@@ -90,8 +72,13 @@ export function Register() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  // Touched = champs déjà visités (pour afficher les erreurs on blur)
-  const [touched, setTouched] = useState({ prenom: false, nom: false, email: false, password: false, confirm: false });
+  const [touched, setTouched] = useState({
+    prenom: false,
+    nom: false,
+    email: false,
+    password: false,
+    confirm: false,
+  });
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -144,7 +131,11 @@ export function Register() {
       const data = await apiRegister({ name: fullName, email, password });
       pendingAuthData.current = data;
 
-      setToastMessage(`Compte créé avec succès ! Bienvenue sur BrandAI, ${data.user?.name || fullName} !`);
+      setToastMessage(
+        `Compte créé avec succès ! Bienvenue sur BrandAI, ${
+          data.user?.name || fullName
+        } !`,
+      );
       setShowToast(true);
     } catch (err) {
       setError(err.message);
@@ -155,9 +146,12 @@ export function Register() {
 
   const inputBase =
     "w-full h-10 rounded-lg border bg-white pl-10 text-sm text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-1 ";
-  const inputValid = "border-green-400 focus:border-green-500 focus:ring-green-500";
-  const inputInvalid = "border-red-400 focus:border-red-500 focus:ring-red-500";
-  const inputNeutral = "border-[#E5E7EB] focus:border-[#7C3AED] focus:ring-[#7C3AED]";
+  const inputValid =
+    "border-green-400 focus:border-green-500 focus:ring-green-500";
+  const inputInvalid =
+    "border-red-400 focus:border-red-500 focus:ring-red-500";
+  const inputNeutral =
+    "border-[#E5E7EB] focus:border-[#7C3AED] focus:ring-[#7C3AED]";
 
   const getInputClass = (hasError, hasValue, touchedField, hasToggle = false) => {
     let base = inputBase + (hasToggle ? "pr-20" : "pr-12");
@@ -187,7 +181,10 @@ export function Register() {
         }}
         duration={3000}
       />
-      <BlobBackground opacity={0.2} className="pointer-events-none absolute inset-0 z-0" />
+      <BlobBackground
+        opacity={0.2}
+        className="pointer-events-none absolute inset-0 z-0"
+      />
 
       <div className="relative z-10 w-full max-w-[420px] mx-4">
         <div className="w-full max-w-[420px] bg-white rounded-xl border border-[#E5E7EB] shadow-sm p-6 space-y-5">
@@ -203,10 +200,11 @@ export function Register() {
             <p className="text-sm text-[#6B7280]">Rejoignez BrandAI</p>
           </div>
 
-          {(searchParams.get("error") === "google_failed" || searchParams.get("error") === "google_auth_failed") && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600">
-              Connexion Google échouée. Veuillez réessayer.
-            </div>
+          {(searchParams.get("error") === "google_failed" ||
+            searchParams.get("error") === "google_auth_failed") && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600">
+                Connexion Google échouée. Veuillez réessayer.
+              </div>
           )}
 
           <button
@@ -222,7 +220,9 @@ export function Register() {
               <div className="w-full border-t border-[#E5E7EB]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-sm text-[#6B7280]">— ou —</span>
+              <span className="bg-white px-3 text-sm text-[#6B7280]">
+                — ou —
+              </span>
             </div>
           </div>
 
@@ -233,10 +233,12 @@ export function Register() {
               </div>
             )}
 
-            {/* Prénom et Nom */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="reg-prenom" className="mb-1.5 block text-sm font-medium text-[#111827]">
+                <label
+                  htmlFor="reg-prenom"
+                  className="mb-1.5 block text-sm font-medium text-[#111827]"
+                >
                   Prénom
                 </label>
                 <div className="relative">
@@ -248,16 +250,30 @@ export function Register() {
                     onChange={(e) => setPrenom(e.target.value)}
                     onBlur={() => handleBlur("prenom")}
                     placeholder="Ahmed"
-                    className={getInputClass(!!prenomError, !!prenom.trim(), touched.prenom, false)}
+                    className={getInputClass(
+                      !!prenomError,
+                      !!prenom.trim(),
+                      touched.prenom,
+                      false,
+                    )}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <FieldIcon error={prenomError} touched={touched.prenom} value={prenom.trim()} />
+                    <FieldIcon
+                      error={prenomError}
+                      touched={touched.prenom}
+                      value={prenom.trim()}
+                    />
                   </span>
                 </div>
-                {prenomError && <p className="mt-1 text-xs text-red-500">{prenomError}</p>}
+                {prenomError && (
+                  <p className="mt-1 text-xs text-red-500">{prenomError}</p>
+                )}
               </div>
               <div>
-                <label htmlFor="reg-nom" className="mb-1.5 block text-sm font-medium text-[#111827]">
+                <label
+                  htmlFor="reg-nom"
+                  className="mb-1.5 block text-sm font-medium text-[#111827]"
+                >
                   Nom
                 </label>
                 <div className="relative">
@@ -269,19 +285,32 @@ export function Register() {
                     onChange={(e) => setNom(e.target.value)}
                     onBlur={() => handleBlur("nom")}
                     placeholder="Ben Ali"
-                    className={getInputClass(!!nomError, !!nom.trim(), touched.nom, false)}
+                    className={getInputClass(
+                      !!nomError,
+                      !!nom.trim(),
+                      touched.nom,
+                      false,
+                    )}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <FieldIcon error={nomError} touched={touched.nom} value={nom.trim()} />
+                    <FieldIcon
+                      error={nomError}
+                      touched={touched.nom}
+                      value={nom.trim()}
+                    />
                   </span>
                 </div>
-                {nomError && <p className="mt-1 text-xs text-red-500">{nomError}</p>}
+                {nomError && (
+                  <p className="mt-1 text-xs text-red-500">{nomError}</p>
+                )}
               </div>
             </div>
 
-            {/* Email */}
             <div>
-              <label htmlFor="reg-email" className="mb-1.5 block text-sm font-medium text-[#111827]">
+              <label
+                htmlFor="reg-email"
+                className="mb-1.5 block text-sm font-medium text-[#111827]"
+              >
                 Email
               </label>
               <div className="relative">
@@ -293,18 +322,31 @@ export function Register() {
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => handleBlur("email")}
                   placeholder="vous@exemple.com"
-                  className={getInputClass(!!emailError, !!email.trim(), touched.email, false)}
+                  className={getInputClass(
+                    !!emailError,
+                    !!email.trim(),
+                    touched.email,
+                    false,
+                  )}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <FieldIcon error={emailError} touched={touched.email} value={email.trim()} />
+                  <FieldIcon
+                    error={emailError}
+                    touched={touched.email}
+                    value={email.trim()}
+                  />
                 </span>
               </div>
-              {emailError && <p className="mt-1 text-xs text-red-500">{emailError}</p>}
+              {emailError && (
+                <p className="mt-1 text-xs text-red-500">{emailError}</p>
+              )}
             </div>
 
-            {/* Password */}
             <div>
-              <label htmlFor="reg-password" className="mb-1.5 block text-sm font-medium text-[#111827]">
+              <label
+                htmlFor="reg-password"
+                className="mb-1.5 block text-sm font-medium text-[#111827]"
+              >
                 Mot de passe
               </label>
               <div className="relative">
@@ -316,45 +358,85 @@ export function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   onBlur={() => handleBlur("password")}
                   placeholder="••••••••"
-                  className={getInputClass(!!passwordError, !!password, touched.password, true)}
+                  className={getInputClass(
+                    !!passwordError,
+                    !!password,
+                    touched.password,
+                    true,
+                  )}
                 />
                 <span className="absolute right-10 top-1/2 flex -translate-y-1/2 items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="text-[#6B7280] hover:text-[#111827]"
-                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    aria-label={
+                      showPassword
+                        ? "Masquer le mot de passe"
+                        : "Afficher le mot de passe"
+                    }
                   >
-                    {showPassword ? <HiOutlineEyeSlash className="h-5 w-5" /> : <HiOutlineEye className="h-5 w-5" />}
+                    {showPassword ? (
+                      <HiOutlineEyeSlash className="h-5 w-5" />
+                    ) : (
+                      <HiOutlineEye className="h-5 w-5" />
+                    )}
                   </button>
-                  <FieldIcon error={passwordError} touched={touched.password} value={password} />
+                  <FieldIcon
+                    error={passwordError}
+                    touched={touched.password}
+                    value={password}
+                  />
                 </span>
               </div>
-              {/* Indicateur de force */}
               {password && (
                 <div className="mt-1.5">
                   <div className="flex gap-1">
                     <div
-                      className={`h-1 flex-1 rounded ${passwordStrength.level >= 1 ? passwordStrength.color : "bg-gray-200"}`}
+                      className={`h-1 flex-1 rounded ${
+                        passwordStrength.level >= 1
+                          ? passwordStrength.color
+                          : "bg-gray-200"
+                      }`}
                     />
                     <div
-                      className={`h-1 flex-1 rounded ${passwordStrength.level >= 2 ? passwordStrength.color : "bg-gray-200"}`}
+                      className={`h-1 flex-1 rounded ${
+                        passwordStrength.level >= 2
+                          ? passwordStrength.color
+                          : "bg-gray-200"
+                      }`}
                     />
                     <div
-                      className={`h-1 flex-1 rounded ${passwordStrength.level >= 3 ? passwordStrength.color : "bg-gray-200"}`}
+                      className={`h-1 flex-1 rounded ${
+                        passwordStrength.level >= 3
+                          ? passwordStrength.color
+                          : "bg-gray-200"
+                      }`}
                     />
                   </div>
-                  <p className={`mt-0.5 text-xs ${passwordStrength.level === 1 ? "text-red-500" : passwordStrength.level === 2 ? "text-orange-500" : "text-green-600"}`}>
+                  <p
+                    className={`mt-0.5 text-xs ${
+                      passwordStrength.level === 1
+                        ? "text-red-500"
+                        : passwordStrength.level === 2
+                          ? "text-orange-500"
+                          : "text-green-600"
+                    }`}
+                  >
                     {passwordStrength.label}
                   </p>
                 </div>
               )}
-              {passwordError && <p className="mt-1 text-xs text-red-500">{passwordError}</p>}
+              {passwordError && (
+                <p className="mt-1 text-xs text-red-500">{passwordError}</p>
+              )}
             </div>
 
-            {/* Confirm password */}
             <div>
-              <label htmlFor="reg-confirm" className="mb-1.5 block text-sm font-medium text-[#111827]">
+              <label
+                htmlFor="reg-confirm"
+                className="mb-1.5 block text-sm font-medium text-[#111827]"
+              >
                 Confirmer le mot de passe
               </label>
               <div className="relative">
@@ -366,21 +448,38 @@ export function Register() {
                   onChange={(e) => setConfirm(e.target.value)}
                   onBlur={() => handleBlur("confirm")}
                   placeholder="••••••••"
-                  className={getInputClass(!!confirmError, !!confirm, touched.confirm, true)}
+                  className={getInputClass(
+                    !!confirmError,
+                    !!confirm,
+                    touched.confirm,
+                    true,
+                  )}
                 />
                 <span className="absolute right-10 top-1/2 flex -translate-y-1/2 items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    onClick={() =>
+                      setShowConfirmPassword(!showConfirmPassword)
+                    }
                     className="text-[#6B7280] hover:text-[#111827]"
                     aria-label={showConfirmPassword ? "Masquer" : "Afficher"}
                   >
-                    {showConfirmPassword ? <HiOutlineEyeSlash className="h-5 w-5" /> : <HiOutlineEye className="h-5 w-5" />}
+                    {showConfirmPassword ? (
+                      <HiOutlineEyeSlash className="h-5 w-5" />
+                    ) : (
+                      <HiOutlineEye className="h-5 w-5" />
+                    )}
                   </button>
-                  <FieldIcon error={confirmError} touched={touched.confirm} value={confirm} />
+                  <FieldIcon
+                    error={confirmError}
+                    touched={touched.confirm}
+                    value={confirm}
+                  />
                 </span>
               </div>
-              {confirmError && <p className="mt-1 text-xs text-red-500">{confirmError}</p>}
+              {confirmError && (
+                <p className="mt-1 text-xs text-red-500">{confirmError}</p>
+              )}
             </div>
 
             <button
@@ -398,7 +497,10 @@ export function Register() {
 
           <p className="pt-2 text-center text-sm text-[#6B7280]">
             Déjà un compte ?{" "}
-            <Link to="/login" className="font-medium text-[#7C3AED] hover:underline">
+            <Link
+              to="/login"
+              className="font-medium text-[#7C3AED] hover:underline"
+            >
               Se connecter
             </Link>
           </p>
@@ -408,4 +510,3 @@ export function Register() {
   );
 }
 
-export default Register;

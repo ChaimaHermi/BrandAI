@@ -15,11 +15,11 @@ import {
   HiOutlineUserGroup,
 } from "react-icons/hi2";
 import { FiTarget } from "react-icons/fi";
-import { Navbar } from "../components/layout/Navbar";
-import { Footer } from "../components/layout/Footer";
-import { Card } from "../components/ui/Card";
-import { Badge } from "../components/ui/Badge";
-import { BlobBackground } from "../components/ui/BlobBackground";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { Card } from "@/shared/ui/Card";
+import { Badge } from "@/shared/ui/Badge";
+import { BlobBackground } from "@/components/ui/BlobBackground";
 
 const AGENTS_PREVIEW = [
   { id: "idea", name: "Idea Enhancer", Icon: HiOutlineLightBulb, status: "done" },
@@ -45,7 +45,7 @@ const STEPS = [
   { number: "03", title: "Récupérez votre marque", description: "Téléchargez votre analyse, identité, contenus et site web. Prêt à lancer votre startup sur le marché." },
 ];
 
-export function Landing() {
+export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -141,7 +141,7 @@ export function Landing() {
                   </Card>
                 ))}
               </div>
-              {/* Marketing Strategy wide banner */}
+
               <div className="mt-8 flex flex-col items-center gap-6 rounded-[12px] border border-[#DDD6FE] bg-[#F5F3FF] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(124,58,237,0.04)] md:flex-row md:items-center md:justify-between md:px-8 md:py-6">
                 <div className="flex items-center gap-6">
                   <span className="flex h-[36px] w-[36px] shrink-0 items-center justify-center text-[28px]">
@@ -205,4 +205,3 @@ export function Landing() {
   );
 }
 
-export default Landing;

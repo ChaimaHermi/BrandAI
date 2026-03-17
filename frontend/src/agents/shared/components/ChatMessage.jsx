@@ -1,6 +1,6 @@
 import React from "react";
-import { UserAvatar } from "../ui/UserAvatar";
-import { AgentAvatar } from "./AgentAvatar";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { AgentAvatar } from "@/agents/shared/components/AgentAvatar";
 
 function formatTime(ts) {
   if (!ts) return "";
@@ -86,25 +86,6 @@ function ClarifiedSections({ data }) {
       <Section label="Pour qui ?" value={sections.who} />
       <Section label="Le problème résolu" value={sections.problem} />
       <ClarityBar score={data.score} />
-    </div>
-  );
-}
-
-function QuestionBlocks({ questions }) {
-  if (!Array.isArray(questions) || questions.length === 0) return null;
-  return (
-    <div className="mt-2 flex flex-col gap-1.5">
-      {questions.map((q, i) => (
-        <div
-          key={i}
-          className="flex gap-2 rounded-lg bg-[#EDE9FE] p-2 text-sm text-[#111827]"
-        >
-          <span className="text-xs font-semibold text-[#4C1D95]">
-            {i + 1}.
-          </span>
-          <span>{q}</span>
-        </div>
-      ))}
     </div>
   );
 }
@@ -237,6 +218,25 @@ export function ChatMessage({ message, user }) {
           {formatTime(message.timestamp)}
         </p>
       </div>
+    </div>
+  );
+}
+
+function QuestionBlocks({ questions }) {
+  if (!Array.isArray(questions) || questions.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-col gap-1.5">
+      {questions.map((q, i) => (
+        <div
+          key={i}
+          className="flex gap-2 rounded-lg bg-[#EDE9FE] p-2 text-sm text-[#111827]"
+        >
+          <span className="text-xs font-semibold text-[#4C1D95]">
+            {i + 1}.
+          </span>
+          <span>{q}</span>
+        </div>
+      ))}
     </div>
   );
 }

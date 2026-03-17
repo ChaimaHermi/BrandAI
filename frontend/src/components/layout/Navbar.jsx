@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { UserAvatar } from "../ui/UserAvatar";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "@/shared/hooks/useAuth";
 
 export function Navbar({ variant = "landing" }) {
   const { user, logout } = useAuth();
