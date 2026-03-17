@@ -1,27 +1,42 @@
 import { useState, useCallback, useRef } from "react";
 import { useSSEStream } from "@/agents/shared/hooks/useSSEStream";
-import { createStreamWords } from "@/agents/shared/utils/streamWords";
 import { safeText } from "@/agents/shared/utils/safeText";
+import { createStreamWords } from "@/agents/shared/utils/streamWords";
 
 const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
 
-// Copie exacte de useChatStream (logique pré-existante),
-// avec factorisation de readSSEStream, streamWords et safeText.
 export function useClarifierChat(idea, token) {
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [clarityScore, setClarityScore] = useState(0);
   const [isReady, setIsReady] = useState(false);
-  const [isRefused, setIsRefused] = useState(false);
-  const [pendingQuestions, setPendingQuestions] = useState([]);
   const [clarifiedIdea, setClarifiedIdea] = useState(null);
+  const [isRefused, setIsRefused] = useState(false);
   const [agentSteps, setAgentSteps] = useState([]);
-  const streamTimerRef = useRef(null);
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({
+    problem: "",
+    target: "",
+    solution: "",
+  });
 
+  const streamTimerRef = useRef(null);
+  const startedRef = useRef(false);
   const { readSSEStream } = useSSEStream();
   const streamWords = createStreamWords(setMessages);
 
-  const clearSteps = useCallback(() => setAgentSteps([]), []);
+  const addMessage = useCallback((role, content, extra = {}) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now() + Math.random(),
+        role,
+        content,
+        timestamp: new Date(),
+        ...extra,
+      },
+    ]);
+  }, []);
 
   const addStep = useCallback((status, text, detail = {}) => {
     setAgentSteps((prev) => [
@@ -30,317 +45,190 @@ export function useClarifierChat(idea, token) {
     ]);
   }, []);
 
-  const replaceLastLoadingStep = useCallback((status, text, detail) => {
-    setAgentSteps((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.status === "loading") {
-        return [
-          ...prev.slice(0, -1),
-          { id: Date.now() + Math.random(), status, text, detail },
-        ];
-      }
-      return [...prev, { id: Date.now() + Math.random(), status, text, detail }];
-    });
-  }, []);
-
-  const addMessage = useCallback((role, content, extra = {}) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now() + Math.random(),
-        role,
-        content: safeText(content, ""),
-        timestamp: new Date().toISOString(),
-        ...extra,
-      },
-    ]);
-  }, []);
-
-  const formatAgentResponse = useCallback((result) => {
-    const rawQuestions = result.questions || [];
-    const questions = rawQuestions.filter(
-      (q) => q != null && String(q).trim() !== "",
-    );
-
-    if (result.type === "questions" || questions.length > 0) {
-      return {
-        type: "questions",
-        questions,
-      };
-    }
-
-    if (result.type === "clarified") {
-      return {
-        type: "clarified",
-        clarifiedIdea: result,
-        score: result.score,
-        sections: {
-          what: result?.solution_description,
-          who: result?.target_users,
-          problem: result?.problem,
-          pitch: result?.short_pitch,
-        },
-      };
-    }
-
-    if (result.type === "refused" || result.safe === false) {
-      const msg = safeText(result.refusal_message || result.message);
-      return {
-        type: "refused",
-        reason_category: result.reason_category,
-        refusal_message: msg,
-        partial_understanding: {
-          what: result.partial_what ?? null,
-          who: result.partial_who ?? null,
-          problem: result.partial_problem ?? null,
-        },
-        score: 0,
-      };
-    }
-
-    return { type: "unknown" };
-  }, []);
-
-  const applyClarifierResult = useCallback(
-    (result, options = {}) => {
-      setIsStreaming(false);
-      if (result.error) {
-        addStep("error", result.error);
-        return;
-      }
-      const formatted = formatAgentResponse(result);
-      // Type refused
-      if (formatted.type === "refused") {
-        setIsRefused(true);
-        const msg = safeText(result.refusal_message || result.message);
-        if (msg) {
-          streamWords(msg, (msgId) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === msgId
-                  ? {
-                      ...m,
-                      structured: {
-                        type: "refused",
-                        reason_category: formatted.reason_category,
-                        refusal_message: formatted.refusal_message,
-                        partial_understanding:
-                          formatted.partial_understanding || {},
-                        score: 0,
-                      },
-                    }
-                  : m,
-              ),
-            );
-          });
-        }
-        return;
-      }
-
-      // Type questions
-      if (result.type === "questions") {
-        const msg = safeText(result.message);
-        if (msg) {
-          streamWords(msg, (msgId) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === msgId
-                  ? {
-                      ...m,
-                      structured: {
-                        type: "questions",
-                        questions: result.questions || [],
-                      },
-                    }
-                  : m,
-              ),
-            );
-          });
-        }
-        setPendingQuestions(result.questions || []);
-        setClarityScore(result.score || 0);
-        return;
-      }
-
-      // Type off_topic
-      if (result.type === "off_topic") {
-        const msg = safeText(result.message);
-        if (msg) {
-          streamWords(msg, () => {
-            if (result.repeat_question) {
-              setTimeout(() => {
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: Date.now() + Math.random(),
-                    role: "agent",
-                    content: result.repeat_question,
-                    isStreaming: false,
-                    timestamp: new Date(),
-                    structured: {
-                      type: "questions",
-                      questions: [result.repeat_question],
-                    },
-                  },
-                ]);
-                setPendingQuestions([result.repeat_question]);
-              }, 1000);
-            }
-          });
-        }
-        return;
-      }
-
-      // Type clarified
-      if (result.type === "clarified") {
-        const score = result.score || 0;
-        const msg = safeText(result.message);
-
-        setClarityScore(score);
-        setClarifiedIdea(result);
-        if (score >= 55) setIsReady(true);
-
-        if (msg) {
-          streamWords(msg, (msgId) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === msgId
-                  ? {
-                      ...m,
-                      structured: {
-                        type: "clarified",
-                        score,
-                        sections: {
-                          what: safeText(result.solution_description),
-                          who: safeText(result.target_users),
-                          problem: safeText(result.problem),
-                          pitch: safeText(result.short_pitch),
-                        },
-                      },
-                    }
-                  : m,
-              ),
-            );
-          });
-        }
-        return;
-      }
-
-      // Fallback
-      const fallbackMsg = safeText(result.message || "Réponse reçue.");
-      if (fallbackMsg) {
-        streamWords(fallbackMsg, null);
-      }
-    },
-    [addStep, formatAgentResponse, streamWords],
-  );
-
-  const handleSSEEvent = useCallback(
-    (eventType, data, options = {}) => {
-      if (eventType === "step") {
-        const detail = {
-          sector: data.sector ?? null,
-          confidence: data.confidence ?? null,
-          dimensions: data.dimensions ?? null,
-          score: data.score ?? null,
-          model: data.model ?? null,
-          elapsed_ms: data.elapsed_ms ?? null,
-        };
-        if (data.status !== "loading") {
-          setAgentSteps((prev) => {
-            const last = prev[prev.length - 1];
-            if (last && last.status === "loading") {
-              return [
-                ...prev.slice(0, -1),
-                {
-                  id: Date.now() + Math.random(),
-                  status: data.status,
-                  text: data.message,
-                  detail,
-                },
-              ];
-            }
-            return [
-              ...prev,
-              {
-                id: Date.now() + Math.random(),
-                status: data.status,
-                text: data.message,
-                detail,
-              },
-            ];
-          });
-        } else {
-          addStep(data.status, data.message, detail);
-        }
-      } else if (eventType === "result") {
-        addStep("success", "Analyse terminée ✓");
-        applyClarifierResult(data, options);
-      }
-    },
-    [addStep, applyClarifierResult],
-  );
-
   const startConversation = useCallback(async () => {
-    if (!idea || !idea.id) return;
-
-    clearSteps();
-    addMessage("user", idea.description || "");
+    if (!idea?.description || startedRef.current) return;
+    startedRef.current = true;
     setIsStreaming(true);
+    setAgentSteps([]);
+
+    addMessage("user", idea.description);
 
     try {
       await readSSEStream(
         `${AI_URL}/clarifier/start/stream`,
         {
           idea_id: idea.id,
-          name: idea.name,
-          sector: idea.sector,
+          name: idea.name || "",
+          sector: idea.sector || "",
           description: idea.description,
           target_audience: idea.target_audience || "",
         },
-        (eventType, data) => handleSSEEvent(eventType, data, {}),
+        (eventType, data) => {
+          if (eventType === "step") {
+            addStep(data.status, data.message, {
+              dimensions: data.dimensions || null,
+              sector: data.sector || null,
+              confidence: data.confidence || null,
+              score: data.score || null,
+              model: data.model || null,
+              elapsed_ms: data.elapsed_ms || null,
+            });
+          } else if (eventType === "result") {
+            setIsStreaming(false);
+            const msg = safeText(data.message);
+
+            if (data.type === "refused") {
+              setIsRefused(true);
+              if (msg) streamWords(msg, null);
+              return;
+            }
+
+            if (data.type === "questions") {
+              setQuestions(data.questions || []);
+              if (msg) {
+                streamWords(msg, (msgId) => {
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === msgId
+                        ? {
+                            ...m,
+                            structured: {
+                              type: "questions",
+                              questions: data.questions || [],
+                            },
+                          }
+                        : m,
+                    ),
+                  );
+                });
+              }
+            }
+
+            if (data.type === "clarified") {
+              const score = data.score || 0;
+              setClarityScore(score);
+              setClarifiedIdea(data);
+              if (score >= 55) setIsReady(true);
+              if (msg) {
+                streamWords(msg, (msgId) => {
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === msgId
+                        ? {
+                            ...m,
+                            structured: {
+                              type: "clarified",
+                              score,
+                              sections: {
+                                what: safeText(data.solution_description),
+                                who: safeText(data.target_users),
+                                problem: safeText(data.problem),
+                                pitch: safeText(data.short_pitch),
+                              },
+                            },
+                          }
+                        : m,
+                    ),
+                  );
+                });
+              }
+            }
+          } else if (eventType === "done") {
+            setIsStreaming(false);
+          }
+        },
         { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       );
     } catch (err) {
       setIsStreaming(false);
-      addStep("error", "✗ Erreur serveur IA");
       addMessage(
         "agent",
-        "Une erreur s'est produite. Vérifiez que le service IA est démarré (port 8001).",
+        err.message.includes("Failed to fetch")
+          ? "Service IA injoignable. Vérifiez le port 8001."
+          : `Erreur : ${err.message}`,
       );
     }
-  }, [idea, token, addMessage, addStep, clearSteps, readSSEStream, handleSSEEvent]);
+  }, [idea, token, addMessage, addStep, streamWords, readSSEStream]);
 
-  const sendAnswer = useCallback(
-    async (userText) => {
-      if (!idea || isStreaming || !userText?.trim()) return;
-
-      addMessage("user", userText.trim());
+  const submitAnswers = useCallback(
+    async (userAnswers) => {
+      if (!idea || isStreaming) return;
       setIsStreaming(true);
-      setPendingQuestions([]);
+      setAgentSteps([]);
 
-      const answers = [userText.trim()];
+      const summary = [
+        userAnswers.problem,
+        userAnswers.target,
+        userAnswers.solution,
+      ]
+        .filter(Boolean)
+        .join(" • ");
+      addMessage("user", summary);
 
       try {
         await readSSEStream(
           `${AI_URL}/clarifier/answer/stream`,
           {
             idea_id: idea.id,
-            name: idea.name,
-            sector: idea.sector,
+            name: idea.name || "",
+            sector: idea.sector || "",
             description: idea.description,
             target_audience: idea.target_audience || "",
-            answers,
+            answer_problem: userAnswers.problem || "",
+            answer_target: userAnswers.target || "",
+            answer_solution: userAnswers.solution || "",
           },
-          (eventType, data) => handleSSEEvent(eventType, data, { fromAnswer: true }),
+          (eventType, data) => {
+            if (eventType === "step") {
+              addStep(data.status, data.message, {
+                score: data.score || null,
+                model: data.model || null,
+                elapsed_ms: data.elapsed_ms || null,
+              });
+            } else if (eventType === "result") {
+              setIsStreaming(false);
+              if (data.type === "clarified") {
+                const score = data.score || 0;
+                setClarityScore(score);
+                setClarifiedIdea(data);
+                if (score >= 55) setIsReady(true);
+                const msg = safeText(data.message);
+                if (msg) {
+                  streamWords(msg, (msgId) => {
+                    setMessages((prev) =>
+                      prev.map((m) =>
+                        m.id === msgId
+                          ? {
+                              ...m,
+                              structured: {
+                                type: "clarified",
+                                score,
+                                sections: {
+                                  what: safeText(data.solution_description),
+                                  who: safeText(data.target_users),
+                                  problem: safeText(data.problem),
+                                  pitch: safeText(data.short_pitch),
+                                },
+                              },
+                            }
+                          : m,
+                      ),
+                    );
+                  });
+                }
+              }
+            } else if (eventType === "done") {
+              setIsStreaming(false);
+            }
+          },
           { headers: token ? { Authorization: `Bearer ${token}` } : {} },
         );
       } catch (err) {
         setIsStreaming(false);
-        addMessage("agent", "Erreur lors du traitement. Réessayez.");
+        addMessage("agent", `Erreur : ${err.message}`);
       }
     },
-    [idea, token, isStreaming, addMessage, readSSEStream, handleSSEEvent],
+    [idea, isStreaming, addMessage, addStep, streamWords, readSSEStream, token],
   );
 
   return {
@@ -348,13 +236,14 @@ export function useClarifierChat(idea, token) {
     isStreaming,
     clarityScore,
     isReady,
-    isRefused,
     clarifiedIdea,
-    pendingQuestions,
+    isRefused,
     agentSteps,
+    questions,
+    answers,
+    setAnswers,
     startConversation,
-    sendAnswer,
-    readSSEStream,
+    submitAnswers,
   };
 }
 

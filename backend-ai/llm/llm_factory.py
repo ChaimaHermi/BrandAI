@@ -29,6 +29,7 @@ def create_groq_clients():
                 ChatGroq(
                     api_key=key,
                     model="llama-3.3-70b-versatile",
+                    temperature=0.05,
                 )
             )
 

@@ -23,6 +23,8 @@
 #    })
 # ==============================================================
 
+import logging
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -43,6 +45,7 @@ from app.utils.helpers import format_user_response
 # prefix="/auth" → toutes les routes commencent par /auth
 # tags=["..."]   → groupe dans Swagger UI
 router = APIRouter(prefix="/auth", tags=["Authentification"])
+logger = logging.getLogger(__name__)
 
 
 # ==============================================================
@@ -200,6 +203,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         name      = user_info.get("name")
         picture   = user_info.get("picture")   # URL photo de profil
 
+        if not email:
+            raise ValueError("Google n'a pas renvoyé d'email.")
+
+        safe_name = name or (email.split("@")[0] if email else None) or "Utilisateur Google"
+
         # 3. Chercher l'utilisateur par google_id
         user = db.query(User).filter(User.google_id == google_id).first()
 
@@ -216,7 +224,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             else:
                 # 4b. Créer un nouveau compte
                 user = User(
-                    name=name,
+                    name=safe_name,
                     email=email,
                     google_id=google_id,
                     avatar_url=picture,
@@ -234,6 +242,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url=frontend_url)
 
     except Exception as e:
+        logger.exception("Google OAuth callback failed")
         # En cas d'erreur → rediriger vers login avec message
         return RedirectResponse(
             url=f"{settings.FRONTEND_URL}/login?error=google_auth_failed"
