@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   HiOutlineArrowLeft,
-  HiOutlineSparkles,
   HiOutlineChatBubbleLeftRight,
-  HiOutlineArrowRight,
-  HiOutlineTrash,
   HiOutlineCheckCircle,
   HiOutlineLightBulb,
   HiOutlineRocketLaunch,
@@ -14,9 +11,13 @@ import { Navbar } from "../components/layout/Navbar";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Loader } from "../components/ui/Loader";
-import { AgentTimeline } from "../components/agents/AgentTimeline";
-import { ResultDisplay } from "../components/agents/ResultDisplay";
-import { apiGetIdea, apiDeleteIdea, getErrorMessage } from "../services/ideaApi";
+import { Badge } from "../components/ui/Badge";
+import { ChatMessage } from "../components/chat/ChatMessage";
+import { TypingIndicator } from "../components/chat/TypingIndicator";
+import { AgentAvatar } from "../components/chat/AgentAvatar";
+import { AgentStatusBar } from "../components/chat/AgentStatusBar";
+import { useChatStream } from "../hooks/useChatStream";
+import { apiGetIdea, getErrorMessage } from "../services/ideaApi";
 import { useAuth } from "../hooks/useAuth";
 import { AGENTS, TECHMENTOR_RESULTS } from "../data/mockData";
 
@@ -59,7 +60,11 @@ function buildMockResults(idea) {
 function StepFlow({ currentStep }) {
   const steps = [
     { key: 1, label: "Votre idée", Icon: HiOutlineLightBulb },
-    { key: 2, label: "Affiner avec l'agent", Icon: HiOutlineChatBubbleLeftRight },
+    {
+      key: 2,
+      label: "Affiner avec l'agent",
+      Icon: HiOutlineChatBubbleLeftRight,
+    },
     { key: 3, label: "Lancer le pipeline", Icon: HiOutlineRocketLaunch },
   ];
   return (
@@ -97,7 +102,11 @@ function StepFlow({ currentStep }) {
               </div>
               <span
                 className={`max-w-[90px] text-center text-[11px] font-medium leading-tight sm:max-w-[100px] ${
-                  isActive ? "text-[#7C3AED]" : isCompleted ? "text-[#6B7280]" : "text-[#9CA3AF]"
+                  isActive
+                    ? "text-[#7C3AED]"
+                    : isCompleted
+                      ? "text-[#6B7280]"
+                      : "text-[#9CA3AF]"
                 }`}
               >
                 {step.label}
@@ -113,16 +122,27 @@ function StepFlow({ currentStep }) {
 export function IdeaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [idea, setIdea] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [fetchError, setFetchError] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [showPipeline, setShowPipeline] = useState(false);
   const [activeAgent, setActiveAgent] = useState("idea");
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [inputText, setInputText] = useState("");
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const {
+    messages,
+    isStreaming,
+    clarityScore,
+    isReady,
+    isRefused,
+    agentSteps,
+    startConversation,
+    sendAnswer,
+  } = useChatStream(idea, token);
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   useEffect(() => {
     if (!id || !token) return;
@@ -138,7 +158,10 @@ export function IdeaDetail() {
       } catch (err) {
         if (!cancelled) {
           const msg = err.message || "";
-          if (msg.includes("404") || msg.toLowerCase().includes("introuvable")) {
+          if (
+            msg.includes("404") ||
+            msg.toLowerCase().includes("introuvable")
+          ) {
             setNotFound(true);
             setFetchError("");
           } else {
@@ -149,33 +172,36 @@ export function IdeaDetail() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id, token]);
 
-  // Hooks must be called unconditionally (before any early return)
   const statuses = useMemo(() => getMockStatuses(), []);
   const results = useMemo(() => buildMockResults(idea), [idea]);
   const currentData = results[activeAgent];
   const currentStatus = statuses[activeAgent] || "waiting";
 
-  const handleDelete = async () => {
-    if (!id || !token) return;
-    setDeleting(true);
-    try {
-      await apiDeleteIdea(id, token);
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      setDeleting(false);
-      setFetchError(getErrorMessage(err));
+  useEffect(() => {
+    if (idea && idea.status === "pending") {
+      startConversation();
     }
-  };
+  }, [idea?.id]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="h-screen flex flex-col overflow-hidden bg-white">
         <Navbar variant="app" />
-        <main className="flex min-h-[60vh] items-center justify-center">
-          <Loader className="h-10 w-10" />
+        <main className="flex flex-1 overflow-hidden items-center justify-center">
+          <div className="max-w-[1400px] mx-auto w-full px-6 py-4">
+            <Loader className="h-10 w-10" />
+          </div>
         </main>
       </div>
     );
@@ -183,247 +209,306 @@ export function IdeaDetail() {
 
   if (notFound || !idea) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="h-screen flex flex-col overflow-hidden bg-white">
         <Navbar variant="app" />
-        <main className="mx-auto max-w-[560px] px-4 py-12 text-center">
-          {fetchError && (
-            <div className="mb-4 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {fetchError}
+        <main className="flex flex-1 overflow-hidden">
+          <div className="max-w-[1400px] mx-auto w-full px-6 py-4 flex items-center justify-center">
+            <div className="max-w-[560px] w-full text-center">
+              {fetchError && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                  {fetchError}
+                </div>
+              )}
+              <p className="text-[#6B7280]">
+                {notFound
+                  ? "Cette idée n'existe pas ou a été supprimée."
+                  : "Nous n'avons pas pu charger cette idée."}
+              </p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => navigate("/dashboard")}
+              >
+                Retour au tableau de bord
+              </Button>
             </div>
-          )}
-          <p className="text-[#6B7280]">
-            {notFound
-              ? "Cette idée n'existe pas ou a été supprimée."
-              : "Nous n'avons pas pu charger cette idée."}
-          </p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard")}>
-            Retour au tableau de bord
-          </Button>
+          </div>
         </main>
       </div>
     );
   }
 
-  const isPending = idea.status === "pending";
-
-  // ─── STATE 2: running or done — placeholder ─────────────────────────────
-  if (idea.status === "running" || idea.status === "done") {
-    return (
-      <div className="min-h-screen bg-white">
-        <Navbar variant="app" />
-        <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-12">
-          <Loader className="h-12 w-12 text-[#7C3AED]" />
-          <p className="mt-4 font-medium text-[#111827]">Pipeline en cours d&apos;exécution...</p>
-          <p className="mt-1 text-sm text-[#6B7280]">Les agents travaillent sur votre projet</p>
-        </main>
-      </div>
-    );
-  }
-
-  if (idea.status === "error") {
-    return (
-      <div className="min-h-screen bg-white">
-        <Navbar variant="app" />
-        <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-12 text-center">
-          <p className="font-medium text-[#111827]">Une erreur s&apos;est produite lors du pipeline</p>
-          <p className="mt-1 text-sm text-[#6B7280]">Veuillez réessayer ou contacter le support.</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard")}>
-            Retour au tableau de bord
-          </Button>
-        </main>
-      </div>
-    );
-  }
-
-  const currentStep = showPipeline ? 3 : 2;
+  const currentStep = 2;
 
   const description = idea.description || "—";
   const descriptionLong = description.length > 120;
-  const renderLeftColumn = () => (
-    <aside className="flex w-full shrink-0 flex-col gap-4 rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] p-4 lg:w-[300px] lg:self-start">
-      <Card hover={false} className="border border-[#E5E7EB] bg-white p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-[#6B7280]">Votre idée</h2>
-        <p className="mt-2 font-semibold text-[#111827]">{idea.name}</p>
-        <p className="mt-0.5 text-sm text-[#6B7280]">{idea.sector}</p>
-        <p className="mt-3 text-xs text-[#6B7280]">Public cible:</p>
-        <p className="mt-0.5 text-sm text-[#111827]">{idea.target_audience || "—"}</p>
-        <hr className="my-4 border-[#E5E7EB]" />
-        <p className="text-xs font-medium text-[#6B7280]">Description soumise:</p>
-        <div className="mt-1.5 rounded-[10px] border border-[#E5E7EB] bg-[#F9FAFB] p-3 text-sm text-[#374151]">
-          <p className={descriptionExpanded || !descriptionLong ? "whitespace-pre-wrap break-words" : "line-clamp-3 whitespace-pre-wrap break-words"}>
-            {description}
-          </p>
-          {descriptionLong && (
-            <button
-              type="button"
-              onClick={() => setDescriptionExpanded((e) => !e)}
-              className="mt-2 text-xs font-medium text-[#7C3AED] hover:underline"
-            >
-              {descriptionExpanded ? "Voir moins" : "Voir plus"}
-            </button>
-          )}
-        </div>
-        <hr className="my-4 border-[#E5E7EB]" />
-        <p className="text-xs text-[#6B7280]">Soumise le {formatDate(idea.created_at)}</p>
-        <hr className="my-4 border-[#E5E7EB]" />
-        {!deleteConfirm ? (
-          <Button
-            variant="outline"
-            className="w-full border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50"
-            onClick={() => setDeleteConfirm(true)}
-          >
-            <HiOutlineTrash className="h-4 w-4" />
-            Supprimer
-          </Button>
-        ) : (
-          <div className="rounded-[10px] border border-red-200 bg-red-50 p-3 text-sm">
-            <p className="font-medium text-red-800">Êtes-vous sûr ?</p>
-            <div className="mt-2 flex gap-2">
-              <Button variant="outline" className="flex-1 border-red-300 text-red-600" onClick={() => setDeleteConfirm(false)} disabled={deleting}>
-                Annuler
-              </Button>
-              <Button className="flex-1 bg-red-600 text-white hover:bg-red-700" onClick={handleDelete} disabled={deleting}>
-                {deleting ? "Suppression..." : "Supprimer"}
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
-    </aside>
-  );
+  const handleSend = (event) => {
+    event.preventDefault();
+    if (!inputText.trim() || isStreaming) return;
+    sendAnswer(inputText.trim());
+    setInputText("");
+  };
+  return (
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
+      <Navbar variant="app" />
 
-  // ─── STATE 1b: pending + showPipeline — vue pipeline statique ────────────
-  if (showPipeline) {
-    return (
-      <div className="flex min-h-screen flex-col bg-white">
-        <Navbar variant="app" />
-        <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col px-4 md:px-6">
-          <header className="border-b border-[#E5E7EB] bg-white pb-2 pt-2">
-            <div className="flex items-center justify-between gap-1">
-              <Link to="/dashboard" className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#6B7280] hover:text-[#7C3AED]">
-                <HiOutlineArrowLeft className="h-4 w-4" />
-                Retour
-              </Link>
-              <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-1">
-                <p className="text-[11px] font-medium text-[#6B7280]">Étape {currentStep} sur 3</p>
-                <div className="mt-1 w-full max-w-md">
-                  <StepFlow currentStep={currentStep} />
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPipeline(false)}
-                className="shrink-0 text-xs font-medium text-[#6B7280] hover:text-[#7C3AED]"
-              >
-                Retour à l&apos;agent
-              </button>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <h1 className="text-sm font-semibold text-[#111827]">{idea.name}</h1>
-              <span className="rounded-full bg-[#EDE9FE] px-2 py-0.5 text-[11px] font-medium text-[#7C3AED]">Pipeline</span>
-            </div>
-          </header>
-          {fetchError && (
-            <div className="mt-4">
-              <div className="rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{fetchError}</div>
-            </div>
-          )}
-          <div className="flex min-h-0 flex-1 flex-col gap-6 py-6 lg:flex-row lg:items-start">
-            <aside className="flex w-full shrink-0 flex-col rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] p-3 lg:w-[280px] lg:self-start">
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-[#6B7280]">Agents du pipeline</p>
-              <AgentTimeline agents={AGENTS} agentStatuses={statuses} activeId={activeAgent} onSelect={setActiveAgent} />
-            </aside>
-            <main className="min-h-0 min-w-0 flex-1 overflow-auto">
-              <ResultDisplay agentId={activeAgent} data={currentData} status={currentStatus} />
-            </main>
+      <div className="border-b border-[#E5E7EB]">
+        <div className="max-w-[1400px] mx-auto w-full px-6 py-2 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="truncate text-xs font-medium text-[#4B5563]">
+              {idea.name}
+            </p>
+            {idea.sector && (
+              <Badge className="text-[10px] shrink-0">{idea.sector}</Badge>
+            )}
+          </div>
+          <div className="hidden md:block">
+            <StepFlow currentStep={currentStep} />
           </div>
         </div>
       </div>
-    );
-  }
 
-  // ─── STATE 1a: pending — chat interface ─────────────────────────────────
-  return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <Navbar variant="app" />
-      <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col px-4 md:px-6">
-        <header className="border-b border-[#E5E7EB] bg-white pb-2 pt-2">
-          <div className="flex items-center justify-between gap-1">
-            <Link to="/dashboard" className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#6B7280] hover:text-[#7C3AED]" aria-label="Retour au tableau de bord">
-              <HiOutlineArrowLeft className="h-4 w-4" />
-              Retour
-            </Link>
-            <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-1">
-              <p className="text-[11px] font-medium text-[#6B7280]">Étape {currentStep} sur 3</p>
-              <div className="mt-1 w-full max-w-md">
-                <StepFlow currentStep={currentStep} />
-              </div>
-            </div>
-            <div className="w-[64px] shrink-0 sm:w-[80px]" aria-hidden />
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <h1 className="text-sm font-semibold text-[#111827]">{idea.name}</h1>
-            <span className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[11px] font-medium text-[#6B7280]">{idea.sector}</span>
-          </div>
-        </header>
+      <div className="flex flex-1 gap-4 overflow-hidden max-w-[1400px] mx-auto w-full px-6 py-4 min-h-0">
         {fetchError && (
-          <div className="mt-4">
-            <div className="rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{fetchError}</div>
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-10 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 shadow-sm">
+            {fetchError}
           </div>
         )}
-        <div className="flex min-h-0 flex-1 flex-col gap-6 py-6 lg:flex-row lg:items-start">
-          {renderLeftColumn()}
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-auto">
-            <Card hover={false} className="shrink-0 border border-[#E5E7EB] bg-white p-4">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED] text-white">
-                  <HiOutlineSparkles className="h-3.5 w-3.5" aria-hidden />
-                </span>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-[#111827]">Idea Enhancer Agent</h3>
-                  <p className="text-xs text-[#6B7280]">Posez vos questions pour affiner votre idée</p>
+
+        <aside className="w-[300px] flex-shrink-0 h-full overflow-y-auto flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] p-4">
+          <Link
+            to="/dashboard"
+            className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#6B7280] hover:text-[#7C3AED]"
+            aria-label="Retour au tableau de bord"
+          >
+            <HiOutlineArrowLeft className="h-4 w-4" />
+            Retour
+          </Link>
+
+          <div className="mt-1 space-y-2">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-[#6B7280]">
+              Étapes du pipeline
+            </p>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-center justify-between rounded-lg py-2 px-3 bg-[#F5F3FF]">
+                <div className="flex items-center gap-2">
+                  <AgentAvatar agentType="idea_clarifier" size={24} />
+                  <span className="text-[11px] font-medium text-[#4B5563]">
+                    Idea Clarifier
+                  </span>
                 </div>
+                <Badge variant="violet" className="text-[10px]">
+                  En cours
+                </Badge>
               </div>
-              <div className="relative mt-3 min-h-[180px] rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB]">
-                <div className="flex min-h-[180px] flex-col items-center justify-center px-3 py-4 text-center">
-                  <HiOutlineChatBubbleLeftRight className="h-6 w-6 text-[#9CA3AF]" aria-hidden />
-                  <p className="mt-1.5 text-xs font-medium text-[#374151]">L&apos;agent est prêt à affiner votre idée</p>
-                  <p className="mt-0.5 text-[11px] text-[#6B7280]">Il analysera votre description et vous posera des questions</p>
+              <div className="flex items-center justify-between rounded-lg py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <AgentAvatar agentType="idea_enhancer" size={22} />
+                  <span className="text-[11px] text-[#4B5563]">
+                    Idea Enhancer
+                  </span>
                 </div>
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[8px] bg-white/80 backdrop-blur-[2px]" aria-hidden>
-                  <p className="text-center text-sm font-medium text-[#374151]">Disponible après intégration de l&apos;agent IA</p>
-                  <p className="mt-0.5 text-[11px] text-[#6B7280]">En cours de développement — Sprint 2</p>
+                <Badge variant="waiting" className="text-[10px]">
+                  En attente
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-lg py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <AgentAvatar agentType="market_analysis" size={22} />
+                  <span className="text-[11px] text-[#4B5563]">
+                    Market Analysis
+                  </span>
                 </div>
+                <Badge variant="waiting" className="text-[10px]">
+                  En attente
+                </Badge>
               </div>
-              <div className="mt-3 flex items-center gap-2 border-t border-[#E5E7EB] pt-2.5">
-                <input
-                  type="text"
-                  placeholder="Votre message..."
-                  disabled
-                  className="min-w-0 flex-1 rounded-[8px] border border-[#E5E7EB] bg-[#F3F4F6] px-3 py-2 text-xs text-[#9CA3AF] placeholder:text-[#9CA3AF] cursor-not-allowed"
-                />
-                <button type="button" disabled className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed" aria-label="Envoyer">
-                  <HiOutlineArrowRight className="h-4 w-4" />
-                </button>
+              <div className="flex items-center justify-between rounded-lg py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <AgentAvatar agentType="brand_identity" size={22} />
+                  <span className="text-[11px] text-[#4B5563]">
+                    Brand Identity
+                  </span>
+                </div>
+                <Badge variant="waiting" className="text-[10px]">
+                  En attente
+                </Badge>
               </div>
-            </Card>
-            <section className="shrink-0 rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] p-4">
-              <h3 className="text-xs font-semibold text-[#111827]">Étape suivante</h3>
-              <p className="mt-0.5 text-[11px] text-[#6B7280]">
-                Analyse de marché · identité de marque · contenus · site web · stratégie marketing
-              </p>
+              <div className="flex items-center justify-between rounded-lg py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <AgentAvatar agentType="content_creator" size={22} />
+                  <span className="text-[11px] text-[#4B5563]">
+                    Content Creator
+                  </span>
+                </div>
+                <Badge variant="waiting" className="text-[10px]">
+                  En attente
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-lg py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <AgentAvatar agentType="website_builder" size={22} />
+                  <span className="text-[11px] text-[#4B5563]">
+                    Website Builder
+                  </span>
+                </div>
+                <Badge variant="waiting" className="text-[10px]">
+                  En attente
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-lg py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <AgentAvatar agentType="optimizer" size={22} />
+                  <span className="text-[11px] text-[#4B5563]">Optimizer</span>
+                </div>
+                <Badge variant="waiting" className="text-[10px]">
+                  En attente
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2">
+            {isRefused ? (
               <Button
                 variant="primary"
                 fullWidth
-                className="mt-3 gap-1.5 py-2.5 text-sm"
-                onClick={() => setShowPipeline(true)}
+                disabled
+                className="gap-1.5 py-2 text-xs cursor-not-allowed bg-red-500 opacity-70 hover:bg-red-500"
               >
-                <HiOutlineRocketLaunch className="h-4 w-4" />
-                Lancer le pipeline IA
+                ✗ Pipeline bloqué — idée refusée
               </Button>
-            </section>
-          </main>
-        </div>
+            ) : (
+              <>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  disabled={!isReady || isStreaming}
+                  className="gap-1.5 py-2 text-xs"
+                >
+                  <HiOutlineRocketLaunch className="h-3.5 w-3.5" />
+                  {isReady
+                    ? "Lancer le pipeline complet"
+                    : `Affiner encore (${clarityScore || 0}/100)`}
+                </Button>
+                {!isReady && (
+                  <p className="mt-1 text-[10px] text-[#9CA3AF]">
+                    Disponible une fois la clarté de l&apos;idée ≥ 80/100.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </aside>
+
+        <main className="flex-1 flex flex-col min-h-0 min-w-0 h-full overflow-hidden bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+          <header className="p-4 border-b border-[#E5E7EB] shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AgentAvatar agentType="idea_clarifier" size={32} />
+                <div>
+                  <p className="text-sm font-semibold text-[#111827]">
+                    Idea Clarifier Agent
+                  </p>
+                  <p className="text-[11px] text-[#6B7280]">
+                    Clarifie votre idée pas à pas avant de lancer tout le
+                    pipeline.
+                  </p>
+                </div>
+              </div>
+              <Badge className="text-[10px]">IA</Badge>
+            </div>
+          </header>
+
+          <AgentStatusBar steps={agentSteps} />
+
+          <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0"
+              onScroll={() => {
+                const el = messagesContainerRef.current;
+                if (!el) return;
+                const atBottom =
+                  el.scrollTop + el.clientHeight >= el.scrollHeight - 32;
+                setIsAtBottom(atBottom);
+              }}
+            >
+              {messages.length === 0 && (
+                <div className="flex min-h-[200px] flex-col items-center justify-center text-center text-xs text-[#6B7280]">
+                  <HiOutlineChatBubbleLeftRight
+                    className="mb-2 h-6 w-6 text-[#9CA3AF]"
+                    aria-hidden
+                  />
+                  <p>
+                    Votre description vient d&apos;être envoyée à l&apos;agent
+                    BrandAI.
+                  </p>
+                  <p className="mt-0.5">
+                    Il va analyser votre idée puis vous poser quelques questions
+                    ciblées.
+                  </p>
+                </div>
+              )}
+
+              {messages.map((msg) => (
+                <ChatMessage key={msg.id} message={msg} user={user} />
+              ))}
+
+              {isStreaming && !messages.some((m) => m.isStreaming) && (
+                <TypingIndicator />
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {!isAtBottom && messages.length > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  messagesEndRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                  })
+                }
+                className="absolute bottom-20 right-6 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-[#4B5563] shadow-md ring-1 ring-[#E5E7EB] hover:bg-[#F3F4F6]"
+              >
+                Revenir en bas
+              </button>
+            )}
+
+            <div className="border-t border-[#E5E7EB] p-4 bg-white shrink-0">
+              <form onSubmit={handleSend}>
+                <div className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1">
+                  <textarea
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Répondez aux questions de l'agent ou précisez votre idée…"
+                    className="w-full min-h-[10px] max-h-[30px] resize-none border-none bg-transparent text-sm px-3 py-1 text-[#111827] outline-none placeholder:text-[#9CA3AF]"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend(e);
+                      }
+                    }}
+                    disabled={isStreaming}
+                  />
+                  <div className="mt-1 flex items-center justify-between">
+                    <p className="text-[10px] text-[#9CA3AF]">
+                      Entrée = envoyer · Shift+Entrée = nouvelle ligne
+                    </p>
+                    <button
+                      type="submit"
+                      disabled={isStreaming}
+                      className="h-9 px-4 text-sm rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Envoyer
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

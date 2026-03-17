@@ -199,11 +199,9 @@ class BaseAgent(ABC):
             f"[{self.agent_name}] START | idea_id={state.idea_id}"
         )
 
-    def _log_success(self):
+    def _log_success(self, payload=None):
 
-        self.logger.info(
-            f"[{self.agent_name}] SUCCESS"
-        )
+        self.logger.info(f"[{self.agent_name}] SUCCESS")
 
     def _log_error(self, error):
 

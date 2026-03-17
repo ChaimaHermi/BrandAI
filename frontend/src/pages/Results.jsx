@@ -29,11 +29,11 @@ export function Results() {
   const pipelineLabel = runningIndex >= 0 ? `Pipeline en cours — agent ${runningIndex + 1}/${AGENTS.length}` : "Pipeline terminé";
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="flex min-h-screen flex-col">
-        <Navbar variant="app" />
-        <main className="flex flex-1 flex-col lg:flex-row">
-          <div className="border-b border-[#E5E7EB] bg-white px-4 py-4 lg:px-6">
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
+      <Navbar variant="app" />
+      <main className="flex flex-1 overflow-hidden">
+        <div className="mx-auto w-full max-w-[1400px] px-6 py-4 flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+          <div className="border-b border-[#E5E7EB] bg-white px-0 py-4 lg:px-0 shrink-0 lg:border-b-0">
             <div className="flex flex-wrap items-center gap-3">
               <Link to="/dashboard" className="flex items-center gap-1 text-sm text-[#6B7280] hover:text-[#7C3AED]"><HiOutlineArrowLeft className="h-4 w-4" /> Retour</Link>
               <h1 className="text-lg font-semibold text-[#111827]">{project.name}</h1>
@@ -52,11 +52,11 @@ export function Results() {
             <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[#6B7280]">Agents</p>
             <AgentTimeline agents={AGENTS} agentStatuses={statuses} activeId={activeAgent} onSelect={setActiveAgent} />
           </aside>
-          <div className="flex-1 p-4 lg:p-6">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-6">
             <ResultDisplay agentId={activeAgent} data={currentData} status={currentStatus} />
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

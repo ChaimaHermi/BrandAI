@@ -1,13 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { HiOutlineArrowRight, HiOutlineCalendar } from "react-icons/hi2";
+import { HiOutlineArrowRight, HiOutlineCalendar, HiOutlineTrash } from "react-icons/hi2";
 import { Badge } from "../ui/Badge";
 import { STATUS_BADGE, formatIdeaDate } from "./constants";
 
 /**
  * Table: Idea name | Sector | Status | Created date | Action
  */
-export function IdeasTable({ ideas }) {
+export function IdeasTable({ ideas, onDelete }) {
+  const [deletingId, setDeletingId] = useState(null);
+  const handleDeleteClick = async (idea) => {
+    if (!onDelete) return;
+    if (!window.confirm(`Supprimer l'idée « ${idea.name || "sans nom"} » ?`)) return;
+    setDeletingId(idea.id);
+    try {
+      await onDelete(idea.id);
+    } finally {
+      setDeletingId(null);
+    }
+  };
   return (
     <div className="overflow-x-auto rounded-[10px] border border-[#E5E7EB] bg-white">
       <table className="w-full min-w-[600px] border-collapse text-left text-sm">
@@ -65,13 +76,27 @@ export function IdeasTable({ ideas }) {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link
-                    to={`/ideas/${idea.id}`}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-[#7C3AED] hover:underline"
-                  >
-                    {actionLabel}
-                    <HiOutlineArrowRight className="h-4 w-4" />
-                  </Link>
+                  <div className="inline-flex items-center gap-2">
+                    <Link
+                      to={`/ideas/${idea.id}`}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-[#7C3AED] hover:underline"
+                    >
+                      {actionLabel}
+                      <HiOutlineArrowRight className="h-4 w-4" />
+                    </Link>
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClick(idea)}
+                        disabled={deletingId === idea.id}
+                        className="inline-flex items-center justify-center rounded-lg p-1.5 text-[#6B7280] hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+                        title="Supprimer l'idée"
+                        aria-label="Supprimer l'idée"
+                      >
+                        <HiOutlineTrash className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             );

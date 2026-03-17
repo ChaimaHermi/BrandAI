@@ -28,8 +28,6 @@ import {
   HiXCircle,
 } from "react-icons/hi2";
 import { FcGoogle } from "react-icons/fc";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
 import { BlobBackground } from "../components/ui/BlobBackground";
 import { Toast } from "../components/ui/Toast";
 import { useAuth } from "../hooks/useAuth";
@@ -156,10 +154,10 @@ export function Register() {
   };
 
   const inputBase =
-    "w-full rounded-[10px] bg-white py-2.5 pl-10 text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-1 ";
-  const inputValid = "border border-green-400 focus:border-green-500 focus:ring-green-500";
-  const inputInvalid = "border border-red-400 focus:border-red-500 focus:ring-red-500";
-  const inputNeutral = "border border-[#E5E7EB] focus:border-[#7C3AED] focus:ring-[#7C3AED]";
+    "w-full h-10 rounded-lg border bg-white pl-10 text-sm text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-1 ";
+  const inputValid = "border-green-400 focus:border-green-500 focus:ring-green-500";
+  const inputInvalid = "border-red-400 focus:border-red-500 focus:ring-red-500";
+  const inputNeutral = "border-[#E5E7EB] focus:border-[#7C3AED] focus:ring-[#7C3AED]";
 
   const getInputClass = (hasError, hasValue, touchedField, hasToggle = false) => {
     let base = inputBase + (hasToggle ? "pr-20" : "pr-12");
@@ -176,7 +174,7 @@ export function Register() {
   };
 
   return (
-    <div className="relative min-h-screen bg-white">
+    <div className="relative h-screen flex items-center justify-center bg-gray-50 overflow-hidden">
       <Toast
         message={toastMessage}
         visible={showToast}
@@ -189,27 +187,24 @@ export function Register() {
         }}
         duration={3000}
       />
-      <BlobBackground opacity={0.35} className="pointer-events-none z-0" />
+      <BlobBackground opacity={0.2} className="pointer-events-none absolute inset-0 z-0" />
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-        <Card
-          className="w-full max-w-[420px] shadow-[0_8px_32px_rgba(0,0,0,0.06)]"
-          hover={false}
-        >
-          <div className="flex flex-col items-center text-center">
+      <div className="relative z-10 w-full max-w-[420px] mx-4">
+        <div className="w-full max-w-[420px] bg-white rounded-xl border border-[#E5E7EB] shadow-sm p-6 space-y-5">
+          <div className="flex flex-col items-center gap-2 mb-2">
             <img
               src="/logo%20brand%20ai.png"
               alt="BrandAI"
-              className="mb-4 h-14 w-auto"
+              className="h-12 w-auto"
             />
-            <h1 className="mb-2 text-xl font-semibold text-[#111827]">
+            <h1 className="text-xl font-semibold text-[#111827]">
               Créer un compte
             </h1>
-            <p className="mb-6 text-[#6B7280]">Rejoignez BrandAI</p>
+            <p className="text-sm text-[#6B7280]">Rejoignez BrandAI</p>
           </div>
 
           {(searchParams.get("error") === "google_failed" || searchParams.get("error") === "google_auth_failed") && (
-            <div className="mb-4 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600">
               Connexion Google échouée. Veuillez réessayer.
             </div>
           )}
@@ -217,30 +212,30 @@ export function Register() {
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="mb-6 flex w-full items-center justify-center gap-3 rounded-[10px] border border-[#E5E7EB] bg-white py-3 font-medium text-[#111827] transition-all hover:border-violet-300 hover:bg-[#F9FAFB]"
+            className="w-full h-11 flex items-center justify-center gap-2 border border-[#E5E7EB] rounded-lg bg-white font-medium text-[#111827] hover:bg-gray-50 transition"
           >
             <FcGoogle className="h-5 w-5" /> Continuer avec Google
           </button>
 
-          <div className="relative mb-6">
+          <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#E5E7EB]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-sm text-[#6B7280]">ou</span>
+              <span className="bg-white px-3 text-sm text-[#6B7280]">— ou —</span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
             {error && (
               <div className="rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}
               </div>
             )}
 
-            {/* Prénom et Nom sur une seule ligne */}
-            <div className="flex gap-3">
-              <div className="flex-1">
+            {/* Prénom et Nom */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label htmlFor="reg-prenom" className="mb-1.5 block text-sm font-medium text-[#111827]">
                   Prénom
                 </label>
@@ -261,7 +256,7 @@ export function Register() {
                 </div>
                 {prenomError && <p className="mt-1 text-xs text-red-500">{prenomError}</p>}
               </div>
-              <div className="flex-1">
+              <div>
                 <label htmlFor="reg-nom" className="mb-1.5 block text-sm font-medium text-[#111827]">
                   Nom
                 </label>
@@ -388,28 +383,26 @@ export function Register() {
               {confirmError && <p className="mt-1 text-xs text-red-500">{confirmError}</p>}
             </div>
 
-            <Button
+            <button
               type="submit"
-              variant="primary"
-              fullWidth
               disabled={!isFormValid || loading}
-              className="py-3"
+              className="w-full h-11 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 "Créer mon compte"
               )}
-            </Button>
+            </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-[#6B7280]">
+          <p className="pt-2 text-center text-sm text-[#6B7280]">
             Déjà un compte ?{" "}
             <Link to="/login" className="font-medium text-[#7C3AED] hover:underline">
               Se connecter
             </Link>
           </p>
-        </Card>
+        </div>
       </div>
     </div>
   );
