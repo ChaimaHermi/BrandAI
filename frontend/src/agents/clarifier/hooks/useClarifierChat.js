@@ -1,8 +1,13 @@
 import { useState, useCallback, useRef } from "react";
+import { useSSEStream } from "@/agents/shared/hooks/useSSEStream";
+import { createStreamWords } from "@/agents/shared/utils/streamWords";
+import { safeText } from "@/agents/shared/utils/safeText";
 
 const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
 
-export function useChatStream(idea, token) {
+// Copie exacte de useChatStream (logique pré-existante),
+// avec factorisation de readSSEStream, streamWords et safeText.
+export function useClarifierChat(idea, token) {
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [clarityScore, setClarityScore] = useState(0);
@@ -12,6 +17,9 @@ export function useChatStream(idea, token) {
   const [clarifiedIdea, setClarifiedIdea] = useState(null);
   const [agentSteps, setAgentSteps] = useState([]);
   const streamTimerRef = useRef(null);
+
+  const { readSSEStream } = useSSEStream();
+  const streamWords = createStreamWords(setMessages);
 
   const clearSteps = useCallback(() => setAgentSteps([]), []);
 
@@ -26,7 +34,10 @@ export function useChatStream(idea, token) {
     setAgentSteps((prev) => {
       const last = prev[prev.length - 1];
       if (last && last.status === "loading") {
-        return [...prev.slice(0, -1), { id: Date.now() + Math.random(), status, text, detail }];
+        return [
+          ...prev.slice(0, -1),
+          { id: Date.now() + Math.random(), status, text, detail },
+        ];
       }
       return [...prev, { id: Date.now() + Math.random(), status, text, detail }];
     });
@@ -38,157 +49,17 @@ export function useChatStream(idea, token) {
       {
         id: Date.now() + Math.random(),
         role,
-        content,
+        content: safeText(content, ""),
         timestamp: new Date().toISOString(),
         ...extra,
       },
     ]);
   }, []);
 
-  const streamWords = useCallback((fullText, onComplete) => {
-    if (!fullText || typeof fullText !== "string") {
-      if (onComplete) onComplete(null);
-      return null;
-    }
-
-    const clean = fullText
-      .replace(/\bundefined\b/g, "")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-
-    if (!clean) {
-      if (onComplete) onComplete(null);
-      return null;
-    }
-
-    const words = clean.split(" ");
-    const msgId = Date.now() + Math.random();
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: msgId,
-        role: "agent",
-        content: "",
-        isStreaming: true,
-        timestamp: new Date(),
-      },
-    ]);
-
-    let i = 0;
-
-    const tick = () => {
-      if (i < words.length) {
-        const word = words[i];
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === msgId
-              ? { ...m, content: m.content + (i === 0 ? "" : " ") + word }
-              : m,
-          ),
-        );
-        i++;
-        streamTimerRef.current = setTimeout(tick, 40 + Math.random() * 40);
-      } else {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === msgId ? { ...m, isStreaming: false } : m,
-          ),
-        );
-        if (onComplete) onComplete(msgId);
-      }
-    };
-
-    tick();
-    return msgId;
-  }, []);
-
-  const readSSEStream = useCallback(async (url, body, onEvent, options = {}) => {
-    const headers = {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    };
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
-
-    const processBuffer = () => {
-      const blocks = buffer.split("\n\n");
-      buffer = blocks.pop() ?? "";
-
-      for (const block of blocks) {
-        const trimmed = block.trim();
-        if (!trimmed) continue;
-
-        let eventType = "message";
-        let rawData = "";
-
-        for (const line of trimmed.split("\n")) {
-          if (line.startsWith("event:")) {
-            eventType = line.slice(6).trim();
-          } else if (line.startsWith("data:")) {
-            rawData = line.slice(5).trim();
-          }
-        }
-
-        if (!rawData) continue;
-
-        const isCompleteJson =
-          (rawData.startsWith("{") && rawData.endsWith("}")) ||
-          (rawData.startsWith("[") && rawData.endsWith("]")) ||
-          (!rawData.startsWith("{") && !rawData.startsWith("["));
-
-        if (!isCompleteJson) {
-          buffer = block + "\n\n" + buffer;
-          continue;
-        }
-
-        let parsed;
-        try {
-          parsed = JSON.parse(rawData);
-        } catch {
-          parsed = rawData;
-        }
-
-        onEvent(eventType, parsed);
-      }
-    };
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        buffer += decoder.decode();
-        if (buffer.trim()) {
-          buffer += "\n\n";
-          processBuffer();
-        }
-        break;
-      }
-
-      buffer += decoder.decode(value, { stream: true });
-
-      if (buffer.includes("\n\n")) {
-        processBuffer();
-      }
-    }
-  }, []);
-
   const formatAgentResponse = useCallback((result) => {
     const rawQuestions = result.questions || [];
     const questions = rawQuestions.filter(
-      (q) => q != null && String(q).trim() !== ""
+      (q) => q != null && String(q).trim() !== "",
     );
     if (questions.length > 0) {
       return {
@@ -275,7 +146,8 @@ export function useChatStream(idea, token) {
       }
       if (formatted.type === "questions") {
         setPendingQuestions(formatted.questions);
-        const introText = "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :";
+        const introText =
+          "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :";
         streamWords(introText, (msgId) => {
           setMessages((prev) =>
             prev.map((m) =>
@@ -289,7 +161,8 @@ export function useChatStream(idea, token) {
       }
       if (formatted.type === "clarified") {
         setPendingQuestions([]);
-        const score = result.clarified_idea?.clarity_score ?? formatted.score ?? 0;
+        const score =
+          result.clarified_idea?.clarity_score ?? formatted.score ?? 0;
         setClarityScore(score);
         setClarifiedIdea(formatted.clarifiedIdea);
         if (score >= 80) setIsReady(true);
@@ -316,7 +189,9 @@ export function useChatStream(idea, token) {
         });
         return;
       }
-      streamWords(formatted?.text != null ? String(formatted.text) : "Réponse reçue.");
+      streamWords(
+        safeText(formatted?.text, "Réponse reçue."),
+      );
     },
     [addStep, formatAgentResponse, streamWords],
   );
@@ -444,5 +319,5 @@ export function useChatStream(idea, token) {
   };
 }
 
-export default useChatStream;
+export default useClarifierChat;
 

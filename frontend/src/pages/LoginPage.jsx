@@ -1,22 +1,5 @@
-// ==============================================================
-//  frontend/src/pages/Login.jsx
-//  RÔLE : Page de connexion connectée au vrai backend
-//
-//  VALIDATION CÔTÉ CLIENT (on blur) :
-//    - email : format email valide (regex)
-//    - password : non vide
-//
-//  GESTION D'ERREURS 401 (backend) :
-//    - Si message contient "mot de passe" → "Mot de passe incorrect. Veuillez réessayer."
-//    - Si message contient "Email" → sous le champ email : "Aucun compte trouvé avec cet email. Veuillez vous inscrire."
-//      + lien cliquable "Pas encore de compte ? S'inscrire →" vers /register
-//
-//  FEEDBACK VISUEL :
-//    - Champ valide → bordure verte + icône check
-//    - Champ invalide → bordure rouge + icône X
-//    - Toggle show/hide password
-//    - Spinner dans le bouton pendant l'API call
-// ==============================================================
+// Page de connexion (anciennement Login.jsx)
+// Reprise intégrale de la logique existante.
 
 import React, { useState, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -29,12 +12,11 @@ import {
   HiXCircle,
 } from "react-icons/hi2";
 import { FcGoogle } from "react-icons/fc";
-import { BlobBackground } from "../components/ui/BlobBackground";
-import { Toast } from "../components/ui/Toast";
-import { useAuth } from "../hooks/useAuth";
-import { apiLogin } from "../services/authApi";
+import { BlobBackground } from "@/components/ui/BlobBackground";
+import { Toast } from "@/shared/ui/Toast";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { apiLogin } from "@/services/authApi";
 
-// ── Validateurs (exécutés on blur) ─────────────────────────────
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const validateEmail = (value) => {
   if (!value.trim()) return "";
@@ -202,7 +184,6 @@ export function Login() {
               </div>
             )}
 
-            {/* Email */}
             <div>
               <label
                 htmlFor="login-email"
@@ -246,7 +227,6 @@ export function Login() {
               )}
             </div>
 
-            {/* Password */}
             <div>
               <label
                 htmlFor="login-password"
@@ -314,3 +294,4 @@ export function Login() {
 }
 
 export default Login;
+
