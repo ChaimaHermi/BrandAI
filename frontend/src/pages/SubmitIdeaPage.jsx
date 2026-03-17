@@ -40,7 +40,7 @@ export default function SubmitIdeaPage() {
       }
 
       const idea = await response.json();
-      navigate(`/ideas/${idea.id}`);
+      navigate(`/ideas/${idea.id}/clarifier`);
     } catch (err) {
       setError("Une erreur est survenue. Réessayez.");
     } finally {

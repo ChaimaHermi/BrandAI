@@ -1,11 +1,13 @@
 import { useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
 import XaiBlock from "../components/XaiBlock";
 import QuestionsBlock from "../components/QuestionsBlock";
 import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
 
-export default function ClarifierPage({ idea, token }) {
+export default function ClarifierPage() {
+  const { idea, token } = useOutletContext();
   const {
     currentStep,
     xaiSteps,
@@ -37,8 +39,9 @@ export default function ClarifierPage({ idea, token }) {
         flexDirection: "column",
         gap: 12,
         padding: "16px 20px",
-        overflowY: "auto",
         flex: 1,
+        overflowY: "auto",
+        minHeight: 0,
       }}
     >
       {/* Agent header */}

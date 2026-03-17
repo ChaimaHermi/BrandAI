@@ -33,7 +33,7 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
         background: "white",
         border: "0.5px solid #9FE1CB",
         borderRadius: 14,
-        overflow: "hidden",
+        overflow: "visible",
         boxShadow: "0 2px 8px rgba(29,158,117,0.08)",
         animation: "slideUp 0.35s ease forwards",
       }}
@@ -124,8 +124,9 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
       {!effectiveCollapsed && (
         <div
           style={{
-            maxHeight: 220,
+            height: 220,
             overflowY: "auto",
+            borderTop: dims ? "none" : "0.5px solid #f0fdf4",
           }}
         >
           <div
