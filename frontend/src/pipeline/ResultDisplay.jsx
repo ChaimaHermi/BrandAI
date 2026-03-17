@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card } from "../ui/Card";
+import { Card } from "../../shared/Card";
 
 export function TypewriterLines({ lines, className = "" }) {
   const [displayedLines, setDisplayedLines] = useState([]);
@@ -12,28 +12,35 @@ export function TypewriterLines({ lines, className = "" }) {
     const isLastChar = currentCharIndex >= line.length;
     const isLastLine = currentLineIndex === lines.length - 1;
     if (isLastChar && isLastLine) return;
-    const timeout = setTimeout(() => {
-      if (isLastChar) {
-        setDisplayedLines((prev) => [...prev, line]);
-        setCurrentLineIndex((i) => i + 1);
-        setCurrentCharIndex(0);
-      } else {
-        const char = line[currentCharIndex];
-        setDisplayedLines((prev) => {
-          const next = [...prev];
-          if (next.length <= currentLineIndex) next.push("");
-          next[currentLineIndex] = (next[currentLineIndex] || "") + char;
-          return next;
-        });
-        setCurrentCharIndex((i) => i + 1);
-      }
-    }, isLastChar ? 400 : 50);
+    const timeout = setTimeout(
+      () => {
+        if (isLastChar) {
+          setDisplayedLines((prev) => [...prev, line]);
+          setCurrentLineIndex((i) => i + 1);
+          setCurrentCharIndex(0);
+        } else {
+          const char = line[currentCharIndex];
+          setDisplayedLines((prev) => {
+            const next = [...prev];
+            if (next.length <= currentLineIndex) next.push("");
+            next[currentLineIndex] = (next[currentLineIndex] || "") + char;
+            return next;
+          });
+          setCurrentCharIndex((i) => i + 1);
+        }
+      },
+      isLastChar ? 400 : 50,
+    );
     return () => clearTimeout(timeout);
   }, [lines, currentLineIndex, currentCharIndex]);
 
   const currentLine = lines[currentLineIndex] || "";
-  const currentDisplay = (displayedLines[currentLineIndex] || "").replace(/▌$/, "");
-  const showCursor = currentLineIndex < lines.length && currentCharIndex < currentLine.length;
+  const currentDisplay = (displayedLines[currentLineIndex] || "").replace(
+    /▌$/,
+    "",
+  );
+  const showCursor =
+    currentLineIndex < lines.length && currentCharIndex < currentLine.length;
 
   return (
     <div className={`font-mono text-sm text-[#111827] ${className}`}>
@@ -69,7 +76,10 @@ function SummaryBlock({ title, children }) {
 export function ResultDisplay({ agentId, data, status }) {
   if (status === "waiting")
     return (
-      <Card className="flex flex-col items-center justify-center py-10" hover={false}>
+      <Card
+        className="flex flex-col items-center justify-center py-10"
+        hover={false}
+      >
         <p className="text-sm text-[#6B7280]">En attente de génération...</p>
       </Card>
     );
@@ -99,7 +109,11 @@ export function ResultDisplay({ agentId, data, status }) {
           <div className="grid gap-3 sm:grid-cols-3">
             <StatCard label="Taille de marché" value={data?.market_size} />
             <StatCard label="Concurrents" value={data?.competitors} />
-            <StatCard label="Croissance" value={data?.growth} accentColor="text-[#16A34A]" />
+            <StatCard
+              label="Croissance"
+              value={data?.growth}
+              accentColor="text-[#16A34A]"
+            />
           </div>
           <SummaryBlock title="Opportunité">{data?.opportunity}</SummaryBlock>
           <SummaryBlock title="Principaux concurrents">

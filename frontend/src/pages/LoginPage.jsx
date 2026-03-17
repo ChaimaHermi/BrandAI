@@ -29,8 +29,8 @@ import {
   HiXCircle,
 } from "react-icons/hi2";
 import { FcGoogle } from "react-icons/fc";
-import { BlobBackground } from "../components/ui/BlobBackground";
-import { Toast } from "../components/ui/Toast";
+import { BlobBackground } from "../shared/BlobBackground";
+import { Toast } from "../shared/Toast";
 import { useAuth } from "../hooks/useAuth";
 import { apiLogin } from "../services/authApi";
 
@@ -38,7 +38,8 @@ import { apiLogin } from "../services/authApi";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const validateEmail = (value) => {
   if (!value.trim()) return "";
-  if (!EMAIL_REGEX.test(value.trim())) return "Veuillez entrer une adresse email valide.";
+  if (!EMAIL_REGEX.test(value.trim()))
+    return "Veuillez entrer une adresse email valide.";
   return "";
 };
 
@@ -74,7 +75,9 @@ export function Login() {
   };
 
   const displayEmailError = touched.email ? validateEmail(email) : "";
-  const displayPasswordError = touched.password ? validatePassword(password) : "";
+  const displayPasswordError = touched.password
+    ? validatePassword(password)
+    : "";
 
   const isFormValid =
     !displayEmailError &&
@@ -93,7 +96,9 @@ export function Login() {
       const data = await apiLogin({ email, password });
       pendingAuthData.current = data;
 
-      setToastMessage(`Connexion réussie ! Bon retour, ${data.user?.name || "!"}`);
+      setToastMessage(
+        `Connexion réussie ! Bon retour, ${data.user?.name || "!"}`,
+      );
       setShowToast(true);
     } catch (err) {
       const msg = err.message || "";
@@ -106,7 +111,9 @@ export function Login() {
           setPasswordError("");
         } else if (msg.toLowerCase().includes("email")) {
           setError("");
-          setEmailError("Aucun compte trouvé avec cet email. Veuillez vous inscrire.");
+          setEmailError(
+            "Aucun compte trouvé avec cet email. Veuillez vous inscrire.",
+          );
           setPasswordError("");
         } else {
           setError(msg);
@@ -121,11 +128,18 @@ export function Login() {
 
   const inputBase =
     "w-full h-10 rounded-lg border bg-white pl-10 text-sm text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-1 ";
-  const inputValid = "border-green-400 focus:border-green-500 focus:ring-green-500";
+  const inputValid =
+    "border-green-400 focus:border-green-500 focus:ring-green-500";
   const inputInvalid = "border-red-400 focus:border-red-500 focus:ring-red-500";
-  const inputNeutral = "border-[#E5E7EB] focus:border-[#7C3AED] focus:ring-[#7C3AED]";
+  const inputNeutral =
+    "border-[#E5E7EB] focus:border-[#7C3AED] focus:ring-[#7C3AED]";
 
-  const getInputClass = (hasError, hasValue, touchedField, hasToggle = false) => {
+  const getInputClass = (
+    hasError,
+    hasValue,
+    touchedField,
+    hasToggle = false,
+  ) => {
     let base = inputBase + (hasToggle ? "pr-20" : "pr-12");
     if (!touchedField) return base + " " + inputNeutral;
     if (hasError) return base + " " + inputInvalid;
@@ -156,7 +170,10 @@ export function Login() {
         }}
         duration={2000}
       />
-      <BlobBackground opacity={0.2} className="pointer-events-none absolute inset-0 z-0" />
+      <BlobBackground
+        opacity={0.2}
+        className="pointer-events-none absolute inset-0 z-0"
+      />
 
       <div className="relative z-10 w-full max-w-[420px] mx-4">
         <div className="w-full max-w-[420px] bg-white rounded-xl border border-[#E5E7EB] shadow-sm p-6 space-y-5">
@@ -169,10 +186,13 @@ export function Login() {
             <h1 className="text-xl font-semibold text-[#111827]">
               Bienvenue sur BrandAI
             </h1>
-            <p className="text-sm text-[#6B7280]">Connectez-vous pour continuer</p>
+            <p className="text-sm text-[#6B7280]">
+              Connectez-vous pour continuer
+            </p>
           </div>
 
-          {(searchParams.get("error") === "google_failed" || searchParams.get("error") === "google_auth_failed") && (
+          {(searchParams.get("error") === "google_failed" ||
+            searchParams.get("error") === "google_auth_failed") && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600">
               Connexion Google échouée. Veuillez réessayer.
             </div>
@@ -191,7 +211,9 @@ export function Login() {
               <div className="w-full border-t border-[#E5E7EB]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-sm text-[#6B7280]">— ou —</span>
+              <span className="bg-white px-3 text-sm text-[#6B7280]">
+                — ou —
+              </span>
             </div>
           </div>
 
@@ -222,10 +244,19 @@ export function Login() {
                   }}
                   onBlur={() => handleBlur("email")}
                   placeholder="vous@exemple.com"
-                  className={getInputClass(!!effectiveEmailError, !!email.trim(), touched.email, false)}
+                  className={getInputClass(
+                    !!effectiveEmailError,
+                    !!email.trim(),
+                    touched.email,
+                    false,
+                  )}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <FieldIcon error={effectiveEmailError} touched={touched.email} value={email.trim()} />
+                  <FieldIcon
+                    error={effectiveEmailError}
+                    touched={touched.email}
+                    value={email.trim()}
+                  />
                 </span>
               </div>
               {effectiveEmailError && (
@@ -266,22 +297,41 @@ export function Login() {
                   }}
                   onBlur={() => handleBlur("password")}
                   placeholder="••••••••"
-                  className={getInputClass(!!effectivePasswordError, !!password, touched.password, true)}
+                  className={getInputClass(
+                    !!effectivePasswordError,
+                    !!password,
+                    touched.password,
+                    true,
+                  )}
                 />
                 <span className="absolute right-10 top-1/2 flex -translate-y-1/2 items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="text-[#6B7280] hover:text-[#111827]"
-                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    aria-label={
+                      showPassword
+                        ? "Masquer le mot de passe"
+                        : "Afficher le mot de passe"
+                    }
                   >
-                    {showPassword ? <HiOutlineEyeSlash className="h-5 w-5" /> : <HiOutlineEye className="h-5 w-5" />}
+                    {showPassword ? (
+                      <HiOutlineEyeSlash className="h-5 w-5" />
+                    ) : (
+                      <HiOutlineEye className="h-5 w-5" />
+                    )}
                   </button>
-                  <FieldIcon error={effectivePasswordError} touched={touched.password} value={password} />
+                  <FieldIcon
+                    error={effectivePasswordError}
+                    touched={touched.password}
+                    value={password}
+                  />
                 </span>
               </div>
               {effectivePasswordError && (
-                <p className="mt-1 text-xs text-red-500">{effectivePasswordError}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {effectivePasswordError}
+                </p>
               )}
             </div>
 

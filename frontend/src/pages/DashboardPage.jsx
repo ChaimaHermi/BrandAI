@@ -7,16 +7,20 @@ import {
   HiOutlinePlus,
 } from "react-icons/hi2";
 import { Navbar } from "../components/layout/Navbar";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
+import { Card } from "../shared/ui/Card";
+import { Button } from "../shared/ui/Button";
 import {
   IdeasTable,
   IdeasTableSkeleton,
   IdeasFilters,
   Pagination,
 } from "../components/dashboard";
-import { apiGetIdeas, apiDeleteIdea, getErrorMessage } from "../services/ideaApi";
-import { useAuth } from "../hooks/useAuth";
+import {
+  apiGetIdeas,
+  apiDeleteIdea,
+  getErrorMessage,
+} from "../shared/services/idea.service";
+import { useAuth } from "../shared/hooks/useAuth";
 
 const IDEAS_PER_PAGE = 5;
 
@@ -48,7 +52,9 @@ export function Dashboard() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   const filteredIdeas = useMemo(() => {
@@ -58,7 +64,7 @@ export function Dashboard() {
       list = list.filter(
         (i) =>
           (i.name || "").toLowerCase().includes(q) ||
-          (i.sector || "").toLowerCase().includes(q)
+          (i.sector || "").toLowerCase().includes(q),
       );
     }
     if (statusFilter) {
@@ -67,7 +73,10 @@ export function Dashboard() {
     return list;
   }, [ideas, search, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredIdeas.length / IDEAS_PER_PAGE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredIdeas.length / IDEAS_PER_PAGE),
+  );
   const pageIdeas = useMemo(() => {
     const start = (currentPage - 1) * IDEAS_PER_PAGE;
     return filteredIdeas.slice(start, start + IDEAS_PER_PAGE);
@@ -104,30 +113,41 @@ export function Dashboard() {
           <div className="grid grid-cols-3 gap-4 shrink-0 mb-4">
             <div className="p-4 rounded-xl border border-[#E5E7EB] bg-white">
               <p className="flex items-center gap-2 text-sm text-[#6B7280]">
-                <HiOutlineClipboardDocumentList className="h-4 w-4" aria-hidden />
+                <HiOutlineClipboardDocumentList
+                  className="h-4 w-4"
+                  aria-hidden
+                />
                 Total idées
               </p>
-              <p className="mt-1 text-xl font-semibold text-[#111827]">{totalCount}</p>
+              <p className="mt-1 text-xl font-semibold text-[#111827]">
+                {totalCount}
+              </p>
             </div>
             <div className="p-4 rounded-xl border border-[#E5E7EB] bg-white">
               <p className="flex items-center gap-2 text-sm text-[#6B7280]">
                 <HiOutlineArrowPath className="h-4 w-4" aria-hidden />
                 En cours
               </p>
-              <p className="mt-1 text-xl font-semibold text-[#7C3AED]">{runningCount}</p>
+              <p className="mt-1 text-xl font-semibold text-[#7C3AED]">
+                {runningCount}
+              </p>
             </div>
             <div className="p-4 rounded-xl border border-[#E5E7EB] bg-white">
               <p className="flex items-center gap-2 text-sm text-[#6B7280]">
                 <HiOutlineCheckCircle className="h-4 w-4" aria-hidden />
                 Terminées
               </p>
-              <p className="mt-1 text-xl font-semibold text-[#16A34A]">{doneCount}</p>
+              <p className="mt-1 text-xl font-semibold text-[#16A34A]">
+                {doneCount}
+              </p>
             </div>
           </div>
 
           <section className="flex flex-col flex-1 overflow-hidden min-h-0">
             <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
-              <h2 className="text-lg font-semibold text-[#111827]">Mes idées</h2>
+              <h2 className="text-lg font-semibold text-[#111827]">
+                Mes idées
+              </h2>
             </div>
 
             {error && (

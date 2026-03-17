@@ -1,31 +1,31 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "./app/providers/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PublicRoute } from "./components/PublicRoute";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import { GoogleCallback } from "./pages/GoogleCallback";
-import Dashboard from "./pages/Dashboard";
-import Results from "./pages/Results";
-import { SubmitIdea } from "./pages/SubmitIdea";
-import { IdeaDetail } from "./pages/IdeaDetail";
+import DashboardPage from "./pages/DashboardPage";
+import ResultsPage from "./pages/ResultsPage";
+import SubmitIdeaPage from "./pages/SubmitIdeaPage";
+import IdeaPage from "./pages/IdeaPage";
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="/auth/callback" element={<PublicRoute><GoogleCallback /></PublicRoute>} />
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardPage />
               </ProtectedRoute>
             }
           />
@@ -34,7 +34,7 @@ function App() {
             path="/ideas/new"
             element={
               <ProtectedRoute>
-                <SubmitIdea />
+                <SubmitIdeaPage />
               </ProtectedRoute>
             }
           />
@@ -42,7 +42,7 @@ function App() {
             path="/ideas/:id"
             element={
               <ProtectedRoute>
-                <IdeaDetail />
+                <IdeaPage />
               </ProtectedRoute>
             }
           />
@@ -50,7 +50,7 @@ function App() {
             path="/projects/:id"
             element={
               <ProtectedRoute>
-                <Results />
+                <ResultsPage />
               </ProtectedRoute>
             }
           />

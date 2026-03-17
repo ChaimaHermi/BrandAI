@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { HiOutlineArrowRight, HiOutlineCalendar, HiOutlineTrash } from "react-icons/hi2";
-import { Badge } from "../ui/Badge";
+import {
+  HiOutlineArrowRight,
+  HiOutlineCalendar,
+  HiOutlineTrash,
+} from "react-icons/hi2";
+import { Badge } from "../../shared/ui/Badge";
 import { STATUS_BADGE, formatIdeaDate } from "./constants";
 
 /**
@@ -11,7 +15,8 @@ export function IdeasTable({ ideas, onDelete }) {
   const [deletingId, setDeletingId] = useState(null);
   const handleDeleteClick = async (idea) => {
     if (!onDelete) return;
-    if (!window.confirm(`Supprimer l'idée « ${idea.name || "sans nom"} » ?`)) return;
+    if (!window.confirm(`Supprimer l'idée « ${idea.name || "sans nom"} » ?`))
+      return;
     setDeletingId(idea.id);
     try {
       await onDelete(idea.id);
@@ -24,16 +29,23 @@ export function IdeasTable({ ideas, onDelete }) {
       <table className="w-full min-w-[600px] border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-[#E5E7EB] bg-[#F9FAFB]">
-            <th className="px-4 py-3 font-semibold text-[#6B7280]">Nom de l&apos;idée</th>
+            <th className="px-4 py-3 font-semibold text-[#6B7280]">
+              Nom de l&apos;idée
+            </th>
             <th className="px-4 py-3 font-semibold text-[#6B7280]">Secteur</th>
             <th className="px-4 py-3 font-semibold text-[#6B7280]">Statut</th>
-            <th className="px-4 py-3 font-semibold text-[#6B7280]">Date de création</th>
-            <th className="px-4 py-3 font-semibold text-[#6B7280] text-right">Action</th>
+            <th className="px-4 py-3 font-semibold text-[#6B7280]">
+              Date de création
+            </th>
+            <th className="px-4 py-3 font-semibold text-[#6B7280] text-right">
+              Action
+            </th>
           </tr>
         </thead>
         <tbody>
           {ideas.map((idea) => {
-            const statusConf = STATUS_BADGE[idea.status] || STATUS_BADGE.pending;
+            const statusConf =
+              STATUS_BADGE[idea.status] || STATUS_BADGE.pending;
             const isRunning = idea.status === "running";
             const actionLabel =
               idea.status === "pending"
@@ -54,11 +66,15 @@ export function IdeasTable({ ideas, onDelete }) {
                     {idea.name || "—"}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-[#6B7280]">{idea.sector || "—"}</td>
+                <td className="px-4 py-3 text-[#6B7280]">
+                  {idea.sector || "—"}
+                </td>
                 <td className="px-4 py-3">
                   <Badge
                     variant={statusConf.variant}
-                    className={isRunning ? "inline-flex items-center gap-1" : ""}
+                    className={
+                      isRunning ? "inline-flex items-center gap-1" : ""
+                    }
                   >
                     {isRunning && (
                       <span
@@ -71,7 +87,10 @@ export function IdeasTable({ ideas, onDelete }) {
                 </td>
                 <td className="px-4 py-3 text-[#6B7280]">
                   <span className="inline-flex items-center gap-1">
-                    <HiOutlineCalendar className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <HiOutlineCalendar
+                      className="h-3.5 w-3.5 shrink-0"
+                      aria-hidden
+                    />
                     {formatIdeaDate(idea.created_at)}
                   </span>
                 </td>

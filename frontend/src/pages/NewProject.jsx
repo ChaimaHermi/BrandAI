@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineRocketLaunch, HiOutlineMagnifyingGlass, HiOutlinePaintBrush, HiOutlineDevicePhoneMobile, HiOutlineGlobeAlt, HiOutlineChartBar, HiOutlineSparkles } from "react-icons/hi2";
 import { Navbar } from "../components/layout/Navbar";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { SECTORS } from "../data/mockData";
+import { Card } from "../shared/ui/Card";
+import { Button } from "../shared/ui/Button";
+import { SECTORS } from "../shared/utils/mockData";
 
 const GENERATED_ITEMS = [
   { icon: HiOutlineMagnifyingGlass, label: "Analyse marché" },

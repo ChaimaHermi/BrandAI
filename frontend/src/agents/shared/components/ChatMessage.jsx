@@ -1,5 +1,5 @@
 import React from "react";
-import { UserAvatar } from "../ui/UserAvatar";
+import { UserAvatar } from "../../../shared/ui/UserAvatar";
 import { AgentAvatar } from "./AgentAvatar";
 
 function formatTime(ts) {
@@ -13,13 +13,10 @@ function formatTime(ts) {
 
 function ClarityBar({ score }) {
   if (typeof score !== "number") return null;
-  const color =
-    score >= 80 ? "#16A34A" : score >= 55 ? "#7C3AED" : "#DC2626";
+  const color = score >= 80 ? "#16A34A" : score >= 55 ? "#7C3AED" : "#DC2626";
   return (
     <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F9FAFB] py-1 px-2">
-      <span className="text-xs font-medium text-[#6B7280]">
-        Clarity Score
-      </span>
+      <span className="text-xs font-medium text-[#6B7280]">Clarity Score</span>
       <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]">
         <div
           className="h-full rounded-full"
@@ -99,9 +96,7 @@ function QuestionBlocks({ questions }) {
           key={i}
           className="flex gap-2 rounded-lg bg-[#EDE9FE] p-2 text-sm text-[#111827]"
         >
-          <span className="text-xs font-semibold text-[#4C1D95]">
-            {i + 1}.
-          </span>
+          <span className="text-xs font-semibold text-[#4C1D95]">{i + 1}.</span>
           <span>{q}</span>
         </div>
       ))}
@@ -136,9 +131,7 @@ function RefusedBlock({ data }) {
           <p className="text-[10px] font-medium uppercase tracking-wide text-[#9CA3AF]">
             Ce que j&apos;ai compris
           </p>
-          <p className="mt-0.5 text-sm text-[#374151]">
-            → {partial.what}
-          </p>
+          <p className="mt-0.5 text-sm text-[#374151]">→ {partial.what}</p>
         </div>
       )}
       {partial.who && (
@@ -146,9 +139,7 @@ function RefusedBlock({ data }) {
           <p className="text-[10px] font-medium uppercase tracking-wide text-[#9CA3AF]">
             Pour qui ?
           </p>
-          <p className="mt-0.5 text-sm text-[#374151]">
-            → {partial.who}
-          </p>
+          <p className="mt-0.5 text-sm text-[#374151]">→ {partial.who}</p>
         </div>
       )}
 
@@ -160,9 +151,7 @@ function RefusedBlock({ data }) {
             style={{ width: "0%" }}
           />
         </div>
-        <span className="text-xs font-medium text-red-500">
-          0/100 — Refusé
-        </span>
+        <span className="text-xs font-medium text-red-500">0/100 — Refusé</span>
       </div>
 
       <div className="flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-2 py-1">
@@ -242,4 +231,3 @@ export function ChatMessage({ message, user }) {
 }
 
 export default ChatMessage;
-

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Button } from "../ui/Button";
-import { UserAvatar } from "../ui/UserAvatar";
+import { Button } from "../../shared/ui/Button";
+import { UserAvatar } from "../../shared/ui/UserAvatar";
 import { useAuth } from "../../hooks/useAuth";
 
 export function Navbar({ variant = "landing" }) {
@@ -10,8 +10,15 @@ export function Navbar({ variant = "landing" }) {
   return (
     <header className="sticky top-0 z-50 border-b border-[#E5E7EB] bg-white/80 backdrop-blur-sm">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-2 md:px-6">
-        <Link to="/" className="flex items-center text-[#111827] transition-opacity hover:opacity-80">
-          <img src="/logo%20brand%20ai.png" alt="BrandAI" className="h-9 w-auto object-contain" />
+        <Link
+          to="/"
+          className="flex items-center text-[#111827] transition-opacity hover:opacity-80"
+        >
+          <img
+            src="/logo%20brand%20ai.png"
+            alt="BrandAI"
+            className="h-9 w-auto object-contain"
+          />
         </Link>
         {variant === "landing" ? (
           <nav className="flex items-center gap-2">
@@ -37,12 +44,22 @@ export function Navbar({ variant = "landing" }) {
               Mes idées
             </Link>
             <Link to="/ideas/new">
-              <Button variant="primary" className="px-3 py-1.5 text-sm">+ Nouvelle idée</Button>
+              <Button variant="primary" className="px-3 py-1.5 text-sm">
+                + Nouvelle idée
+              </Button>
             </Link>
             <div className="flex items-center gap-2 border-l border-[#E5E7EB] pl-3">
-              <span className="hidden text-xs text-[#6B7280] sm:block">{user?.name}</span>
+              <span className="hidden text-xs text-[#6B7280] sm:block">
+                {user?.name}
+              </span>
               <UserAvatar size={28} user={user} />
-              <button type="button" onClick={logout} className="text-xs text-[#6B7280] transition-colors hover:text-[#7C3AED]">Déconnexion</button>
+              <button
+                type="button"
+                onClick={logout}
+                className="text-xs text-[#6B7280] transition-colors hover:text-[#7C3AED]"
+              >
+                Déconnexion
+              </button>
             </div>
           </nav>
         )}

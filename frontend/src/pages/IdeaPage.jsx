@@ -8,18 +8,18 @@ import {
   HiOutlineRocketLaunch,
 } from "react-icons/hi2";
 import { Navbar } from "../components/layout/Navbar";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Loader } from "../components/ui/Loader";
-import { Badge } from "../components/ui/Badge";
-import { ChatMessage } from "../components/chat/ChatMessage";
-import { TypingIndicator } from "../components/chat/TypingIndicator";
-import { AgentAvatar } from "../components/chat/AgentAvatar";
-import { AgentStatusBar } from "../components/chat/AgentStatusBar";
-import { useChatStream } from "../hooks/useChatStream";
-import { apiGetIdea, getErrorMessage } from "../services/ideaApi";
-import { useAuth } from "../hooks/useAuth";
-import { AGENTS, TECHMENTOR_RESULTS } from "../data/mockData";
+import { Card } from "../shared/ui/Card";
+import { Button } from "../shared/ui/Button";
+import { Loader } from "../shared/ui/Loader";
+import { Badge } from "../shared/ui/Badge";
+import { ChatMessage } from "../agents/shared/components/ChatMessage";
+import { TypingIndicator } from "../agents/shared/components/TypingIndicator";
+import { AgentAvatar } from "../agents/shared/components/AgentAvatar";
+import { AgentStatusBar } from "../agents/shared/components/AgentStatusBar";
+import { useClarifierChat } from "../agents/clarifier/hooks/useClarifierChat";
+import { apiGetIdea, getErrorMessage } from "../shared/services/idea.service";
+import { useAuth } from "../shared/hooks/useAuth";
+import { AGENTS, TECHMENTOR_RESULTS } from "../shared/utils/mockData";
 
 function formatDate(d) {
   if (!d) return "—";
@@ -140,7 +140,7 @@ export function IdeaDetail() {
     agentSteps,
     startConversation,
     sendAnswer,
-  } = useChatStream(idea, token);
+  } = useClarifierChat(idea, token);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
