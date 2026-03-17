@@ -206,10 +206,10 @@ export function useChatStream(idea, token) {
         score: c.clarity_score,
         text: "Voici ce que j'ai compris de votre idée :",
         sections: {
-          what: c.solution_description,
-          who: c.target_users,
-          problem: c.problem,
-          pitch: c.short_pitch,
+          what: c?.solution_description,
+          who: c?.target_users,
+          problem: c?.problem,
+          pitch: c?.short_pitch,
         },
       };
     }
@@ -301,10 +301,10 @@ export function useChatStream(idea, token) {
         streamWords(introClarified, (msgId) => {
           const sec = result.clarified_idea || {};
           const sections = formatted.sections || {
-            what: sec.solution_description ?? null,
-            who: sec.target_users ?? null,
-            problem: sec.problem ?? null,
-            pitch: sec.short_pitch ?? null,
+            what: sec?.solution_description ?? null,
+            who: sec?.target_users ?? null,
+            problem: sec?.problem ?? null,
+            pitch: sec?.short_pitch ?? null,
           };
           setMessages((prev) =>
             prev.map((m) =>
@@ -324,15 +324,43 @@ export function useChatStream(idea, token) {
   const handleSSEEvent = useCallback(
     (eventType, data, options = {}) => {
       if (eventType === "step") {
-        addStep(data.status, data.message, {
+        const detail = {
           sector: data.sector ?? null,
           confidence: data.confidence ?? null,
           dimensions: data.dimensions ?? null,
           score: data.score ?? null,
           model: data.model ?? null,
           elapsed_ms: data.elapsed_ms ?? null,
-        });
+        };
+        if (data.status !== "loading") {
+          setAgentSteps((prev) => {
+            const last = prev[prev.length - 1];
+            if (last && last.status === "loading") {
+              return [
+                ...prev.slice(0, -1),
+                {
+                  id: Date.now() + Math.random(),
+                  status: data.status,
+                  text: data.message,
+                  detail,
+                },
+              ];
+            }
+            return [
+              ...prev,
+              {
+                id: Date.now() + Math.random(),
+                status: data.status,
+                text: data.message,
+                detail,
+              },
+            ];
+          });
+        } else {
+          addStep(data.status, data.message, detail);
+        }
       } else if (eventType === "result") {
+        addStep("success", "Analyse terminée ✓");
         applyClarifierResult(data, options);
       }
     },

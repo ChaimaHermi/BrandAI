@@ -1,12 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
 
 export function AgentStatusBar({ steps }) {
+  const [showXAI, setShowXAI] = useState(true);
+
   if (!steps || steps.length === 0) return null;
 
   return (
     <div className="border-b border-[#E5E7EB] bg-[#F9FAFB] px-4 py-2">
-      <div className="flex flex-col gap-0.5">
-        {steps.map((step) => (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setShowXAI(!showXAI)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setShowXAI((v) => !v);
+          }
+        }}
+        className="flex items-center gap-1.5 cursor-pointer select-none py-1 rounded hover:bg-[#EEF2FF]/60 transition-colors min-w-0"
+        style={{ marginBottom: showXAI ? "6px" : 0 }}
+      >
+        <span className="text-[10px] text-[#6B7280] font-mono leading-none">
+          {showXAI ? "▼" : "▶"}
+        </span>
+        <span className="text-[11px] font-medium text-[#4B5563]">
+          XAI — Raisonnement de l&apos;agent
+        </span>
+      </div>
+      {showXAI && (
+        <div className="flex flex-col gap-0.5">
+          {steps.map((step) => (
           <div key={step.id} className="flex flex-col">
             <div className="flex items-center gap-2">
               {step.status === "loading" && (
@@ -103,7 +126,8 @@ export function AgentStatusBar({ steps }) {
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

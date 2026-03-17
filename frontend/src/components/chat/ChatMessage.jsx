@@ -49,6 +49,39 @@ function ClarifiedSections({ data }) {
   const sections = data.sections || {};
   return (
     <div className="mt-2 flex flex-col gap-1.5">
+      {sections?.pitch && (
+        <div
+          style={{
+            background: "var(--color-bg-secondary, #F9FAFB)",
+            borderLeft: "2px solid #7F77DD",
+            borderRadius: 0,
+            padding: "10px 12px",
+            marginBottom: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "10px",
+              color: "#534AB7",
+              fontWeight: 500,
+              letterSpacing: "0.08em",
+              marginBottom: "4px",
+              textTransform: "uppercase",
+            }}
+          >
+            EN RÉSUMÉ
+          </div>
+          <div
+            style={{
+              fontSize: "13px",
+              fontStyle: "italic",
+              color: "var(--color-text-primary, #111827)",
+            }}
+          >
+            &quot;{sections.pitch}&quot;
+          </div>
+        </div>
+      )}
       <Section label="Ce que vous proposez" value={sections.what} />
       <Section label="Pour qui ?" value={sections.who} />
       <Section label="Le problème résolu" value={sections.problem} />
