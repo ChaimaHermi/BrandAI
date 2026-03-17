@@ -10,24 +10,115 @@ export default function ClarifierPage() {
   const { idea, token } = useOutletContext();
   const {
     currentStep,
+    setCurrentStep,
     xaiSteps,
+    setXaiSteps,
     agentMessage,
+    setAgentMessage,
     questions,
+    setQuestions,
     answers,
     setAnswers,
     clarifiedIdea,
+    setClarifiedIdea,
     clarityScore,
+    setClarityScore,
     isReady,
+    setIsReady,
     refusalData,
+    setRefusalData,
     startAnalysis,
     submitAnswers,
   } = useClarifierAgent(idea, token);
 
   useEffect(() => {
-    if (idea?.description) {
+    if (!idea) return;
+
+    const status = idea.clarity_status;
+
+    // ── CAS : idée déjà clarifiée ──────────────────
+    if (status === "clarified" && idea.clarity_score != null) {
+      const restored = {
+        type: "clarified",
+        message: idea.clarity_agent_message || "",
+        sector: idea.clarity_sector || "",
+        target_users: idea.clarity_target_users || "",
+        problem: idea.clarity_problem || "",
+        solution_description: idea.clarity_solution || "",
+        short_pitch: idea.clarity_short_pitch || "",
+        score: idea.clarity_score ?? 0,
+      };
+      setClarifiedIdea(restored);
+      setClarityScore(idea.clarity_score ?? 0);
+      setIsReady(true);
+      setCurrentStep("clarified");
+      setXaiSteps([
+        {
+          id: "restored-1",
+          status: "success",
+          text: "Résultat restauré · clarification précédente",
+          detail: {
+            score: idea.clarity_score,
+            sector: idea.clarity_sector,
+            dimensions: {
+              problem: !!idea.clarity_problem,
+              target: !!idea.clarity_target_users,
+              solution: !!idea.clarity_solution,
+            },
+          },
+        },
+      ]);
+      return;
+    }
+
+    // ── CAS : idée refusée ─────────────────────────
+    if (status === "refused") {
+      setRefusalData({
+        type: "refused",
+        reason_category: idea.clarity_refused_reason || "",
+        message: idea.clarity_refused_message || "",
+      });
+      setCurrentStep("refused");
+      setXaiSteps([
+        {
+          id: "restored-refused",
+          status: "error",
+          text:
+            "Projet refusé · " +
+            (idea.clarity_refused_reason || "sécurité"),
+          detail: {},
+        },
+      ]);
+      return;
+    }
+
+    // ── CAS : questions déjà générées ─────────────
+    if (
+      status === "questions" &&
+      idea.clarity_questions?.length > 0
+    ) {
+      setQuestions(idea.clarity_questions);
+      setAgentMessage(idea.clarity_agent_message || "");
+      setCurrentStep("questions");
+      setXaiSteps([
+        {
+          id: "restored-questions",
+          status: "success",
+          text:
+            "Questions restaurées · " +
+            idea.clarity_questions.length +
+            " question(s)",
+          detail: {},
+        },
+      ]);
+      return;
+    }
+
+    // ── CAS : nouvelle idée → lancer l'analyse ─────
+    if (idea.description) {
       startAnalysis();
     }
-  }, [idea, startAnalysis]);
+  }, [idea]);
 
   const isLoading =
     currentStep === "analyzing" || currentStep === "answering";

@@ -12,12 +12,16 @@
 #    Modifier l'idée après pipeline = résultats incohérents
 # ─────────────────────────────────────────
 
-from fastapi import APIRouter, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
+from app.models.idea import Idea
 from app.schemas.idea import IdeaCreate, IdeaOut, IdeaListOut
 from app.services.idea_service import (
     create_idea,
@@ -27,6 +31,22 @@ from app.services.idea_service import (
 )
 
 router = APIRouter(prefix="/ideas", tags=["Idées"])
+
+
+class ClarifierSaveRequest(BaseModel):
+    """Corps de PATCH /api/ideas/{idea_id}/clarifier-result"""
+    clarity_status: Optional[str] = None
+    clarity_score: Optional[int] = None
+    clarity_sector: Optional[str] = None
+    clarity_target_users: Optional[str] = None
+    clarity_problem: Optional[str] = None
+    clarity_solution: Optional[str] = None
+    clarity_short_pitch: Optional[str] = None
+    clarity_agent_message: Optional[str] = None
+    clarity_questions: Optional[list] = None
+    clarity_answers: Optional[dict] = None
+    clarity_refused_reason: Optional[str] = None
+    clarity_refused_message: Optional[str] = None
 
 
 @router.post(
@@ -104,3 +124,35 @@ def delete(
     Impossible si le pipeline est en cours (status = running).
     """
     return delete_idea(idea_id, current_user.id, db)
+
+
+@router.patch(
+    "/{idea_id}/clarifier-result",
+    status_code=200,
+    summary="Sauvegarder le résultat du Clarifier",
+)
+def save_clarifier_result(
+    idea_id: int,
+    body: ClarifierSaveRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Enregistre l'état du Clarifier (clarified / refused / questions) sur l'idée.
+    """
+    idea = (
+        db.query(Idea)
+        .filter(Idea.id == idea_id, Idea.user_id == current_user.id)
+        .first()
+    )
+    if not idea:
+        raise HTTPException(status_code=404, detail="Idée introuvable")
+
+    fields = body.model_dump(exclude_none=True)
+    for field, value in fields.items():
+        if hasattr(idea, field):
+            setattr(idea, field, value)
+
+    db.commit()
+    db.refresh(idea)
+    return {"success": True, "idea_id": idea_id}

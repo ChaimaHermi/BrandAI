@@ -3,7 +3,7 @@
 # Schémas Pydantic pour les idées
 # ─────────────────────────────────────────
 
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel, field_validator
 from datetime import datetime
 
@@ -78,6 +78,20 @@ class IdeaOut(BaseModel):
     description: str
     status: str           # pending | running | done | error
     created_at: datetime
+
+    # Résultat Clarifier
+    clarity_status: Optional[str] = None
+    clarity_score: Optional[int] = None
+    clarity_sector: Optional[str] = None
+    clarity_target_users: Optional[str] = None
+    clarity_problem: Optional[str] = None
+    clarity_solution: Optional[str] = None
+    clarity_short_pitch: Optional[str] = None
+    clarity_agent_message: Optional[str] = None
+    clarity_questions: Optional[Any] = None
+    clarity_answers: Optional[Any] = None
+    clarity_refused_reason: Optional[str] = None
+    clarity_refused_message: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

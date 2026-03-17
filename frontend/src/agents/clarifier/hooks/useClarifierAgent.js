@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useSSEStream } from "@/agents/shared/hooks/useSSEStream";
 import { safeText } from "@/agents/shared/utils/safeText";
+import { saveClarifierResult } from "../api/clarifier.api";
 
 const AI_URL =
   import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
@@ -76,12 +77,32 @@ export function useClarifierAgent(idea, token) {
             if (data.type === "refused") {
               setRefusalData(data);
               setCurrentStep("refused");
+              saveClarifierResult(
+                idea.id,
+                {
+                  clarity_status: "refused",
+                  clarity_score: 0,
+                  clarity_refused_reason: data.reason_category || "",
+                  clarity_refused_message:
+                    data.message || data.refusal_message || "",
+                },
+                token,
+              );
               return;
             }
             if (data.type === "questions") {
               setAgentMessage(safeText(data.message));
               setQuestions(data.questions || []);
               setCurrentStep("questions");
+              saveClarifierResult(
+                idea.id,
+                {
+                  clarity_status: "questions",
+                  clarity_questions: data.questions || [],
+                  clarity_agent_message: data.message || "",
+                },
+                token,
+              );
               return;
             }
             if (data.type === "clarified") {
@@ -90,6 +111,22 @@ export function useClarifierAgent(idea, token) {
               setClarifiedIdea(data);
               if (score >= 55) setIsReady(true);
               setCurrentStep("clarified");
+              saveClarifierResult(
+                idea.id,
+                {
+                  clarity_status: "clarified",
+                  clarity_score: data.score || 0,
+                  clarity_sector: data.sector || "",
+                  clarity_target_users: data.target_users || "",
+                  clarity_problem: data.problem || "",
+                  clarity_solution: data.solution_description || "",
+                  clarity_short_pitch: data.short_pitch || "",
+                  clarity_agent_message: data.message || "",
+                  clarity_questions: [],
+                  clarity_answers: {},
+                },
+                token,
+              );
             }
           }
 
@@ -162,6 +199,26 @@ export function useClarifierAgent(idea, token) {
               setClarifiedIdea(data);
               if (score >= 55) setIsReady(true);
               setCurrentStep("clarified");
+              saveClarifierResult(
+                idea.id,
+                {
+                  clarity_status: "clarified",
+                  clarity_score: data.score || 0,
+                  clarity_sector: data.sector || "",
+                  clarity_target_users: data.target_users || "",
+                  clarity_problem: data.problem || "",
+                  clarity_solution: data.solution_description || "",
+                  clarity_short_pitch: data.short_pitch || "",
+                  clarity_agent_message: data.message || "",
+                  clarity_questions: questions || [],
+                  clarity_answers: {
+                    problem: answers.problem || "",
+                    target: answers.target || "",
+                    solution: answers.solution || "",
+                  },
+                },
+                token,
+              );
             }
           }
 
@@ -179,6 +236,7 @@ export function useClarifierAgent(idea, token) {
     idea,
     token,
     answers,
+    questions,
     currentStep,
     addXaiStep,
     readSSEStream,
@@ -187,15 +245,23 @@ export function useClarifierAgent(idea, token) {
 
   return {
     currentStep,
+    setCurrentStep,
     xaiSteps,
+    setXaiSteps,
     agentMessage,
+    setAgentMessage,
     questions,
+    setQuestions,
     answers,
     setAnswers,
     clarifiedIdea,
+    setClarifiedIdea,
     clarityScore,
+    setClarityScore,
     isReady,
+    setIsReady,
     refusalData,
+    setRefusalData,
     startAnalysis,
     submitAnswers,
   };
