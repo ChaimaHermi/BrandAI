@@ -33,6 +33,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 from app.core.database import Base, engine
 import app.models.user  # noqa
+import app.models.idea  # noqa
 from app.api.routes import auth , ideas 
 
 app = FastAPI(

@@ -16,6 +16,7 @@ from app.core.config import settings
 # OBLIGATOIRE : Alembic doit connaître les modèles pour les migrations
 from app.core.database import Base
 import app.models.user  # noqa
+import app.models.idea  # noqa
 
 config = context.config
 

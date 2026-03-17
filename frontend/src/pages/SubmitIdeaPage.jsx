@@ -1,272 +1,437 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  HiOutlineArrowRight,
-  HiOutlineLightBulb,
-  HiOutlineChatBubbleLeftRight,
-  HiOutlineRocketLaunch,
-} from "react-icons/hi2";
 import { Navbar } from "@/components/layout/Navbar";
-import { Card } from "@/shared/ui/Card";
-import { Button } from "@/shared/ui/Button";
-import { apiCreateIdea, getErrorMessage } from "@/services/ideaApi";
 import { useAuth } from "@/shared/hooks/useAuth";
 
-const SECTOR_OPTIONS = [
-  { value: "tech", label: "Tech / SaaS" },
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "sante", label: "Santé" },
-  { value: "education", label: "Éducation" },
-  { value: "finance", label: "Finance" },
-  { value: "alimentation", label: "Alimentation" },
-  { value: "mode", label: "Mode" },
-  { value: "autre", label: "Autre" },
-];
-
-const MAX_DESC_LENGTH = 500;
-const inputFocusClass =
-  "w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#111827] placeholder:text-[#6B7280] focus:border-[#7C3AED] focus:outline-none focus:ring-1 focus:ring-[#7C3AED]";
-
 export default function SubmitIdeaPage() {
-  const [name, setName] = useState("");
-  const [sector, setSector] = useState("");
-  const [targetAudience, setTargetAudience] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { token } = useAuth();
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
-  const nameValid = name.trim().length >= 2;
-  const descValid = description.trim().length >= 20;
-  const canSubmit = nameValid && sector && descValid && !loading;
+  const handleSubmit = async () => {
+    if (description.trim().length < 20) {
+      setError("Décrivez votre idée en au moins 20 caractères.");
+      return;
+    }
 
-  const handleDescriptionChange = (e) => {
-    const v = e.target.value;
-    if (v.length <= MAX_DESC_LENGTH) setDescription(v);
+    setIsSubmitting(true);
     setError("");
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!canSubmit || !token) return;
-    setError("");
-    setLoading(true);
     try {
-      const data = await apiCreateIdea(
-        {
-          name: name.trim(),
-          sector,
-          target_audience: targetAudience.trim() || undefined,
-          description: description.trim(),
+      const response = await fetch(`${API_URL}/ideas`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        token,
-      );
-      navigate(`/ideas/${data.id}`, { replace: true });
+        body: JSON.stringify({
+          name: "",
+          description: description.trim(),
+          sector: "",
+          target_audience: "",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la création");
+      }
+
+      const idea = await response.json();
+      navigate(`/ideas/${idea.id}/clarifier`);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError("Une erreur est survenue. Réessayez.");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const descCount = description.length;
-  const descNearLimit = descCount > 450;
+  const charCount = description.length;
+  const isReady = description.trim().length >= 20;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-white">
+    <>
       <Navbar variant="app" />
-      <main className="flex flex-1 overflow-hidden">
-        <div className="mx-auto w-full max-w-[1400px] px-6 py-4 flex flex-1 items-center justify-center">
-          <div className="w-full max-w-[700px] bg-white rounded-xl border border-[#E5E7EB] shadow-sm p-6 space-y-4">
-            <h1 className="text-xl font-semibold text-[#111827]">Nouvelle idée</h1>
-
-            <div className="flex items-center gap-0">
-              <div className="flex flex-col items-center">
+      <div
+        className="pt-20 px-6"
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg,#f8f7ff 0%,#f0eeff 40%,#faf5ff 100%)",
+          fontFamily: "var(--font-sans)",
+        }}
+      >
+        <div className="max-w-3xl mx-auto w-full">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "2rem 0",
+            }}
+          >
+            <div style={{ width: "100%", maxWidth: 520 }}>
+              {/* Badge */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginBottom: 20,
+                }}
+              >
                 <div
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7C3AED] text-sm font-medium text-white"
-                  aria-hidden
-                >
-                  1
-                </div>
-                <span className="mt-1.5 flex items-center gap-1 text-xs font-medium text-[#7C3AED]">
-                  <HiOutlineLightBulb className="h-3.5 w-3.5" aria-hidden />
-                  Votre idée
-                </span>
-              </div>
-              <div className="h-0.5 w-8 flex-1 min-w-[24px] bg-[#E5E7EB]" />
-              <div className="flex flex-col items-center">
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5E7EB] text-sm font-medium text-[#9CA3AF]"
-                  aria-hidden
-                >
-                  2
-                </div>
-                <span className="mt-1.5 flex items-center gap-1 text-xs text-[#9CA3AF]">
-                  <HiOutlineChatBubbleLeftRight className="h-3.5 w-3.5" aria-hidden />
-                  Affiner avec l&apos;agent
-                </span>
-              </div>
-              <div className="h-0.5 w-8 flex-1 min-w-[24px] bg-[#E5E7EB]" />
-              <div className="flex flex-col items-center">
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5E7EB] text-sm font-medium text-[#9CA3AF]"
-                  aria-hidden
-                >
-                  3
-                </div>
-                <span className="mt-1.5 flex items-center gap-1 text-xs text-[#9CA3AF]">
-                  <HiOutlineRocketLaunch className="h-3.5 w-3.5" aria-hidden />
-                  Lancer le pipeline
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <span className="inline-flex rounded-full bg-[#7C3AED] px-2.5 py-0.5 text-xs font-medium text:white">
-                Étape 1 sur 3
-              </span>
-            </div>
-
-            <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
-              <div>
-                <label
-                  htmlFor="idea-name"
-                  className="mb-1.5 block text-sm font-medium text-[#111827]"
-                >
-                  Nom de votre idée
-                </label>
-                <input
-                  id="idea-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setError("");
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "5px 14px",
+                    background: "white",
+                    border: "0.5px solid #AFA9EC",
+                    borderRadius: 99,
+                    boxShadow: "0 1px 4px rgba(124,58,237,0.1)",
                   }}
-                  placeholder="Ex : EcoShop, TechMentor..."
-                  className={inputFocusClass}
-                />
-                <p className="mt-1 text-xs text-[#6B7280]">
-                  Donnez un nom court et mémorable
-                </p>
-                {name.trim().length > 0 && name.trim().length < 2 && (
-                  <p className="mt-0.5 text-xs text-red-500">
-                    Minimum 2 caractères
-                  </p>
-                )}
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="idea-sector"
-                    className="mb-1.5 block text-sm font-medium text-[#111827]"
-                  >
-                    Secteur
-                  </label>
-                  <select
-                    id="idea-sector"
-                    value={sector}
-                    onChange={(e) => {
-                      setSector(e.target.value);
-                      setError("");
-                    }}
-                    className={inputFocusClass}
-                  >
-                    <option value="">Sélectionner</option>
-                    {SECTOR_OPTIONS.map((s) => (
-                      <option key={s.value} value={s.value}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="idea-audience"
-                    className="mb-1.5 block text-sm font-medium text-[#111827]"
-                  >
-                    Public cible
-                  </label>
-                  <input
-                    id="idea-audience"
-                    type="text"
-                    value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value)}
-                    placeholder="Ex : étudiants, PME, entrepreneurs..."
-                    className={inputFocusClass}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="idea-desc"
-                  className="mb-1.5 block text-sm font-medium text-[#111827]"
                 >
-                  Description de votre idée
-                </label>
-                <textarea
-                  id="idea-desc"
-                  value={description}
-                  onChange={handleDescriptionChange}
-                  placeholder="Décrivez votre idée : quel problème résout-elle ? pour qui ? comment ?"
-                  className={`resize-none h-[120px] ${inputFocusClass}`}
-                />
-                <div className="mt-1 flex items-center justify-between gap-2">
-                  <p className="text-xs text-[#6B7280]">
-                    Minimum 20 caractères · Soyez précis, l&apos;agent s&apos;en chargera
-                  </p>
+                  <div
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: "#7F77DD",
+                    }}
+                  />
                   <span
-                    className={`text-xs tabular-nums ${
-                      descNearLimit ? "text-amber-600" : "text-[#6B7280]"
-                    }`}
+                    style={{
+                      fontSize: 11,
+                      color: "#534AB7",
+                      fontWeight: 600,
+                    }}
                   >
-                    {descCount} / {MAX_DESC_LENGTH}
+                    IA Générative & Agentique
                   </span>
                 </div>
-                {description.trim().length > 0 &&
-                  description.trim().length < 20 && (
-                    <p className="mt-0.5 text-xs text-red-500">
-                      Minimum 20 caractères
-                    </p>
-                  )}
               </div>
 
-              {error && (
-                <div className="rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                variant="primary"
-                fullWidth
-                disabled={!canSubmit}
-                className="gap-2 h-9 px-4 text-sm rounded-lg"
+              {/* Title */}
+              <h1
+                style={{
+                  fontSize: 28,
+                  fontWeight: 800,
+                  color: "#1a1040",
+                  textAlign: "center",
+                  margin: "0 0 8px",
+                  lineHeight: 1.2,
+                }}
               >
-                {loading ? (
-                  <>
-                    <span
-                      className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"
-                      aria-hidden
+                Décrivez votre idée
+              </h1>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "#6b7280",
+                  textAlign: "center",
+                  margin: "0 0 28px",
+                  lineHeight: 1.6,
+                }}
+              >
+                Notre agent IA analyse votre description, détecte le secteur et
+                vous guide pour structurer votre projet.
+              </p>
+
+              {/* Card */}
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: 20,
+                  border: "0.5px solid #e8e4ff",
+                  padding: 28,
+                  boxShadow: "0 8px 32px rgba(124,58,237,0.1)",
+                }}
+              >
+                {/* Stepper */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 24,
+                  }}
+                >
+                  {[
+                    { n: 1, label: "Votre idée", active: true },
+                    { n: 2, label: "Affiner", active: false },
+                    { n: 3, label: "Pipeline", active: false },
+                  ].map(({ n, label, active }, i) => (
+                    <div
+                      key={n}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flex: i < 2 ? 1 : 0,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: "50%",
+                            background: active
+                              ? "linear-gradient(135deg,#7F77DD,#534AB7)"
+                              : "#f3f0ff",
+                            border: active ? "none" : "1.5px solid #e8e4ff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: active ? "white" : "#AFA9EC",
+                            boxShadow: active
+                              ? "0 2px 10px rgba(124,58,237,0.3)"
+                              : "none",
+                          }}
+                        >
+                          {active ? (
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 12 12"
+                              fill="none"
+                            >
+                              <path
+                                d="M6 1l1 2.5 2.5.4-1.8 1.7.4 2.4L6 6.8 3.9 8l.4-2.4L2.5 3.9l2.5-.4L6 1z"
+                                stroke="white"
+                                strokeWidth="1"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          ) : (
+                            n
+                          )}
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: active ? "#7F77DD" : "#AFA9EC",
+                            fontWeight: active ? 700 : 500,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                      {i < 2 && (
+                        <div
+                          style={{
+                            flex: 1,
+                            height: 1.5,
+                            background: active ? "#7F77DD" : "#f0eeff",
+                            margin: "0 6px 14px",
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Info pill */}
+                <div
+                  style={{
+                    background: "#f8f7ff",
+                    border: "0.5px solid #e8e4ff",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    marginBottom: 18,
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    style={{ flexShrink: 0, marginTop: 1 }}
+                  >
+                    <circle
+                      cx="7"
+                      cy="7"
+                      r="5"
+                      stroke="#7F77DD"
+                      strokeWidth="1.2"
                     />
-                    Sauvegarde en cours...
-                  </>
-                ) : (
-                  <>
-                    Soumettre mon idée
-                    <HiOutlineArrowRight className="h-5 w-5" />
-                  </>
+                    <path
+                      d="M7 4v3.5M7 9v.5"
+                      stroke="#7F77DD"
+                      strokeWidth="1.3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "#534AB7",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Parlez naturellement — l&apos;IA détecte le secteur et la
+                    cible automatiquement.
+                  </span>
+                </div>
+
+                {/* Textarea */}
+                <div style={{ marginBottom: 18 }}>
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#1a1040",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Votre projet
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      setError("");
+                    }}
+                    placeholder="Ex: Une application qui aide les étudiants à organiser leurs révisions grâce à l'IA..."
+                    rows={5}
+                    style={{
+                      width: "100%",
+                      padding: "12px 14px",
+                      fontSize: 13,
+                      border: "1.5px solid #e8e4ff",
+                      borderRadius: 10,
+                      resize: "vertical",
+                      fontFamily: "var(--font-sans)",
+                      background: "#fafafe",
+                      color: "#1a1040",
+                      boxSizing: "border-box",
+                      outline: "none",
+                      lineHeight: 1.6,
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "#7F77DD";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "#e8e4ff";
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginTop: 5,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color:
+                          description.trim().length < 20
+                            ? "#e11d48"
+                            : "#1D9E75",
+                      }}
+                    >
+                      {description.trim().length < 20
+                        ? `${20 - description.trim().length} car. minimum`
+                        : "Longueur correcte ✓"}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: "#9ca3af",
+                      }}
+                    >
+                      {charCount} / 500
+                    </span>
+                  </div>
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <div
+                    style={{
+                      padding: "9px 12px",
+                      background: "#fff5f5",
+                      border: "0.5px solid #fecaca",
+                      borderRadius: 10,
+                      fontSize: 12,
+                      color: "#e11d48",
+                      marginBottom: 14,
+                    }}
+                  >
+                    {error}
+                  </div>
                 )}
-              </Button>
-            </form>
+
+                {/* Button */}
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!isReady || isSubmitting}
+                  style={{
+                    width: "100%",
+                    padding: "13px",
+                    background: isReady
+                      ? "linear-gradient(135deg,#7F77DD,#534AB7)"
+                      : "#f3f0ff",
+                    color: isReady ? "white" : "#AFA9EC",
+                    border: "none",
+                    borderRadius: 99,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: isReady ? "pointer" : "not-allowed",
+                    boxShadow: isReady
+                      ? "0 4px 16px rgba(124,58,237,0.3)"
+                      : "none",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  {isSubmitting ? (
+                    "Création en cours..."
+                  ) : (
+                    <>
+                      Lancer l&apos;analyse IA
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                      >
+                        <path
+                          d="M3 8h10M9 4l4 4-4 4"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
-

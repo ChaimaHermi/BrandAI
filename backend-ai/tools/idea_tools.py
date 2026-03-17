@@ -24,26 +24,24 @@ def get_sector_label(sector: str) -> str:
     return SECTOR_LABELS.get(sector.lower().strip(), sector)
 
 
-def validate_idea_input(name: str, description: str, sector: str) -> list[str]:
+def validate_idea_input(
+    name: str,
+    description: str,
+    sector: str,
+) -> list[str]:
     """
-    Valide les champs obligatoires avant d'appeler le LLM.
-    Retourne une liste d'erreurs — vide si tout est valide.
-
-    Exemple :
-        validate_idea_input("A", "court", "ecommerce")
-        → ["Le nom doit contenir au moins 2 caractères.",
-           "La description doit contenir au moins 20 caractères."]
+    Validation approche B — description libre.
+    name et sector sont optionnels.
+    Le LLM détecte secteur depuis la description.
+    Le Brand Identity Agent génère le nom plus tard.
     """
-    errors: list[str] = []
+    errors = []
 
-    if not name or len(name.strip()) < 2:
-        errors.append("Le nom du projet doit contenir au moins 2 caractères.")
-
-    if not description or len(description.strip()) < 20:
-        errors.append("La description doit contenir au moins 20 caractères.")
-
-    if not sector or not sector.strip():
-        errors.append("Le secteur est obligatoire.")
+    if not description or len(description.strip()) < 10:
+        errors.append(
+            "La description doit contenir "
+            "au moins 10 caractères."
+        )
 
     return errors
 

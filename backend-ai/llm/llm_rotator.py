@@ -16,7 +16,11 @@ class LLMRotator:
         if not clients:
             raise RuntimeError(f"Aucun client {self.provider} disponible.")
         client = clients[self.index]
-        client.temperature = temperature
+        # Pour Groq, on fige la température à 0.05 pour éviter la duplication
+        if self.provider == "groq":
+            client.temperature = 0.05
+        else:
+            client.temperature = temperature
         return client
 
     def rotate(self) -> bool:
