@@ -12,7 +12,7 @@
 #    Modifier l'idée après pipeline = résultats incohérents
 # ─────────────────────────────────────────
 
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -47,6 +47,7 @@ class ClarifierSaveRequest(BaseModel):
     clarity_answers: Optional[dict] = None
     clarity_refused_reason: Optional[str] = None
     clarity_refused_message: Optional[str] = None
+    pipeline_progress: Optional[Any] = None
 
 
 @router.post(
@@ -147,6 +148,14 @@ def save_clarifier_result(
     )
     if not idea:
         raise HTTPException(status_code=404, detail="Idée introuvable")
+
+    # Mettre à jour le statut pour refléter la progression dans la liste
+    if body.clarity_status == "questions":
+        idea.status = "in_progress"
+    elif body.clarity_status == "clarified":
+        idea.status = "clarifier_done"
+    elif body.clarity_status == "refused":
+        idea.status = "error"
 
     fields = body.model_dump(exclude_none=True)
     for field, value in fields.items():

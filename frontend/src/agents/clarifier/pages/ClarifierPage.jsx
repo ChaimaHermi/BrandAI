@@ -52,22 +52,28 @@ export default function ClarifierPage() {
       setClarityScore(idea.clarity_score ?? 0);
       setIsReady(true);
       setCurrentStep("clarified");
-      setXaiSteps([
-        {
-          id: "restored-1",
-          status: "success",
-          text: "Résultat restauré · clarification précédente",
-          detail: {
-            score: idea.clarity_score,
-            sector: idea.clarity_sector,
-            dimensions: {
-              problem: !!idea.clarity_problem,
-              target: !!idea.clarity_target_users,
-              solution: !!idea.clarity_solution,
-            },
-          },
-        },
-      ]);
+      const restoredSteps = idea.pipeline_progress?.clarifier_steps;
+      setXaiSteps(
+        Array.isArray(restoredSteps) && restoredSteps.length > 0
+          ? restoredSteps
+          : [
+              {
+                id: "restored-1",
+                status: "success",
+                text:
+                  "Résultat restauré · clarification précédente",
+                detail: {
+                  score: idea.clarity_score,
+                  sector: idea.clarity_sector,
+                  dimensions: {
+                    problem: !!idea.clarity_problem,
+                    target: !!idea.clarity_target_users,
+                    solution: !!idea.clarity_solution,
+                  },
+                },
+              },
+            ],
+      );
       return;
     }
 
@@ -79,16 +85,21 @@ export default function ClarifierPage() {
         message: idea.clarity_refused_message || "",
       });
       setCurrentStep("refused");
-      setXaiSteps([
-        {
-          id: "restored-refused",
-          status: "error",
-          text:
-            "Projet refusé · " +
-            (idea.clarity_refused_reason || "sécurité"),
-          detail: {},
-        },
-      ]);
+      const restoredSteps = idea.pipeline_progress?.clarifier_steps;
+      setXaiSteps(
+        Array.isArray(restoredSteps) && restoredSteps.length > 0
+          ? restoredSteps
+          : [
+              {
+                id: "restored-refused",
+                status: "error",
+                text:
+                  "Projet refusé · " +
+                  (idea.clarity_refused_reason || "sécurité"),
+                detail: {},
+              },
+            ],
+      );
       return;
     }
 
@@ -100,17 +111,22 @@ export default function ClarifierPage() {
       setQuestions(idea.clarity_questions);
       setAgentMessage(idea.clarity_agent_message || "");
       setCurrentStep("questions");
-      setXaiSteps([
-        {
-          id: "restored-questions",
-          status: "success",
-          text:
-            "Questions restaurées · " +
-            idea.clarity_questions.length +
-            " question(s)",
-          detail: {},
-        },
-      ]);
+      const restoredSteps = idea.pipeline_progress?.clarifier_steps;
+      setXaiSteps(
+        Array.isArray(restoredSteps) && restoredSteps.length > 0
+          ? restoredSteps
+          : [
+              {
+                id: "restored-questions",
+                status: "success",
+                text:
+                  "Questions restaurées · " +
+                  idea.clarity_questions.length +
+                  " question(s)",
+                detail: {},
+              },
+            ],
+      );
       return;
     }
 

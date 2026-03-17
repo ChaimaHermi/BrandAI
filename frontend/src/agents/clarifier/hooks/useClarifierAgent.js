@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSSEStream } from "@/agents/shared/hooks/useSSEStream";
 import { safeText } from "@/agents/shared/utils/safeText";
 import { saveClarifierResult } from "../api/clarifier.api";
@@ -9,6 +9,7 @@ const AI_URL =
 export function useClarifierAgent(idea, token) {
   const [currentStep, setCurrentStep] = useState("idle"); // idle | analyzing | questions | answering | clarified | refused
   const [xaiSteps, setXaiSteps] = useState([]);
+  const xaiStepsRef = useRef([]);
   const [agentMessage, setAgentMessage] = useState("");
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({
@@ -24,16 +25,25 @@ export function useClarifierAgent(idea, token) {
   const startedRef = useRef(false);
   const { readSSEStream } = useSSEStream();
 
+  // Assurer la synchro de la ref quand `setXaiSteps` est modifié depuis l'extérieur.
+  useEffect(() => {
+    xaiStepsRef.current = xaiSteps;
+  }, [xaiSteps]);
+
   const addXaiStep = useCallback((status, text, detail = {}) => {
-    setXaiSteps((prev) => [
-      ...prev,
-      { id: Date.now() + Math.random(), status, text, detail },
-    ]);
+    setXaiSteps((prev) => {
+      const next = [
+        ...prev,
+        { id: Date.now() + Math.random(), status, text, detail },
+      ];
+      xaiStepsRef.current = next;
+      return next;
+    });
   }, []);
 
   const resolveLoadingSteps = useCallback(() => {
-    setXaiSteps((prev) =>
-      prev.map((step) =>
+    setXaiSteps((prev) => {
+      const next = prev.map((step) =>
         step.status === "loading"
           ? {
               ...step,
@@ -41,8 +51,10 @@ export function useClarifierAgent(idea, token) {
               text: step.text.replace(/\.\.\.$/, " — terminé"),
             }
           : step,
-      ),
-    );
+      );
+      xaiStepsRef.current = next;
+      return next;
+    });
   }, []);
 
   const startAnalysis = useCallback(async () => {
@@ -50,6 +62,7 @@ export function useClarifierAgent(idea, token) {
     startedRef.current = true;
     setCurrentStep("analyzing");
     setXaiSteps([]);
+    xaiStepsRef.current = [];
 
     try {
       await readSSEStream(
@@ -85,6 +98,9 @@ export function useClarifierAgent(idea, token) {
                   clarity_refused_reason: data.reason_category || "",
                   clarity_refused_message:
                     data.message || data.refusal_message || "",
+                  pipeline_progress: {
+                    clarifier_steps: xaiStepsRef.current,
+                  },
                 },
                 token,
               );
@@ -100,6 +116,9 @@ export function useClarifierAgent(idea, token) {
                   clarity_status: "questions",
                   clarity_questions: data.questions || [],
                   clarity_agent_message: data.message || "",
+                  pipeline_progress: {
+                    clarifier_steps: xaiStepsRef.current,
+                  },
                 },
                 token,
               );
@@ -124,6 +143,9 @@ export function useClarifierAgent(idea, token) {
                   clarity_agent_message: data.message || "",
                   clarity_questions: [],
                   clarity_answers: {},
+                  pipeline_progress: {
+                    clarifier_steps: xaiStepsRef.current,
+                  },
                 },
                 token,
               );
@@ -160,15 +182,19 @@ export function useClarifierAgent(idea, token) {
       return;
 
     setCurrentStep("answering");
-    setXaiSteps((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        status: "loading",
-        text: "Analyse de vos réponses...",
-        detail: {},
-      },
-    ]);
+    setXaiSteps((prev) => {
+      const next = [
+        ...prev,
+        {
+          id: Date.now(),
+          status: "loading",
+          text: "Analyse de vos réponses...",
+          detail: {},
+        },
+      ];
+      xaiStepsRef.current = next;
+      return next;
+    });
 
     try {
       await readSSEStream(
@@ -215,6 +241,9 @@ export function useClarifierAgent(idea, token) {
                     problem: answers.problem || "",
                     target: answers.target || "",
                     solution: answers.solution || "",
+                  },
+                  pipeline_progress: {
+                    clarifier_steps: xaiStepsRef.current,
                   },
                 },
                 token,

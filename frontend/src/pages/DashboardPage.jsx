@@ -149,6 +149,22 @@ export default function DashboardPage() {
     return desc.length > 45 ? `${desc.slice(0, 45)}...` : desc || "Idée sans nom";
   };
 
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+  // Pour le moment, on calcule la progression "clarifier" en % depuis
+  // `idea.pipeline_progress.clarifier_steps` (même si l'idée est encore "pending").
+  const getClarifierProgressFromSteps = (idea) => {
+    const steps = idea?.pipeline_progress?.clarifier_steps;
+    if (!Array.isArray(steps) || steps.length <= 0) return 0;
+
+    // UI actuelle: "1/7" => 14%. On ramène donc 7 steps => 14%.
+    const clarifierTotalSteps = 7;
+    const clarifierMaxPct = 14;
+
+    const pct = Math.round((steps.length / clarifierTotalSteps) * clarifierMaxPct);
+    return clamp(pct, 0, clarifierMaxPct);
+  };
+
   const getProgress = (idea) => {
     const statusMap = {
       clarifier_done: 14,
@@ -159,17 +175,42 @@ export default function DashboardPage() {
       website_done: 85,
       done: 100,
     };
-    return statusMap[idea.status] || 0;
+
+    // Si l’idée est encore en cours de clarification,
+    // on affiche le % depuis le pipeline sauvegardé.
+    if (idea?.status === "pending" || idea?.status === "in_progress") {
+      const clarifierPct = getClarifierProgressFromSteps(idea);
+      return clarifierPct;
+    }
+
+    return statusMap[idea?.status] || 0;
   };
 
   const getStatusLabel = (idea) => {
+    const progress = getProgress(idea);
     const map = {
-      pending: { label: "En attente", color: "#9ca3af" },
-      clarifier_done: { label: "Clarifier ✓ · 1/7", color: "#7F77DD" },
-      enhancer_done: { label: "Enhancer ✓ · 2/7", color: "#1D9E75" },
-      done: { label: "Pipeline complet ✓", color: "#1D9E75" },
+      pending: {
+        label: `En attente · ${progress}%`,
+        color: "#9ca3af",
+      },
+      in_progress: {
+        label: `Clarifier en cours · ${progress}%`,
+        color: "#7F77DD",
+      },
+      clarifier_done: {
+        label: `Clarifier ✓ · ${progress}%`,
+        color: "#7F77DD",
+      },
+      enhancer_done: {
+        label: `Enhancer ✓ · ${progress}%`,
+        color: "#1D9E75",
+      },
+      done: {
+        label: `Pipeline complet ✓ · ${progress}%`,
+        color: "#1D9E75",
+      },
     };
-    return map[idea.status] || { label: "En attente", color: "#9ca3af" };
+    return map[idea?.status] || { label: `En attente · ${progress}%`, color: "#9ca3af" };
   };
 
   const handlePageChange = (page) => {

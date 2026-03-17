@@ -93,6 +93,9 @@ class IdeaOut(BaseModel):
     clarity_refused_reason: Optional[str] = None
     clarity_refused_message: Optional[str] = None
 
+    # Progression de pipeline (historique des étapes)
+    pipeline_progress: Optional[Any] = None
+
     model_config = {"from_attributes": True}
 
 
