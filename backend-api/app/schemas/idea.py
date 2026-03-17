@@ -3,6 +3,7 @@
 # Schémas Pydantic pour les idées
 # ─────────────────────────────────────────
 
+from typing import Optional
 from pydantic import BaseModel, field_validator
 from datetime import datetime
 
@@ -14,21 +15,33 @@ class IdeaCreate(BaseModel):
 
     {
         "name": "EcoShop",
-        "sector": "ecommerce",
-        "target_audience": "PME, entrepreneurs",
+        "sector": "ecommerce" | "",
+        "target_audience": "PME, entrepreneurs" | "",
         "description": "Une marketplace durable et locale..."
     }
     """
-    name: str
-    sector: str
-    target_audience: str | None = None
+
+    # Approche texte libre : le nom peut être vide au départ.
+    name: Optional[str] = ""
+    # Approche B : le secteur peut être vide au moment de la création,
+    # il sera détecté automatiquement par l'Idea Clarifier.
+    sector: str | None = ""
+    # Idem pour le public cible : champ libre optionnel.
+    target_audience: str | None = ""
     description: str
 
     @field_validator("name")
     @classmethod
-    def validate_name(cls, v: str) -> str:
+    def validate_name(cls, v: Optional[str]) -> str:
+        """
+        Le nom peut être vide ("") — il sera généré plus tard
+        par le Brand Identity Agent si nécessaire.
+        """
+        if v is None:
+            return ""
         v = v.strip()
-        if len(v) < 2:
+        # Si un nom est fourni, on applique quand même une validation minimale.
+        if v and len(v) < 2:
             raise ValueError("Le nom doit contenir au moins 2 caractères")
         return v
 
@@ -42,10 +55,14 @@ class IdeaCreate(BaseModel):
 
     @field_validator("sector")
     @classmethod
-    def validate_sector(cls, v: str) -> str:
+    def validate_sector(cls, v: str | None) -> str | None:
+        """
+        En Approche B, sector peut être vide ("") ou None.
+        On laisse le Clarifier le déduire à partir de la description.
+        """
+        if v is None:
+          return ""
         v = v.strip()
-        if not v:
-            raise ValueError("Le secteur est obligatoire")
         return v
 
 

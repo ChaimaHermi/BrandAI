@@ -5,16 +5,11 @@
 #  RÔLE UNIQUE : Comprendre ce que l'utilisateur veut faire.
 #
 #  FLUX — 2 appels LLM séquentiels :
-#
-#    Appel 1 : check_safety()
-#      → Prompt court, focalisé sur l'intention réelle
-#      → safe: false  → STOP immédiat, appel 2 jamais lancé
-#      → safe: true   → on continue
-#
-#    Appel 2 : generate_clarified_idea()
-#      → Seulement si l'appel 1 dit safe: true
-#      → Pose 0-3 questions si description vague
-#      → Produit le JSON de clarification
+#    Appel 1 : check_safety()     → sécurité + détection secteur
+#    Appel 2 : generate_clarified_idea() → 3 types de réponse :
+#      - "questions"  : dimensions manquantes → poser des questions
+#      - "off_topic"  : réponse hors sujet → rediriger poliment
+#      - "clarified"  : idée complète → JSON structuré + score
 #
 #  CE QUE CET AGENT NE FAIT PAS :
 #    - Générer un nom de marque   → Brand Identity Agent
@@ -35,44 +30,40 @@
 
 from agents.base_agent import BaseAgent, PipelineState
 from guardrails.safety_checks import get_refusal_message
-from tools.idea_tools import build_idea_summary, validate_idea_input
+from tools.idea_tools import build_idea_summary
 
 
 # ══════════════════════════════════════════════════════════════
-#  PROMPTS — constantes de module
-#  Chaque prompt a UN seul rôle, court et focalisé
+#  PROMPTS
 # ══════════════════════════════════════════════════════════════
 
-# Appel 1 — Sécurité uniquement
-# Court → réponse rapide → si refus, STOP immédiat
 _SAFETY_PROMPT = """Tu es un filtre de sécurité pour la plateforme BrandAI.
 
 Analyse l'INTENTION RÉELLE du projet, pas les mots utilisés.
+Déduis aussi le SECTEUR depuis la description.
 
 Réponds uniquement en JSON sans texte avant ou après :
 {
   "safe": true ou false,
   "reason_category": null | "fraud" | "illegal" | "harmful",
-  "sector": "secteur du projet (ex: tech, ecommerce, sante)",
+  "sector": "secteur principal (tech, ecommerce, sante, education, finance, autre)",
   "confidence": 0 à 100
 }
 
 Refuse uniquement si le projet vise clairement à :
-- Tromper des personnes ou leur soutirer de l'argent
-- Pirater ou contourner des systèmes de sécurité
-- Produire du contenu illégal dans la majorité des pays
-- Inciter à la violence, la haine ou le terrorisme
+- Tromper des personnes ou soutirer de l'argent
+- Pirater des systèmes de sécurité
+- Produire du contenu illégal
+- Inciter à la violence ou au terrorisme
 
 RÈGLES :
 - Cybersécurité ≠ hacking
 - Cryptomonnaie ≠ arnaque
-- Projet ambigu mais non dangereux → safe: true
+- Projet ambigu → safe: true
 - Juge l'intention, pas les mots"""
 
 
-# Appel 2a — Évaluation des dimensions manquantes
-# Détermine quelles questions poser à l'utilisateur
-_RICHNESS_PROMPT = """Tu analyses si une description de projet contient ces 3 informations.
+_RICHNESS_PROMPT = """Tu analyses si une description contient ces 3 informations.
 
 Réponds uniquement en JSON sans texte avant ou après :
 {
@@ -82,39 +73,108 @@ Réponds uniquement en JSON sans texte avant ou après :
 }
 
 Définitions :
-- has_problem  : le problème résolu est clairement mentionné
+- has_problem  : le problème résolu est mentionné
 - has_target   : les utilisateurs visés sont identifiés
-- has_solution : le fonctionnement de la solution est expliqué"""
+- has_solution : le fonctionnement est expliqué"""
 
 
-# Appel 2b — Génération du JSON structuré
-# Seulement si safe=true, reformule uniquement ce que l'user a dit
-_CLARIFY_PROMPT = """Tu structures les idées de projets soumises par des entrepreneurs.
+_CLARIFY_PROMPT = """Tu es l'agent Clarifier de BrandAI.
+Tu aides les entrepreneurs à structurer leur idée.
 
-TON SEUL RÔLE : Reformuler ce que l'utilisateur a dit de façon claire.
+TON RÔLE : Comprendre et reformuler ce que l'utilisateur a dit.
+Ne rien inventer. Ne jamais copier du texte depuis ces instructions.
 
-NE PAS faire :
-- Inventer un nom de projet     → c'est le Brand Identity Agent
-- Proposer un business model    → c'est l'Idea Enhancer
-- Analyser la concurrence       → c'est le Market Analysis Agent
-- Inventer des informations non mentionnées par l'utilisateur
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RÈGLES ABSOLUES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Ne jamais inventer d'informations
+- Ne jamais proposer de business model → Idea Enhancer
+- Ne jamais générer un nom → Brand Identity
+- Ne jamais analyser la concurrence → Market Analysis
+- Toujours répondre en français
+- Toujours répondre en JSON pur sans backticks
+- Le champ "message" : toujours rédigé librement par toi
+  jamais copié depuis ces instructions
 
-FORMAT — JSON uniquement, sans backticks :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DÉTECTION HORS SUJET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Réponse hors sujet si elle ne répond pas à la question :
+- Salutations : "bonjour", "ok", "merci"
+- Questions techniques : "c'est quoi React ?"
+- Moins de 4 mots sans information utile
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMAT — 3 types de réponse possibles
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TYPE 1 — "questions" (score < 80, dimensions manquantes) :
 {
-  "sector":               "secteur du projet",
-  "target_users":         "utilisateurs visés — uniquement ce que l'user a dit",
-  "problem":              "problème résolu — uniquement ce que l'user a dit",
-  "solution_description": "comment ça fonctionne — uniquement ce que l'user a dit",
-  "short_pitch":          "reformulation simple en 8 à 12 mots",
-  "clarity_score":        0 à 100
+  "type": "questions",
+  "message": <
+    Rédige librement 1-2 phrases encourageantes en français.
+    Mentionne le secteur ou le type de projet si connu.
+    Introduis naturellement les questions qui suivent.
+    Varie le style à chaque fois.
+    Ne jamais copier ce texte depuis ces instructions.
+  >,
+  "questions": ["question 1", "question 2"],
+  "score": <entier entre 0 et 79>
 }
 
-clarity_score :
-- 80-100 : problème + cible + solution tous clairs
-- 55-79  : 2 dimensions sur 3 présentes
-- 0-54   : informations insuffisantes
+TYPE 2 — "off_topic" (réponse hors sujet) :
+{
+  "type": "off_topic",
+  "message": <
+    Rédige librement 2-3 phrases polies en français.
+    Explique que tu es un agent de clarification d'idée.
+    Précise que ton rôle est de préparer l'idée pour
+    le pipeline de génération de marque.
+    Invite à revenir à la question.
+    Varie le style à chaque fois.
+    Ne jamais copier ce texte depuis ces instructions.
+  >,
+  "repeat_question": <question précédente mot pour mot>
+}
 
-Réponds toujours en français."""
+TYPE 3 — "clarified" (score >= 80, toutes dimensions) :
+{
+  "type": "clarified",
+  "message": <
+    Rédige librement 1-2 phrases en français.
+    Score >= 90 : ton enthousiaste, félicite l'entrepreneur.
+    Score 80-89 : ton positif et encourageant.
+    Mentionne concrètement l'idée ou le secteur.
+    Annonce que la structure est prête pour le pipeline.
+    Varie le style selon le projet.
+    Ne jamais copier ce texte depuis ces instructions.
+  >,
+  "sector":               <secteur détecté ou déduit>,
+  "target_users":         <uniquement ce que l'user a dit>,
+  "problem":              <uniquement ce que l'user a dit>,
+  "solution_description": <uniquement ce que l'user a dit>,
+  "short_pitch":          <reformulation 8-12 mots>,
+  "score": <entier entre 80 et 100>
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCORE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- problème mentionné  : +33 pts
+- cible identifiée    : +33 pts
+- solution expliquée  : +34 pts
+
+80-100 → type "clarified"
+55-79  → type "questions"
+0-54   → type "questions"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HISTORIQUE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Si un historique est fourni, prends en compte TOUTES
+les réponses précédentes pour réévaluer le score.
+Ne repose jamais une question déjà bien répondue.
+"""
 
 
 # ══════════════════════════════════════════════════════════════
@@ -125,91 +185,77 @@ class IdeaClarifierAgent(BaseAgent):
     """
     Agent 0 du pipeline BrandAI.
 
-    2 modes d'utilisation :
-      run()              → mode batch, LangGraph, sans questions
-      run_interactive()  → mode chat, frontend IdeaDetail.jsx
+    2 modes :
+      run()              → mode batch (LangGraph)
+      run_interactive()  → mode chat (frontend IdeaPage.jsx)
     """
 
     def __init__(self):
         super().__init__(
             agent_name="idea_clarifier",
-            temperature=0.2,
+            temperature=0.3,
             max_retries=3,
         )
-
-    # ── Méthodes abstraites requises par BaseAgent ────────────
 
     def _build_system_prompt(self, state: PipelineState) -> str:
         return _SAFETY_PROMPT
 
     def _build_user_prompt(self, state: PipelineState) -> str:
-        return (
-            f"Nom : {state.name}\n"
-            f"Secteur : {state.sector}\n"
-            f"Description : {state.description}"
-        )
+        parts = []
+        if state.name and state.name.strip():
+            parts.append(f"Nom : {state.name}")
+        if state.sector and state.sector.strip():
+            parts.append(f"Secteur : {state.sector}")
+        parts.append(f"Description : {state.description}")
+        return "\n".join(parts)
 
     # ══════════════════════════════════════════════════════════
-    #  APPEL LLM 1 — check_safety()
-    #  Prompt court → si refus → STOP immédiat
+    #  LLM 1 — check_safety()
     # ══════════════════════════════════════════════════════════
 
     async def check_safety(self, state: PipelineState) -> dict:
-        """
-        Appel LLM 1 — sécurité uniquement.
-
-        Retourne :
-          {"safe": True}
-          {"safe": False, "reason_category": str, "refusal_message": str}
-        """
         user_prompt = self._build_user_prompt(state)
-
         try:
-            raw      = await self._call_llm(_SAFETY_PROMPT, user_prompt)
-            result   = self._parse_json(raw)
-            safe     = bool(result.get("safe", True))
-            category = result.get("reason_category") or "default"
+            raw    = await self._call_llm(_SAFETY_PROMPT, user_prompt)
+            self.logger.info(f"[safety] raw : {repr(raw[:300])}")
+            result = self._parse_json(raw)
+            safe   = bool(result.get("safe", True))
 
             if not safe:
-                self.logger.info(f"[idea_clarifier] Refusé — {category}")
+                category = result.get("reason_category") or "default"
+                self.logger.info(f"[clarifier] Refusé — {category}")
                 return {
                     "safe":            False,
                     "reason_category": category,
                     "refusal_message": get_refusal_message(category),
                 }
 
-            sector = (result.get("sector") or "").strip() or None
+            sector     = (result.get("sector") or "").strip() or None
             confidence = result.get("confidence")
             if confidence is not None:
                 try:
                     confidence = int(confidence)
-                    if confidence < 0 or confidence > 100:
+                    if not (0 <= confidence <= 100):
                         confidence = None
                 except (TypeError, ValueError):
                     confidence = None
+
             return {"safe": True, "sector": sector, "confidence": confidence}
 
         except Exception as e:
-            # Erreur LLM → on laisse passer par défaut
-            self.logger.warning(f"[idea_clarifier] check_safety erreur : {e} → safe par défaut")
+            self.logger.warning(f"[clarifier] check_safety erreur : {e}")
             return {"safe": True}
 
     # ══════════════════════════════════════════════════════════
-    #  APPEL LLM 2 — generate_clarified_idea()
-    #  Lancé SEULEMENT si check_safety() → safe: true
+    #  LLM 2a — _evaluate_richness()
     # ══════════════════════════════════════════════════════════
 
     async def _evaluate_richness(self, state: PipelineState) -> dict:
-        """
-        Évalue quelles dimensions manquent dans la description.
-        Utilisé pour décider quelles questions poser.
-        """
         user_prompt = (
             f"Description : {state.description}\n"
-            f"Secteur : {state.sector}\n"
-            f"Public mentionné : {state.target_audience or 'non précisé'}"
+            f"Secteur : {state.sector or 'à détecter'}\n"
+            f"Public : {state.target_audience or 'non précisé'}"
         )
-
         try:
             raw    = await self._call_llm(_RICHNESS_PROMPT, user_prompt)
             result = self._parse_json(raw)
@@ -219,16 +265,15 @@ class IdeaClarifierAgent(BaseAgent):
                 "has_solution": bool(result.get("has_solution", False)),
             }
         except Exception as e:
-            self.logger.warning(f"[idea_clarifier] _evaluate_richness erreur : {e}")
-            return {"has_problem": False, "has_target": False, "has_solution": False}
+            self.logger.warning(f"[clarifier] _evaluate_richness erreur : {e}")
+            return {
+                "has_problem":  False,
+                "has_target":   False,
+                "has_solution": False,
+            }
 
     def build_questions(self, richness: dict) -> list[str]:
-        """
-        Retourne 0 à 3 questions selon les dimensions manquantes.
-        Jamais de questions sur la stratégie ou la concurrence.
-        """
         questions = []
-
         if not richness.get("has_problem"):
             questions.append(
                 "Quel problème concret votre idée cherche-t-elle à résoudre ?"
@@ -240,21 +285,26 @@ class IdeaClarifierAgent(BaseAgent):
             )
         if not richness.get("has_solution"):
             questions.append(
-                "Comment votre solution fonctionne-t-elle concrètement "
-                "en 2 à 3 phrases ?"
+                "Comment votre solution fonctionne-t-elle "
+                "concrètement en 2 à 3 phrases ?"
             )
-
         return questions
+
+    # ══════════════════════════════════════════════════════════
+    #  LLM 2b — generate_clarified_idea()
+    #  Retourne : "questions" | "off_topic" | "clarified"
+    # ══════════════════════════════════════════════════════════
 
     async def generate_clarified_idea(
         self,
         state: PipelineState,
         user_answers: list[str] | None = None,
+        conversation_history: list[dict] | None = None,
     ) -> dict:
         """
-        Appel LLM 2 — clarification uniquement.
-        Lancé SEULEMENT après check_safety() → safe: true.
-        Reformule ce que l'utilisateur a dit. N'invente rien.
+        Appel LLM principal.
+        Retourne un dict avec "type" = questions | off_topic | clarified.
+        Le champ "message" est rédigé librement par le LLM.
         """
         context = build_idea_summary(
             name=state.name,
@@ -263,44 +313,84 @@ class IdeaClarifierAgent(BaseAgent):
             target_audience=state.target_audience,
         )
 
+        # Historique complet
+        history_block = ""
+        if conversation_history:
+            history_block = "\n\nHistorique de la conversation :"
+            for turn in conversation_history:
+                q = turn.get("question", "")
+                a = turn.get("answer", "")
+                if q or a:
+                    history_block += f"\n  Agent : {q}\n  User  : {a}"
+
+        # Dernières réponses
         answers_block = ""
         if user_answers:
-            answers_block = "\n\nRéponses aux questions de clarification :"
-            questions = self.build_questions(
-                {"has_problem": False, "has_target": False, "has_solution": False}
-            )
+            answers_block = "\n\nDernières réponses reçues :"
             for i, answer in enumerate(user_answers):
-                q = questions[i] if i < len(questions) else f"Question {i+1}"
-                answers_block += f"\n  Q : {q}\n  R : {answer}"
+                answers_block += f"\n  Réponse {i+1} : {answer}"
 
-        user_prompt = f"Voici le projet soumis :\n\n{context}{answers_block}"
+        user_prompt = (
+            f"Projet :\n\n{context}"
+            f"{history_block}"
+            f"{answers_block}"
+        )
 
         try:
-            raw    = await self._call_llm(_CLARIFY_PROMPT, user_prompt)
-            result = self._parse_json(raw)
+            raw = await self._call_llm(_CLARIFY_PROMPT, user_prompt)
+            self.logger.info(f"[clarifier] raw : {repr(raw[:500])}")
 
+            result      = self._parse_json(raw)
+            result_type = result.get("type", "clarified")
+
+            self.logger.info(f"[clarifier] type : {result_type}")
+            self.logger.info(
+                f"[clarifier] message : {result.get('message', '')[:100]}"
+            )
+
+            # ── off_topic ───────────────────────────────────
+            if result_type == "off_topic":
+                return {
+                    "type":            "off_topic",
+                    "message":         result.get("message", ""),
+                    "repeat_question": result.get("repeat_question", ""),
+                }
+
+            # ── questions ───────────────────────────────────
+            if result_type == "questions":
+                return {
+                    "type":      "questions",
+                    "message":   result.get("message", ""),
+                    "questions": result.get("questions", []),
+                    "score":     int(result.get("score", 45)),
+                }
+
+            # ── clarified ───────────────────────────────────
             return {
-                "sector":               result.get("sector",               state.sector),
-                "target_users":         result.get("target_users",         state.target_audience or ""),
-                "problem":              result.get("problem",              ""),
-                "solution_description": result.get("solution_description", state.description[:200]),
-                "short_pitch":          result.get("short_pitch",          state.name),
-                "clarity_score":        int(result.get("clarity_score",   50)),
+                "type":               "clarified",
+                "message":            result.get("message", ""),
+                "sector":             result.get("sector", state.sector or ""),
+                "target_users":       result.get("target_users", ""),
+                "problem":            result.get("problem", ""),
+                "solution_description": result.get("solution_description", ""),
+                "short_pitch":        result.get("short_pitch", ""),
+                "score":              int(result.get("score", 50)),
             }
 
         except Exception as e:
-            self.logger.warning(f"[idea_clarifier] generate erreur : {e} → fallback")
+            self.logger.warning(f"[clarifier] generate erreur : {e} → fallback")
             return self._build_fallback(state)
 
     def _build_fallback(self, state: PipelineState) -> dict:
-        """Fallback minimal si le LLM échoue — le pipeline ne s'arrête jamais."""
         return {
-            "sector":               state.sector,
-            "target_users":         state.target_audience or "",
-            "problem":              "",
+            "type":               "clarified",
+            "message":            "Voici ce que j'ai compris de votre projet :",
+            "sector":             state.sector or "",
+            "target_users":       state.target_audience or "",
+            "problem":            "",
             "solution_description": state.description[:300],
-            "short_pitch":          state.name,
-            "clarity_score":        30,
+            "short_pitch":        state.name or "",
+            "score":              30,
         }
 
     # ══════════════════════════════════════════════════════════
@@ -308,34 +398,19 @@ class IdeaClarifierAgent(BaseAgent):
     # ══════════════════════════════════════════════════════════
 
     async def run(self, state: PipelineState) -> dict:
-        """
-        Mode batch — appelé par LangGraph.
-
-        FLUX :
-          1. Validation des inputs
-          2. Appel LLM 1 : check_safety()
-             → safe: false → STOP, retourne le refus
-          3. Appel LLM 2 : generate_clarified_idea()
-             → retourne le JSON de clarification
-        """
         self._log_start(state)
         state.current_agent = "idea_clarifier"
 
-        # 1. Validation
-        errors = validate_idea_input(state.name, state.description, state.sector)
-        if errors:
-            msg = "; ".join(errors)
-            state.errors.append(f"idea_clarifier: {msg}")
-            raise ValueError(f"Validation échouée : {msg}")
+        if not state.description or len(state.description.strip()) < 10:
+            raise ValueError("Description trop courte")
 
-        # 2. Appel LLM 1 — sécurité
+        # LLM 1 — sécurité
         safety = await self.check_safety(state)
+        if safety.get("sector") and not state.sector:
+            state.sector = safety["sector"]
 
         if not safety["safe"]:
             state.status = "refused"
-            state.errors.append(
-                f"idea_clarifier: refusé — {safety.get('reason_category')}"
-            )
             return {
                 "safe":            False,
                 "reason_category": safety.get("reason_category"),
@@ -344,14 +419,20 @@ class IdeaClarifierAgent(BaseAgent):
                 "clarity_score":   0,
             }
 
-        # 3. Appel LLM 2 — clarification
-        clarified = await self.generate_clarified_idea(state)
-        score     = clarified.get("clarity_score", 50)
+        # LLM 2 — clarification
+        result = await self.generate_clarified_idea(state)
+        score  = result.get("score", 50)
+
+        clarified = {
+            k: v for k, v in result.items()
+            if k not in ("type", "message")
+        }
+        clarified["clarity_score"] = score
 
         state.clarified_idea = clarified
         state.clarity_score  = score
-
         self._log_success(clarified)
+
         return {
             "safe":           True,
             "clarified_idea": clarified,
@@ -359,102 +440,87 @@ class IdeaClarifierAgent(BaseAgent):
         }
 
     # ══════════════════════════════════════════════════════════
-    #  run_interactive() — mode chat (frontend IdeaDetail.jsx)
+    #  run_interactive() — mode chat (frontend IdeaPage.jsx)
     # ══════════════════════════════════════════════════════════
 
     async def run_interactive(
         self,
         state: PipelineState,
         user_answers: list[str] | None = None,
+        conversation_history: list[dict] | None = None,
     ) -> dict:
         """
-        Mode chat — appelé depuis IdeaDetail.jsx.
+        Mode chat — appelé depuis clarifier.py (routes SSE).
 
-        Frontend appel A — sans réponses :
-          1. Validation inputs
-          2. LLM 1 : check_safety()  → si refus → STOP
-          3. LLM 2 : _evaluate_richness() → dimensions manquantes
-          4. Retourne les questions
-          → {"questions": [...], "ready": false}
+        Appel A (sans réponses) :
+          1. check_safety() → secteur détecté
+          2. generate_clarified_idea() → questions ou clarified
 
-        Frontend appel B — avec réponses :
-          1. LLM 2 : generate_clarified_idea() avec les réponses
-          → {"clarified_idea": {...}, "ready": true}
+        Appel B (avec réponses) :
+          1. generate_clarified_idea() avec historique complet
+          → off_topic | questions | clarified
         """
         self._log_start(state)
 
-        # Validation
-        errors = validate_idea_input(state.name, state.description, state.sector)
-        if errors:
+        if not state.description or len(state.description.strip()) < 5:
             return {
-                "safe":           True,
-                "questions":      [],
-                "clarified_idea": {},
-                "clarity_score":  0,
-                "ready":          False,
-                "error":          "; ".join(errors),
+                "type":      "questions",
+                "message":   "Pourriez-vous décrire votre idée en quelques mots ?",
+                "questions": ["Décrivez votre idée en quelques phrases."],
+                "score":     0,
             }
 
-        # ── Appel B : l'utilisateur a répondu aux questions ──────────────
+        # ── Appel B — avec réponses ───────────────────────────
         if user_answers:
-            clarified = await self.generate_clarified_idea(state, user_answers)
-            score     = clarified.get("clarity_score", 50)
+            result = await self.generate_clarified_idea(
+                state,
+                user_answers=user_answers,
+                conversation_history=conversation_history or [],
+            )
 
-            state.clarified_idea = clarified
-            state.clarity_score  = score
+            if result.get("type") == "clarified":
+                score     = result.get("score", 50)
+                clarified = {
+                    k: v for k, v in result.items()
+                    if k not in ("type", "message")
+                }
+                clarified["clarity_score"] = score
+                state.clarified_idea = clarified
+                state.clarity_score  = score
+                self._log_success(clarified)
 
-            self._log_success(clarified)
-            return {
-                "safe":           True,
-                "questions":      [],
-                "clarified_idea": clarified,
-                "clarity_score":  score,
-                "ready":          True,
-            }
+            return result
 
-        # ── Appel A : premier appel, sans réponses ────────────────────────
+        # ── Appel A — premier appel ───────────────────────────
 
-        # LLM 1 — sécurité
+        # LLM 1 — sécurité + détection secteur
         safety = await self.check_safety(state)
+        if safety.get("sector") and not state.sector:
+            state.sector = safety["sector"]
 
         if not safety["safe"]:
             state.status = "refused"
             return {
+                "type":            "refused",
                 "safe":            False,
                 "reason_category": safety.get("reason_category"),
                 "refusal_message": safety.get("refusal_message"),
-                "questions":       [],
-                "clarified_idea":  {},
-                "clarity_score":   0,
-                "ready":           False,
+                "message":         safety.get("refusal_message", ""),
+                "score":           0,
             }
 
-        # LLM 2a — dimensions manquantes
-        richness  = await self._evaluate_richness(state)
-        questions = self.build_questions(richness)
+        # LLM 2 — clarification ou questions
+        result = await self.generate_clarified_idea(state)
 
-        if questions:
-            return {
-                "safe":           True,
-                "questions":      questions,
-                "clarified_idea": {},
-                "clarity_score":  0,
-                "ready":          False,
+        if result.get("type") == "clarified":
+            score     = result.get("score", 50)
+            clarified = {
+                k: v for k, v in result.items()
+                if k not in ("type", "message")
             }
+            clarified["clarity_score"] = score
+            state.clarified_idea = clarified
+            state.clarity_score  = score
+            self._log_success(clarified)
 
-        # Description complète → générer directement sans questions
-        # LLM 2b — clarification directe
-        clarified = await self.generate_clarified_idea(state)
-        score     = clarified.get("clarity_score", 50)
-
-        state.clarified_idea = clarified
-        state.clarity_score  = score
-
-        self._log_success(clarified)
-        return {
-            "safe":           True,
-            "questions":      [],
-            "clarified_idea": clarified,
-            "clarity_score":  score,
-            "ready":          True,
-        }
+        return result

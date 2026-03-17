@@ -61,57 +61,44 @@ export function useClarifierChat(idea, token) {
     const questions = rawQuestions.filter(
       (q) => q != null && String(q).trim() !== "",
     );
-    if (questions.length > 0) {
+
+    if (result.type === "questions" || questions.length > 0) {
       return {
         type: "questions",
         questions,
-        text: "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :",
       };
     }
 
-    if (result.clarified_idea && result.ready) {
-      const c = result.clarified_idea;
+    if (result.type === "clarified") {
       return {
         type: "clarified",
-        clarifiedIdea: c,
-        score: c.clarity_score,
-        text: "Voici ce que j'ai compris de votre idée :",
+        clarifiedIdea: result,
+        score: result.score,
         sections: {
-          what: c?.solution_description,
-          who: c?.target_users,
-          problem: c?.problem,
-          pitch: c?.short_pitch,
+          what: result?.solution_description,
+          who: result?.target_users,
+          problem: result?.problem,
+          pitch: result?.short_pitch,
         },
       };
     }
 
-    if (result.safe === false) {
-      const fallback =
-        "Ce projet ne peut pas être traité par BrandAI pour des raisons de sécurité.";
-      let raw =
-        result.refusal_message != null && typeof result.refusal_message === "string"
-          ? result.refusal_message
-          : fallback;
-      raw = String(raw).trim();
-      const refusalMessage = raw
-        .replace(/\s*undefined\s*$/i, "")
-        .replace(/\s*null\s*$/i, "")
-        .trim() || fallback;
+    if (result.type === "refused" || result.safe === false) {
+      const msg = safeText(result.refusal_message || result.message);
       return {
         type: "refused",
         reason_category: result.reason_category,
-        refusal_message: refusalMessage,
+        refusal_message: msg,
         partial_understanding: {
           what: result.partial_what ?? null,
           who: result.partial_who ?? null,
           problem: result.partial_problem ?? null,
         },
         score: 0,
-        text: refusalMessage,
       };
     }
 
-    return { type: "unknown", text: "Réponse reçue." };
+    return { type: "unknown" };
   }, []);
 
   const applyClarifierResult = useCallback(
@@ -122,76 +109,128 @@ export function useClarifierChat(idea, token) {
         return;
       }
       const formatted = formatAgentResponse(result);
+      // Type refused
       if (formatted.type === "refused") {
         setIsRefused(true);
-        streamWords(formatted.text, (msgId) => {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === msgId
-                ? {
-                    ...m,
+        const msg = safeText(result.refusal_message || result.message);
+        if (msg) {
+          streamWords(msg, (msgId) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === msgId
+                  ? {
+                      ...m,
+                      structured: {
+                        type: "refused",
+                        reason_category: formatted.reason_category,
+                        refusal_message: formatted.refusal_message,
+                        partial_understanding:
+                          formatted.partial_understanding || {},
+                        score: 0,
+                      },
+                    }
+                  : m,
+              ),
+            );
+          });
+        }
+        return;
+      }
+
+      // Type questions
+      if (result.type === "questions") {
+        const msg = safeText(result.message);
+        if (msg) {
+          streamWords(msg, (msgId) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === msgId
+                  ? {
+                      ...m,
+                      structured: {
+                        type: "questions",
+                        questions: result.questions || [],
+                      },
+                    }
+                  : m,
+              ),
+            );
+          });
+        }
+        setPendingQuestions(result.questions || []);
+        setClarityScore(result.score || 0);
+        return;
+      }
+
+      // Type off_topic
+      if (result.type === "off_topic") {
+        const msg = safeText(result.message);
+        if (msg) {
+          streamWords(msg, () => {
+            if (result.repeat_question) {
+              setTimeout(() => {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: Date.now() + Math.random(),
+                    role: "agent",
+                    content: result.repeat_question,
+                    isStreaming: false,
+                    timestamp: new Date(),
                     structured: {
-                      type: "refused",
-                      reason_category: formatted.reason_category,
-                      refusal_message: formatted.refusal_message,
-                      partial_understanding: formatted.partial_understanding || {},
-                      score: 0,
+                      type: "questions",
+                      questions: [result.repeat_question],
                     },
-                  }
-                : m,
-            ),
-          );
-        });
+                  },
+                ]);
+                setPendingQuestions([result.repeat_question]);
+              }, 1000);
+            }
+          });
+        }
         return;
       }
-      if (formatted.type === "questions") {
-        setPendingQuestions(formatted.questions);
-        const introText =
-          "J'ai analysé votre idée. Pour mieux la comprendre, j'ai quelques questions :";
-        streamWords(introText, (msgId) => {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === msgId
-                ? { ...m, structured: { type: "questions", questions: formatted.questions } }
-                : m,
-            ),
-          );
-        });
-        return;
-      }
-      if (formatted.type === "clarified") {
-        setPendingQuestions([]);
-        const score =
-          result.clarified_idea?.clarity_score ?? formatted.score ?? 0;
+
+      // Type clarified
+      if (result.type === "clarified") {
+        const score = result.score || 0;
+        const msg = safeText(result.message);
+
         setClarityScore(score);
-        setClarifiedIdea(formatted.clarifiedIdea);
-        if (score >= 80) setIsReady(true);
-        const introClarified = options.fromAnswer
-          ? "Merci pour ces précisions ! Voici votre idée structurée :"
-          : score >= 80
-            ? "Votre idée est bien structurée ! Voici ce que j'ai compris :"
-            : "Voici ce que j'ai compris de votre idée :";
-        streamWords(introClarified, (msgId) => {
-          const sec = result.clarified_idea || {};
-          const sections = formatted.sections || {
-            what: sec?.solution_description ?? null,
-            who: sec?.target_users ?? null,
-            problem: sec?.problem ?? null,
-            pitch: sec?.short_pitch ?? null,
-          };
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === msgId
-                ? { ...m, structured: { type: "clarified", ...formatted, score, sections } }
-                : m,
-            ),
-          );
-        });
+        setClarifiedIdea(result);
+        if (score >= 55) setIsReady(true);
+
+        if (msg) {
+          streamWords(msg, (msgId) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === msgId
+                  ? {
+                      ...m,
+                      structured: {
+                        type: "clarified",
+                        score,
+                        sections: {
+                          what: safeText(result.solution_description),
+                          who: safeText(result.target_users),
+                          problem: safeText(result.problem),
+                          pitch: safeText(result.short_pitch),
+                        },
+                      },
+                    }
+                  : m,
+              ),
+            );
+          });
+        }
         return;
       }
-      streamWords(
-        safeText(formatted?.text, "Réponse reçue."),
-      );
+
+      // Fallback
+      const fallbackMsg = safeText(result.message || "Réponse reçue.");
+      if (fallbackMsg) {
+        streamWords(fallbackMsg, null);
+      }
     },
     [addStep, formatAgentResponse, streamWords],
   );
