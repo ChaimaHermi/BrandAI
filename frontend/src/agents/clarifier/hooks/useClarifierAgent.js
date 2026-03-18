@@ -156,12 +156,25 @@ export function useClarifierAgent(idea, token, options = {}) {
 
   const submitAnswers = useCallback(async () => {
     if (!idea || currentStep !== "questions") return;
-    if (
-      !answers.problem?.trim() ||
-      !answers.target?.trim() ||
-      !answers.solution?.trim()
-    )
-      return;
+
+    const keys = ["problem", "target", "solution"];
+    const getAxis = (q, i) => {
+      if (typeof q === "string") return keys[i] || null;
+      return q?.axis || keys[i] || null;
+    };
+    const requiredAxes = Array.from(
+      new Set(
+        (questions || [])
+          .map((q, i) => getAxis(q, i))
+          .filter((a) => typeof a === "string" && a.length > 0)
+      )
+    );
+    const axesToValidate = requiredAxes.length ? requiredAxes : keys;
+
+    const isValid = axesToValidate.every(
+      (axis) => answers[axis]?.trim().length > 3
+    );
+    if (!isValid) return;
 
     setCurrentStep("answering");
     setXaiSteps((prev) => {

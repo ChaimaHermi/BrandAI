@@ -158,57 +158,134 @@ Réponds UNIQUEMENT avec le message en texte libre.
 Pas de JSON, pas de titre, juste le message."""
 
 
-_QUESTIONS_PROMPT = """Tu es l'agent Idea Clarifier de BrandAI.
+QUESTIONS_PROMPT = """Tu es l'agent Idea Clarifier de BrandAI.
 
 Ton rôle est d'aider un entrepreneur à clarifier son idée
-en posant EXACTEMENT 3 questions ciblées.
+en analysant sa description et en vérifiant si elle est complète.
 
-RÈGLES STRICTES :
-- Répondre en français
-- Répondre en JSON valide (sans backticks ni markdown)
+Une idée est considérée comme claire si ces 3 éléments sont définis :
+1. PROBLÈME — quel problème concret est résolu ?
+2. CIBLE — qui sont les utilisateurs ?
+3. SOLUTION — comment fonctionne la solution ?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RÈGLES STRICTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Répondre uniquement en français
+- Répondre uniquement en JSON valide (aucun markdown, aucun backticks)
 - Ne jamais répéter un mot deux fois de suite
-- Adapter les questions au secteur détecté
+- Ne jamais inventer des informations absentes
+- Adapter au secteur détecté automatiquement
+- Maximum 3 questions
+- Poser uniquement les questions nécessaires (pas systématiquement 3)
+- Pour le JSON :
+  - Si type="questions" alors renvoyer `missing_axes` ET `questions`
+  - Chaque élément de `questions` doit être un objet {axis,text}
+  - questions.length doit être égal à missing_axes.length
+  - axis doit être exactement "problem" | "target" | "solution"
 
-QUESTIONS OBLIGATOIRES (dans cet ordre) :
-1. Le PROBLÈME concret résolu
-2. La CIBLE (qui sont les utilisateurs ?)
-3. La SOLUTION (comment ça fonctionne ?)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANALYSE DE L’IDÉE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Reformuler selon le contexte mais garder ce sens.
+1. Lire la description utilisateur
 
-INTERDIT dans les questions :
-- concurrence / différenciation
-- business model / pricing
+2. Détecter si les éléments suivants sont présents et clairs :
+- problème
+- cible
+- solution
+
+3. Considérer comme "non clair" si :
+- trop vague
+- trop général
+- implicite
+- ambigu
+- ou absent
+
+4. Si le texte est incohérent ou aléatoire (ex: "qsdjkfqsdf"),
+→ considérer comme non exploitable
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LOGIQUE DE DÉCISION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CAS A — IDÉE CLAIRE :
+→ Les 3 éléments sont présents et compréhensibles
+→ Ne poser AUCUNE question
+→ Reformuler clairement l’idée
+
+CAS B — IDÉE PARTIELLE :
+→ Certains éléments manquent ou sont flous
+→ Poser UNIQUEMENT les questions nécessaires
+→ Chaque question doit cibler un élément manquant
+
+CAS C — IDÉE TROP VAGUE OU INCOHÉRENTE :
+→ Expliquer que la description n’est pas claire
+→ Poser des questions simples pour structurer
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INTERDIT DANS LES QUESTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- concurrence
+- différenciation
+- business model
+- pricing
 - stratégie marketing
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ADAPTER LE MESSAGE selon la description
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STYLE DES QUESTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Courtes et précises
+- Adaptées au contexte
+- Naturelles (pas robotiques)
+- Une question = un objectif
 
-CAS 1 — Description trop courte ou vague :
-→ Commencer par expliquer que la description
-  n'est pas assez claire.
-→ Exemple : "Votre description est un peu courte
-  pour que je puisse bien comprendre votre projet.
-  Quelques questions vont nous aider à clarifier ça !"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMAT DE SORTIE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CAS 2 — Description lisible avec sujet identifiable :
-→ Message encourageant, mentionner le secteur.
-→ Exemple : "Votre idée dans le secteur éducation
-  semble prometteuse ! Pour mieux la structurer,
-  j'ai besoin de 3 précisions."
+CAS A — IDÉE CLAIRE :
+{
+  "type": "clarified",
+  "message": "Votre idée est claire et bien structurée.",
+  "missing_axes": [],
+  "questions": []
+}
 
-FORMAT JSON :
+CAS B — QUESTIONS :
 {
   "type": "questions",
-  "message": "message adapté selon CAS 1 ou CAS 2",
+  "message": "Votre idée est intéressante, mais certains éléments doivent être précisés.",
+  "missing_axes": ["problem", "target"],
   "questions": [
-    "question sur le problème — adaptée au secteur",
-    "question sur la cible — adaptée au secteur",
-    "question sur la solution — adaptée au secteur"
+    {"axis": "problem", "text": "Quel problème concret voulez-vous résoudre ?"},
+    {"axis": "target",  "text": "Pour qui exactement est cette solution ?"}
   ]
-}"""
+}
 
+CAS C — IDÉE NON CLAIRE :
+{
+  "type": "questions",
+  "message": "Votre description est trop vague ou difficile à comprendre. Quelques précisions vont m’aider à mieux structurer votre idée.",
+  "missing_axes": ["problem", "target", "solution"],
+  "questions": [
+    {"axis": "problem",  "text": "Quel problème voulez-vous résoudre ?"},
+    {"axis": "target",   "text": "Pour qui est cette solution ?"},
+    {"axis": "solution", "text": "Quelle solution proposez-vous ?"}
+  ]
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OBJECTIF FINAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Toujours produire soit :
+- une idée claire, exploitable directement par les autres agents
+- soit les questions minimales nécessaires pour y arriver
+
+Ne jamais faire de résumé inutile.
+Ne jamais ajouter d’explications hors JSON.
+"""
 
 _CLARIFY_PROMPT = """Tu es l'agent Idea Clarifier de BrandAI.
 
@@ -456,52 +533,7 @@ class IdeaClarifierAgent(BaseAgent):
 
     # ── LLM 2a : Questions ────────────────────────────────
 
-    async def generate_questions(
-        self,
-        state: PipelineState,
-    ) -> dict:
-        """
-        Génère exactement 3 questions ciblées.
-        Message adapté selon clarté de la description.
-        """
-        user_prompt = self._build_user_prompt(state)
-
-        fallback = {
-            "type":    "questions",
-            "message": "Votre description est un peu courte. "
-                       "Quelques questions vont nous aider à "
-                       "mieux comprendre votre projet !",
-            "questions": [
-                "Quel problème concret votre idée résout-elle ?",
-                "Pour qui est cette solution ?",
-                "Comment fonctionne-t-elle concrètement ?",
-            ],
-        }
-
-        try:
-            raw    = await self._call_llm(_QUESTIONS_PROMPT, user_prompt)
-            result = self._parse_json(raw)
-
-            self.logger.info(
-                f"[clarifier] questions : {result.get('questions', [])}"
-            )
-
-            questions = result.get("questions", [])
-            if not questions or len(questions) < 3:
-                questions = fallback["questions"]
-
-            return {
-                "type":      "questions",
-                "message":   result.get("message", fallback["message"]),
-                "questions": questions[:3],
-            }
-
-        except Exception as e:
-            self.logger.warning(
-                f"[clarifier] generate_questions erreur : {e}"
-            )
-            return fallback
-
+    
     # ── LLM 2b : Clarification ────────────────────────────
 
     async def generate_clarified_idea(
@@ -582,6 +614,121 @@ class IdeaClarifierAgent(BaseAgent):
                 f"[clarifier] generate_clarified_idea erreur : {e}"
             )
             return fallback
+
+    # ── LLM 1b : axes manquants / questions minimales ──────────
+    async def generate_questions(self, state: PipelineState) -> dict:
+        """
+        Analyse la clarté de la description (sans réponses).
+
+        Retourne :
+        - type="clarified" (retourne directement l'objet final compatible front)
+        - ou type="questions" avec questions au format :
+            [{ "axis": "problem"|"target"|"solution", "text": "..." }]
+        """
+        user_prompt = self._build_user_prompt(state)
+
+        try:
+            raw = await self._call_llm(QUESTIONS_PROMPT, user_prompt)
+            parsed = self._parse_json(raw)
+        except Exception as e:
+            self.logger.warning(
+                f"[clarifier] generate_questions erreur → fallback : {e}"
+            )
+            return {
+                "type": "questions",
+                "message": (
+                    "Votre idée est intéressante, mais j’ai besoin de "
+                    "préciser certains éléments pour mieux la structurer."
+                ),
+                "missing_axes": ["problem", "target", "solution"],
+                "questions": [
+                    {
+                        "axis": "problem",
+                        "text": "Quel problème concret voulez-vous résoudre ?",
+                    },
+                    {
+                        "axis": "target",
+                        "text": "Pour qui exactement est cette solution ?",
+                    },
+                    {
+                        "axis": "solution",
+                        "text": "Quelle solution proposez-vous ?",
+                    },
+                ],
+                "detected_sector": state.sector or "",
+            }
+
+        parsed_type = parsed.get("type")
+
+        # Compat ancienne valeur : "validated"
+        if parsed_type in ("validated", "clarified"):
+            # Pour que le front affiche directement, on renvoie l'objet final complet.
+            return await self.generate_clarified_idea(state)
+
+        if parsed_type != "questions":
+            return {
+                "type": "questions",
+                "message": (
+                    "Votre idée est intéressante, mais certains éléments "
+                    "doivent être précisés."
+                ),
+                "missing_axes": ["problem", "target", "solution"],
+                "questions": [
+                    {
+                        "axis": "problem",
+                        "text": "Quel problème concret voulez-vous résoudre ?",
+                    },
+                    {
+                        "axis": "target",
+                        "text": "Pour qui exactement est cette solution ?",
+                    },
+                    {
+                        "axis": "solution",
+                        "text": "Quelle solution proposez-vous ?",
+                    },
+                ],
+                "detected_sector": state.sector or "",
+            }
+
+        missing_axes = parsed.get("missing_axes") or []
+        questions_in = parsed.get("questions") or []
+
+        axis_order = ["problem", "target", "solution"]
+        normalized_questions = []
+
+        for i, q in enumerate(questions_in):
+            axis = None
+            text = ""
+
+            if isinstance(q, str):
+                axis = axis_order[i] if i < len(axis_order) else None
+                text = q
+            elif isinstance(q, dict):
+                axis = (
+                    q.get("axis")
+                    or (axis_order[i] if i < len(axis_order) else None)
+                )
+                text = q.get("text") or q.get("question") or q.get("message") or ""
+            else:
+                continue
+
+            if not axis or not text or not str(text).strip():
+                continue
+
+            normalized_questions.append(
+                {"axis": axis, "text": str(text).strip()}
+            )
+
+        if not missing_axes:
+            missing_axes = [q["axis"] for q in normalized_questions]
+
+        return {
+            "type": "questions",
+            "message": parsed.get("message") or "Pouvez-vous préciser ?",
+            "missing_axes": missing_axes,
+            "questions": normalized_questions,
+            "detected_sector": state.sector or "",
+        }
 
     # ── Point d'entrée principal ──────────────────────────
 

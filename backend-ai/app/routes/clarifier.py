@@ -88,7 +88,7 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
             "confidence": safety.get("confidence", 0),
         })
 
-        # Étape 2 — générer les 3 questions
+        # Étape 2 — générer (ou refuser / clarifier)
         yield sse_event("step", {
             "status":  "loading",
             "message": "Analyse de votre idée...",
@@ -100,9 +100,20 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
         result["detected_sector"] = state.sector or ""
 
         elapsed_ms = int((time.time() - start_time) * 1000)
+
+        if result.get("type") == "clarified":
+            success_message = "Idée claire — prêt pour le pipeline"
+        else:
+            questions_count = len(result.get("questions") or [])
+            success_message = (
+                f"{questions_count} question(s) générée(s)"
+                if questions_count
+                else "Clarification requise"
+            )
+
         yield sse_event("step", {
             "status":     "success",
-            "message":    "3 questions générées",
+            "message":    success_message,
             "sector":     state.sector or safety.get("sector") or "",
             "confidence": safety.get("confidence", 0),
             "model":      agent.llm_rotator.current_info(),

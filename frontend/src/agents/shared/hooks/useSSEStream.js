@@ -90,7 +90,10 @@ export function useSSEStream() {
     };
 
     const processBuffer = () => {
-      const blocks = buffer.split("\n\n");
+      // Normaliser les retours chariot SSE (CRLF) vers LF pour
+      // détecter correctement les blocs séparés.
+      const normalized = buffer.replace(/\r\n/g, "\n");
+      const blocks = normalized.split("\n\n");
       buffer = blocks.pop() ?? "";
       for (const block of blocks) {
         parseBlock(block);
@@ -117,6 +120,9 @@ export function useSSEStream() {
       }
 
       buffer += decoder.decode(value, { stream: true });
+      // Important : normaliser CRLF pour que `.includes("\n\n")` marche
+      // même si le serveur envoie `\r\n\r\n`.
+      buffer = buffer.replace(/\r\n/g, "\n");
 
       // Ne parser que si on a au moins un bloc complet
       if (buffer.includes("\n\n")) {

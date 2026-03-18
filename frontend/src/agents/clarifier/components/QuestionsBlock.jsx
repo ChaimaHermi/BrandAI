@@ -9,7 +9,29 @@ export default function QuestionsBlock({
   if (!questions.length) return null;
 
   const keys = ["problem", "target", "solution"];
-  const isValid = keys.every((k) => answers[k]?.trim().length > 3);
+
+  const getAxis = (q, i) => {
+    if (typeof q === "string") return keys[i] || null;
+    return q?.axis || keys[i] || null;
+  };
+
+  const getText = (q) => {
+    if (typeof q === "string") return q;
+    return q?.text || q?.question || "";
+  };
+
+  const requiredAxes = Array.from(
+    new Set(
+      questions
+        .map((q, i) => getAxis(q, i))
+        .filter((a) => typeof a === "string" && a.length > 0)
+    )
+  );
+
+  const axesToValidate = requiredAxes.length ? requiredAxes : keys;
+  const isValid = axesToValidate.every(
+    (axis) => answers[axis]?.trim().length > 3
+  );
 
   return (
     <div
@@ -84,7 +106,10 @@ export default function QuestionsBlock({
         )}
 
         {questions.map((question, i) => {
-          const key = keys[i] || `q${i}`;
+          const axis = getAxis(question, i) || `q${i}`;
+          const key = axis;
+          const text = getText(question);
+          if (!text) return null;
           return (
             <div
               key={i}
@@ -103,12 +128,12 @@ export default function QuestionsBlock({
                   color: "#3C3489",
                 }}
               >
-                {i + 1}. {question}
+                {i + 1}. {text}
               </div>
               <textarea
-                value={answers[key] || ""}
+                value={answers[axis] || ""}
                 onChange={(e) =>
-                  setAnswers((prev) => ({ ...prev, [key]: e.target.value }))
+                  setAnswers((prev) => ({ ...prev, [axis]: e.target.value }))
                 }
                 placeholder="Votre réponse..."
                 rows={2}
