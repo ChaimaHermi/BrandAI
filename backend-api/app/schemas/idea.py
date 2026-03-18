@@ -4,7 +4,7 @@
 # ─────────────────────────────────────────
 
 from typing import Optional, Any
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import datetime
 
 
@@ -96,7 +96,7 @@ class IdeaOut(BaseModel):
     # Progression de pipeline (historique des étapes)
     pipeline_progress: Optional[Any] = None
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class IdeaListOut(BaseModel):

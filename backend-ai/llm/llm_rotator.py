@@ -11,6 +11,25 @@ class LLMRotator:
         self.provider = "gemini"
         self.index    = 0
 
+    @classmethod
+    def groq_only(cls) -> "LLMRotator":
+        """
+        Crée un rotator qui utilise uniquement Groq.
+        Pour les agents qui ne veulent jamais Gemini.
+        """
+        instance = cls.__new__(cls)
+        instance._init_groq_only()
+        return instance
+
+    def _init_groq_only(self):
+        # Initialiser uniquement avec les clés Groq
+        self.gemini = []
+        self.groq = create_groq_clients()
+        if not self.groq:
+            raise RuntimeError("Aucun client groq disponible.")
+        self.provider = "groq"
+        self.index = 0
+
     def get_client(self, temperature: float = 0.7):
         clients = self.gemini if self.provider == "gemini" else self.groq
         if not clients:
@@ -18,6 +37,9 @@ class LLMRotator:
         client = clients[self.index]
         # Pour Groq, on fige la température à 0.05 pour éviter la duplication
         if self.provider == "groq":
+            # Groq : temperature forcée à 0.05
+            # pour éviter les répétitions de mots (llama-3.3)
+            # Le paramètre temperature passé est ignoré.
             client.temperature = 0.05
         else:
             client.temperature = temperature

@@ -91,15 +91,20 @@ class BaseAgent(ABC):
         """Méthode principale exécutée par l'agent"""
         pass
 
-    @abstractmethod
-    def _build_system_prompt(self, state: PipelineState):
-        """Construit le system prompt"""
-        pass
+    def _build_system_prompt(self, state: PipelineState) -> str:
+        """
+        Construit le system prompt.
+        Override dans les agents qui utilisent run() batch.
+        Les agents avec sous-méthodes dédiées peuvent ignorer.
+        """
+        return ""
 
-    @abstractmethod
-    def _build_user_prompt(self, state: PipelineState):
-        """Construit le user prompt"""
-        pass
+    def _build_user_prompt(self, state: PipelineState) -> str:
+        """
+        Construit le user prompt.
+        Override dans les agents qui utilisent run() batch.
+        """
+        return ""
 
     # ─────────────────────────────────────────
     # Appel LLM

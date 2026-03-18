@@ -1,17 +1,17 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSSEStream } from "@/agents/shared/hooks/useSSEStream";
-import { safeText } from "@/agents/shared/utils/safeText";
 import { saveClarifierResult } from "../api/clarifier.api";
 
 const AI_URL =
   import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
 
-export function useClarifierAgent(idea, token) {
+export function useClarifierAgent(idea, token, options = {}) {
   const [currentStep, setCurrentStep] = useState("idle"); // idle | analyzing | questions | answering | clarified | refused
   const [xaiSteps, setXaiSteps] = useState([]);
   const xaiStepsRef = useRef([]);
   const [agentMessage, setAgentMessage] = useState("");
   const [questions, setQuestions] = useState([]);
+  const [detectedSector, setDetectedSector] = useState("");
   const [answers, setAnswers] = useState({
     problem: "",
     target: "",
@@ -88,8 +88,6 @@ export function useClarifierAgent(idea, token) {
 
           if (eventType === "result") {
             if (data.type === "refused") {
-              setRefusalData(data);
-              setCurrentStep("refused");
               saveClarifierResult(
                 idea.id,
                 {
@@ -98,38 +96,28 @@ export function useClarifierAgent(idea, token) {
                   clarity_refused_reason: data.reason_category || "",
                   clarity_refused_message:
                     data.message || data.refusal_message || "",
-                  pipeline_progress: {
-                    clarifier_steps: xaiStepsRef.current,
-                  },
                 },
                 token,
-              );
+              ).then(() => options.onPersisted?.());
               return;
             }
             if (data.type === "questions") {
-              setAgentMessage(safeText(data.message));
-              setQuestions(data.questions || []);
-              setCurrentStep("questions");
+              // Sauvegarder le secteur détecté pour le 2ème appel
+              if (data.detected_sector) {
+                setDetectedSector(data.detected_sector);
+              }
               saveClarifierResult(
                 idea.id,
                 {
                   clarity_status: "questions",
                   clarity_questions: data.questions || [],
                   clarity_agent_message: data.message || "",
-                  pipeline_progress: {
-                    clarifier_steps: xaiStepsRef.current,
-                  },
                 },
                 token,
-              );
+              ).then(() => options.onPersisted?.());
               return;
             }
             if (data.type === "clarified") {
-              const score = data.score || 0;
-              setClarityScore(score);
-              setClarifiedIdea(data);
-              if (score >= 55) setIsReady(true);
-              setCurrentStep("clarified");
               saveClarifierResult(
                 idea.id,
                 {
@@ -143,20 +131,14 @@ export function useClarifierAgent(idea, token) {
                   clarity_agent_message: data.message || "",
                   clarity_questions: [],
                   clarity_answers: {},
-                  pipeline_progress: {
-                    clarifier_steps: xaiStepsRef.current,
-                  },
                 },
                 token,
-              );
+              ).then(() => options.onPersisted?.());
             }
           }
 
           if (eventType === "done") {
             resolveLoadingSteps();
-            if (currentStep === "analyzing") {
-              setCurrentStep("questions");
-            }
           }
         },
         { headers: token ? { Authorization: `Bearer ${token}` } : {} },
@@ -202,7 +184,7 @@ export function useClarifierAgent(idea, token) {
         {
           idea_id: idea.id,
           name: idea.name || "",
-          sector: idea.sector || "",
+          sector: detectedSector || idea.sector || "",
           description: idea.description,
           target_audience: idea.target_audience || "",
           answer_problem: answers.problem.trim(),
@@ -220,11 +202,6 @@ export function useClarifierAgent(idea, token) {
 
           if (eventType === "result") {
             if (data.type === "clarified") {
-              const score = data.score || 0;
-              setClarityScore(score);
-              setClarifiedIdea(data);
-              if (score >= 55) setIsReady(true);
-              setCurrentStep("clarified");
               saveClarifierResult(
                 idea.id,
                 {
@@ -242,12 +219,9 @@ export function useClarifierAgent(idea, token) {
                     target: answers.target || "",
                     solution: answers.solution || "",
                   },
-                  pipeline_progress: {
-                    clarifier_steps: xaiStepsRef.current,
-                  },
                 },
                 token,
-              );
+              ).then(() => options.onPersisted?.());
             }
           }
 
@@ -266,6 +240,7 @@ export function useClarifierAgent(idea, token) {
     token,
     answers,
     questions,
+    detectedSector,
     currentStep,
     addXaiStep,
     readSSEStream,
@@ -289,6 +264,7 @@ export function useClarifierAgent(idea, token) {
     setClarityScore,
     isReady,
     setIsReady,
+    detectedSector,
     refusalData,
     setRefusalData,
     startAnalysis,

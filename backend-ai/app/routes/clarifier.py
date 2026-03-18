@@ -61,13 +61,20 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
             state.sector = safety["sector"]
 
         if not safety["safe"]:
+            refusal_msg = (safety.get("refusal_message") or "").strip()
+            if not refusal_msg:
+                # Fallback ultime (ne devrait pas arriver si l'agent fonctionne)
+                refusal_msg = "BrandAI ne peut pas vous accompagner dans ce type de projet."
             yield sse_event("step", {
                 "status":  "error",
                 "message": f"Projet refusé — {safety.get('reason_category')}",
             })
             yield sse_event("result", {
                 "type":            "refused",
-                "message":         safety.get("refusal_message", ""),
+                # Compat front: certains clients lisent `message`,
+                # d'autres `refusal_message`.
+                "message":         refusal_msg,
+                "refusal_message": refusal_msg,
                 "reason_category": safety.get("reason_category"),
                 "score":           0,
             })
@@ -88,6 +95,9 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
         })
 
         result = await agent.generate_questions(state)
+        # Ajouter le secteur détecté dans le result
+        # pour que le frontend le renvoie au 2ème appel
+        result["detected_sector"] = state.sector or ""
 
         elapsed_ms = int((time.time() - start_time) * 1000)
         yield sse_event("step", {

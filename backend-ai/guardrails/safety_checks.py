@@ -1,13 +1,14 @@
- 
-# backend-ai/guardrails/safety_checks.py
-# Messages de refus — un par catégorie détectée par le LLM
-
 REFUSAL_MESSAGES = {
-    "fraud":   "Ce projet semble viser à tromper des personnes. BrandAI accompagne uniquement des projets honnêtes.",
-    "illegal": "Ce projet implique des activités illégales. BrandAI ne peut pas vous accompagner.",
-    "harmful": "Ce projet pourrait causer du tort. BrandAI ne peut pas vous accompagner.",
-    "default": "Ce projet ne respecte pas les conditions d'utilisation de BrandAI.",
+    "fraud":   "BrandAI ne peut pas vous accompagner dans ce projet. Il semble viser à tromper des personnes.",
+    "illegal": "BrandAI ne peut pas vous accompagner dans ce projet. Il implique des activités illégales.",
+    "harmful": "BrandAI ne peut pas vous accompagner dans ce projet. Il pourrait causer du tort.",
+    "default": "BrandAI ne peut pas vous accompagner dans ce type de projet.",
 }
 
+
 def get_refusal_message(category: str) -> str:
+    """
+    Fallback uniquement — utilisé si le LLM échoue.
+    En temps normal, c'est le LLM qui génère le message.
+    """
     return REFUSAL_MESSAGES.get(category, REFUSAL_MESSAGES["default"])
