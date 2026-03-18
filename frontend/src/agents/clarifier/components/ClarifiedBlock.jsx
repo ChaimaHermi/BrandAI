@@ -1,6 +1,8 @@
 export default function ClarifiedBlock({ data, score }) {
   if (!data) return null;
 
+  const messageText = (data.message || "").trim();
+
   // ── Score insuffisant → bloc warning ────────────────
   if (score < 55) {
     return (
@@ -164,6 +166,23 @@ export default function ClarifiedBlock({ data, score }) {
               </div>
             </div>
           </div>
+
+            {messageText && (
+              <div
+                style={{
+                  padding: "10px 14px",
+                  background: "#f8f7ff",
+                  border: "0.5px solid #e8e4ff",
+                  borderRadius: 12,
+                  fontSize: 12,
+                  color: "#374151",
+                  lineHeight: 1.6,
+                  fontWeight: 600,
+                }}
+              >
+                {messageText}
+              </div>
+            )}
 
           {/* Dimensions manquantes */}
           <div
@@ -380,6 +399,23 @@ export default function ClarifiedBlock({ data, score }) {
             }}
           >
             "{data.short_pitch}"
+          </div>
+        )}
+
+        {messageText && (
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "#f8f7ff",
+              border: "0.5px solid #e8e4ff",
+              borderRadius: 12,
+              fontSize: 12,
+              color: "#374151",
+              lineHeight: 1.6,
+              fontWeight: 600,
+            }}
+          >
+            {messageText}
           </div>
         )}
 

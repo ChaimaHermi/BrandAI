@@ -6,10 +6,32 @@ export default function QuestionsBlock({
   onSubmit,
   isLoading,
 }) {
-  if (!questions.length) return null;
+  const hasQuestions = Array.isArray(questions) && questions.length > 0;
 
   const keys = ["problem", "target", "solution"];
-  const isValid = keys.every((k) => answers[k]?.trim().length > 3);
+
+  const getAxis = (q, i) => {
+    if (typeof q === "string") return keys[i] || null;
+    return q?.axis || keys[i] || null;
+  };
+
+  const getText = (q) => {
+    if (typeof q === "string") return q;
+    return q?.text || q?.question || "";
+  };
+
+  const requiredAxes = Array.from(
+    new Set(
+      questions
+        .map((q, i) => getAxis(q, i))
+        .filter((a) => typeof a === "string" && a.length > 0)
+    )
+  );
+
+  const axesToValidate = requiredAxes.length ? requiredAxes : keys;
+  const isValid = axesToValidate.every(
+    (axis) => answers[axis]?.trim().length > 3
+  );
 
   return (
     <div
@@ -83,8 +105,12 @@ export default function QuestionsBlock({
           </p>
         )}
 
-        {questions.map((question, i) => {
-          const key = keys[i] || `q${i}`;
+        {hasQuestions &&
+          questions.map((question, i) => {
+          const axis = getAxis(question, i) || `q${i}`;
+          const key = axis;
+          const text = getText(question);
+          if (!text) return null;
           return (
             <div
               key={i}
@@ -103,12 +129,12 @@ export default function QuestionsBlock({
                   color: "#3C3489",
                 }}
               >
-                {i + 1}. {question}
+                {i + 1}. {text}
               </div>
               <textarea
-                value={answers[key] || ""}
+                value={answers[axis] || ""}
                 onChange={(e) =>
-                  setAnswers((prev) => ({ ...prev, [key]: e.target.value }))
+                  setAnswers((prev) => ({ ...prev, [axis]: e.target.value }))
                 }
                 placeholder="Votre réponse..."
                 rows={2}
@@ -133,30 +159,32 @@ export default function QuestionsBlock({
           );
         })}
 
-        <button
-          onClick={onSubmit}
-          disabled={!isValid || isLoading}
-          style={{
-            alignSelf: "flex-end",
-            padding: "9px 20px",
-            background:
-              isValid && !isLoading
-                ? "#7F77DD"
-                : "var(--color-background-secondary)",
-            color:
-              isValid && !isLoading
-                ? "white"
-                : "var(--color-text-secondary)",
-            border: "none",
-            borderRadius: "var(--border-radius-md)",
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: isValid && !isLoading ? "pointer" : "not-allowed",
-            transition: "all 0.2s",
-          }}
-        >
-          {isLoading ? "Analyse en cours..." : "Envoyer mes réponses →"}
-        </button>
+        {hasQuestions && (
+          <button
+            onClick={onSubmit}
+            disabled={!isValid || isLoading}
+            style={{
+              alignSelf: "flex-end",
+              padding: "9px 20px",
+              background:
+                isValid && !isLoading
+                  ? "#7F77DD"
+                  : "var(--color-background-secondary)",
+              color:
+                isValid && !isLoading
+                  ? "white"
+                  : "var(--color-text-secondary)",
+              border: "none",
+              borderRadius: "var(--border-radius-md)",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: isValid && !isLoading ? "pointer" : "not-allowed",
+              transition: "all 0.2s",
+            }}
+          >
+            {isLoading ? "Analyse en cours..." : "Envoyer mes réponses →"}
+          </button>
+        )}
       </div>
     </div>
   );
