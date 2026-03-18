@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 
 export default function XaiBlock({ steps, isLoading, collapsed }) {
-  if (!steps.length && !isLoading) return null;
-
   const [isOpen, setIsOpen] = useState(!collapsed);
 
   // Si le parent change collapsed (ex: quand clarified), on synchronise l'état local
   useEffect(() => {
     setIsOpen(!collapsed);
   }, [collapsed]);
+
+  const shouldRender = steps.length > 0 || isLoading;
+  if (!shouldRender) return null;
 
   const effectiveCollapsed = !isOpen;
 
