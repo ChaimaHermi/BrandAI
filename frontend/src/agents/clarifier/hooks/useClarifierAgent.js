@@ -201,6 +201,20 @@ export function useClarifierAgent(idea, token, options = {}) {
           }
 
           if (eventType === "result") {
+            if (data.type === "refused") {
+              saveClarifierResult(
+                idea.id,
+                {
+                  clarity_status: "refused",
+                  clarity_score: 0,
+                  clarity_refused_reason: data.reason_category || "",
+                  clarity_refused_message:
+                    data.message || data.refusal_message || "",
+                },
+                token,
+              ).then(() => options.onPersisted?.());
+              return;
+            }
             if (data.type === "clarified") {
               saveClarifierResult(
                 idea.id,

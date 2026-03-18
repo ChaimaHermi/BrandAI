@@ -6,12 +6,14 @@
 #
 #  FLUX :
 #    Appel 1 (sans réponses) :
-#      → check_safety()       — sécurité + secteur
-#      → generate_questions() — 3 questions ciblées
+#      → validate_idea_input() + is_gibberish() — SANS LLM
+#      → check_safety()       — sécurité + secteur (LLM)
+#      → generate_questions() — 3 questions ciblées (LLM)
 #
 #    Appel 2 (avec réponses) :
-#      → check_safety()             — re-vérification
-#      → generate_clarified_idea()  — JSON structuré final
+#      → check_safety()            — re-vérification LLM
+#                                    analyse description + réponses
+#      → generate_clarified_idea() — JSON structuré final (LLM)
 #
 #  TYPES DE RETOUR :
 #    "questions" → 3 champs à remplir
@@ -36,19 +38,17 @@ logger = logging.getLogger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════
-#  UTILITAIRES
+#  UTILITAIRE — Détection texte incohérent SANS LLM
 # ══════════════════════════════════════════════════════════════
 
 def is_gibberish(text: str) -> bool:
     """
-    Filtre basique — détecte uniquement les cas évidents :
+    Filtre basique SANS LLM — détecte les cas évidents :
     - Texte trop court (< 10 chars)
     - Moins de 2 mots
-    - Mots sans aucune voyelle (ex: "qsdfsdfg", "bbbbb")
+    - Mots sans aucune voyelle (ex: "qsdfsdfg")
     - Tous les mots identiques
-
-    Le LLM gère les cas ambigus et adapte son message
-    si la description est vague mais lisible.
+    Le LLM gère les cas ambigus.
     """
     if not text or len(text.strip()) < 10:
         return True
@@ -59,11 +59,9 @@ def is_gibberish(text: str) -> bool:
     if len(words) < 2:
         return True
 
-    # Tous les mots identiques
     if len(set(words)) == 1:
         return True
 
-    # Compter les mots réels (avec au moins 1 voyelle)
     real_words = sum(
         1 for w in words
         if len(w) <= 2 or any(c in vowels for c in w)
@@ -71,7 +69,6 @@ def is_gibberish(text: str) -> bool:
     if real_words < 2:
         return True
 
-    # Détecter mots longs sans voyelles (ex: "qsdfsdfgdfg")
     for word in words:
         if len(word) > 6:
             ratio = sum(
@@ -89,7 +86,21 @@ def is_gibberish(text: str) -> bool:
 
 _SAFETY_PROMPT = """Tu es un système de modération pour BrandAI.
 
-Analyse l'INTENTION RÉELLE du projet — pas uniquement les mots.
+Ta mission : analyser l'INTENTION RÉELLE du projet.
+
+RÈGLE CRITIQUE :
+Quand des réponses utilisateur sont fournies,
+analyse l'ENSEMBLE description + réponses.
+Une description innocente avec des réponses malveillantes
+= projet REFUSÉ immédiatement.
+
+Exemples concrets :
+- Description "marketplace" + réponse "vente de drogue"
+  → safe: false, reason_category: "illegal"
+- Description "app mobile" + réponse "escroquer des retraités"
+  → safe: false, reason_category: "fraud"
+- Description "marketplace" + réponse "vêtements pour enfants"
+  → safe: true
 
 Réponds STRICTEMENT en JSON valide, sans texte avant ou après :
 
@@ -100,16 +111,19 @@ Réponds STRICTEMENT en JSON valide, sans texte avant ou après :
   "confidence": nombre entre 0 et 100
 }
 
-Refuser UNIQUEMENT si l'intention est clairement :
-- Tromper des utilisateurs ou soutirer de l'argent (fraud)
-- Pirater ou contourner des systèmes (illegal)
-- Créer du contenu dangereux, violent ou nuisible (harmful)
+Refuser si l'intention est clairement :
+- Tromper / escroquer des personnes (fraud)
+- Activités illégales : drogues, armes, contrebande,
+  faux documents, piratage (illegal)
+- Contenu nuisible, violent, dangereux (harmful)
+- Exploitation de mineurs (harmful)
 
 RÈGLES :
-- Cybersécurité ≠ hacking malveillant
-- Crypto ≠ arnaque
-- Projet flou → safe: true
-- Juger l'intention réelle, pas les mots
+- Cybersécurité défensive ≠ hacking malveillant
+- Crypto légal ≠ arnaque
+- Projet flou sans intention claire → safe: true
+- Juger l'INTENTION RÉELLE, pas les mots isolés
+- Si les réponses révèlent une intention illégale → safe: false
 - En cas de doute → safe: true"""
 
 
@@ -117,24 +131,30 @@ _REFUSAL_PROMPT = """Tu es l'agent Clarifier de BrandAI.
 
 Un projet vient d'être refusé par notre système de modération.
 Tu dois expliquer à l'entrepreneur pourquoi BrandAI
-ne peut pas l'accompagner, de façon professionnelle
-et bienveillante.
+ne peut pas l'accompagner.
 
 RÈGLES :
 - Répondre en français
 - Ton professionnel, jamais agressif
-- Expliquer clairement pourquoi le projet est refusé
+- Mentionner que c'est basé sur la description
+  et les réponses fournies
+- Expliquer clairement la raison du refus
 - Ne pas insulter l'utilisateur
-- Proposer de soumettre un nouveau projet si possible
+- Proposer de soumettre un nouveau projet
 - Maximum 3 phrases
 
 CATÉGORIES :
-
 fraud   → Le projet vise à tromper ou escroquer des personnes.
 illegal → Le projet implique des activités contraires à la loi.
 harmful → Le projet pourrait causer du tort à des personnes.
 
-Réponds UNIQUEMENT avec le message de refus en texte libre.
+STRUCTURE :
+Phrase 1 : "En nous basant sur votre description et
+            vos réponses, [raison du refus]."
+Phrase 2 : Pourquoi BrandAI ne peut pas accompagner.
+Phrase 3 : Invitation à soumettre un nouveau projet légal.
+
+Réponds UNIQUEMENT avec le message en texte libre.
 Pas de JSON, pas de titre, juste le message."""
 
 
@@ -162,28 +182,21 @@ INTERDIT dans les questions :
 - stratégie marketing
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-RÈGLE IMPORTANTE — ADAPTER LE MESSAGE
+ADAPTER LE MESSAGE selon la description
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Lire attentivement la description fournie.
-
-CAS 1 — Description trop courte ou vague
-(ex: "une app", "projet web", "idée startup", "app mobile") :
-→ Commencer le message en expliquant poliment
-  que la description n'est pas assez claire.
-→ Exemple : "Votre description est un peu courte pour
-  que je puisse bien comprendre votre projet.
+CAS 1 — Description trop courte ou vague :
+→ Commencer par expliquer que la description
+  n'est pas assez claire.
+→ Exemple : "Votre description est un peu courte
+  pour que je puisse bien comprendre votre projet.
   Quelques questions vont nous aider à clarifier ça !"
 
-CAS 2 — Description lisible avec un sujet identifiable
-(ex: "application pour les étudiants") :
-→ Message encourageant, mentionner le secteur ou sujet.
+CAS 2 — Description lisible avec sujet identifiable :
+→ Message encourageant, mentionner le secteur.
 → Exemple : "Votre idée dans le secteur éducation
   semble prometteuse ! Pour mieux la structurer,
   j'ai besoin de 3 précisions."
-
-Le message doit TOUJOURS être adapté à la description reçue.
-Ne jamais utiliser un message générique identique à chaque fois.
 
 FORMAT JSON :
 {
@@ -213,6 +226,13 @@ RÈGLES STRICTES :
 - Ne jamais inventer d'informations
 - Ne jamais proposer de stratégie ou business model
 - Reformuler pour améliorer la clarté, rester fidèle
+
+GARDE-FOU SÉCURITÉ :
+Si description ou réponses contiennent des activités
+illégales ou nuisibles :
+→ Ne JAMAIS reformuler ces activités comme légales
+→ Ne JAMAIS présenter une intention illégale positivement
+→ Retourner score: 0 dans ce cas
 
 SCORING :
 - problème clair    : +33 pts
@@ -246,7 +266,11 @@ class IdeaClarifierAgent(BaseAgent):
     """
     Agent 0 du pipeline BrandAI.
     Valide, questionne et structure l'idée utilisateur.
-    Max 2 appels LLM — pas de conversation multi-tours.
+
+    Sécurité :
+    - Appel 1 : check_safety() sur description seule
+    - Appel 2 : check_safety() sur description + réponses
+    Toute la détection est faite par le LLM — pas de hardcode.
     """
 
     def __init__(self):
@@ -255,17 +279,12 @@ class IdeaClarifierAgent(BaseAgent):
             temperature=0.3,
             max_retries=3,
         )
-        # Forcer Groq uniquement (jamais Gemini)
+        # Groq uniquement — température 0.05 forcée
         self.llm_rotator = self.llm_rotator.groq_only()
 
     # ── Prompt système ─────────────────────────────────────
 
     def _build_system_prompt(self, state: PipelineState) -> str:
-        """
-        Obligatoire (BaseAgent).
-        Les routes appellent des sous-méthodes dédiées,
-        on fournit le prompt clarify par défaut.
-        """
         return _CLARIFY_PROMPT
 
     # ── Prompt utilisateur ─────────────────────────────────
@@ -275,6 +294,11 @@ class IdeaClarifierAgent(BaseAgent):
         state: PipelineState,
         answers: dict | None = None,
     ) -> str:
+        """
+        Construit le prompt envoyé au LLM.
+        Si answers présent → séparateurs ━━━ pour
+        rendre les réponses très visibles au LLM.
+        """
         parts = []
 
         if state.name and state.name.strip():
@@ -291,13 +315,35 @@ class IdeaClarifierAgent(BaseAgent):
             )
 
         if answers:
-            parts.append("\nRéponses de l'utilisateur :")
+            parts.append(
+                "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
+            parts.append(
+                "RÉPONSES DE L'UTILISATEUR "
+                "— analyser attentivement l'intention :"
+            )
+            parts.append(
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
             if answers.get("problem"):
-                parts.append(f"  Problème  : {answers['problem']}")
+                parts.append(
+                    f"Problème déclaré   : {answers['problem']}"
+                )
             if answers.get("target"):
-                parts.append(f"  Cible     : {answers['target']}")
+                parts.append(
+                    f"Cible déclarée     : {answers['target']}"
+                )
             if answers.get("solution"):
-                parts.append(f"  Solution  : {answers['solution']}")
+                parts.append(
+                    f"Solution déclarée  : {answers['solution']}"
+                )
+            parts.append(
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
+            parts.append(
+                "Question : ces réponses révèlent-elles "
+                "une intention illégale ou nuisible ?"
+            )
 
         return "\n".join(parts)
 
@@ -309,8 +355,14 @@ class IdeaClarifierAgent(BaseAgent):
         answers: dict | None = None,
     ) -> dict:
         """
-        Vérifie la conformité du projet.
-        En cas d'erreur LLM → retourne safe: True par défaut
+        Vérifie la conformité du projet via LLM.
+
+        Appel 1 (answers=None) : analyse description seule
+        Appel 2 (answers=...)  : analyse description + réponses
+          → les séparateurs ━━━ rendent les réponses
+            très visibles pour le LLM
+
+        En cas d'erreur LLM → safe: True par défaut
         (un timeout ne doit pas bloquer l'utilisateur).
         """
         user_prompt = self._build_user_prompt(state, answers)
@@ -327,7 +379,6 @@ class IdeaClarifierAgent(BaseAgent):
                     f"[clarifier] Refusé — catégorie : {category}"
                 )
 
-                # LLM génère le message personnalisé
                 refusal_message = await self.generate_refusal_message(
                     category=category,
                     description=state.description,
@@ -358,7 +409,6 @@ class IdeaClarifierAgent(BaseAgent):
             }
 
         except Exception as e:
-            # Erreur LLM → laisser passer par défaut
             self.logger.warning(
                 f"[clarifier] check_safety erreur → "
                 f"safe par défaut : {e}"
@@ -369,6 +419,8 @@ class IdeaClarifierAgent(BaseAgent):
                 "confidence": None,
             }
 
+    # ── Message de refus personnalisé ─────────────────────
+
     async def generate_refusal_message(
         self,
         category: str,
@@ -376,6 +428,7 @@ class IdeaClarifierAgent(BaseAgent):
     ) -> str:
         """
         Génère un message de refus personnalisé via LLM.
+        Mentionne explicitement description + réponses.
         Fallback sur get_refusal_message() si erreur.
         """
         user_prompt = (
@@ -388,21 +441,17 @@ class IdeaClarifierAgent(BaseAgent):
                 _REFUSAL_PROMPT,
                 user_prompt,
             )
-            # Nettoyer — enlever les guillemets ou JSON accidentel
             message = message.strip().strip('"').strip("'")
             if message and len(message) > 10:
                 self.logger.info(
-                    f"[clarifier] refusal message LLM : "
-                    f"{message[:100]}"
+                    f"[clarifier] refusal message : {message[:100]}"
                 )
                 return message
         except Exception as e:
             self.logger.warning(
-                f"[clarifier] generate_refusal_message "
-                f"erreur : {e}"
+                f"[clarifier] generate_refusal_message erreur : {e}"
             )
 
-        # Fallback
         return get_refusal_message(category)
 
     # ── LLM 2a : Questions ────────────────────────────────
@@ -413,8 +462,7 @@ class IdeaClarifierAgent(BaseAgent):
     ) -> dict:
         """
         Génère exactement 3 questions ciblées.
-        Le LLM adapte son message selon la clarté
-        de la description (vague vs lisible).
+        Message adapté selon clarté de la description.
         """
         user_prompt = self._build_user_prompt(state)
 
@@ -435,8 +483,7 @@ class IdeaClarifierAgent(BaseAgent):
             result = self._parse_json(raw)
 
             self.logger.info(
-                f"[clarifier] questions : "
-                f"{result.get('questions', [])}"
+                f"[clarifier] questions : {result.get('questions', [])}"
             )
 
             questions = result.get("questions", [])
@@ -463,8 +510,8 @@ class IdeaClarifierAgent(BaseAgent):
         answers: dict | None = None,
     ) -> dict:
         """
-        Génère le JSON structuré final à partir
-        de la description + réponses utilisateur.
+        Génère le JSON structuré final.
+        Appelé UNIQUEMENT si check_safety() → safe: True.
         """
         context = build_idea_summary(
             name=state.name,
@@ -519,11 +566,15 @@ class IdeaClarifierAgent(BaseAgent):
                 "type":    "clarified",
                 "message": result.get("message", ""),
                 "sector":  result.get("sector", state.sector or ""),
-                "target_users":         result.get("target_users",         ""),
-                "problem":              result.get("problem",              ""),
-                "solution_description": result.get("solution_description", ""),
-                "short_pitch":          result.get("short_pitch",          ""),
-                "score":                score,
+                "target_users":
+                    result.get("target_users",         ""),
+                "problem":
+                    result.get("problem",              ""),
+                "solution_description":
+                    result.get("solution_description", ""),
+                "short_pitch":
+                    result.get("short_pitch",          ""),
+                "score": score,
             }
 
         except Exception as e:
@@ -543,16 +594,18 @@ class IdeaClarifierAgent(BaseAgent):
         Appelé depuis clarifier.py (routes SSE).
 
         Appel A (answers=None) :
-          1. Validation description + gibberish check
-          2. check_safety() → secteur propagé dans state
-          3. generate_questions() → message adapté + 3 questions
+          1. validate_idea_input() — description ≥ 10 chars
+          2. is_gibberish()        — filtre SANS LLM
+          3. check_safety()        — LLM : sécurité + secteur
+          4. generate_questions()  — LLM : 3 questions
 
         Appel B (answers={problem, target, solution}) :
-          1. check_safety() avec réponses
-          2. generate_clarified_idea() → JSON final + score
-
-        Retourne toujours :
-          {"type": "questions"|"clarified"|"refused", ...}
+          1. check_safety(state, answers)
+               → LLM analyse description + réponses ensemble
+               → Les séparateurs ━━━ rendent les réponses
+                 très visibles pour détecter les intentions
+               → safe: false → refused avec message LLM
+               → safe: true  → generate_clarified_idea()
         """
 
         # ── Validation basique ────────────────────────────
@@ -573,13 +626,11 @@ class IdeaClarifierAgent(BaseAgent):
                 "score": 0,
             }
 
-        # ── Gibberish check ───────────────────────────────
-        # Détecte les cas évidents SANS appel LLM
-        # (texte sans voyelles, répétitions, < 2 mots réels)
+        # ── Gibberish check SANS LLM ──────────────────────
         if is_gibberish(state.description):
             self.logger.info(
-                "[clarifier] Description gibberish détectée "
-                f": {repr(state.description[:50])}"
+                "[clarifier] Gibberish détecté : "
+                f"{repr(state.description[:50])}"
             )
             return {
                 "type":    "questions",
@@ -597,12 +648,17 @@ class IdeaClarifierAgent(BaseAgent):
 
         # ── Appel B : avec réponses ───────────────────────
         if answers:
+
+            # LLM analyse description + réponses ensemble
+            # Les séparateurs ━━━ dans _build_user_prompt()
+            # rendent les réponses très visibles pour le LLM
             safety = await self.check_safety(state, answers)
 
             if safety.get("sector") and not state.sector:
                 state.sector = safety["sector"]
 
             if not safety["safe"]:
+                # Même comportement que l'Appel A refusé
                 return {
                     "type":            "refused",
                     "message":         safety.get("refusal_message", ""),
@@ -612,12 +668,14 @@ class IdeaClarifierAgent(BaseAgent):
                     "confidence":      safety.get("confidence", 0),
                 }
 
-            return await self.generate_clarified_idea(state, answers)
+            # safe: True → générer le JSON final
+            return await self.generate_clarified_idea(
+                state, answers
+            )
 
-        # ── Appel A : premier appel ───────────────────────
+        # ── Appel A : premier appel sans réponses ─────────
         safety = await self.check_safety(state)
 
-        # Propager secteur détecté dans le state
         if safety.get("sector") and not state.sector:
             state.sector = safety["sector"]
             self.logger.info(
@@ -634,8 +692,6 @@ class IdeaClarifierAgent(BaseAgent):
                 "confidence":      safety.get("confidence", 0),
             }
 
-        # generate_questions() — le LLM adapte son message
-        # selon que la description est vague ou lisible
         return await self.generate_questions(state)
 
     # ── Mode batch LangGraph ──────────────────────────────

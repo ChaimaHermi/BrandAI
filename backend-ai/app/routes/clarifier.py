@@ -159,7 +159,7 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
             "solution": body.answer_solution or "",
         }
 
-        result = await agent.generate_clarified_idea(
+        result = await agent.run_interactive(
             state,
             answers=answers,
         )
