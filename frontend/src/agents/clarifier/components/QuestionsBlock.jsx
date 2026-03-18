@@ -6,7 +6,7 @@ export default function QuestionsBlock({
   onSubmit,
   isLoading,
 }) {
-  if (!questions.length) return null;
+  const hasQuestions = Array.isArray(questions) && questions.length > 0;
 
   const keys = ["problem", "target", "solution"];
 
@@ -105,7 +105,8 @@ export default function QuestionsBlock({
           </p>
         )}
 
-        {questions.map((question, i) => {
+        {hasQuestions &&
+          questions.map((question, i) => {
           const axis = getAxis(question, i) || `q${i}`;
           const key = axis;
           const text = getText(question);
@@ -158,30 +159,32 @@ export default function QuestionsBlock({
           );
         })}
 
-        <button
-          onClick={onSubmit}
-          disabled={!isValid || isLoading}
-          style={{
-            alignSelf: "flex-end",
-            padding: "9px 20px",
-            background:
-              isValid && !isLoading
-                ? "#7F77DD"
-                : "var(--color-background-secondary)",
-            color:
-              isValid && !isLoading
-                ? "white"
-                : "var(--color-text-secondary)",
-            border: "none",
-            borderRadius: "var(--border-radius-md)",
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: isValid && !isLoading ? "pointer" : "not-allowed",
-            transition: "all 0.2s",
-          }}
-        >
-          {isLoading ? "Analyse en cours..." : "Envoyer mes réponses →"}
-        </button>
+        {hasQuestions && (
+          <button
+            onClick={onSubmit}
+            disabled={!isValid || isLoading}
+            style={{
+              alignSelf: "flex-end",
+              padding: "9px 20px",
+              background:
+                isValid && !isLoading
+                  ? "#7F77DD"
+                  : "var(--color-background-secondary)",
+              color:
+                isValid && !isLoading
+                  ? "white"
+                  : "var(--color-text-secondary)",
+              border: "none",
+              borderRadius: "var(--border-radius-md)",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: isValid && !isLoading ? "pointer" : "not-allowed",
+              transition: "all 0.2s",
+            }}
+          >
+            {isLoading ? "Analyse en cours..." : "Envoyer mes réponses →"}
+          </button>
+        )}
       </div>
     </div>
   );

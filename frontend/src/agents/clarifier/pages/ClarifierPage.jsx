@@ -107,7 +107,9 @@ export default function ClarifierPage() {
     // ── CAS : questions déjà générées ─────────────
     if (
       status === "questions" &&
-      idea.clarity_questions?.length > 0
+      (idea.clarity_questions?.length > 0 ||
+        (idea.clarity_agent_message &&
+          idea.clarity_agent_message.trim().length > 0))
     ) {
       setQuestions(idea.clarity_questions);
       setAgentMessage(idea.clarity_agent_message || "");

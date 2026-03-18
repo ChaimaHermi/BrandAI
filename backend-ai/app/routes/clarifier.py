@@ -94,7 +94,9 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
             "message": "Analyse de votre idée...",
         })
 
-        result = await agent.generate_questions(state)
+        # Utiliser run_interactive() pour bénéficier aussi
+        # des gardes locaux (ex: gibberish / validation).
+        result = await agent.run_interactive(state)
         # Ajouter le secteur détecté dans le result
         # pour que le frontend le renvoie au 2ème appel
         result["detected_sector"] = state.sector or ""
