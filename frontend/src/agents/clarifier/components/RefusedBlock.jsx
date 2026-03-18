@@ -14,6 +14,10 @@ export default function RefusedBlock({ data }) {
   const categoryLabel =
     categoryLabels[data.reason_category] || categoryLabels.default;
 
+  const refusalText =
+    (data.message || data.refusal_message || "").trim() ||
+    "BrandAI ne peut pas vous accompagner dans ce type de projet.";
+
   return (
     <div
       style={{
@@ -151,7 +155,7 @@ export default function RefusedBlock({ data }) {
               flex: 1,
             }}
           >
-            {data.message || data.refusal_message}
+            {refusalText}
           </div>
         </div>
 

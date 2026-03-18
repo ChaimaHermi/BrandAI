@@ -29,7 +29,7 @@ import logging
 
 from agents.base_agent import BaseAgent, PipelineState
 from guardrails.safety_checks import get_refusal_message
-from tools.idea_tools import build_idea_summary
+from tools.idea_tools import build_idea_summary, validate_idea_input
 
 
 logger = logging.getLogger(__name__)
@@ -255,6 +255,8 @@ class IdeaClarifierAgent(BaseAgent):
             temperature=0.3,
             max_retries=3,
         )
+        # Forcer Groq uniquement (jamais Gemini)
+        self.llm_rotator = self.llm_rotator.groq_only()
 
     # ── Prompt système ─────────────────────────────────────
 
@@ -554,9 +556,12 @@ class IdeaClarifierAgent(BaseAgent):
         """
 
         # ── Validation basique ────────────────────────────
-        if not state.description or len(
-            state.description.strip()
-        ) < 5:
+        errors = validate_idea_input(
+            name=state.name or "",
+            description=state.description or "",
+            sector=state.sector or "",
+        )
+        if errors:
             return {
                 "type":    "questions",
                 "message": "Décrivez votre idée pour commencer.",

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
 import XaiBlock from "../components/XaiBlock";
@@ -7,7 +7,8 @@ import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
-  const { idea, setIdea, token } = useOutletContext();
+  const { idea, token, refetchIdea } = useOutletContext();
+  const xaiHideTimerRef = useRef(null);
   const {
     currentStep,
     setCurrentStep,
@@ -29,42 +30,24 @@ export default function ClarifierPage() {
     setRefusalData,
     startAnalysis,
     submitAnswers,
-  } = useClarifierAgent(idea, token);
+  } = useClarifierAgent(idea, token, { onPersisted: refetchIdea });
 
-  // Remonter immédiatement le statut/score au layout (sidebar pipeline)
-  // IMPORTANT: ne pas boucler → ne setIdea que si changement réel
+  const scheduleHideXai = (delayMs = 50000) => {
+    if (xaiHideTimerRef.current) {
+      clearTimeout(xaiHideTimerRef.current);
+    }
+    xaiHideTimerRef.current = setTimeout(() => {
+      setXaiSteps([]);
+    }, delayMs);
+  };
+
   useEffect(() => {
-    if (!setIdea) return;
-
-    const nextStatus =
-      currentStep === "refused"
-        ? "refused"
-        : currentStep === "questions"
-          ? "questions"
-          : currentStep === "clarified"
-            ? "clarified"
-            : null;
-
-    if (!nextStatus) return;
-
-    setIdea((prev) => {
-      if (!prev) return prev;
-      const nextScore =
-        nextStatus === "clarified"
-          ? clarityScore ?? prev.clarity_score ?? 0
-          : prev.clarity_score ?? 0;
-
-      const sameStatus = prev.clarity_status === nextStatus;
-      const sameScore = (prev.clarity_score ?? 0) === (nextScore ?? 0);
-      if (sameStatus && sameScore) return prev;
-
-      return {
-        ...prev,
-        clarity_status: nextStatus,
-        clarity_score: nextScore,
-      };
-    });
-  }, [currentStep, clarityScore, setIdea]);
+    return () => {
+      if (xaiHideTimerRef.current) {
+        clearTimeout(xaiHideTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!idea) return;
@@ -86,7 +69,7 @@ export default function ClarifierPage() {
 
       if (!hasPersistedClarifiedFields && clarifiedIdea) {
         setCurrentStep("clarified");
-        setXaiSteps([]);
+        scheduleHideXai();
         return;
       }
 
@@ -104,7 +87,7 @@ export default function ClarifierPage() {
       setClarityScore(idea.clarity_score ?? 0);
       setIsReady(true);
       setCurrentStep("clarified");
-      setXaiSteps([]);
+      scheduleHideXai();
       return;
     }
 
@@ -117,7 +100,7 @@ export default function ClarifierPage() {
         refusal_message: idea.clarity_refused_message ?? undefined,
       });
       setCurrentStep("refused");
-      setXaiSteps([]);
+      scheduleHideXai();
       return;
     }
 
@@ -129,7 +112,7 @@ export default function ClarifierPage() {
       setQuestions(idea.clarity_questions);
       setAgentMessage(idea.clarity_agent_message || "");
       setCurrentStep("questions");
-      setXaiSteps([]);
+      scheduleHideXai();
       return;
     }
 

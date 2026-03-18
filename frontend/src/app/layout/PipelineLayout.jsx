@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/shared/hooks/useAuth";
 
@@ -98,7 +98,7 @@ export default function PipelineLayout() {
     return "pending";
   };
 
-  useEffect(() => {
+  const refetchIdea = useCallback(() => {
     if (!id || !token) return;
     fetch(import.meta.env.VITE_API_URL + "/ideas/" + id, {
       headers: { Authorization: "Bearer " + token },
@@ -108,7 +108,11 @@ export default function PipelineLayout() {
         if (data) setIdea(data);
       })
       .catch(console.error);
-  }, [id, token, location.pathname]);
+  }, [id, token]);
+
+  useEffect(() => {
+    refetchIdea();
+  }, [refetchIdea, location.pathname]);
 
   // Calculer si pipeline est disponible
   const pipelineEnabled =
@@ -755,7 +759,7 @@ export default function PipelineLayout() {
 
         {/* CONTENU */}
         <div style={S.content}>
-          <Outlet context={{ idea, setIdea, token }} />
+          <Outlet context={{ idea, setIdea, token, refetchIdea }} />
         </div>
       </div>
     </div>
