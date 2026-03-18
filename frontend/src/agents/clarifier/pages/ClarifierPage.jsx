@@ -7,7 +7,7 @@ import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
-  const { idea, token } = useOutletContext();
+  const { idea, setIdea, token } = useOutletContext();
   const {
     currentStep,
     setCurrentStep,
@@ -31,6 +31,41 @@ export default function ClarifierPage() {
     submitAnswers,
   } = useClarifierAgent(idea, token);
 
+  // Remonter immédiatement le statut/score au layout (sidebar pipeline)
+  // IMPORTANT: ne pas boucler → ne setIdea que si changement réel
+  useEffect(() => {
+    if (!setIdea) return;
+
+    const nextStatus =
+      currentStep === "refused"
+        ? "refused"
+        : currentStep === "questions"
+          ? "questions"
+          : currentStep === "clarified"
+            ? "clarified"
+            : null;
+
+    if (!nextStatus) return;
+
+    setIdea((prev) => {
+      if (!prev) return prev;
+      const nextScore =
+        nextStatus === "clarified"
+          ? clarityScore ?? prev.clarity_score ?? 0
+          : prev.clarity_score ?? 0;
+
+      const sameStatus = prev.clarity_status === nextStatus;
+      const sameScore = (prev.clarity_score ?? 0) === (nextScore ?? 0);
+      if (sameStatus && sameScore) return prev;
+
+      return {
+        ...prev,
+        clarity_status: nextStatus,
+        clarity_score: nextScore,
+      };
+    });
+  }, [currentStep, clarityScore, setIdea]);
+
   useEffect(() => {
     if (!idea) return;
 
@@ -38,6 +73,23 @@ export default function ClarifierPage() {
 
     // ── CAS : idée déjà clarifiée ──────────────────
     if (status === "clarified" && idea.clarity_score != null) {
+      // Si on vient juste de générer via SSE, `idea.clarity_*` peut être vide
+      // pendant un court moment (refetch pas encore fait). Dans ce cas,
+      // ne pas écraser le résultat affiché (clarifiedIdea) par des champs vides.
+      const hasPersistedClarifiedFields =
+        !!idea.clarity_solution ||
+        !!idea.clarity_target_users ||
+        !!idea.clarity_problem ||
+        !!idea.clarity_sector ||
+        !!idea.clarity_short_pitch ||
+        !!idea.clarity_agent_message;
+
+      if (!hasPersistedClarifiedFields && clarifiedIdea) {
+        setCurrentStep("clarified");
+        setXaiSteps([]);
+        return;
+      }
+
       const restored = {
         type: "clarified",
         message: idea.clarity_agent_message || "",
@@ -52,28 +104,7 @@ export default function ClarifierPage() {
       setClarityScore(idea.clarity_score ?? 0);
       setIsReady(true);
       setCurrentStep("clarified");
-      const restoredSteps = idea.pipeline_progress?.clarifier_steps;
-      setXaiSteps(
-        Array.isArray(restoredSteps) && restoredSteps.length > 0
-          ? restoredSteps
-          : [
-              {
-                id: "restored-1",
-                status: "success",
-                text:
-                  "Résultat restauré · clarification précédente",
-                detail: {
-                  score: idea.clarity_score,
-                  sector: idea.clarity_sector,
-                  dimensions: {
-                    problem: !!idea.clarity_problem,
-                    target: !!idea.clarity_target_users,
-                    solution: !!idea.clarity_solution,
-                  },
-                },
-              },
-            ],
-      );
+      setXaiSteps([]);
       return;
     }
 
@@ -81,25 +112,12 @@ export default function ClarifierPage() {
     if (status === "refused") {
       setRefusalData({
         type: "refused",
-        reason_category: idea.clarity_refused_reason || "",
-        message: idea.clarity_refused_message || "",
+        reason_category: idea.clarity_refused_reason ?? undefined,
+        message: idea.clarity_refused_message ?? undefined,
+        refusal_message: idea.clarity_refused_message ?? undefined,
       });
       setCurrentStep("refused");
-      const restoredSteps = idea.pipeline_progress?.clarifier_steps;
-      setXaiSteps(
-        Array.isArray(restoredSteps) && restoredSteps.length > 0
-          ? restoredSteps
-          : [
-              {
-                id: "restored-refused",
-                status: "error",
-                text:
-                  "Projet refusé · " +
-                  (idea.clarity_refused_reason || "sécurité"),
-                detail: {},
-              },
-            ],
-      );
+      setXaiSteps([]);
       return;
     }
 
@@ -111,22 +129,7 @@ export default function ClarifierPage() {
       setQuestions(idea.clarity_questions);
       setAgentMessage(idea.clarity_agent_message || "");
       setCurrentStep("questions");
-      const restoredSteps = idea.pipeline_progress?.clarifier_steps;
-      setXaiSteps(
-        Array.isArray(restoredSteps) && restoredSteps.length > 0
-          ? restoredSteps
-          : [
-              {
-                id: "restored-questions",
-                status: "success",
-                text:
-                  "Questions restaurées · " +
-                  idea.clarity_questions.length +
-                  " question(s)",
-                detail: {},
-              },
-            ],
-      );
+      setXaiSteps([]);
       return;
     }
 

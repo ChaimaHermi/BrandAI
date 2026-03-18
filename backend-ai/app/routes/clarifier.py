@@ -67,7 +67,10 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
             })
             yield sse_event("result", {
                 "type":            "refused",
+                # Compat front: certains clients lisent `message`,
+                # d'autres `refusal_message`.
                 "message":         safety.get("refusal_message", ""),
+                "refusal_message": safety.get("refusal_message", ""),
                 "reason_category": safety.get("reason_category"),
                 "score":           0,
             })

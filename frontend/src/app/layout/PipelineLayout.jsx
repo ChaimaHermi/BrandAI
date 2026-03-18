@@ -108,7 +108,11 @@ export default function PipelineLayout() {
         if (data) setIdea(data);
       })
       .catch(console.error);
-  }, [id, token]);
+  }, [id, token, location.pathname]);
+
+  // Calculer si pipeline est disponible
+  const pipelineEnabled =
+    idea?.clarity_status === "clarified" && (idea?.clarity_score ?? 0) >= 80;
 
   const userInitials = (user?.name || user?.email || "U")
     .slice(0, 2)
@@ -668,36 +672,66 @@ export default function PipelineLayout() {
           {/* Pipeline button */}
           <div style={S.pipelineBtn}>
             <button
-              onClick={() => navigate("/ideas/" + id + "/enhancer")}
+              onClick={() => {
+                if (pipelineEnabled) {
+                  navigate(`/ideas/${id}/enhancer`);
+                }
+              }}
+              disabled={!pipelineEnabled}
               style={{
                 width: "100%",
                 padding: "10px",
-                background: "linear-gradient(135deg,#7F77DD,#534AB7)",
-                color: "white",
-                border: "none",
+                background: pipelineEnabled
+                  ? "linear-gradient(135deg,#7F77DD,#534AB7)"
+                  : "#f3f0ff",
+                color: pipelineEnabled ? "white" : "#AFA9EC",
+                border: pipelineEnabled ? "none" : "0.5px solid #e8e4ff",
                 borderRadius: 99,
                 fontSize: 12,
                 fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 2px 10px rgba(124,58,237,0.25)",
+                cursor: pipelineEnabled ? "pointer" : "not-allowed",
+                boxShadow: pipelineEnabled
+                  ? "0 2px 10px rgba(124,58,237,0.25)"
+                  : "none",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 6,
                 transition: "all 0.2s",
                 whiteSpace: "nowrap",
+                opacity: pipelineEnabled ? 1 : 0.6,
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path
-                  d="M2 6h8M7 3l3 3-3 3"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              Lancer le pipeline
+              {pipelineEnabled ? (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M2 6h8M7 3l3 3-3 3"
+                    stroke="white"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <rect
+                    x="2"
+                    y="5"
+                    width="8"
+                    height="6"
+                    rx="1"
+                    stroke="#AFA9EC"
+                    strokeWidth="1.2"
+                  />
+                  <path
+                    d="M4 5V3.5a2 2 0 014 0V5"
+                    stroke="#AFA9EC"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+              {pipelineEnabled ? "Lancer le pipeline" : "Pipeline verrouillé"}
             </button>
             <div
               style={{
@@ -707,14 +741,21 @@ export default function PipelineLayout() {
                 marginTop: 6,
               }}
             >
-              Disponible après clarification
+              {idea?.clarity_status === "refused"
+                ? "Idée refusée — non conforme"
+                : idea?.clarity_status === "clarified" &&
+                    (idea?.clarity_score ?? 0) < 80
+                  ? `Score insuffisant (${idea.clarity_score}/100 < 80)`
+                  : idea?.clarity_status === "questions"
+                    ? "Répondez aux questions d'abord"
+                    : "Disponible après clarification"}
             </div>
           </div>
         </div>
 
         {/* CONTENU */}
         <div style={S.content}>
-          <Outlet context={{ idea, token }} />
+          <Outlet context={{ idea, setIdea, token }} />
         </div>
       </div>
     </div>

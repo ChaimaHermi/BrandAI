@@ -98,9 +98,6 @@ export function useClarifierAgent(idea, token) {
                   clarity_refused_reason: data.reason_category || "",
                   clarity_refused_message:
                     data.message || data.refusal_message || "",
-                  pipeline_progress: {
-                    clarifier_steps: xaiStepsRef.current,
-                  },
                 },
                 token,
               );
@@ -116,9 +113,6 @@ export function useClarifierAgent(idea, token) {
                   clarity_status: "questions",
                   clarity_questions: data.questions || [],
                   clarity_agent_message: data.message || "",
-                  pipeline_progress: {
-                    clarifier_steps: xaiStepsRef.current,
-                  },
                 },
                 token,
               );
@@ -143,9 +137,6 @@ export function useClarifierAgent(idea, token) {
                   clarity_agent_message: data.message || "",
                   clarity_questions: [],
                   clarity_answers: {},
-                  pipeline_progress: {
-                    clarifier_steps: xaiStepsRef.current,
-                  },
                 },
                 token,
               );
@@ -241,9 +232,6 @@ export function useClarifierAgent(idea, token) {
                     problem: answers.problem || "",
                     target: answers.target || "",
                     solution: answers.solution || "",
-                  },
-                  pipeline_progress: {
-                    clarifier_steps: xaiStepsRef.current,
                   },
                 },
                 token,
