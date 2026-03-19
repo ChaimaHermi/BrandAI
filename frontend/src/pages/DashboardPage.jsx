@@ -234,63 +234,19 @@ export default function DashboardPage() {
       >
         <div className="max-w-7xl mx-auto w-full">
         {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            marginBottom: 20,
-          }}
-        >
+        <div className="mb-5 flex items-start justify-between">
           <div>
-            <h1
-              style={{
-                fontSize: 24,
-                fontWeight: 800,
-                color: "#1a1040",
-                margin: "0 0 4px",
-              }}
-            >
+            <h1 className="mb-1 text-[24px] font-extrabold text-[#1a1040]">
               Mes idées
             </h1>
-            <p
-              style={{
-                fontSize: 13,
-                color: "#9ca3af",
-                margin: 0,
-              }}
-            >
+            <p className="m-0 text-[13px] text-gray-400">
               Gérez et suivez vos projets IA
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate("/ideas/new")}
-            style={{
-              padding: "10px 20px",
-              background: "linear-gradient(135deg,#7F77DD,#534AB7)",
-              color: "white",
-              border: "none",
-              borderRadius: 99,
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow: "0 2px 10px rgba(124,58,237,0.25)",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              transition: "all 0.2s",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 4px 16px rgba(124,58,237,0.35)";
-              e.currentTarget.style.transform = "translateY(-1px)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 2px 10px rgba(124,58,237,0.25)";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
+            className="flex cursor-pointer items-center gap-1.5 rounded-full border-0 bg-gradient-to-br from-[#7F77DD] to-[#534AB7] px-5 py-[10px] text-[13px] font-bold text-white shadow-[0_2px_10px_rgba(124,58,237,0.25)] transition-all hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(124,58,237,0.35)]"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path
@@ -401,42 +357,20 @@ export default function DashboardPage() {
 
         {/* Erreur */}
         {error && (
-          <div
-            style={{
-              marginBottom: 16,
-              borderRadius: 12,
-              border: "0.5px solid #fecaca",
-              background: "#fef2f2",
-              padding: "10px 14px",
-              fontSize: 13,
-              color: "#b91c1c",
-            }}
-          >
+          <div className="mb-4 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-[14px] py-[10px] text-[13px] text-[#b91c1c]">
             {error}
           </div>
         )}
 
         {/* Filtres + Search */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: 14,
-          }}
-        >
-          <div style={{ flex: 1, position: "relative" }}>
+        <div className="mb-[14px] flex items-center gap-[10px]">
+          <div className="relative flex-1">
             <svg
               width="14"
               height="14"
               viewBox="0 0 14 14"
               fill="none"
-              style={{
-                position: "absolute",
-                left: 12,
-                top: "50%",
-                transform: "translateY(-50%)",
-              }}
+              className="absolute left-3 top-1/2 -translate-y-1/2"
             >
               <circle
                 cx="6"
@@ -460,24 +394,7 @@ export default function DashboardPage() {
                 setCurrentPage(1);
               }}
               placeholder="Rechercher par nom ou secteur..."
-              style={{
-                width: "100%",
-                padding: "9px 14px 9px 36px",
-                border: "1.5px solid #e8e4ff",
-                borderRadius: 99,
-                fontSize: 13,
-                background: "white",
-                color: "#1a1040",
-                outline: "none",
-                boxSizing: "border-box",
-                transition: "border-color 0.2s",
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#7F77DD";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "#e8e4ff";
-              }}
+              className="box-border w-full rounded-full border-[1.5px] border-[#e8e4ff] bg-white py-[9px] pl-9 pr-[14px] text-[13px] text-[#1a1040] outline-none transition-colors focus:border-[#7F77DD]"
             />
           </div>
 
@@ -487,17 +404,7 @@ export default function DashboardPage() {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            style={{
-              padding: "9px 14px",
-              border: "1.5px solid #e8e4ff",
-              borderRadius: 99,
-              fontSize: 12,
-              background: "white",
-              color: "#6b7280",
-              outline: "none",
-              cursor: "pointer",
-              fontFamily: "var(--font-sans)",
-            }}
+            className="cursor-pointer rounded-full border-[1.5px] border-[#e8e4ff] bg-white px-[14px] py-[9px] font-[var(--font-sans)] text-xs text-gray-500 outline-none"
           >
             <option value="">Tous les statuts</option>
             <option value="pending">En attente</option>
@@ -508,83 +415,20 @@ export default function DashboardPage() {
 
         {/* Liste d'idées */}
         {loading ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              marginBottom: 20,
-            }}
-          >
+          <div className="mb-5 flex flex-col gap-2">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                style={{
-                  background: "white",
-                  border: "0.5px solid #e8e4ff",
-                  borderRadius: 14,
-                  padding: "14px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  boxShadow: "0 2px 8px rgba(124,58,237,0.04)",
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: "#f0eeff",
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      height: 13,
-                      width: "60%",
-                      background: "#f0eeff",
-                      borderRadius: 4,
-                      marginBottom: 8,
-                    }}
-                  />
-                  <div
-                    style={{
-                      height: 10,
-                      width: "30%",
-                      background: "#f8f7ff",
-                      borderRadius: 4,
-                    }}
-                  />
+              <div key={i} className="flex items-center gap-3 rounded-[14px] border border-[#e8e4ff] bg-white px-4 py-[14px] shadow-[0_2px_8px_rgba(124,58,237,0.04)]">
+                <div className="h-10 w-10 shrink-0 rounded-[10px] bg-[#f0eeff]" />
+                <div className="flex-1">
+                  <div className="mb-2 h-[13px] w-3/5 rounded bg-[#f0eeff]" />
+                  <div className="h-[10px] w-[30%] rounded bg-[#f8f7ff]" />
                 </div>
               </div>
             ))}
           </div>
         ) : ideas.length === 0 ? (
-          <div
-            style={{
-              background: "white",
-              border: "0.5px solid #e8e4ff",
-              borderRadius: 16,
-              padding: "48px 24px",
-              textAlign: "center",
-              boxShadow: "0 2px 8px rgba(124,58,237,0.04)",
-              marginBottom: 20,
-            }}
-          >
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: "#f0eeff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 16px",
-              }}
-            >
+          <div className="mb-5 rounded-2xl border border-[#e8e4ff] bg-white px-6 py-12 text-center shadow-[0_2px_8px_rgba(124,58,237,0.04)]">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#f0eeff]">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 3l2 5.5 5.5.8-4 3.9.9 5.5L12 16l-4.4 2.7.9-5.5-4-3.9 5.5-.8L12 3z"
@@ -594,53 +438,23 @@ export default function DashboardPage() {
                 />
               </svg>
             </div>
-            <div
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: "#1a1040",
-                marginBottom: 8,
-              }}
-            >
+            <div className="mb-2 text-[15px] font-bold text-[#1a1040]">
               Aucune idée pour l&apos;instant
             </div>
-            <div
-              style={{
-                fontSize: 13,
-                color: "#9ca3af",
-                marginBottom: 20,
-              }}
-            >
+            <div className="mb-5 text-[13px] text-gray-400">
               Créez votre première idée et laissez l&apos;IA la transformer en
               marque complète.
             </div>
             <button
               type="button"
               onClick={() => navigate("/ideas/new")}
-              style={{
-                padding: "10px 24px",
-                background: "linear-gradient(135deg,#7F77DD,#534AB7)",
-                color: "white",
-                border: "none",
-                borderRadius: 99,
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 2px 10px rgba(124,58,237,0.25)",
-              }}
+              className="cursor-pointer rounded-full border-0 bg-gradient-to-br from-[#7F77DD] to-[#534AB7] px-6 py-[10px] text-[13px] font-bold text-white shadow-[0_2px_10px_rgba(124,58,237,0.25)]"
             >
               Créer ma première idée →
             </button>
           </div>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              marginBottom: 20,
-            }}
-          >
+          <div className="mb-5 flex flex-col gap-2">
             {pageIdeas.map((idea, index) => {
               const { bg, color, avatarBg } = getSectorStyle(idea.sector);
               const {
@@ -751,20 +565,8 @@ export default function DashboardPage() {
 
         {/* Pagination avec style précédent */}
         {totalPages > 1 && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 16,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 12,
-                color: "#9ca3af",
-              }}
-            >
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-xs text-gray-400">
               {filteredIdeas.length === 0
                 ? "Aucun résultat"
                 : `${(currentPage - 1) * IDEAS_PER_PAGE + 1}–${Math.min(
@@ -773,30 +575,12 @@ export default function DashboardPage() {
                   )} sur ${filteredIdeas.length} idées`}
             </span>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 99,
-                  background: "white",
-                  border: "0.5px solid #e8e4ff",
-                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: currentPage === 1 ? 0.4 : 1,
-                  transition: "all 0.15s",
-                }}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#e8e4ff] bg-white transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path
@@ -824,25 +608,11 @@ export default function DashboardPage() {
                     key={page}
                     type="button"
                     onClick={() => handlePageChange(page)}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 99,
-                      background:
-                        page === currentPage
-                          ? "linear-gradient(135deg,#7F77DD,#534AB7)"
-                          : "white",
-                      border: "0.5px solid #e8e4ff",
-                      color: page === currentPage ? "white" : "#6b7280",
-                      fontSize: 12,
-                      fontWeight: page === currentPage ? 700 : 400,
-                      cursor: "pointer",
-                      boxShadow:
-                        page === currentPage
-                          ? "0 2px 8px rgba(124,58,237,0.25)"
-                          : "none",
-                      transition: "all 0.15s",
-                    }}
+                    className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#e8e4ff] transition-all duration-150 ${
+                      page === currentPage
+                        ? "bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_8px_rgba(124,58,237,0.25)]"
+                        : "bg-white text-xs text-gray-500"
+                    }`}
                   >
                     {page}
                   </button>
@@ -850,13 +620,7 @@ export default function DashboardPage() {
               })}
 
               {totalPages > 5 && currentPage < totalPages - 2 && (
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "#9ca3af",
-                    padding: "0 4px",
-                  }}
-                >
+                <span className="px-1 text-xs text-gray-400">
                   ...
                 </span>
               )}
@@ -865,17 +629,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => handlePageChange(totalPages)}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 99,
-                    background: "white",
-                    border: "0.5px solid #e8e4ff",
-                    color: "#6b7280",
-                    fontSize: 12,
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                  }}
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#e8e4ff] bg-white text-xs text-gray-500 transition-all duration-150"
                 >
                   {totalPages}
                 </button>
@@ -885,20 +639,7 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 99,
-                  background: "white",
-                  border: "0.5px solid #e8e4ff",
-                  cursor:
-                    currentPage === totalPages ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: currentPage === totalPages ? 0.4 : 1,
-                  transition: "all 0.15s",
-                }}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#e8e4ff] bg-white transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path
