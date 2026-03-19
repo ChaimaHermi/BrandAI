@@ -20,7 +20,7 @@ function getProject(id) {
 function getAgentStatuses(projectId) {
   if (projectId === "techmentor") {
     return {
-      idea: "done",
+      clarifier: "done",
       market: "done",
       brand: "running",
       content: "waiting",
@@ -30,7 +30,7 @@ function getAgentStatuses(projectId) {
   }
   if (projectId === "ecoshop" || projectId === "foodieapp") {
     return {
-      idea: "done",
+      clarifier: "done",
       market: "done",
       brand: "done",
       content: "done",
@@ -39,7 +39,7 @@ function getAgentStatuses(projectId) {
     };
   }
   return {
-    idea: "waiting",
+    clarifier: "waiting",
     market: "waiting",
     brand: "waiting",
     content: "waiting",
@@ -100,7 +100,7 @@ export default function ResultsPage() {
                       : "border-[#E5E7EB] bg:white text-[#6B7280]"
                   }`}
                 >
-                  {agent.name}
+                  {agent.label}
                 </button>
               ))}
             </div>

@@ -1,131 +1,46 @@
+import {
+  CLARITY_SCORE_MIN_DISPLAY,
+  CLARITY_SCORE_MIN_PIPELINE,
+} from "../constants";
+
 export default function ClarifiedBlock({ data, score }) {
   if (!data) return null;
 
   const messageText = (data.message || "").trim();
 
   // ── Score insuffisant → bloc warning ────────────────
-  if (score < 55) {
+  if (score < CLARITY_SCORE_MIN_DISPLAY) {
     return (
-      <div
-        style={{
-          background: "white",
-          border: "0.5px solid #FAC775",
-          borderRadius: 14,
-          overflow: "hidden",
-          boxShadow: "0 4px 16px rgba(239,159,39,0.1)",
-          animation: "slideUp 0.35s ease forwards",
-        }}
-      >
-        <div
-          style={{
-            padding: "12px 18px",
-            background: "#FAEEDA",
-            borderBottom: "0.5px solid #FAC775",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <div
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: "#EF9F27",
-              }}
-            />
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#854F0B",
-                textTransform: "uppercase",
-                letterSpacing: "0.07em",
-              }}
-            >
+      <div className="overflow-hidden rounded-[14px] border border-[#FAC775] bg-white shadow-[0_4px_16px_rgba(239,159,39,0.1)] animate-[slideUp_0.35s_ease_forwards]">
+        <div className="flex items-center justify-between border-b border-[#FAC775] bg-[#FAEEDA] px-[18px] py-3">
+          <div className="flex items-center gap-2">
+            <div className="h-[7px] w-[7px] rounded-full bg-[#EF9F27]" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#854F0B]">
               Idée insuffisamment claire
             </span>
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <div
-              style={{
-                width: 80,
-                height: 6,
-                borderRadius: 99,
-                background: "#FAC775",
-                overflow: "hidden",
-              }}
-            >
+          <div className="flex items-center gap-2">
+            <div className="h-[6px] w-20 overflow-hidden rounded-full bg-[#FAC775]">
               <div
                 style={{
                   height: "100%",
                   width: `${score}%`,
-                  background: "#EF9F27",
-                  borderRadius: 99,
                 }}
+                className="rounded-full bg-[#EF9F27]"
               />
             </div>
-            <span
-              style={{
-                fontSize: 14,
-                fontWeight: 800,
-                color: "#854F0B",
-              }}
-            >
+            <span className="text-sm font-extrabold text-[#854F0B]">
               {score}
             </span>
-            <span
-              style={{
-                fontSize: 11,
-                color: "#EF9F27",
-              }}
-            >
+            <span className="text-[11px] text-[#EF9F27]">
               /100
             </span>
           </div>
         </div>
 
-        <div
-          style={{
-            padding: "16px 18px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "flex-start",
-            }}
-          >
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                background: "#FAEEDA",
-                border: "0.5px solid #FAC775",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
+        <div className="flex flex-col gap-3 px-[18px] py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#FAC775] bg-[#FAEEDA]">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <circle
                   cx="8"
@@ -143,55 +58,26 @@ export default function ClarifiedBlock({ data, score }) {
               </svg>
             </div>
             <div>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: "#854F0B",
-                  marginBottom: 6,
-                }}
-              >
+              <div className="mb-1.5 text-[13px] font-bold text-[#854F0B]">
                 Votre idée nécessite plus de précisions
               </div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "#633806",
-                  lineHeight: 1.6,
-                }}
-              >
+              <div className="text-xs leading-[1.6] text-[#633806]">
                 Le score de clarté est de {score}/100. Pour lancer le pipeline,
-                votre idée doit atteindre un score minimum de 80/100. Revenez en
-                arrière et précisez les dimensions manquantes.
+                votre idée doit atteindre un score minimum de{" "}
+                {CLARITY_SCORE_MIN_PIPELINE}/100. Revenez en arrière et précisez
+                les dimensions manquantes.
               </div>
             </div>
           </div>
 
             {messageText && (
-              <div
-                style={{
-                  padding: "10px 14px",
-                  background: "#f8f7ff",
-                  border: "0.5px solid #e8e4ff",
-                  borderRadius: 12,
-                  fontSize: 12,
-                  color: "#374151",
-                  lineHeight: 1.6,
-                  fontWeight: 600,
-                }}
-              >
+              <div className="rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] px-[14px] py-[10px] text-xs font-semibold leading-[1.6] text-gray-700">
                 {messageText}
               </div>
             )}
 
           {/* Dimensions manquantes */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: 8,
-            }}
-          >
+          <div className="grid grid-cols-3 gap-2">
             {[
               { label: "Problème", ok: !!data.problem, value: data.problem },
               {
@@ -207,50 +93,21 @@ export default function ClarifiedBlock({ data, score }) {
             ].map(({ label, ok, value }) => (
               <div
                 key={label}
-                style={{
-                  padding: "10px",
-                  background: ok ? "#f0fdf4" : "#fff5f5",
-                  border: `0.5px solid ${ok ? "#9FE1CB" : "#fecaca"}`,
-                  borderRadius: 10,
-                }}
+                className={`rounded-[10px] p-[10px] ${ok ? "border border-[#9FE1CB] bg-[#f0fdf4]" : "border border-[#fecaca] bg-[#fff5f5]"}`}
               >
-                <div
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    color: ok ? "#1D9E75" : "#e11d48",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.07em",
-                    marginBottom: 4,
-                  }}
-                >
+                <div className={`mb-1 text-[9px] font-bold uppercase tracking-[0.07em] ${ok ? "text-[#1D9E75]" : "text-rose-600"}`}>
                   {ok ? "✓" : "✗"} {label}
                 </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: ok ? "#374151" : "#e11d48",
-                    fontWeight: ok ? 400 : 600,
-                  }}
-                >
+                <div className={`text-[11px] ${ok ? "font-normal text-gray-700" : "font-semibold text-rose-600"}`}>
                   {ok ? (value || "").slice(0, 40) + "..." : "Non renseigné"}
                 </div>
               </div>
             ))}
           </div>
 
-          <div
-            style={{
-              padding: "10px 14px",
-              background: "#fff9f0",
-              border: "0.5px solid #FAC775",
-              borderRadius: 10,
-              fontSize: 12,
-              color: "#854F0B",
-            }}
-          >
+          <div className="rounded-[10px] border border-[#FAC775] bg-[#fff9f0] px-[14px] py-[10px] text-xs text-[#854F0B]">
             Le lancement du pipeline est désactivé. Score minimum requis :{" "}
-            <strong>80/100</strong>
+            <strong>{CLARITY_SCORE_MIN_PIPELINE}/100</strong>
           </div>
         </div>
       </div>
@@ -261,273 +118,92 @@ export default function ClarifiedBlock({ data, score }) {
   const scoreLabel =
     score >= 90
       ? { text: "Excellent", color: "#085041", bg: "#f0fdf4", border: "#9FE1CB" }
-      : score >= 80
+      : score >= CLARITY_SCORE_MIN_PIPELINE
         ? { text: "Très bien", color: "#1D9E75", bg: "#f0fdf4", border: "#9FE1CB" }
         : { text: "Acceptable", color: "#854F0B", bg: "#FAEEDA", border: "#FAC775" };
 
   return (
-    <div
-      style={{
-        background: "white",
-        border: "0.5px solid #AFA9EC",
-        borderRadius: 14,
-        overflow: "hidden",
-        boxShadow: "0 4px 20px rgba(124,58,237,0.1)",
-        animation: "slideUp 0.35s ease forwards",
-      }}
-    >
+    <div className="overflow-hidden rounded-[14px] border border-[#AFA9EC] bg-white shadow-[0_4px_20px_rgba(124,58,237,0.1)] animate-[slideUp_0.35s_ease_forwards]">
       {/* Header avec score */}
-      <div
-        style={{
-          padding: "12px 18px",
-          background: "linear-gradient(135deg,#f0eeff,#fafafe)",
-          borderBottom: "0.5px solid #AFA9EC",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <div
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "#7F77DD",
-            }}
-          />
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "#3C3489",
-              textTransform: "uppercase",
-              letterSpacing: "0.07em",
-            }}
-          >
+      <div className="flex items-center justify-between border-b border-[#AFA9EC] bg-gradient-to-br from-[#f0eeff] to-[#fafafe] px-[18px] py-3">
+        <div className="flex items-center gap-2">
+          <div className="h-[7px] w-[7px] rounded-full bg-[#7F77DD]" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#3C3489]">
             Idée structurée
           </span>
         </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <div
-              style={{
-                width: 90,
-                height: 6,
-                borderRadius: 99,
-                background: "#e8e4ff",
-                overflow: "hidden",
-              }}
-            >
+        <div className="flex items-center gap-[10px]">
+          <div className="flex items-center gap-1.5">
+            <div className="h-[6px] w-[90px] overflow-hidden rounded-full bg-[#e8e4ff]">
               <div
                 style={{
                   height: "100%",
                   width: `${score}%`,
-                  background:
-                    score >= 80
-                      ? "linear-gradient(90deg,#7F77DD,#1D9E75)"
-                      : "linear-gradient(90deg,#7F77DD,#EF9F27)",
-                  borderRadius: 99,
                   transition: "width 1s ease",
                 }}
+                className={`rounded-full ${
+                  score >= CLARITY_SCORE_MIN_PIPELINE
+                    ? "bg-gradient-to-r from-[#7F77DD] to-[#1D9E75]"
+                    : "bg-gradient-to-r from-[#7F77DD] to-[#EF9F27]"
+                }`}
               />
             </div>
-            <span
-              style={{
-                fontSize: 16,
-                fontWeight: 800,
-                color: scoreLabel.color,
-              }}
-            >
+            <span className="text-base font-extrabold" style={{ color: scoreLabel.color }}>
               {score}
             </span>
-            <span style={{ fontSize: 11, color: "#AFA9EC" }}>/100</span>
+            <span className="text-[11px] text-[#AFA9EC]">/100</span>
           </div>
-          <div
-            style={{
-              padding: "3px 10px",
-              background: scoreLabel.bg,
-              border: `0.5px solid ${scoreLabel.border}`,
-              borderRadius: 99,
-              fontSize: 10,
-              fontWeight: 700,
-              color: scoreLabel.color,
-            }}
-          >
+          <div className="rounded-full border px-[10px] py-[3px] text-[10px] font-bold" style={{ background: scoreLabel.bg, borderColor: scoreLabel.border, color: scoreLabel.color }}>
             {scoreLabel.text} ✓
           </div>
         </div>
       </div>
 
-      <div
-        style={{
-          padding: "16px 18px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
+      <div className="flex flex-col gap-3 px-[18px] py-4">
         {data.short_pitch && (
-          <div
-            style={{
-              fontSize: 14,
-              fontStyle: "italic",
-              color: "#534AB7",
-              padding: "12px 16px",
-              background: "#f8f7ff",
-              borderLeft: "3px solid #7F77DD",
-              fontWeight: 600,
-              lineHeight: 1.5,
-            }}
-          >
+          <div className="border-l-[3px] border-l-[#7F77DD] bg-[#f8f7ff] px-4 py-3 text-sm font-semibold italic leading-[1.5] text-[#534AB7]">
             "{data.short_pitch}"
           </div>
         )}
 
         {messageText && (
-          <div
-            style={{
-              padding: "10px 14px",
-              background: "#f8f7ff",
-              border: "0.5px solid #e8e4ff",
-              borderRadius: 12,
-              fontSize: 12,
-              color: "#374151",
-              lineHeight: 1.6,
-              fontWeight: 600,
-            }}
-          >
+          <div className="rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] px-[14px] py-[10px] text-xs font-semibold leading-[1.6] text-gray-700">
             {messageText}
           </div>
         )}
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 8,
-          }}
-        >
-          <div
-            style={{
-              padding: "12px",
-              background: "#f8f7ff",
-              border: "0.5px solid #e8e4ff",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: "#7F77DD",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: 6,
-              }}
-            >
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] p-3">
+            <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#7F77DD]">
               Ce que c&apos;est
             </div>
-            <div style={{ fontSize: 12, color: "#374151", lineHeight: 1.5 }}>
+            <div className="text-xs leading-[1.5] text-gray-700">
               {data.solution_description || "—"}
             </div>
           </div>
-          <div
-            style={{
-              padding: "12px",
-              background: "#f0fdf4",
-              border: "0.5px solid #9FE1CB",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: "#1D9E75",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: 6,
-              }}
-            >
+          <div className="rounded-xl border border-[#9FE1CB] bg-[#f0fdf4] p-3">
+            <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#1D9E75]">
               Pour qui ?
             </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "#374151",
-                lineHeight: 1.5,
-                fontWeight: 600,
-              }}
-            >
+            <div className="text-xs font-semibold leading-[1.5] text-gray-700">
               {data.target_users || "—"}
             </div>
           </div>
-          <div
-            style={{
-              padding: "12px",
-              background: "#FAEEDA",
-              border: "0.5px solid #FAC775",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: "#854F0B",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: 6,
-              }}
-            >
+          <div className="rounded-xl border border-[#FAC775] bg-[#FAEEDA] p-3">
+            <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#854F0B]">
               Secteur
             </div>
-            <div style={{ fontSize: 12, color: "#374151", fontWeight: 700 }}>
+            <div className="text-xs font-bold text-gray-700">
               {data.sector || "—"}
             </div>
           </div>
         </div>
 
-        <div
-          style={{
-            padding: "12px 14px",
-            background: "#fff5f5",
-            border: "0.5px solid #fecaca",
-            borderRadius: 12,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 9,
-              fontWeight: 700,
-              color: "#e11d48",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              marginBottom: 6,
-            }}
-          >
+        <div className="rounded-xl border border-[#fecaca] bg-[#fff5f5] px-[14px] py-3">
+          <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-rose-600">
             Problème résolu
           </div>
-          <div style={{ fontSize: 12, color: "#374151", lineHeight: 1.6 }}>
+          <div className="text-xs leading-[1.6] text-gray-700">
             {data.problem || "—"}
           </div>
         </div>

@@ -305,14 +305,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3,1fr)",
-            gap: 10,
-            marginBottom: 20,
-          }}
-        >
+        <div className="mb-5 grid grid-cols-3 gap-[10px]">
           {[
             {
               label: "Total idées",
@@ -387,54 +380,18 @@ export default function DashboardPage() {
             }) => (
               <div
                 key={label}
-                style={{
-                  background: "white",
-                  border: `0.5px solid ${border}`,
-                  borderRadius: 14,
-                  padding: "16px 18px",
-                  boxShadow: "0 2px 8px rgba(124,58,237,0.05)",
-                }}
+                className="rounded-[14px] bg-white px-[18px] py-4 shadow-[0_2px_8px_rgba(124,58,237,0.05)]"
+                style={{ border: `0.5px solid ${border}` }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: labelColor,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.07em",
-                    }}
-                  >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.07em]" style={{ color: labelColor }}>
                     {label}
                   </span>
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 8,
-                      background: iconBg,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: iconBg }}>
                     {icon}
                   </div>
                 </div>
-                <div
-                  style={{
-                    fontSize: 28,
-                    fontWeight: 800,
-                    color: valueColor,
-                  }}
-                >
+                <div className="text-[28px] font-extrabold" style={{ color: valueColor }}>
                   {value}
                 </div>
               </div>
@@ -696,75 +653,27 @@ export default function DashboardPage() {
                 <div
                   key={idea.id}
                   className="idea-card"
-                  style={{
-                    animationDelay: `${index * 0.05}s`,
-                  }}
+                  style={{ animationDelay: `${index * 0.05}s` }}
                   onClick={() => navigate(`/ideas/${idea.id}`)}
                 >
                   <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 10,
-                      background: avatarBg,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color,
-                      flexShrink: 0,
-                    }}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-xs font-extrabold"
+                    style={{ background: avatarBg, color }}
                   >
                     {getInitials(idea)}
                   </div>
 
-                  <div
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: "#1a1040",
-                        marginBottom: 3,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-[3px] overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold text-[#1a1040]">
                       {getDisplayName(idea)}
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 6,
-                        alignItems: "center",
-                      }}
-                    >
+                    <div className="flex items-center gap-1.5">
                       {idea.sector && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            padding: "2px 8px",
-                            borderRadius: 99,
-                            background: bg,
-                            color,
-                            fontWeight: 600,
-                          }}
-                        >
+                        <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: bg, color }}>
                           {idea.sector}
                         </span>
                       )}
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "#9ca3af",
-                        }}
-                      >
+                      <span className="text-[11px] text-gray-400">
                         {new Date(idea.created_at).toLocaleDateString("fr-FR", {
                           day: "numeric",
                           month: "long",
@@ -774,34 +683,12 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div style={{ textAlign: "right" }}>
-                      <div
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          color: statusColor,
-                          marginBottom: 4,
-                        }}
-                      >
+                  <div className="flex shrink-0 items-center gap-[10px]">
+                    <div className="text-right">
+                      <div className="mb-1 text-[10px] font-semibold" style={{ color: statusColor }}>
                         {statusLabel}
                       </div>
-                      <div
-                        style={{
-                          width: 72,
-                          height: 4,
-                          borderRadius: 99,
-                          background: bg,
-                          overflow: "hidden",
-                        }}
-                      >
+                      <div className="h-1 w-[72px] overflow-hidden rounded-full" style={{ background: bg }}>
                         <div
                           style={{
                             height: "100%",
@@ -810,9 +697,9 @@ export default function DashboardPage() {
                               progress === 100
                                 ? "linear-gradient(90deg,#1D9E75,#085041)"
                                 : "linear-gradient(90deg,#7F77DD,#534AB7)",
-                            borderRadius: 99,
                             transition: "width 0.5s ease",
                           }}
+                          className="rounded-full"
                         />
                       </div>
                     </div>
@@ -823,27 +710,11 @@ export default function DashboardPage() {
                         e.stopPropagation();
                         navigate(`/ideas/${idea.id}`);
                       }}
-                      style={{
-                        padding: "6px 14px",
-                        background:
-                          idea.status === "done"
-                            ? "white"
-                            : "linear-gradient(135deg,#7F77DD,#534AB7)",
-                        color: idea.status === "done" ? "#1D9E75" : "white",
-                        border:
-                          idea.status === "done"
-                            ? "0.5px solid #9FE1CB"
-                            : "none",
-                        borderRadius: 99,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        boxShadow:
-                          idea.status === "done"
-                            ? "none"
-                            : "0 2px 6px rgba(124,58,237,0.25)",
-                        whiteSpace: "nowrap",
-                      }}
+                      className={`whitespace-nowrap rounded-full px-[14px] py-1.5 text-[11px] font-bold ${
+                        idea.status === "done"
+                          ? "border border-[#9FE1CB] bg-white text-[#1D9E75] shadow-none"
+                          : "bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_6px_rgba(124,58,237,0.25)]"
+                      }`}
                     >
                       {idea.status === "done" ? "Voir →" : "Affiner →"}
                     </button>
@@ -854,25 +725,7 @@ export default function DashboardPage() {
                         e.stopPropagation();
                         handleDeleteIdea(idea.id);
                       }}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: "50%",
-                        background: "white",
-                        border: "0.5px solid #fecaca",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        transition: "all 0.15s",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = "#fff5f5";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = "white";
-                      }}
+                      className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#fecaca] bg-white transition-all duration-150 hover:bg-[#fff5f5]"
                     >
                       <svg
                         width="11"
