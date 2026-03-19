@@ -31,15 +31,18 @@ class ClarifierAnswerRequest(BaseModel):
     sector:          Optional[str] = ""
     description:     str
     target_audience: Optional[str] = ""
-    # Réponses aux 3 questions — champs séparés
     answer_problem:  Optional[str] = ""
     answer_target:   Optional[str] = ""
     answer_solution: Optional[str] = ""
 
 
+# ══════════════════════════════════════════════════════════════
+# STREAM — Appel initial (description seule)
+# ══════════════════════════════════════════════════════════════
+
 async def _stream_clarifier_start(body: ClarifierStartRequest):
-    import time
     start_time = time.time()
+
     state = PipelineState(
         idea_id=body.idea_id,
         name=body.name or "",
@@ -50,82 +53,44 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
     agent = IdeaClarifierAgent()
 
     try:
-        # Étape 1 — sécurité
-        yield sse_event("step", {
-            "status":  "loading",
-            "message": "Vérification de sécurité...",
-        })
-
-        safety = await agent.check_safety(state)
-        if safety.get("sector") and not state.sector:
-            state.sector = safety["sector"]
-
-        if not safety["safe"]:
-            refusal_msg = (safety.get("refusal_message") or "").strip()
-            if not refusal_msg:
-                # Fallback ultime (ne devrait pas arriver si l'agent fonctionne)
-                refusal_msg = "BrandAI ne peut pas vous accompagner dans ce type de projet."
-            yield sse_event("step", {
-                "status":  "error",
-                "message": f"Projet refusé — {safety.get('reason_category')}",
-            })
-            yield sse_event("result", {
-                "type":            "refused",
-                # Compat front: certains clients lisent `message`,
-                # d'autres `refusal_message`.
-                "message":         refusal_msg,
-                "refusal_message": refusal_msg,
-                "reason_category": safety.get("reason_category"),
-                "score":           0,
-            })
-            yield sse_event("done", {"success": True})
-            return
-
-        yield sse_event("step", {
-            "status":     "success",
-            "message":    "Sécurité — projet conforme",
-            "sector":     safety.get("sector") or "",
-            "confidence": safety.get("confidence", 0),
-        })
-
-        # Étape 2 — générer (ou refuser / clarifier)
         yield sse_event("step", {
             "status":  "loading",
             "message": "Analyse de votre idée...",
         })
 
-        # Utiliser run_interactive() pour bénéficier aussi
-        # des gardes locaux (ex: gibberish / validation).
-        result = await agent.run_interactive(state)
-        # Ajouter le secteur détecté dans le result
-        # pour que le frontend le renvoie au 2ème appel
-        result["detected_sector"] = state.sector or ""
+        # 1 seul appel — sécurité + axes + réponse
+        result = await agent.run_start(state)
 
         elapsed_ms = int((time.time() - start_time) * 1000)
+        result_type = result.get("type")
 
-        if result.get("type") == "clarified":
-            success_message = "Idée claire — prêt pour le pipeline"
-        else:
+        # ── Étape XAI selon le résultat ──────────────────────
+        if result_type == "refused":
+            yield sse_event("step", {
+                "status":  "error",
+                "message": f"Projet refusé — {result.get('reason_category', 'non conforme')}",
+                "elapsed_ms": elapsed_ms,
+            })
+
+        elif result_type == "questions":
             questions_count = len(result.get("questions") or [])
-            success_message = (
-                f"{questions_count} question(s) générée(s)"
-                if questions_count
-                else "Clarification requise"
-            )
+            yield sse_event("step", {
+                "status":     "success",
+                "message":    f"{questions_count} question(s) générée(s)",
+                "sector":     result.get("detected_sector") or result.get("sector") or "",
+                "elapsed_ms": elapsed_ms,
+                "model":      agent.llm_rotator.current_info(),
+            })
 
-        yield sse_event("step", {
-            "status":     "success",
-            "message":    success_message,
-            "sector":     state.sector or safety.get("sector") or "",
-            "confidence": safety.get("confidence", 0),
-            "model":      agent.llm_rotator.current_info(),
-            "elapsed_ms": elapsed_ms,
-        })
+        elif result_type == "clarified":
+            yield sse_event("step", {
+                "status":     "success",
+                "message":    "Idée claire — prêt pour le pipeline",
+                "sector":     result.get("sector") or "",
+                "elapsed_ms": elapsed_ms,
+                "model":      agent.llm_rotator.current_info(),
+            })
 
-        print(
-            f"[ROUTE] questions : "
-            f"{json.dumps(result, ensure_ascii=False)[:300]}"
-        )
         yield sse_event("result", result)
         yield sse_event("done", {"success": True})
 
@@ -147,8 +112,11 @@ async def clarifier_start_stream(body: ClarifierStartRequest):
     )
 
 
+# ══════════════════════════════════════════════════════════════
+# STREAM — Appel après réponses utilisateur
+# ══════════════════════════════════════════════════════════════
+
 async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
-    import time
     start_time = time.time()
 
     state = PipelineState(
@@ -167,36 +135,40 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
         })
 
         answers = {
-            "problem":  body.answer_problem or "",
-            "target":   body.answer_target or "",
-            "solution": body.answer_solution or "",
+            "problem":  (body.answer_problem  or "").strip(),
+            "target":   (body.answer_target   or "").strip(),
+            "solution": (body.answer_solution or "").strip(),
         }
 
-        result = await agent.run_interactive(
-            state,
-            answers=answers,
-        )
+        # 1 seul appel — sécurité sur réponses + structuration
+        result = await agent.run_answer(state, answers)
 
         elapsed_ms = int((time.time() - start_time) * 1000)
-        score = result.get("score", 0)
-        yield sse_event("step", {
-            "status":     "success",
-            "message":    f"Idée clarifiée — score {score}/100",
-            "score":      score,
-            "dimensions": {
-                "problem":  bool(result.get("problem")),
-                "target":   bool(result.get("target_users")),
-                "solution": bool(result.get("solution_description")),
-            },
-            "sector":     result.get("sector", ""),
-            "model":      agent.llm_rotator.current_info(),
-            "elapsed_ms": elapsed_ms,
-        })
+        result_type = result.get("type")
 
-        print(
-            f"[ROUTE] result : "
-            f"{json.dumps(result, ensure_ascii=False)[:300]}"
-        )
+        if result_type == "refused":
+            yield sse_event("step", {
+                "status":  "error",
+                "message": f"Projet refusé — {result.get('reason_category', 'non conforme')}",
+                "elapsed_ms": elapsed_ms,
+            })
+
+        elif result_type == "clarified":
+            score = result.get("score", 0)
+            yield sse_event("step", {
+                "status":     "success",
+                "message":    f"Idée clarifiée — score {score}/100",
+                "score":      score,
+                "dimensions": {
+                    "problem":  bool(result.get("problem")),
+                    "target":   bool(result.get("target_users")),
+                    "solution": bool(result.get("solution_description")),
+                },
+                "sector":     result.get("sector", ""),
+                "model":      agent.llm_rotator.current_info(),
+                "elapsed_ms": elapsed_ms,
+            })
+
         yield sse_event("result", result)
         yield sse_event("done", {"success": True})
 
@@ -218,6 +190,10 @@ async def clarifier_answer_stream(body: ClarifierAnswerRequest):
     )
 
 
+# ══════════════════════════════════════════════════════════════
+# ENDPOINTS JSON (sans stream) — conservés
+# ══════════════════════════════════════════════════════════════
+
 @router.post("/clarifier/start")
 async def clarifier_start(body: ClarifierStartRequest):
     state = PipelineState(
@@ -228,8 +204,7 @@ async def clarifier_start(body: ClarifierStartRequest):
         target_audience=body.target_audience or "",
     )
     agent = IdeaClarifierAgent()
-    result = await agent.run_interactive(state)
-    return result
+    return await agent.run_start(state)
 
 
 @router.post("/clarifier/answer")
@@ -242,10 +217,9 @@ async def clarifier_answer(body: ClarifierAnswerRequest):
         target_audience=body.target_audience or "",
     )
     answers = {
-        "problem":  body.answer_problem or "",
-        "target":   body.answer_target or "",
-        "solution": body.answer_solution or "",
+        "problem":  (body.answer_problem  or "").strip(),
+        "target":   (body.answer_target   or "").strip(),
+        "solution": (body.answer_solution or "").strip(),
     }
     agent = IdeaClarifierAgent()
-    result = await agent.run_interactive(state, answers=answers)
-    return result
+    return await agent.run_answer(state, answers)
