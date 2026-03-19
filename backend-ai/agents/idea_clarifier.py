@@ -4,22 +4,15 @@ import logging
 
 from agents.base_agent import BaseAgent, PipelineState
 from guardrails.safety_checks import get_refusal_message
-from tools.idea_tools import build_idea_summary, validate_idea_input
+from tools.idea_tools import validate_idea_input
 
 logger = logging.getLogger(__name__)
 
+
 # ══════════════════════════════════════════════════════════════
 # UTILITAIRE — Détection texte incohérent SANS LLM
-# ══════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 def is_gibberish(text: str) -> bool:
-    """
-    Filtre basique SANS LLM — détecte les cas évidents :
-    - Texte trop court (< 10 chars)
-    - Moins de 2 mots
-    - Mots sans aucune voyelle (ex: "qsdfsdfg")
-    - Tous les mots identiques
-    Le LLM gère les cas ambigus.
-    """
     if not text or len(text.strip()) < 10:
         return True
 
@@ -29,269 +22,208 @@ def is_gibberish(text: str) -> bool:
     if len(words) < 2:
         return True
 
+    # Tous les mots identiques : "test test test test"
     if len(set(words)) == 1:
         return True
 
-    real_words = sum(1 for w in words if len(w) <= 2 or any(c in vowels for c in w))
+    # Quasi-répétition : plus de 70% des mots sont identiques
+    # "test tes tes test test" → 5 mots, "test" apparaît 3 fois = 60%
+    # On abaisse le seuil à 60% pour attraper ce cas
+    from collections import Counter
+    most_common_count = Counter(words).most_common(1)[0][1]
+    if len(words) >= 3 and most_common_count / len(words) >= 0.60:
+        return True
+
+    # Vocabulaire trop pauvre : moins de 3 mots distincts pour 5+ mots
+    if len(words) >= 5 and len(set(words)) <= 2:
+        return True
+
+    real_words = sum(
+        1 for w in words
+        if len(w) <= 3 or (
+            any(c in vowels for c in w) and
+            sum(1 for c in w if c in vowels) / len(w) >= 0.20
+        )
+    )
     if real_words < 2:
         return True
 
+    # Séquences de consonnes anormalement longues
     for word in words:
-        if len(word) > 6:
-            ratio = sum(1 for c in word if c in vowels) / len(word)
-            if ratio < 0.15:
-                return True
+        if len(word) < 5:
+            continue
+        max_consonant_streak = 0
+        streak = 0
+        for c in word:
+            if c not in vowels:
+                streak += 1
+                max_consonant_streak = max(max_consonant_streak, streak)
+            else:
+                streak = 0
+        if max_consonant_streak > 4:
+            return True
 
     return False
 
-
 # ══════════════════════════════════════════════════════════════
-# PROMPTS (inchangés)
+# PROMPT 1 — Analyse initiale (description seule)
+# Fait tout en 1 call : sécurité + axes + questions ou clarified
 # ══════════════════════════════════════════════════════════════
-_SAFETY_PROMPT = """Tu es un système de modération pour BrandAI.
+_ANALYSE_PROMPT = """Tu es l'agent Idea Clarifier de BrandAI.
 
-Ta mission : analyser l'INTENTION RÉELLE du projet.
+Ta mission en UN SEUL appel :
+1. Vérifier si le projet est safe (légal, non nuisible)
+2. Si safe → analyser si les 3 axes sont présents
+3. Retourner le bon type de réponse
 
-RÈGLE CRITIQUE :
-Quand des réponses utilisateur sont fournies,
-analyse l'ENSEMBLE description + réponses.
-Une description innocente avec des réponses malveillantes
-= projet REFUSÉ immédiatement.
-
-Exemples concrets :
-- Description "marketplace" + réponse "vente de drogue"
-  → safe: false, reason_category: "illegal"
-- Description "app mobile" + réponse "escroquer des retraités"
-  → safe: false, reason_category: "fraud"
-- Description "marketplace" + réponse "vêtements pour enfants"
-  → safe: true
-
-Réponds STRICTEMENT en JSON valide, sans texte avant ou après :
-
-{
-  "safe": true ou false,
-  "reason_category": null | "fraud" | "illegal" | "harmful",
-  "sector": "tech | ecommerce | sante | education | finance | autre",
-  "confidence": nombre entre 0 et 100
-}
-
-Refuser si l'intention est clairement :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ÉTAPE 1 — SÉCURITÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Refuser si l'intention est CLAIREMENT :
 - Tromper / escroquer des personnes (fraud)
-- Activités illégales : drogues, armes, contrebande,
-  faux documents, piratage (illegal)
+- Activités illégales : drogues, armes, faux documents, piratage (illegal)
 - Contenu nuisible, violent, dangereux (harmful)
 - Exploitation de mineurs (harmful)
 
-RÈGLES :
+Règles de sécurité :
 - Cybersécurité défensive ≠ hacking malveillant
 - Crypto légal ≠ arnaque
-- Projet flou sans intention claire → safe: true
+- Projet flou sans intention claire → safe
 - Juger l'INTENTION RÉELLE, pas les mots isolés
-- Si les réponses révèlent une intention illégale → safe: false
-- En cas de doute → safe: true"""
+- En cas de doute → safe
 
-_REFUSAL_PROMPT = """Tu es l'agent Clarifier de BrandAI.
-
-Un projet vient d'être refusé par notre système de modération.
-Tu dois expliquer à l'entrepreneur pourquoi BrandAI
-ne peut pas l'accompagner.
-
-RÈGLES :
-- Répondre en français
-- Ton professionnel, jamais agressif
-- Mentionner que c'est basé sur la description
-  et les réponses fournies
-- Expliquer clairement la raison du refus
-- Ne pas insulter l'utilisateur
-- Proposer de soumettre un nouveau projet
-- Maximum 3 phrases
-
-CATÉGORIES :
-fraud   → Le projet vise à tromper ou escroquer des personnes.
-illegal → Le projet implique des activités contraires à la loi.
-harmful → Le projet pourrait causer du tort à des personnes.
-
-STRUCTURE :
-Phrase 1 : "En nous basant sur votre description et
-            vos réponses, [raison du refus]."
-Phrase 2 : Pourquoi BrandAI ne peut pas accompagner.
-Phrase 3 : Invitation à soumettre un nouveau projet légal.
-
-Réponds UNIQUEMENT avec le message en texte libre.
-Pas de JSON, pas de titre, juste le message."""
-
-QUESTIONS_PROMPT = """Tu es l'agent Idea Clarifier de BrandAI.
-
-Ton rôle est d'aider un entrepreneur à clarifier son idée
-en analysant sa description et en vérifiant si elle est complète.
-
-Une idée est considérée comme claire si ces 3 éléments sont définis :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ÉTAPE 2 — ANALYSE DES 3 AXES (si safe)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Une idée est CLAIRE si ces 3 éléments sont présents et précis :
 1. PROBLÈME — quel problème concret est résolu ?
-2. CIBLE — qui sont les utilisateurs ?
+2. CIBLE    — qui sont les utilisateurs ?
 3. SOLUTION — comment fonctionne la solution ?
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-RÈGLES STRICTES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Répondre uniquement en français
-- Répondre uniquement en JSON valide (aucun markdown, aucun backticks)
-- Ne jamais répéter un mot deux fois de suite
-- Ne jamais inventer des informations absentes
-- Adapter au secteur détecté automatiquement
-- Maximum 3 questions
-- Poser uniquement les questions nécessaires (pas systématiquement 3)
-- Pour le JSON :
-  - Si type="questions" alors renvoyer `missing_axes` ET `questions`
-  - Chaque élément de `questions` doit être un objet {axis,text}
-  - questions.length doit être égal à missing_axes.length
-  - axis doit être exactement "problem" | "target" | "solution"
-  - missing_axes ne doit contenir que les axes absents ou ambigus dans la DESCRIPTION
-  - Ne pas inclure un axe dans missing_axes s'il est clairement exprimé
+Considérer comme "non clair" si : trop vague, trop général, implicite, ambigu, absent.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ANALYSE DE L’IDÉE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INTERDIT dans les questions :
+concurrence, différenciation, business model, pricing, marketing
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Lire la description utilisateur
-2. Détecter si les éléments suivants sont présents et clairs :
-- problème
-- cible
-- solution
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMATS DE RÉPONSE (JSON strict, sans backticks)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-3. Considérer comme "non clair" si :
-- trop vague
-- trop général
-- implicite
-- ambigu
-- ou absent
+CAS 1 — PROJET REFUSÉ :
+{
+  "type": "refused",
+  "reason_category": "fraud" | "illegal" | "harmful",
+  "message": "Message professionnel en français expliquant le refus (3 phrases max). Phrase 1 : raison basée sur la description. Phrase 2 : pourquoi BrandAI ne peut pas accompagner. Phrase 3 : invitation à soumettre un projet légal.",
+  "sector": "secteur détecté ou null"
+}
 
-4. Si le texte est incohérent ou aléatoire (ex: "qsdjkfqsdf"),
-→ considérer comme non exploitable
+CAS 2 — AXES MANQUANTS (questions nécessaires) :
+{
+  "type": "questions",
+  "message": "Message court et naturel en français (1-2 phrases)",
+  "missing_axes": ["problem"] | ["target"] | ["solution"] | combinaison,
+  "questions": [
+    {"axis": "problem" | "target" | "solution", "text": "Question courte et précise"}
+  ],
+  "sector": "secteur détecté"
+}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LOGIQUE DE DÉCISION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-CAS A — IDÉE CLAIRE :
-→ Les 3 éléments sont présents et compréhensibles
-→ Ne poser AUCUNE question
-→ Reformuler clairement l’idée
-
-CAS B — IDÉE PARTIELLE :
-→ Certains éléments manquent ou sont flous
-→ Poser UNIQUEMENT les questions nécessaires
-→ Chaque question doit cibler un élément manquant
-
-CAS C — IDÉE TROP VAGUE OU INCOHÉRENTE :
-→ Expliquer que la description n’est pas claire
-→ Poser des questions simples pour structurer
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-INTERDIT DANS LES QUESTIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- concurrence
-- différenciation
-- business model
-- pricing
-- stratégie marketing
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STYLE DES QUESTIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Courtes et précises
-- Adaptées au contexte
-- Naturelles (pas robotiques)
-- Une question = un objectif
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FORMAT DE SORTIE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-CAS A — IDÉE CLAIRE :
+CAS 3 — IDÉE CLAIRE (tous les axes présents) :
 {
   "type": "clarified",
-  "message": "Votre idée est claire et bien structurée.",
-  "missing_axes": [],
-  "questions": []
+  "message": "1-2 phrases naturelles et encourageantes en français",
+  "sector": "secteur détecté",
+  "target_users": "cible définie précisément",
+  "problem": "problème reformulé clairement",
+  "solution_description": "solution expliquée concrètement",
+  "short_pitch": "phrase de 8 à 12 mots maximum",
+  "score": nombre entre 80 et 100
 }
 
-CAS B — QUESTIONS :
-{
-  "type": "questions",
-  "message": "Votre idée est intéressante, mais certains éléments doivent être précisés.",
-  "missing_axes": ["problem"],
-  "questions": [
-    {"axis": "problem", "text": "Quel problème concret voulez-vous résoudre ?"}
-  ]
-}
-
-CAS C — IDÉE NON CLAIRE :
-{
-  "type": "questions",
-  "message": "Votre description est trop vague ou difficile à comprendre. Quelques précisions vont m’aider à mieux structurer votre idée.",
-  "missing_axes": ["problem", "target", "solution"],
-  "questions": [
-    {"axis": "problem",  "text": "Quel problème voulez-vous résoudre ?"},
-    {"axis": "target",   "text": "Pour qui est cette solution ?"},
-    {"axis": "solution", "text": "Quelle solution proposez-vous ?"}
-  ]
-}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-OBJECTIF FINAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Toujours produire soit :
-- une idée claire, exploitable directement par les autres agents
-- soit les questions minimales nécessaires pour y arriver
-Ne jamais faire de résumé inutile.
-Ne jamais ajouter d’explications hors JSON.
+RÈGLES ABSOLUES :
+- Répondre UNIQUEMENT en JSON valide
+- Pas de texte avant ou après le JSON
+- Pas de backticks ni de markdown
+- Répondre en français dans les champs message/text
+- Ne jamais inventer d'informations absentes
+- missing_axes ne contient QUE les axes réellement absents ou ambigus
+- Maximum 3 questions
 """
 
-_CLARIFY_PROMPT = """Tu es l'agent Idea Clarifier de BrandAI.
 
-Ton rôle est de transformer une idée utilisateur en description
-claire et structurée, SANS ajouter de nouvelles idées.
+# ══════════════════════════════════════════════════════════════
+# PROMPT 2 — Analyse des réponses utilisateur
+# Fait tout en 1 call : sécurité sur réponses + structuration finale
+# ══════════════════════════════════════════════════════════════
+_ANSWER_PROMPT = """Tu es l'agent Idea Clarifier de BrandAI.
 
-OBJECTIF :
-- Problème : précis, concret, compréhensible
-- Cible : bien définie (qui exactement ?)
-- Solution : concrète, simple, claire
+L'utilisateur a répondu aux questions de clarification.
+Ta mission en UN SEUL appel :
+1. Vérifier si les RÉPONSES révèlent une intention illégale ou nuisible
+2. Si safe → construire l'idée clarifiée complète
 
-RÈGLES STRICTES :
-- Répondre en français
-- Répondre en JSON valide (sans backticks ni markdown)
-- Ne jamais inventer d'informations
-- Ne jamais proposer de stratégie ou business model
-- Reformuler pour améliorer la clarté, rester fidèle
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RÈGLE CRITIQUE DE SÉCURITÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Analyser l'ENSEMBLE description originale + réponses.
+Une description innocente avec des réponses malveillantes = REFUSÉ.
 
-GARDE-FOU SÉCURITÉ :
-Si description ou réponses contiennent des activités
-illégales ou nuisibles :
-→ Ne JAMAIS reformuler ces activités comme légales
-→ Ne JAMAIS présenter une intention illégale positivement
-→ Retourner score: 0 dans ce cas
+Exemples :
+- Description "marketplace" + réponse "vente de drogue" → refused / illegal
+- Description "app mobile" + réponse "escroquer des retraités" → refused / fraud
+- Description "marketplace" + réponse "vêtements pour enfants" → clarified
+
+Refuser si l'intention révélée est :
+- fraud   : tromper / escroquer des personnes
+- illegal : drogues, armes, faux documents, piratage
+- harmful : contenu nuisible, violent, exploitation de mineurs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SI SAFE → STRUCTURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Construire une idée claire à partir de la description + réponses.
+Ne jamais inventer d'informations non fournies.
+Ne jamais proposer de stratégie ou business model.
 
 SCORING :
 - problème clair    : +33 pts
 - cible claire      : +33 pts
 - solution claire   : +34 pts
-- Score 80-100 → idée prête pour le pipeline
+Score 80-100 = idée prête pour le pipeline
 
-TON selon score :
-- score ≥ 90 → enthousiaste
-- score 80-89 → encourageant
-- score < 80 → neutre positif, encourager à préciser
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMATS DE RÉPONSE (JSON strict, sans backticks)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-FORMAT JSON :
+CAS 1 — RÉPONSES REFUSÉES :
+{
+  "type": "refused",
+  "reason_category": "fraud" | "illegal" | "harmful",
+  "message": "Message professionnel en français expliquant le refus (3 phrases max). Baser sur la description ET les réponses fournies.",
+  "sector": "secteur détecté ou null"
+}
+
+CAS 2 — IDÉE CLARIFIÉE :
 {
   "type": "clarified",
-  "message": "1-2 phrases naturelles confirmant la compréhension",
+  "message": "1-2 phrases naturelles et encourageantes en français",
   "sector": "secteur détecté",
-  "target_users": "cible  définie",
-  "problem": "problème clair et reformulé",
+  "target_users": "cible définie précisément",
+  "problem": "problème reformulé clairement",
   "solution_description": "solution expliquée concrètement",
   "short_pitch": "phrase de 8 à 12 mots maximum",
   "score": nombre entre 0 et 100
-}"""
+}
+
+RÈGLES ABSOLUES :
+- Répondre UNIQUEMENT en JSON valide
+- Pas de texte avant ou après le JSON
+- Pas de backticks ni de markdown
+- Répondre en français dans les champs message
+- Ne jamais reformuler une activité illégale comme légale
+"""
 
 
 # ══════════════════════════════════════════════════════════════
@@ -300,255 +232,235 @@ FORMAT JSON :
 class IdeaClarifierAgent(BaseAgent):
     """
     Agent 0 du pipeline BrandAI.
-    Valide, questionne et structure l'idée utilisateur.
 
-    Sécurité :
-    - check_safety sans answers sur l'appel 1
-    - check_safety avec answers sur l'appel 2
+    Flux simplifié — 2 LLM calls maximum :
+
+    Appel 1 — run_start() :
+        description → sécurité + analyse axes → refused | questions | clarified
+
+    Appel 2 — run_answer() :
+        description + réponses → sécurité sur réponses + structuration → refused | clarified
     """
 
     def __init__(self):
         super().__init__(agent_name="idea_clarifier", temperature=0.3, max_retries=3)
-        # Groq uniquement — température 0.05 forcée (voir LLMRotator)
         self.llm_rotator = self.llm_rotator.groq_only()
 
-    def _build_system_prompt(self, state: PipelineState) -> str:
-        return _CLARIFY_PROMPT
+    # ─────────────────────────────────────────────────────────
+    # Construction du contexte utilisateur
+    # ─────────────────────────────────────────────────────────
 
-    def _build_user_prompt(self, state: PipelineState, answers: dict | None = None) -> str:
+    def _build_context(self, state: PipelineState, answers: dict | None = None) -> str:
         """
-        Construit le prompt envoyé au LLM.
-        Si answers présent → séparateurs ━━━ pour rendre les réponses visibles au LLM.
+        Construit le bloc de contexte injecté dans le user prompt.
+        Toujours : nom (si dispo) + secteur (si dispo) + description.
+        Si answers fournis : ajoute les réponses avec séparateurs visuels.
         """
         parts = []
 
         if state.name and state.name.strip():
-            parts.append(f"Nom du projet : {state.name}")
+            parts.append(f"Nom du projet : {state.name.strip()}")
 
         if state.sector and state.sector.strip():
-            parts.append(f"Secteur : {state.sector}")
+            parts.append(f"Secteur : {state.sector.strip()}")
 
-        parts.append(f"Description : {state.description}")
+        parts.append(f"Description : {state.description.strip()}")
 
         if state.target_audience and state.target_audience.strip():
-            parts.append(f"Public cible mentionné : {state.target_audience}")
+            parts.append(f"Public cible mentionné : {state.target_audience.strip()}")
 
         if answers:
             parts.append("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-            parts.append("RÉPONSES DE L'UTILISATEUR — analyser attentivement l'intention :")
+            parts.append("RÉPONSES DE L'UTILISATEUR :")
             parts.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
             if answers.get("problem"):
-                parts.append(f"Problème déclaré   : {answers['problem']}")
+                parts.append(f"Problème déclaré  : {answers['problem']}")
             if answers.get("target"):
-                parts.append(f"Cible déclarée     : {answers['target']}")
+                parts.append(f"Cible déclarée    : {answers['target']}")
             if answers.get("solution"):
-                parts.append(f"Solution déclarée  : {answers['solution']}")
-
+                parts.append(f"Solution déclarée : {answers['solution']}")
             parts.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-            parts.append(
-                "Question : ces réponses révèlent-elles une intention illégale ou nuisible ?"
-            )
 
         return "\n".join(parts)
 
-    async def check_safety(self, state: PipelineState, answers: dict | None = None) -> dict:
+    # ─────────────────────────────────────────────────────────
+    # Normalisation et validation du résultat LLM
+    # ─────────────────────────────────────────────────────────
+
+    def _normalize_result(self, raw_result: dict, state: PipelineState) -> dict:
         """
-        Vérifie la conformité du projet via LLM.
-        Appel 1 (answers=None) : analyse description seule
-        Appel 2 (answers=...) : analyse description + réponses ensemble
+        Normalise et valide le JSON retourné par le LLM.
+        Garantit que tous les champs attendus sont présents et typés.
         """
-        user_prompt = self._build_user_prompt(state, answers)
+        result_type = raw_result.get("type")
 
-        try:
-            raw = await self._call_llm(_SAFETY_PROMPT, user_prompt)
-            result = self._parse_json(raw)
+        if result_type == "refused":
+            return {
+                "type": "refused",
+                "reason_category": raw_result.get("reason_category") or "default",
+                "message": (raw_result.get("message") or "").strip()
+                           or get_refusal_message("default"),
+                "sector": (raw_result.get("sector") or state.sector or "").strip(),
+                "score": 0,
+            }
 
-            if not result.get("safe", True):
-                category = result.get("reason_category") or "default"
-                refusal_message = await self.generate_refusal_message(
-                    category=category, description=state.description
-                )
-                return {
-                    "safe": False,
-                    "reason_category": category,
-                    "refusal_message": refusal_message,
-                    "sector": result.get("sector"),
-                    "confidence": result.get("confidence"),
-                }
+        if result_type == "questions":
+            questions = raw_result.get("questions") or []
+            missing_axes = raw_result.get("missing_axes") or []
+            # Sécurité : garantir la cohérence questions / missing_axes
+            valid_axes = {"problem", "target", "solution"}
+            questions = [
+                q for q in questions
+                if isinstance(q, dict)
+                and q.get("axis") in valid_axes
+                and q.get("text", "").strip()
+            ]
+            missing_axes = [a for a in missing_axes if a in valid_axes]
+            return {
+                "type": "questions",
+                "message": (raw_result.get("message") or "").strip(),
+                "missing_axes": missing_axes,
+                "questions": questions,
+                "sector": (raw_result.get("sector") or state.sector or "").strip(),
+                "detected_sector": (raw_result.get("sector") or state.sector or "").strip(),
+            }
 
-            sector = (result.get("sector") or "").strip() or None
-            confidence = result.get("confidence")
-            if confidence is not None:
-                try:
-                    confidence = int(confidence)
-                    if not (0 <= confidence <= 100):
-                        confidence = None
-                except (TypeError, ValueError):
-                    confidence = None
-
-            return {"safe": True, "sector": sector, "confidence": confidence}
-
-        except Exception as e:
-            # Keep existing safety behavior: default safe on LLM error
-            self.logger.warning(f"[clarifier] check_safety erreur → safe par défaut : {e}")
-            return {"safe": True, "sector": None, "confidence": None}
-
-    async def generate_refusal_message(self, category: str, description: str) -> str:
-        """
-        Génère un message de refus personnalisé via LLM.
-        Fallback sur get_refusal_message() si erreur.
-        """
-        user_prompt = f"Catégorie de refus : {category}\nDescription du projet refusé : {description[:200]}"
-
-        try:
-            message = await self._call_llm(_REFUSAL_PROMPT, user_prompt)
-            message = message.strip().strip('"').strip("'")
-            if message and len(message) > 10:
-                self.logger.info(f"[clarifier] refusal message : {message[:100]}")
-                return message
-        except Exception as e:
-            self.logger.warning(f"[clarifier] generate_refusal_message erreur : {e}")
-
-        return get_refusal_message(category)
-
-    async def generate_clarified_idea(self, state: PipelineState, answers: dict | None = None) -> dict:
-        """
-        Génère le JSON structuré final.
-        Appelé UNIQUEMENT si check_safety() → safe: True.
-        """
-        context = build_idea_summary(
-            name=state.name,
-            sector=state.sector,
-            description=state.description,
-            target_audience=state.target_audience,
-        )
-
-        answers_block = ""
-        if answers:
-            answers_block = "\n\nRéponses de clarification :"
-            if answers.get("problem"):
-                answers_block += f"\n  Problème  : {answers['problem']}"
-            if answers.get("target"):
-                answers_block += f"\n  Cible     : {answers['target']}"
-            if answers.get("solution"):
-                answers_block += f"\n  Solution  : {answers['solution']}"
-
-        user_prompt = f"{context}{answers_block}"
-
-        fallback = {
-            "type": "clarified",
-            "message": "Voici ce que j'ai compris de votre projet.",
-            "sector": state.sector or "",
-            "target_users": (answers or {}).get("target", ""),
-            "problem": (answers or {}).get("problem", ""),
-            "solution_description": (answers or {}).get("solution", state.description[:300]),
-            "short_pitch": state.name or "",
-            "score": 40,
-        }
-
-        try:
-            raw = await self._call_llm(_CLARIFY_PROMPT, user_prompt)
-            result = self._parse_json(raw)
-
-            score = result.get("score", 50)
+        if result_type == "clarified":
+            score = raw_result.get("score", 50)
             try:
                 score = int(score)
                 score = max(0, min(100, score))
             except (TypeError, ValueError):
                 score = 50
-
             return {
                 "type": "clarified",
-                "message": result.get("message", ""),
-                "sector": result.get("sector", state.sector or ""),
-                "target_users": result.get("target_users", ""),
-                "problem": result.get("problem", ""),
-                "solution_description": result.get("solution_description", ""),
-                "short_pitch": result.get("short_pitch", ""),
+                "message": (raw_result.get("message") or "").strip(),
+                "sector": (raw_result.get("sector") or state.sector or "").strip(),
+                "target_users": (raw_result.get("target_users") or "").strip(),
+                "problem": (raw_result.get("problem") or "").strip(),
+                "solution_description": (raw_result.get("solution_description") or "").strip(),
+                "short_pitch": (raw_result.get("short_pitch") or "").strip(),
                 "score": score,
             }
-        except Exception as e:
-            self.logger.warning(f"[clarifier] generate_clarified_idea erreur : {e}")
-            return fallback
 
-    async def generate_questions(self, state: PipelineState) -> dict:
+        # Type inattendu → erreur remontée à la route
+        raise RuntimeError(f"[clarifier] type LLM inattendu : {result_type!r}")
+
+    # ─────────────────────────────────────────────────────────
+    # Méthode 1 — Appel initial (description seule)
+    # ─────────────────────────────────────────────────────────
+
+    async def run_start(self, state: PipelineState) -> dict:
         """
-        Simplifié :
-        - call LLM (QUESTIONS_PROMPT)
-        - parse JSON
-        - si clarified => directement generate_clarified_idea()
-        - si questions => return EXACTLY as-is (NO transformation)
+        1er appel — déclenché quand l'utilisateur soumet son idée.
+
+        Pipeline interne (1 seul LLM call) :
+          - Filtre gibberish sans LLM
+          - LLM : sécurité + analyse axes → refused | questions | clarified
+
+        Retourne un dict avec type = "refused" | "questions" | "clarified"
         """
-        user_prompt = self._build_user_prompt(state)
-
-        try:
-            raw = await self._call_llm(QUESTIONS_PROMPT, user_prompt)
-            parsed = self._parse_json(raw)
-        except Exception as e:
-            self.logger.warning(f"[clarifier] generate_questions erreur → out of service : {e}")
-            raise RuntimeError("Service IA indisponible (out of service)")
-
-        result_type = parsed.get("type")
-
-        if result_type == "clarified":
-            # REQUIRED: directly call generate_clarified_idea
-            return await self.generate_clarified_idea(state)
-
-        if result_type == "questions":
-            # REQUIRED: return EXACTLY as-is
-            return parsed
-
-        # Unexpected format/type
-        raise RuntimeError("Service IA indisponible (out of service)")
-
-    async def run_interactive(self, state: PipelineState, answers: dict | None = None) -> dict:
-        """
-        Simplifié :
-        validation + gibberish + safety + branch (answers ? clarified : questions)
-        """
-        errors = validate_idea_input(name=state.name or "", description=state.description or "", sector=state.sector or "")
+        # ── Validation locale sans LLM ────────────────────────
+        errors = validate_idea_input(
+            name=state.name or "",
+            description=state.description or "",
+            sector=state.sector or "",
+        )
         if errors:
-            # Keep existing UX behavior (no axis questions; message only)
             return {
                 "type": "questions",
-                "message": "Impossible de vous comprendre. Donnez une vraie description claire (2-3 phrases).",
+                "message": "Merci de fournir une description plus détaillée de votre projet (2-3 phrases minimum).",
                 "missing_axes": [],
                 "questions": [],
-                "score": 0,
+                "sector": "",
+                "detected_sector": "",
             }
 
         if is_gibberish(state.description):
             return {
                 "type": "questions",
-                "message": "Votre saisie ne ressemble pas à une idée réelle. Merci de donner une vraie description claire.",
+                "message": "Votre saisie ne ressemble pas à une idée réelle. Merci de décrire votre projet en quelques phrases.",
                 "missing_axes": [],
                 "questions": [],
-                "score": 0,
+                "sector": "",
+                "detected_sector": "",
             }
 
-        # Call safety with/without answers depending on call #1/#2
-        safety = await self.check_safety(state, answers)
+        # ── 1 LLM call : sécurité + analyse ──────────────────
+        user_prompt = self._build_context(state)
 
-        if safety.get("sector") and not state.sector:
-            state.sector = safety["sector"]
+        try:
+            raw = await self._call_llm(_ANALYSE_PROMPT, user_prompt)
+            result = self._parse_json(raw)
+        except Exception as e:
+            self.logger.error(f"[clarifier] run_start LLM error : {e}")
+            raise RuntimeError("Service IA indisponible. Réessayez dans quelques instants.")
 
-        if not safety["safe"]:
-            return {
-                "type": "refused",
-                "message": safety.get("refusal_message", ""),
-                "reason_category": safety.get("reason_category"),
-                "score": 0,
-                "sector": safety.get("sector", ""),
-                "confidence": safety.get("confidence", 0),
-            }
+        normalized = self._normalize_result(result, state)
 
-        if answers:
-            return await self.generate_clarified_idea(state, answers)
+        # Propager le secteur détecté dans le state pour le 2ème appel
+        if normalized.get("sector") and not state.sector:
+            state.sector = normalized["sector"]
 
-        return await self.generate_questions(state)
+        # Ajouter detected_sector pour que le frontend le renvoie au 2ème appel
+        normalized["detected_sector"] = normalized.get("sector", "")
 
-    # ── Mode batch (LangGraph) — conservé pour ne pas casser le reste du pipeline ──
+        self.logger.info(f"[clarifier] run_start → type={normalized['type']}")
+        return normalized
+
+    # ─────────────────────────────────────────────────────────
+    # Méthode 2 — Appel après réponses utilisateur
+    # ─────────────────────────────────────────────────────────
+
+    async def run_answer(self, state: PipelineState, answers: dict) -> dict:
+        """
+        2ème appel — déclenché quand l'utilisateur répond aux questions.
+
+        Pipeline interne (1 seul LLM call) :
+          - LLM : sécurité sur réponses + structuration → refused | clarified
+
+        answers = {"problem": "...", "target": "...", "solution": "..."}
+        (les clés absentes des questions posées sont ignorées)
+
+        Retourne un dict avec type = "refused" | "clarified"
+        """
+        if not answers or not any(v and v.strip() for v in answers.values()):
+            raise ValueError("Aucune réponse fournie.")
+
+        # ── 1 LLM call : sécurité sur réponses + structuration ──
+        user_prompt = self._build_context(state, answers)
+
+        try:
+            raw = await self._call_llm(_ANSWER_PROMPT, user_prompt)
+            result = self._parse_json(raw)
+        except Exception as e:
+            self.logger.error(f"[clarifier] run_answer LLM error : {e}")
+            raise RuntimeError("Service IA indisponible. Réessayez dans quelques instants.")
+
+        normalized = self._normalize_result(result, state)
+
+        # Propager le secteur si enrichi
+        if normalized.get("sector") and not state.sector:
+            state.sector = normalized["sector"]
+
+        self.logger.info(f"[clarifier] run_answer → type={normalized['type']}, score={normalized.get('score', 0)}")
+        return normalized
+
+    # ─────────────────────────────────────────────────────────
+    # Compatibilité — méthodes conservées pour la route existante
+    # ─────────────────────────────────────────────────────────
+
+    async def run_interactive(self, state: PipelineState, answers: dict | None = None) -> dict:
+        """
+        Point d'entrée unique appelé par la route clarifier.py.
+        Délègue vers run_start() ou run_answer() selon le contexte.
+        Conservé pour ne pas modifier la route.
+        """
+        if answers and any(v and v.strip() for v in answers.values()):
+            return await self.run_answer(state, answers)
+        return await self.run_start(state)
+
+    # ── Mode batch LangGraph — conservé pour ne pas casser le pipeline ──
     async def run(self, state: PipelineState) -> dict:
         self._log_start(state)
         state.current_agent = "idea_clarifier"
@@ -556,27 +468,26 @@ class IdeaClarifierAgent(BaseAgent):
         if not state.description or len(state.description.strip()) < 5:
             raise ValueError("Description trop courte")
 
-        safety = await self.check_safety(state)
-        if safety.get("sector") and not state.sector:
-            state.sector = safety["sector"]
+        result = await self.run_start(state)
 
-        if not safety["safe"]:
+        if result["type"] == "refused":
             state.status = "refused"
             return {
                 "safe": False,
-                "reason_category": safety.get("reason_category"),
-                "refusal_message": safety.get("refusal_message"),
+                "reason_category": result.get("reason_category"),
+                "refusal_message": result.get("message"),
                 "clarified_idea": {},
                 "clarity_score": 0,
             }
 
-        result = await self.generate_clarified_idea(state)
-        score = result.get("score", 50)
+        if result["type"] == "clarified":
+            score = result.get("score", 50)
+            clarified = {k: v for k, v in result.items() if k not in ("type", "message", "detected_sector")}
+            clarified["clarity_score"] = score
+            state.clarified_idea = clarified
+            state.clarity_score = score
+            self._log_success(clarified)
+            return {"safe": True, "clarified_idea": clarified, "clarity_score": score}
 
-        clarified = {k: v for k, v in result.items() if k not in ("type", "message")}
-        clarified["clarity_score"] = score
-        state.clarified_idea = clarified
-        state.clarity_score = score
-        self._log_success(clarified)
-
-        return {"safe": True, "clarified_idea": clarified, "clarity_score": score}
+        # type = "questions" → pipeline batch ne peut pas continuer
+        raise RuntimeError("[clarifier] Idée incomplète, questions nécessaires.")
