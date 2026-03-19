@@ -1,79 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/shared/hooks/useAuth";
-
-const AGENTS = [
-  {
-    id: "clarifier",
-    label: "Idea Clarifier",
-    short: "IC",
-    color: "#7F77DD",
-    gradient: "linear-gradient(135deg,#7F77DD,#534AB7)",
-    doneBg: "#f0fdf4",
-    doneBorder: "#9FE1CB",
-    doneColor: "#085041",
-  },
-  {
-    id: "enhancer",
-    label: "Idea Enhancer",
-    short: "IE",
-    color: "#1D9E75",
-    gradient: "linear-gradient(135deg,#1D9E75,#085041)",
-    doneBg: "#f0fdf4",
-    doneBorder: "#9FE1CB",
-    doneColor: "#085041",
-  },
-  {
-    id: "market",
-    label: "Market Analysis",
-    short: "MA",
-    color: "#378ADD",
-    gradient: "linear-gradient(135deg,#378ADD,#185FA5)",
-    doneBg: "#EBF5FF",
-    doneBorder: "#B5D4F4",
-    doneColor: "#0C447C",
-  },
-  {
-    id: "brand",
-    label: "Brand Identity",
-    short: "BI",
-    color: "#D4537E",
-    gradient: "linear-gradient(135deg,#D4537E,#72243E)",
-    doneBg: "#FBEAF0",
-    doneBorder: "#F4C0D1",
-    doneColor: "#72243E",
-  },
-  {
-    id: "content",
-    label: "Content Creator",
-    short: "CC",
-    color: "#D85A30",
-    gradient: "linear-gradient(135deg,#D85A30,#712B13)",
-    doneBg: "#FAECE7",
-    doneBorder: "#F5C4B3",
-    doneColor: "#712B13",
-  },
-  {
-    id: "website",
-    label: "Website Builder",
-    short: "WB",
-    color: "#185FA5",
-    gradient: "linear-gradient(135deg,#185FA5,#042C53)",
-    doneBg: "#EBF5FF",
-    doneBorder: "#B5D4F4",
-    doneColor: "#0C447C",
-  },
-  {
-    id: "optimizer",
-    label: "Optimizer",
-    short: "OP",
-    color: "#854F0B",
-    gradient: "linear-gradient(135deg,#854F0B,#412402)",
-    doneBg: "#FAEEDA",
-    doneBorder: "#FAC775",
-    doneColor: "#633806",
-  },
-];
+import { AGENTS } from "@/agents";
+import { CLARITY_SCORE_MIN_PIPELINE } from "@/agents/clarifier/constants";
 
 export default function PipelineLayout() {
   const { id } = useParams();
@@ -116,7 +45,8 @@ export default function PipelineLayout() {
 
   // Calculer si pipeline est disponible
   const pipelineEnabled =
-    idea?.clarity_status === "clarified" && (idea?.clarity_score ?? 0) >= 80;
+    idea?.clarity_status === "clarified" &&
+    (idea?.clarity_score ?? 0) >= CLARITY_SCORE_MIN_PIPELINE;
 
   const userInitials = (user?.name || user?.email || "U")
     .slice(0, 2)
@@ -158,37 +88,6 @@ export default function PipelineLayout() {
       flex: 1,
       display: "flex",
     },
-    sidebar: {
-      width: sidebarOpen ? 224 : 0,
-      minWidth: sidebarOpen ? 224 : 0,
-      overflow: "hidden",
-      background: "white",
-      borderRight: "0.5px solid #f0eeff",
-      display: "flex",
-      flexDirection: "column",
-      transition: "width 0.25s ease, min-width 0.25s ease",
-      boxShadow: sidebarOpen ? "2px 0 16px rgba(124,58,237,0.06)" : "none",
-      flexShrink: 0,
-    },
-    sidebarHeader: {
-      padding: "14px 14px 10px",
-      borderBottom: "0.5px solid #f0eeff",
-      minWidth: 224,
-    },
-    agentList: {
-      flex: 1,
-      overflowY: "auto",
-      padding: 8,
-      display: "flex",
-      flexDirection: "column",
-      gap: 3,
-      minWidth: 224,
-    },
-    pipelineBtn: {
-      padding: "12px",
-      borderTop: "0.5px solid #f0eeff",
-      minWidth: 224,
-    },
     content: {
       flex: 1,
       display: "flex",
@@ -201,18 +100,10 @@ export default function PipelineLayout() {
   return (
     <div style={S.page}>
       {/* TOP BAR */}
-      <div style={S.topbar}>
+      <div className="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#e8e4ff] bg-white px-5 shadow-[0_1px_8px_rgba(124,58,237,0.06)]">
         {/* Logo */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 7,
-            marginRight: 4,
-            flexShrink: 0,
-          }}
-        >
-          <div style={S.logo}>
+        <div className="mr-1 flex shrink-0 items-center gap-[7px]">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#7F77DD] to-[#534AB7] shadow-[0_2px_8px_rgba(124,58,237,0.3)]">
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
               <path
                 d="M7 1.5l1.2 3 3 .4-2.2 2.1.5 3L7 8.5l-2.5 1.5.5-3L2.8 5l3-.4L7 1.5z"
@@ -222,37 +113,16 @@ export default function PipelineLayout() {
               />
             </svg>
           </div>
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 800,
-              color: "#1a1040",
-            }}
-          >
+          <span className="text-sm font-extrabold text-[#1a1040]">
             BrandAI
           </span>
         </div>
 
         {/* Breadcrumb */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 12,
-            color: "#9ca3af",
-            flex: 1,
-            overflow: "hidden",
-          }}
-        >
+        <div className="flex flex-1 items-center gap-1.5 overflow-hidden text-xs text-gray-400">
           <span
             onClick={() => navigate("/dashboard")}
-            style={{
-              color: "#7F77DD",
-              fontWeight: 600,
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
+            className="shrink-0 cursor-pointer font-semibold text-[#7F77DD]"
           >
             Mes idées
           </span>
@@ -261,7 +131,7 @@ export default function PipelineLayout() {
             height="12"
             viewBox="0 0 12 12"
             fill="none"
-            style={{ flexShrink: 0 }}
+            className="shrink-0"
           >
             <path
               d="M4 2l4 4-4 4"
@@ -270,15 +140,7 @@ export default function PipelineLayout() {
               strokeLinecap="round"
             />
           </svg>
-          <span
-            style={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              color: "#6b7280",
-              fontWeight: 500,
-            }}
-          >
+          <span className="overflow-hidden text-ellipsis whitespace-nowrap font-medium text-gray-500">
             {ideaTitle}...
           </span>
           <svg
@@ -286,7 +148,7 @@ export default function PipelineLayout() {
             height="12"
             viewBox="0 0 12 12"
             fill="none"
-            style={{ flexShrink: 0 }}
+            className="shrink-0"
           >
             <path
               d="M4 2l4 4-4 4"
@@ -295,80 +157,32 @@ export default function PipelineLayout() {
               strokeLinecap="round"
             />
           </svg>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              flexShrink: 0,
-            }}
-          >
+          <div className="flex shrink-0 items-center gap-[5px]">
             <div
-              style={{
-                width: 18,
-                height: 18,
-                borderRadius: "50%",
-                background: activeAgent.gradient,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 7,
-                fontWeight: 700,
-                color: "white",
-              }}
+              className="flex h-[18px] w-[18px] items-center justify-center rounded-full text-[7px] font-bold text-white"
+              style={{ background: activeAgent.gradient }}
             >
               {activeAgent.short}
             </div>
-            <span
-              style={{
-                color: "#3C3489",
-                fontWeight: 700,
-                fontSize: 12,
-              }}
-            >
+            <span className="text-xs font-bold text-[#3C3489]">
               {activeAgent.label}
             </span>
           </div>
         </div>
 
         {/* Progress pill */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            background: "#f0eeff",
-            borderRadius: 99,
-            padding: "5px 12px",
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              width: 50,
-              height: 4,
-              borderRadius: 99,
-              background: "white",
-              overflow: "hidden",
-            }}
-          >
+        <div className="flex shrink-0 items-center gap-2 rounded-full bg-[#f0eeff] px-3 py-[5px]">
+          <div className="h-1 w-[50px] overflow-hidden rounded-full bg-white">
             <div
               style={{
                 height: "100%",
                 width: progressPct + "%",
-                background: "linear-gradient(90deg,#7F77DD,#534AB7)",
-                borderRadius: 99,
                 transition: "width 0.5s ease",
               }}
+              className="rounded-full bg-gradient-to-r from-[#7F77DD] to-[#534AB7]"
             />
           </div>
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "#534AB7",
-            }}
-          >
+          <span className="text-[10px] font-bold text-[#534AB7]">
             {activeIndex + 1}/7
           </span>
         </div>
@@ -376,21 +190,7 @@ export default function PipelineLayout() {
         {/* Hamburger */}
         <button
           onClick={() => setSidebarOpen((v) => !v)}
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 8,
-            background: sidebarOpen ? "#f0eeff" : "white",
-            border: "0.5px solid #e8e4ff",
-            cursor: "pointer",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
-            flexShrink: 0,
-            transition: "all 0.2s",
-          }}
+          className={`flex h-[34px] w-[34px] shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-[#e8e4ff] transition-all ${sidebarOpen ? "bg-[#f0eeff]" : "bg-white"}`}
         >
           {sidebarOpen ? (
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -402,60 +202,16 @@ export default function PipelineLayout() {
               />
             </svg>
           ) : (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{
-                  width: 14,
-                  height: 1.5,
-                  background: "#7F77DD",
-                  borderRadius: 99,
-                }}
-              />
-              <div
-                style={{
-                  width: 14,
-                  height: 1.5,
-                  background: "#7F77DD",
-                  borderRadius: 99,
-                }}
-              />
-              <div
-                style={{
-                  width: 10,
-                  height: 1.5,
-                  background: "#7F77DD",
-                  borderRadius: 99,
-                }}
-              />
+            <div className="flex flex-col items-center gap-1">
+              <div className="h-[1.5px] w-[14px] rounded-full bg-[#7F77DD]" />
+              <div className="h-[1.5px] w-[14px] rounded-full bg-[#7F77DD]" />
+              <div className="h-[1.5px] w-[10px] rounded-full bg-[#7F77DD]" />
             </div>
           )}
         </button>
 
         {/* Avatar */}
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg,#7F77DD,#534AB7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 10,
-            fontWeight: 700,
-            color: "white",
-            flexShrink: 0,
-            boxShadow: "0 2px 6px rgba(124,58,237,0.25)",
-            cursor: "pointer",
-          }}
-        >
+        <div className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-[10px] font-bold text-white shadow-[0_2px_6px_rgba(124,58,237,0.25)]">
           {userInitials}
         </div>
       </div>
@@ -463,25 +219,13 @@ export default function PipelineLayout() {
       {/* BODY */}
       <div style={S.body}>
         {/* SIDEBAR */}
-        <div style={S.sidebar}>
-          <div style={S.sidebarHeader}>
+        <div
+          className={`flex shrink-0 flex-col overflow-hidden border-r border-[#f0eeff] bg-white transition-[width,min-width] duration-200 ease-in-out ${sidebarOpen ? "w-56 min-w-56 shadow-[2px_0_16px_rgba(124,58,237,0.06)]" : "w-0 min-w-0 shadow-none"}`}
+        >
+          <div className="min-w-56 border-b border-[#f0eeff] px-[14px] pb-[10px] pt-[14px]">
             <button
               onClick={() => navigate("/dashboard")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "#9ca3af",
-                fontSize: 12,
-                padding: 0,
-                marginBottom: 12,
-                fontWeight: 500,
-                fontFamily: "var(--font-sans)",
-                whiteSpace: "nowrap",
-              }}
+              className="mb-3 flex cursor-pointer items-center gap-[5px] whitespace-nowrap border-0 bg-transparent p-0 font-[var(--font-sans)] text-xs font-medium text-gray-400"
             >
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                 <path
@@ -495,51 +239,27 @@ export default function PipelineLayout() {
               Retour
             </button>
 
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#1a1040",
-                marginBottom: 2,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
+            <div className="mb-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold text-[#1a1040]">
               {ideaTitle}...
             </div>
-            <div
-              style={{
-                fontSize: 11,
-                color: "#9ca3af",
-                marginBottom: 10,
-              }}
-            >
+            <div className="mb-[10px] text-[11px] text-gray-400">
               Étape {activeIndex + 1} · {activeAgent.label}
             </div>
 
-            <div
-              style={{
-                height: 5,
-                borderRadius: 99,
-                background: "#f0eeff",
-                overflow: "hidden",
-              }}
-            >
+            <div className="h-[5px] overflow-hidden rounded-full bg-[#f0eeff]">
               <div
                 style={{
                   height: "100%",
                   width: progressPct + "%",
-                  background: "linear-gradient(90deg,#7F77DD,#534AB7)",
-                  borderRadius: 99,
                   transition: "width 0.5s ease",
                 }}
+                className="rounded-full bg-gradient-to-r from-[#7F77DD] to-[#534AB7]"
               />
             </div>
           </div>
 
           {/* Agents */}
-          <div style={S.agentList}>
+          <div className="flex min-w-56 flex-1 flex-col gap-[3px] overflow-y-auto p-2">
             {AGENTS.map((agent) => {
               const status = getStatus(agent.id);
               const isActive = agent.id === activeAgent.id;
@@ -550,46 +270,20 @@ export default function PipelineLayout() {
                 <div
                   key={agent.id}
                   onClick={() => navigate("/ideas/" + id + "/" + agent.id)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "9px 10px",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    background: isDone
-                      ? agent.doneBg
+                  className={`flex cursor-pointer items-center gap-[10px] rounded-[10px] px-[10px] py-[9px] transition-all duration-150 ${
+                    isDone
+                      ? "border"
                       : isActive
-                        ? "linear-gradient(135deg,#f0eeff,#fafafe)"
-                        : "transparent",
-                    border: isDone
-                      ? "0.5px solid " + agent.doneBorder
-                      : isActive
-                        ? "0.5px solid #AFA9EC"
-                        : "0.5px solid transparent",
-                    opacity: isPending ? 0.45 : 1,
-                    transition: "all 0.15s",
-                  }}
+                        ? "border border-[#AFA9EC] bg-gradient-to-br from-[#f0eeff] to-[#fafafe]"
+                        : "border border-transparent bg-transparent"
+                  } ${isPending ? "opacity-45" : "opacity-100"}`}
+                  style={isDone ? { background: agent.doneBg, borderColor: agent.doneBorder } : undefined}
                 >
                   <div
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-150 ${isPending ? "border border-[#e5e7eb]" : "border-0"} ${isDone ? "bg-[#1D9E75]" : isActive ? "" : "bg-[#f5f5f5]"}`}
                     style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      background: isDone
-                        ? "#1D9E75"
-                        : isActive
-                          ? agent.gradient
-                          : "#f5f5f5",
-                      border: isPending ? "0.5px solid #e5e7eb" : "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      boxShadow: isActive
-                        ? "0 2px 8px " + agent.color + "44"
-                        : "none",
-                      transition: "all 0.15s",
+                      background: isDone ? "#1D9E75" : isActive ? agent.gradient : "#f5f5f5",
+                      boxShadow: isActive ? `0 2px 8px ${agent.color}44` : "none",
                     }}
                   >
                     {isDone ? (
@@ -609,55 +303,23 @@ export default function PipelineLayout() {
                       </svg>
                     ) : (
                       <span
-                        style={{
-                          fontSize: 9,
-                          fontWeight: 700,
-                          color: isActive ? "white" : "#9ca3af",
-                        }}
+                        className={`text-[9px] font-bold ${isActive ? "text-white" : "text-gray-400"}`}
                       >
                         {agent.short}
                       </span>
                     )}
                   </div>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="min-w-0 flex-1">
                     <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: isDone || isActive ? 700 : 500,
-                        color: isDone
-                          ? agent.doneColor
-                          : isActive
-                            ? "#3C3489"
-                            : "#6b7280",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
+                      className={`overflow-hidden text-ellipsis whitespace-nowrap text-[11px] ${isDone || isActive ? "font-bold" : "font-medium"} ${isActive ? "text-[#3C3489]" : "text-gray-500"}`}
+                      style={isDone ? { color: agent.doneColor } : undefined}
                     >
                       {agent.label}
                     </div>
-                    <div
-                      style={{
-                        fontSize: 9,
-                        color: isDone
-                          ? "#1D9E75"
-                          : isActive
-                            ? "#7F77DD"
-                            : "#9ca3af",
-                        marginTop: 2,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 3,
-                      }}
-                    >
+                    <div className={`mt-0.5 flex items-center gap-[3px] text-[9px] ${isDone ? "text-[#1D9E75]" : isActive ? "text-[#7F77DD]" : "text-gray-400"}`}>
                       {isActive && (
-                        <span
-                          style={{
-                            animation: "pulse 1.2s infinite",
-                            display: "inline-block",
-                          }}
-                        >
+                        <span className="inline-block animate-[pulse_1.2s_infinite]">
                           ●
                         </span>
                       )}
@@ -674,7 +336,7 @@ export default function PipelineLayout() {
           </div>
 
           {/* Pipeline button */}
-          <div style={S.pipelineBtn}>
+          <div className="min-w-56 border-t border-[#f0eeff] p-3">
             <button
               onClick={() => {
                 if (pipelineEnabled) {
@@ -682,29 +344,7 @@ export default function PipelineLayout() {
                 }
               }}
               disabled={!pipelineEnabled}
-              style={{
-                width: "100%",
-                padding: "10px",
-                background: pipelineEnabled
-                  ? "linear-gradient(135deg,#7F77DD,#534AB7)"
-                  : "#f3f0ff",
-                color: pipelineEnabled ? "white" : "#AFA9EC",
-                border: pipelineEnabled ? "none" : "0.5px solid #e8e4ff",
-                borderRadius: 99,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: pipelineEnabled ? "pointer" : "not-allowed",
-                boxShadow: pipelineEnabled
-                  ? "0 2px 10px rgba(124,58,237,0.25)"
-                  : "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                transition: "all 0.2s",
-                whiteSpace: "nowrap",
-                opacity: pipelineEnabled ? 1 : 0.6,
-              }}
+              className={`flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-[10px] py-2.5 text-xs font-bold transition-all duration-200 ${pipelineEnabled ? "cursor-pointer bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_10px_rgba(124,58,237,0.25)] opacity-100" : "cursor-not-allowed border border-[#e8e4ff] bg-[#f3f0ff] text-[#AFA9EC] opacity-60"}`}
             >
               {pipelineEnabled ? (
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -737,19 +377,12 @@ export default function PipelineLayout() {
               )}
               {pipelineEnabled ? "Lancer le pipeline" : "Pipeline verrouillé"}
             </button>
-            <div
-              style={{
-                fontSize: 10,
-                color: "#AFA9EC",
-                textAlign: "center",
-                marginTop: 6,
-              }}
-            >
+            <div className="mt-1.5 text-center text-[10px] text-[#AFA9EC]">
               {idea?.clarity_status === "refused"
                 ? "Idée refusée — non conforme"
                 : idea?.clarity_status === "clarified" &&
-                    (idea?.clarity_score ?? 0) < 80
-                  ? `Score insuffisant (${idea.clarity_score}/100 < 80)`
+                    (idea?.clarity_score ?? 0) < CLARITY_SCORE_MIN_PIPELINE
+                  ? `Score insuffisant (${idea.clarity_score}/100 < ${CLARITY_SCORE_MIN_PIPELINE})`
                   : idea?.clarity_status === "questions"
                     ? "Répondez aux questions d'abord"
                     : "Disponible après clarification"}

@@ -27,48 +27,19 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
 
   const modelStep = steps.find((s) => s.detail?.model);
   const model = modelStep?.detail?.model || null;
+  const dotClass = hasError
+    ? "bg-rose-600"
+    : isLoading
+      ? "bg-[#EF9F27] animate-[pulse_1.2s_infinite]"
+      : "bg-[#1D9E75]";
 
   return (
-    <div
-      style={{
-        background: "white",
-        border: "0.5px solid #9FE1CB",
-        borderRadius: 14,
-        overflow: "visible",
-        boxShadow: "0 2px 8px rgba(29,158,117,0.08)",
-        animation: "slideUp 0.35s ease forwards",
-      }}
-    >
+    <div className="overflow-visible rounded-[14px] border border-[#9FE1CB] bg-white shadow-[0_2px_8px_rgba(29,158,117,0.08)] animate-[slideUp_0.35s_ease_forwards]">
       {/* Header */}
-      <div
-        style={{
-          padding: "10px 16px",
-          background: "#f0fdf4",
-          borderBottom: collapsed ? "none" : "0.5px solid #9FE1CB",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: hasError ? "#e11d48" : isLoading ? "#EF9F27" : "#1D9E75",
-              animation: isLoading ? "pulse 1.2s infinite" : "none",
-            }}
-          />
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: hasError ? "#e11d48" : "#085041",
-              textTransform: "uppercase",
-              letterSpacing: "0.07em",
-            }}
-          >
+      <div className={`flex items-center justify-between bg-green-50 px-4 py-[10px] ${collapsed ? "border-b-0" : "border-b border-[#9FE1CB]"}`}>
+        <div className="flex items-center gap-2">
+          <div className={`h-[7px] w-[7px] rounded-full ${dotClass}`} />
+          <span className={`text-[11px] font-bold uppercase tracking-[0.07em] ${hasError ? "text-rose-600" : "text-[#085041]"}`}>
             {isLoading
               ? "Agent thinking — XAI"
               : collapsed
@@ -76,16 +47,9 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
               : "Analyse XAI — terminée"}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div className="flex items-center gap-1.5">
           {!isLoading && (
-            <span
-              style={{
-                fontSize: 11,
-                fontFamily: "var(--font-mono)",
-                color: "#1D9E75",
-                fontWeight: 600,
-              }}
-            >
+            <span className="font-[var(--font-mono)] text-[11px] font-semibold text-[#1D9E75]">
               {successCount} étapes ✓
             </span>
           )}
@@ -93,28 +57,9 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
           <button
             type="button"
             onClick={() => setIsOpen((v) => !v)}
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 999,
-              border: "0.5px solid #9FE1CB",
-              background: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              padding: 0,
-            }}
+            className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border border-[#9FE1CB] bg-white p-0"
           >
-            <span
-              style={{
-                display: "inline-block",
-                transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
-                transition: "transform 0.15s ease",
-                fontSize: 10,
-                color: "#1D9E75",
-              }}
-            >
+            <span className={`inline-block text-[10px] text-[#1D9E75] transition-transform duration-150 ease-in-out ${isOpen ? "rotate-90" : "rotate-0"}`}>
               ▶
             </span>
           </button>
@@ -123,44 +68,22 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
 
       {/* Steps — cachés si collapsed, scrollable si beaucoup d'éléments */}
       {!effectiveCollapsed && (
-        <div
-          style={{
-            height: 220,
-            overflowY: "auto",
-            borderTop: dims ? "none" : "0.5px solid #f0fdf4",
-          }}
-        >
-          <div
-            style={{
-              padding: "10px 16px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 11,
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-              borderBottom: dims ? "0.5px solid #f0fdf4" : "none",
-            }}
-          >
+        <div className={`h-[220px] overflow-y-auto ${dims ? "border-t-0" : "border-t border-[#f0fdf4]"}`}>
+          <div className={`flex flex-col gap-1 px-4 py-[10px] font-[var(--font-mono)] text-[11px] ${dims ? "border-b border-[#f0fdf4]" : "border-b-0"}`}>
             {steps.map((step) => (
-              <div
-                key={step.id}
-                style={{ display: "flex", flexDirection: "column", gap: 2 }}
-              >
+              <div key={step.id} className="flex flex-col gap-0.5">
                 <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    color:
-                      step.status === "success"
-                        ? "#1D9E75"
-                        : step.status === "error"
-                        ? "#e11d48"
-                        : step.status === "loading"
-                        ? "#9ca3af"
-                        : "#534AB7",
-                  }}
+                  className={`flex gap-2 ${
+                    step.status === "success"
+                      ? "text-[#1D9E75]"
+                      : step.status === "error"
+                      ? "text-rose-600"
+                      : step.status === "loading"
+                      ? "text-gray-400"
+                      : "text-[#534AB7]"
+                  }`}
                 >
-                  <span style={{ width: 14, flexShrink: 0 }}>
+                  <span className="w-[14px] shrink-0">
                     {step.status === "loading" && "●●●"}
                     {step.status === "success" && "✓"}
                     {step.status === "error" && "✗"}
@@ -178,15 +101,7 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
                 </div>
 
                 {step.detail?.dimensions && (
-                  <div
-                    style={{
-                      paddingLeft: 22,
-                      display: "flex",
-                      gap: 12,
-                      fontSize: 10,
-                      marginTop: 2,
-                    }}
-                  >
+                  <div className="mt-0.5 flex gap-3 pl-[22px] text-[10px]">
                     {[
                       { k: "problem", l: "problème" },
                       { k: "target", l: "cible" },
@@ -194,12 +109,7 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
                     ].map(({ k, l }) => (
                       <span
                         key={k}
-                        style={{
-                          color: step.detail.dimensions[k]
-                            ? "#1D9E75"
-                            : "#e11d48",
-                          fontWeight: 600,
-                        }}
+                        className={`font-semibold ${step.detail.dimensions[k] ? "text-[#1D9E75]" : "text-rose-600"}`}
                       >
                         {step.detail.dimensions[k] ? "✓" : "✗"} {l}
                       </span>
@@ -208,14 +118,7 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
                 )}
 
                 {step.detail?.score > 0 && (
-                  <div
-                    style={{
-                      paddingLeft: 22,
-                      fontSize: 10,
-                      color: step.detail.score >= 80 ? "#1D9E75" : "#EF9F27",
-                      fontWeight: 600,
-                    }}
-                  >
+                  <div className={`pl-[22px] text-[10px] font-semibold ${step.detail.score >= 80 ? "text-[#1D9E75]" : "text-[#EF9F27]"}`}>
                     score : {step.detail.score}/100
                   </div>
                 )}
@@ -224,14 +127,7 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
           </div>
 
           {dims && (
-            <div
-              style={{
-                padding: "10px 16px",
-                background: "#fafffe",
-                display: "flex",
-                gap: 8,
-              }}
-            >
+            <div className="flex gap-2 bg-[#fafffe] px-4 py-[10px]">
               {[
                 { k: "problem", l: "Problème" },
                 { k: "target", l: "Cible" },
@@ -239,71 +135,23 @@ export default function XaiBlock({ steps, isLoading, collapsed }) {
               ].map(({ k, l }) => (
                 <div
                   key={k}
-                  style={{
-                    flex: 1,
-                    padding: "8px 10px",
-                    background: dims[k] ? "#f0fdf4" : "#fff5f5",
-                    border: `0.5px solid ${
-                      dims[k] ? "#9FE1CB" : "#fecaca"
-                    }`,
-                    borderRadius: 8,
-                    textAlign: "center",
-                  }}
+                  className={`flex-1 rounded-lg px-[10px] py-2 text-center ${dims[k] ? "border border-[#9FE1CB] bg-[#f0fdf4]" : "border border-[#fecaca] bg-[#fff5f5]"}`}
                 >
-                  <div
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: dims[k] ? "#1D9E75" : "#e11d48",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.07em",
-                      marginBottom: 3,
-                    }}
-                  >
+                  <div className={`mb-[3px] text-[9px] font-bold uppercase tracking-[0.07em] ${dims[k] ? "text-[#1D9E75]" : "text-rose-600"}`}>
                     {l}
                   </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: dims[k] ? "#085041" : "#e11d48",
-                      fontWeight: 600,
-                    }}
-                  >
+                  <div className={`text-[11px] font-semibold ${dims[k] ? "text-[#085041]" : "text-rose-600"}`}>
                     {dims[k] ? "✓ Détecté" : "✗ Manquant"}
                   </div>
                 </div>
               ))}
 
               {sector && (
-                <div
-                  style={{
-                    flex: 1,
-                    padding: "8px 10px",
-                    background: "#f0eeff",
-                    border: "0.5px solid #AFA9EC",
-                    borderRadius: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: "#7F77DD",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.07em",
-                      marginBottom: 3,
-                    }}
-                  >
+                <div className="flex-1 rounded-lg border border-[#AFA9EC] bg-[#f0eeff] px-[10px] py-2 text-center">
+                  <div className="mb-[3px] text-[9px] font-bold uppercase tracking-[0.07em] text-[#7F77DD]">
                     Secteur
                   </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "#3C3489",
-                      fontWeight: 700,
-                    }}
-                  >
+                  <div className="text-[11px] font-bold text-[#3C3489]">
                     {sector}
                   </div>
                 </div>

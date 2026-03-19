@@ -30,6 +30,13 @@ export function useClarifierAgent(idea, token, options = {}) {
     xaiStepsRef.current = xaiSteps;
   }, [xaiSteps]);
 
+  useEffect(() => {
+    startedRef.current = false;
+    return () => {
+      startedRef.current = false;
+    };
+  }, [idea?.id]);
+
   const addXaiStep = useCallback((status, text, detail = {}) => {
     setXaiSteps((prev) => {
       const next = [

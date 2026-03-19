@@ -4,6 +4,7 @@ import { safeText } from "@/agents/shared/utils/safeText";
 import { createStreamWords } from "@/agents/shared/utils/streamWords";
 
 const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
+// @deprecated - remplacé par useClarifierAgent
 
 export function useClarifierChat(idea, token) {
   const [messages, setMessages] = useState([]);

@@ -34,73 +34,19 @@ export default function QuestionsBlock({
   );
 
   return (
-    <div
-      style={{
-        background: "white",
-        border: "0.5px solid #AFA9EC",
-        borderRadius: 14,
-        overflow: "hidden",
-        boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
-        animation: "slideUp 0.35s ease",
-      }}
-    >
-      <div
-        style={{
-          padding: "8px 14px",
-          borderBottom: "0.5px solid #AFA9EC",
-          background: "linear-gradient(135deg,#EEEDFE,#f3f0ff)",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <div
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg,#7F77DD,#534AB7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 6px rgba(124,58,237,0.3)",
-            fontSize: 10,
-            fontWeight: 700,
-            color: "white",
-          }}
-        >
+    <div className="overflow-hidden rounded-[14px] border border-[#AFA9EC] bg-white shadow-[0_2px_12px_rgba(124,58,237,0.08)] animate-[slideUp_0.35s_ease]">
+      <div className="flex items-center gap-2 border-b border-[#AFA9EC] bg-gradient-to-br from-[#EEEDFE] to-[#f3f0ff] px-[14px] py-2">
+        <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-[10px] font-bold text-white shadow-[0_2px_6px_rgba(124,58,237,0.3)]">
           ?
         </div>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 500,
-            color: "var(--color-text-secondary)",
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-          }}
-        >
+        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[color:var(--color-text-secondary)]">
           Questions de clarification
         </span>
       </div>
 
-      <div
-        style={{
-          padding: "14px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
+      <div className="flex flex-col gap-3 p-[14px]">
         {agentMessage && (
-          <p
-            style={{
-              fontSize: 13,
-              color: "var(--color-text-primary)",
-              lineHeight: 1.6,
-              margin: 0,
-            }}
-          >
+          <p className="m-0 text-[13px] leading-[1.6] text-[color:var(--color-text-primary)]">
             {agentMessage}
           </p>
         )}
@@ -114,21 +60,9 @@ export default function QuestionsBlock({
           return (
             <div
               key={i}
-              style={{
-                border: "0.5px solid #AFA9EC",
-                borderRadius: "var(--border-radius-md)",
-                overflow: "hidden",
-              }}
+              className="overflow-hidden rounded-[var(--border-radius-md)] border border-[#AFA9EC]"
             >
-              <div
-                style={{
-                  padding: "8px 12px",
-                  background: "#EEEDFE",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: "#3C3489",
-                }}
-              >
+              <div className="bg-[#EEEDFE] px-3 py-2 text-xs font-medium text-[#3C3489]">
                 {i + 1}. {text}
               </div>
               <textarea
@@ -139,21 +73,7 @@ export default function QuestionsBlock({
                 placeholder="Votre réponse..."
                 rows={2}
                 disabled={isLoading}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  fontSize: 13,
-                  border: "none",
-                  borderTop: "0.5px solid #AFA9EC",
-                  outline: "none",
-                  resize: "vertical",
-                  fontFamily: "var(--font-sans)",
-                  background: "var(--color-background-primary)",
-                  color: "var(--color-text-primary)",
-                  boxSizing: "border-box",
-                  lineHeight: 1.5,
-                  transition: "border-color 0.2s",
-                }}
+                className="box-border w-full resize-y border-0 border-t border-[#AFA9EC] bg-[color:var(--color-background-primary)] px-3 py-[10px] font-[var(--font-sans)] text-[13px] leading-[1.5] text-[color:var(--color-text-primary)] outline-none transition-colors"
               />
             </div>
           );
@@ -163,24 +83,11 @@ export default function QuestionsBlock({
           <button
             onClick={onSubmit}
             disabled={!isValid || isLoading}
-            style={{
-              alignSelf: "flex-end",
-              padding: "9px 20px",
-              background:
-                isValid && !isLoading
-                  ? "#7F77DD"
-                  : "var(--color-background-secondary)",
-              color:
-                isValid && !isLoading
-                  ? "white"
-                  : "var(--color-text-secondary)",
-              border: "none",
-              borderRadius: "var(--border-radius-md)",
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: isValid && !isLoading ? "pointer" : "not-allowed",
-              transition: "all 0.2s",
-            }}
+            className={`self-end rounded-[var(--border-radius-md)] border-0 px-5 py-[9px] text-[13px] font-medium transition-all ${
+              isValid && !isLoading
+                ? "cursor-pointer bg-[#7F77DD] text-white"
+                : "cursor-not-allowed bg-[color:var(--color-background-secondary)] text-[color:var(--color-text-secondary)]"
+            }`}
           >
             {isLoading ? "Analyse en cours..." : "Envoyer mes réponses →"}
           </button>
