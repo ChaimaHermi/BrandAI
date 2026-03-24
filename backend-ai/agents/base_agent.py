@@ -1,16 +1,6 @@
 # ══════════════════════════════════════════════════════════════
-# BrandAI Base Agent
-# Classe mère de tous les agents du pipeline
-#
-# RESPONSABILITÉS :
-# - construire les prompts
-# - appeler le LLM
-# - parser la réponse
-# - gérer les retries
-#
-# NOTE :
-# La configuration LLM (Gemini / Groq / clés API) est gérée
-# dans le module llm_rotator.
+#  agents/base_agent.py
+#  Classe mère de tous les agents du pipeline
 # ══════════════════════════════════════════════════════════════
 
 import asyncio
@@ -21,49 +11,46 @@ import time
 from abc import ABC, abstractmethod
 
 from langchain_core.messages import HumanMessage, SystemMessage
-
 from llm.llm_rotator import LLMRotator
 
 
 # ══════════════════════════════════════════════════════════════
 # Pipeline State
-# Objet partagé entre les agents
 # ══════════════════════════════════════════════════════════════
 
 class PipelineState:
 
     def __init__(self, idea_id, name, sector, description, target_audience=""):
 
-        self.idea_id = idea_id
-        self.name = name
-        self.sector = sector
-        self.description = description
+        self.idea_id         = idea_id
+        self.name            = name
+        self.sector          = sector
+        self.description     = description
         self.target_audience = target_audience
 
-        self.clarified_idea = {}
+        self.clarified_idea  = {}
         self.market_analysis = {}
-        self.brand_identity = {}
-        self.content = {}
+        self.brand_identity  = {}
+        self.content         = {}
 
-        self.status = "running"
-        self.errors = []
+        self.status  = "running"
+        self.errors  = []
 
         self.started_at = time.time()
 
     def to_dict(self):
-
         return {
-            "idea_id": self.idea_id,
-            "name": self.name,
-            "sector": self.sector,
-            "description": self.description,
+            "idea_id":         self.idea_id,
+            "name":            self.name,
+            "sector":          self.sector,
+            "description":     self.description,
             "target_audience": self.target_audience,
-            "clarified_idea": self.clarified_idea,
+            "clarified_idea":  self.clarified_idea,
             "market_analysis": self.market_analysis,
-            "brand_identity": self.brand_identity,
-            "content": self.content,
-            "status": self.status,
-            "errors": self.errors,
+            "brand_identity":  self.brand_identity,
+            "content":         self.content,
+            "status":          self.status,
+            "errors":          self.errors,
         }
 
 
@@ -73,71 +60,68 @@ class PipelineState:
 
 class BaseAgent(ABC):
 
-    def __init__(self, agent_name, temperature=0.7, max_retries=3):
+    def __init__(self, agent_name: str, temperature: float = 0.7, max_retries: int = 3):
 
-        self.agent_name = agent_name
+        self.agent_name  = agent_name
         self.temperature = temperature
         self.max_retries = max_retries
 
-        self.logger = logging.getLogger(f"brandai.{agent_name}")
-
-        # rotator gère Gemini + Groq + rotation
+        self.logger      = logging.getLogger(f"brandai.{agent_name}")
         self.llm_rotator = LLMRotator()
 
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
 
     @abstractmethod
     async def run(self, state: PipelineState):
-        """Méthode principale exécutée par l'agent"""
         pass
 
     def _build_system_prompt(self, state: PipelineState) -> str:
-        """
-        Construit le system prompt.
-        Override dans les agents qui utilisent run() batch.
-        Les agents avec sous-méthodes dédiées peuvent ignorer.
-        """
         return ""
 
     def _build_user_prompt(self, state: PipelineState) -> str:
-        """
-        Construit le user prompt.
-        Override dans les agents qui utilisent run() batch.
-        """
         return ""
 
-    # ─────────────────────────────────────────
-    # Appel LLM
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
+    # Appel LLM — 3 tentatives par clé, rotation si quota/erreur
+    # ──────────────────────────────────────────────────────────
 
-    async def _call_llm(self, system_prompt, user_prompt):
+    async def _call_llm(self, system_prompt: str, user_prompt: str) -> str:
+        """
+        Appelle le LLM avec retry + rotation automatique.
+
+        Logique :
+          - MAX_RETRIES tentatives au total (pas par clé)
+          - Si erreur quota/429/model_not_found → rotate() puis retry immédiat
+          - Si autre erreur → backoff exponentiel puis retry
+          - Si rotate() retourne False → plus aucun provider dispo → exception
+        """
 
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt),
         ]
 
-        retry = 0
+        attempt    = 0
         last_error = None
 
-        while retry < self.max_retries:
+        while attempt < self.max_retries:
 
             try:
-
                 client = self.llm_rotator.get_client(self.temperature)
 
                 self.logger.info(
-                    f"[{self.agent_name}] LLM call"
+                    f"[{self.agent_name}] LLM call — "
+                    f"attempt {attempt + 1}/{self.max_retries} — "
+                    f"{self.llm_rotator.current_info()}"
                 )
 
-                start = time.time()
-
+                start    = time.time()
                 response = await client.ainvoke(messages)
-
-                elapsed = round(time.time() - start, 2)
+                elapsed  = round(time.time() - start, 2)
 
                 self.logger.info(
-                    f"[{self.agent_name}] response received in {elapsed}s"
+                    f"[{self.agent_name}] LLM response in {elapsed}s — "
+                    f"{self.llm_rotator.current_info()}"
                 )
 
                 return response.content
@@ -145,71 +129,71 @@ class BaseAgent(ABC):
             except Exception as e:
 
                 last_error = e
-                error_str = str(e)
+                error_str  = str(e).lower()
+                attempt   += 1   # ← FIX : toujours incrémenter
 
-                is_llm_error = (
-                    "429" in error_str
-                    or "quota" in error_str.lower()
-                    or "model_not_found" in error_str
-                )
+                is_quota_error = any(kw in error_str for kw in [
+                    "429", "quota", "rate_limit", "model_not_found",
+                    "insufficient_quota", "overloaded",
+                ])
 
-                if is_llm_error:
-
+                if is_quota_error:
                     self.logger.warning(
-                        f"[{self.agent_name}] LLM error → rotating key/provider"
+                        f"[{self.agent_name}] Quota/rate error — "
+                        f"rotating from {self.llm_rotator.current_info()}"
                     )
-
-                    self.llm_rotator.rotate()
+                    rotated = self.llm_rotator.rotate()
+                    if not rotated:
+                        # Plus aucun provider → inutile de continuer
+                        break
+                    # Retry immédiat après rotation (pas de sleep)
                     continue
 
-                retry += 1
-
-                if retry < self.max_retries:
-
-                    wait = 2 ** retry
+                # Erreur non-quota → backoff exponentiel
+                if attempt < self.max_retries:
+                    wait = 2 ** attempt
+                    self.logger.warning(
+                        f"[{self.agent_name}] Error (attempt {attempt}) — "
+                        f"retry in {wait}s — {e}"
+                    )
                     await asyncio.sleep(wait)
 
         raise RuntimeError(
-            f"[{self.agent_name}] LLM failed after {self.max_retries} attempts: {last_error}"
+            f"[{self.agent_name}] LLM failed after {attempt} attempts. "
+            f"Last error: {last_error}"
         )
 
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
     # JSON parsing robuste
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
 
-    def _parse_json(self, raw):
+    def _parse_json(self, raw: str) -> dict:
+        """Parse la réponse LLM en JSON, tolère les backticks markdown."""
 
-        cleaned = re.sub(r"```json", "", raw)
-        cleaned = re.sub(r"```", "", cleaned)
+        cleaned = re.sub(r"```json\s*", "", raw)
+        cleaned = re.sub(r"```\s*",     "", cleaned)
+        cleaned = cleaned.strip()
 
         try:
-
-            return json.loads(cleaned.strip())
-
-        except Exception:
-
+            return json.loads(cleaned)
+        except json.JSONDecodeError as e:
             self.logger.error(
-                f"[{self.agent_name}] JSON parsing error: {raw[:300]}"
+                f"[{self.agent_name}] JSON parse error: {e} | "
+                f"raw[:300]={raw[:300]}"
             )
-
             raise
 
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
     # Logging helpers
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
 
-    def _log_start(self, state):
-
+    def _log_start(self, state: PipelineState):
         self.logger.info(
-            f"[{self.agent_name}] START | idea_id={state.idea_id}"
+            f"[{self.agent_name}] ▶ START | idea_id={state.idea_id}"
         )
 
     def _log_success(self, payload=None):
-
-        self.logger.info(f"[{self.agent_name}] SUCCESS")
+        self.logger.info(f"[{self.agent_name}] ✅ SUCCESS")
 
     def _log_error(self, error):
-
-        self.logger.error(
-            f"[{self.agent_name}] ERROR : {error}"
-        )
+        self.logger.error(f"[{self.agent_name}] ❌ ERROR : {error}")
