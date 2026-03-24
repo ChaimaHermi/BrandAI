@@ -1,0 +1,210 @@
+{
+  "market_overview": {
+    "sector": "EdTech / Online Tutoring",
+    "tam_global_usd": "$136.8B",
+    "tam_cagr_pct": 34.5,
+    "sam_local_usd": "$120M",
+    "sam_rationale": "Population de la Tunisie = 12,28 M. 66,4% sont jeunes (0‑24) ≈ 8,13 M. Environ 20% de ces jeunes sont en études supérieures (18‑26) → ~1,6 M étudiants. Internet penetration 72,35% → 1,16 M étudiants connectés. En supposant un budget moyen annuel de 100 USD par étudiant pour du tutorat, le SAM ≈ 1,16 M * 100 USD = 116 M USD (arrondi à 120 M).",
+    "market_maturity_score": 30,
+    "market_maturity_label": "nascent",
+    "timing_signal": "L'essor mondial de l'IA dans l'éducation (prévision $136,8B d'ici 2035) couplé à une forte pénétration mobile (134/100 habitants) et à une population jeune très connectée crée une fenêtre d'opportunité pour un service de tutorat vidéo à faible coût en Tunisie."
+  },
+  "competitors": [
+    {
+      "name": "Eduschool (liste d'alternatives)",
+      "url": "https://www.saasadviser.co/eduschool/alternatives",
+      "type": "indirect",
+      "strengths": [
+        "Large catalogue de solutions LMS",
+        "Présence internationale"
+      ],
+      "weaknesses": [
+        "Pas de focus sur le marché tunisien",
+        "Pas de mise en relation directe tuteur‑étudiant"
+      ],
+      "threat_score": 30,
+      "data_source": "serpapi"
+    },
+    {
+      "name": "GoStudent (mention dans les signaux organiques)",
+      "url": "https://www.gostudent.org",
+      "type": "direct",
+      "strengths": [
+        "Modèle de marketplace éprouvé",
+        "Vérification des tuteurs à l'échelle"
+      ],
+      "weaknesses": [
+        "Tarifs plus élevés que le budget moyen tunisien",
+        "Présence limitée en Afrique du Nord"
+      ],
+      "threat_score": 55,
+      "data_source": "serpapi"
+    },
+    {
+      "name": "Plateformes locales de cours particuliers (ex. \"Site de cours particuliers\")",
+      "url": "N/A",
+      "type": "direct",
+      "strengths": [
+        "Connaissance du marché local",
+        "Tarifs adaptés"
+      ],
+      "weaknesses": [
+        "Manque de technologie vidéo intégrée",
+        "Processus de paiement peu sécurisés"
+      ],
+      "threat_score": 45,
+      "data_source": "organic_signals"
+    }
+  ],
+  "swot": {
+    "strengths": [
+      "Forte proportion de jeunes connectés (72% internet, 134 mobiles/100 hab.)",
+      "Coût de la vie bas → possibilité de tarification très compétitive",
+      "Modèle marketplace déjà prouvé (ex. Airbnb, GoStudent)"
+    ],
+    "weaknesses": [
+      "Pouvoir d'achat limité (GDP per capita ≈ 4 180 USD)",
+      "Absence de données directes sur les besoins des étudiants tunisiens (Reddit vide)",
+      "Infrastructure de paiement en ligne encore immature"
+    ],
+    "opportunities": [
+      "Adoption rapide de l'IA dans l'éducation (trend mondial)",
+      "Partenariats avec universités publiques pour programmes de soutien",
+      "Utilisation du mobile‑first pour atteindre les étudiants hors campus"
+    ],
+    "threats": [
+      "Concurrence de plateformes internationales à forte capacité de financement",
+      "Réglementations potentielles sur les services éducatifs en ligne (absence d'information claire)",
+      "Sensibilité au prix due au faible revenu moyen"
+    ]
+  },
+  "trends": [
+    {
+      "keyword": "Prof de langue en ligne",
+      "direction": "RISING",
+      "signal_strength": "HIGH",
+      "insight": "La demande de cours de langue à distance augmente, ce qui indique un appétit pour le tutorat vidéo spécialisé.",
+      "data_source": "organic_signals"
+    },
+    {
+      "keyword": "Cours en ligne soutien scolaire",
+      "direction": "RISING",
+      "signal_strength": "HIGH",
+      "insight": "Les recherches montrent un besoin croissant de soutien scolaire en ligne, aligné avec le problème identifié.",
+      "data_source": "organic_signals"
+    },
+    {
+      "keyword": "AI in Education Market Size",
+      "direction": "RISING",
+      "signal_strength": "HIGH",
+      "insight": "Le marché mondial de l'IA en éducation devrait exploser (CAGR 34,5%). Intégrer des fonctionnalités IA (matching, recommandation) peut différencier la plateforme.",
+      "data_source": "newsapi"
+    },
+    {
+      "keyword": "EdTech industry trends",
+      "direction": "RISING",
+      "signal_strength": "MEDIUM",
+      "insight": "Le secteur EdTech est perçu comme en forte croissance, ce qui facilite l'accès à des investisseurs régionaux.",
+      "data_source": "organic_signals"
+    }
+  ],
+  "voice_of_customer": {
+    "top_pain_points": [],
+    "desired_features": [],
+    "competitor_frustrations": [],
+    "sources": [
+      "reddit"
+    ],
+    "note": "Aucun post Reddit disponible pour le moment ; il faut lancer des enquêtes ou des AMA sur les subreddits tunisiens d'étudiants pour collecter des insights réels."
+  },
+  "risks": [
+    {
+      "category": "regulatory",
+      "description": "Absence de cadre clair pour les services éducatifs en ligne en Tunisie, risque de nouvelles exigences de certification des tuteurs.",
+      "severity": "MEDIUM",
+      "mitigation": "Engager un conseiller juridique local dès le lancement et obtenir les accréditations nécessaires."
+    },
+    {
+      "category": "market",
+      "description": "Pouvoir d'achat limité pouvant freiner l'adoption du modèle payant.",
+      "severity": "HIGH",
+      "mitigation": "Proposer un modèle freemium avec sessions limitées gratuites et tarification très basse (ex. 5 USD/mois)."
+    },
+    {
+      "category": "technology",
+      "description": "Qualité variable de la connexion internet mobile pouvant impacter l'expérience vidéo.",
+      "severity": "MEDIUM",
+      "mitigation": "Optimiser la plateforme pour le streaming à basse bande passante et offrir une version audio‑only."
+    },
+    {
+      "category": "competition",
+      "description": "Entrée de grands acteurs internationaux (GoStudent, Preply) avec des ressources supérieures.",
+      "severity": "MEDIUM",
+      "mitigation": "Se différencier par la vérification locale des tuteurs, le paiement en monnaie locale et le support en français/arabic."
+    }
+  ],
+  "opportunities": [
+    {
+      "title": "Lancement d'un MVP pilot dans 2 universités publiques",
+      "description": "Tester le produit avec 200‑300 étudiants, recueillir des retours et valider le modèle de pricing.",
+      "time_horizon": "short (0-6m)"
+    },
+    {
+      "title": "Intégration d'un moteur de recommandation IA",
+      "description": "Utiliser l'IA pour matcher automatiquement les étudiants avec les tuteurs les plus pertinents, augmentant la satisfaction et le taux de rétention.",
+      "time_horizon": "medium (6-18m)"
+    },
+    {
+      "title": "Expansion vers les cours de langues et préparation aux examens internationaux (IELTS, TOEFL)",
+      "description": "Ces segments montrent une forte demande et permettent des tarifs premium.",
+      "time_horizon": "long (18m+)"
+    }
+  ],
+  "kpis": {
+    "addressable_students_local": 1160000,
+    "internet_penetration_pct": 72.35,
+    "mobile_penetration_per100": 134.14,
+    "gdp_per_capita_usd": 4181.14,
+    "recommended_pricing_model": "Freemium + abonnement mensuel low‑cost (5‑10 USD) + commission sur sessions payées",
+    "estimated_cac_usd": "10‑15 USD",
+    "market_maturity_score": 30
+  },
+  "recommendations": [
+    {
+      "title": "Conduire une étude de terrain sur Reddit et les forums étudiants tunisiens",
+      "description": "Lancer des sondages et des AMA pour collecter les vrais pain points et valider les fonctionnalités prioritaires.",
+      "priority": "HIGH",
+      "rationale": "Absence de données Reddit limite la compréhension du client."
+    },
+    {
+      "title": "Développer un MVP mobile‑first avec streaming adaptatif",
+      "description": "Prioriser la compatibilité 3G/4G et le mode audio‑only pour garantir l'accès même avec une connexion lente.",
+      "priority": "HIGH",
+      "rationale": "Mobile penetration très élevée (134/100) et internet pas toujours stable."
+    },
+    {
+      "title": "Négocier des partenariats de paiement avec des fintech locales (ex. D17, Epay)",
+      "description": "Faciliter les transactions en dinar tunisien et réduire les frictions de paiement.",
+      "priority": "MEDIUM",
+      "rationale": "Infrastructure de paiement en ligne encore immature en Tunisie."
+    },
+    {
+      "title": "Positionner la plateforme comme «tutorat certifié et abordable»",
+      "description": "Mettre en avant la vérification des tuteurs, le prix bas et le support en français/arabic pour se différencier des acteurs internationaux.",
+      "priority": "MEDIUM",
+      "rationale": "Différenciation cruciale face à la concurrence globale."
+    }
+  ],
+  "data_quality": {
+    "sources_used": [
+      "serpapi",
+      "youtube",
+      "newsapi",
+      "reddit",
+      "google_trends",
+      "worldbank"
+    ],
+    "confidence_score": 32,
+    "missing_data_notes": "Pas de posts Reddit ni de données Google Trends spécifiques à la Tunisie ; les informations concurrentielles sont génériques et ne concernent pas directement le marché local ; aucune donnée détaillée sur les prix moyens du tutorat en Tunisie, ni sur la réglementation précise des services éducatifs en ligne."
+  }
+}

@@ -13,16 +13,20 @@ Tu analyses des données issues de plusieurs sources :
 - Google Trends : évolution de la demande
 - World Bank    : contexte macro (PIB, internet, mobile)
 
-OBJECTIF : Produire une analyse stratégique complète, honnête et actionnelle.
+OBJECTIF : Produire une analyse stratégique complète, honnête et actionnelle, entièrement rédigée en français pour l'utilisateur final.
 
 RÈGLES ABSOLUES :
 1. Répond UNIQUEMENT avec du JSON valide — aucun texte avant ou après
-2. Ne jamais inventer de données — si une info manque, note-le dans data_quality
-3. Baser chaque insight sur les données fournies, pas sur des suppositions
-4. Être logique, structuré, et business-oriented
+2. Dans le JSON : guillemets droits " uniquement (jamais “ ” ‘ ’), pas de virgule après le dernier élément d'un objet/tableau, échappe les " dans les strings avec \"
+2bis. CRITIQUE : aucun saut de ligne dans une valeur string. sam_rationale, timing_signal, missing_data_notes et textes longs : UNE seule ligne, max ~350 caractères chacun (phrases courtes). Sinon la réponse est tronquée et le JSON devient invalide.
+3. Inclure TOUS les champs du schéma ci-dessous (valeurs vides "", 0, [] autorisées si non déductibles)
+4. Ne jamais inventer de faits chiffrés — si une info manque, note-le dans data_quality.missing_data_notes
+5. Baser chaque insight sur les données fournies, pas sur des suppositions
+6. Être logique, structuré, et business-oriented
+7. LANGUE — FRANÇAIS : Tout le contenu textuel du JSON (secteurs, rationales, insights, SWOT, VoC, risques, opportunités, recommandations, notes data_quality, champs descriptifs des concurrents, etc.) doit être en français. Exception : noms propres de marques / entreprises, URLs, codes ISO pays, symboles monétaires ($, USD), et termes techniques non traduits s'ils sont standard (ex. CAGR peut rester avec explication courte en français si besoin). Aucun paragraphe ou phrase rédactionnelle en anglais.
 
 PRIORITÉS D'ANALYSE :
-1. Pain points utilisateurs (Reddit) → ce que les gens veulent vraiment
+1. Voice of customer : Reddit (discussions) + YouTube (titres/descriptions des vidéos les plus vues) → besoins, frustrations, sujets recherchés
 2. Tendances (Trends + News) → timing du marché
 3. Concurrence (SerpAPI) → positionnement différenciant
 4. Contexte macro (World Bank) → faisabilité locale
@@ -88,10 +92,11 @@ def build_user_prompt(data: dict) -> str:
   ],
 
   "voice_of_customer": {
-    "top_pain_points":        ["string"],
-    "desired_features":       ["string"],
-    "competitor_frustrations": ["string"],
-    "sources":                ["string"]
+    "top_pain_points":         ["string — dérivés de Reddit ET/OU YouTube (titres/descriptions)"],
+    "desired_features":        ["string — besoins ou formats demandés (Reddit + YouTube)"],
+    "competitor_frustrations": ["string — frustrations vis-à-vis d'alternatives (surtout Reddit)"],
+    "youtube_voc_signals":     ["string — thèmes récurrents issus UNIQUEMENT de la section YOUTUBE (ex: tutoriels recherchés, problèmes nommés dans les titres)"],
+    "sources":                 ["string — ex: reddit, youtube pour chaque type d'insight utilisé"]
   },
 
   "risks": [
@@ -147,7 +152,7 @@ def build_user_prompt(data: dict) -> str:
 === ORGANIC SIGNALS (SERPAPI) ===
 {organic_str}
 
-=== YOUTUBE SIGNALS ===
+=== YOUTUBE (Voice of Customer — vidéos populaires : titres + descriptions) ===
 {youtube_str}
 
 === NEWS ARTICLES ===
@@ -178,16 +183,18 @@ TASK
 Analyse ces données et produis une analyse marché complète.
 
 INSTRUCTIONS :
+- Langue : rédige 100% du contenu utile pour l'humain en français (pas d'anglais dans les champs texte du JSON)
+- JSON compact : listes courtes (ex. max 4 concurrents, max 3 risques, max 4 reco) pour tenir dans la limite de sortie
 - Ne résume pas → analyse et déduis des insights business
 - Pour le TAM/SAM : utilise les données World Bank + Trends pour estimer localement
 - Pour les concurrents : base-toi sur SerpAPI, classe par threat_score réel
-- Pour voice_of_customer : base-toi UNIQUEMENT sur Reddit (source la plus honnête)
+- Pour voice_of_customer : combine Reddit (posts) et YouTube (titres/descriptions des vidéos fournies). Remplis youtube_voc_signals uniquement à partir des données YouTube. Indique dans sources quelles briques viennent de reddit vs youtube
 - Pour confidence_score : sois honnête (0=aucune donnée, 100=données parfaites)
 - Si une donnée manque, note-le dans missing_data_notes, ne l'invente pas
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT — JSON STRICT (aucun texte avant/après)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Le document doit être un seul objet JSON valide avec exactement les clés racine du schéma (market_overview, competitors, swot, trends, voice_of_customer, risks, opportunities, kpis, recommendations, data_quality). Toutes les valeurs textuelles lisibles par l'utilisateur final : en français.
 
 {output_schema}
 """

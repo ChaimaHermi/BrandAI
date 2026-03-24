@@ -4,98 +4,46 @@
 
 import logging
 
-from llm.llm_factory import (
-    create_openrouter_clients,
-    create_gemini_clients,
-    create_groq_clients,
-)
+from llm.llm_factory import create_groq_clients
 
 logger = logging.getLogger("brandai.llm_rotator")
 
-PROVIDER_ORDER = ["openrouter", "gemini", "groq"]
-
-
 class LLMRotator:
 
-    def __init__(self):
-        self._clients = {
-            "openrouter": create_openrouter_clients(),
-            "gemini": create_gemini_clients(),
-            "groq": create_groq_clients(),  # default llama
-        }
-
-        self._provider = self._first_available_provider()
+    def __init__(self, model: str = "llama3-70b-8192", max_tokens: int | None = None):
+        self._provider = "groq"
+        self._model = model
+        self._clients = {"groq": create_groq_clients(model=model, max_tokens=max_tokens)}
         self._index = 0
 
         logger.info(
-            f"[rotator] Init — provider={self._provider} | "
-            f"openrouter={len(self._clients['openrouter'])} clés | "
-            f"gemini={len(self._clients['gemini'])} clés | "
-            f"groq={len(self._clients['groq'])} clés"
+            f"[rotator] Init - provider=groq | model={self._model} | "
+            f"groq={len(self._clients['groq'])} keys"
         )
+
+        if not self._clients["groq"]:
+            raise RuntimeError("Aucune clé Groq trouvée")
 
     # ─────────────────────────────────────────────
     # 🔥 GROQ ONLY (LLAMA)
     # ─────────────────────────────────────────────
     @classmethod
     def groq_only(cls):
-        instance = cls.__new__(cls)
-
-        instance._clients = {
-            "openrouter": [],
-            "gemini": [],
-            "groq": create_groq_clients(),  # llama
-        }
-
-        instance._provider = "groq"
-        instance._index = 0
-
-        if not instance._clients["groq"]:
-            raise RuntimeError("Aucune clé Groq trouvée")
-
-        return instance
+        return cls(model="llama3-70b-8192")
 
     # ─────────────────────────────────────────────
     # 🔥 GROQ GPT ONLY (TON CAS EXACT)
     # ─────────────────────────────────────────────
     @classmethod
     def groq_gpt_only(cls):
-        instance = cls.__new__(cls)
-
-        instance._clients = {
-            "openrouter": [],
-            "gemini": [],
-            "groq": create_groq_clients(model="openai/gpt-oss-120b"),  # 🔥 GPT OSS
-        }
-
-        instance._provider = "groq"
-        instance._index = 0
-
-        if not instance._clients["groq"]:
-            raise RuntimeError("Aucune clé Groq trouvée")
-
-        return instance
+        return cls(model="openai/gpt-oss-120b")
 
     # ─────────────────────────────────────────────
-    # OPENROUTER ONLY
+    # Generic model selector for future agents
     # ─────────────────────────────────────────────
     @classmethod
-    def openrouter_only(cls):
-        instance = cls.__new__(cls)
-
-        instance._clients = {
-            "openrouter": create_openrouter_clients(),
-            "gemini": [],
-            "groq": [],
-        }
-
-        instance._provider = "openrouter"
-        instance._index = 0
-
-        if not instance._clients["openrouter"]:
-            raise RuntimeError("Aucune clé OpenRouter trouvée")
-
-        return instance
+    def groq_model(cls, model: str, max_tokens: int | None = None):
+        return cls(model=model, max_tokens=max_tokens)
 
     # ─────────────────────────────────────────────
     # GET CLIENT
@@ -108,10 +56,7 @@ class LLMRotator:
 
         client = clients[self._index]
 
-        if self._provider == "groq":
-            client.temperature = 0.3
-        else:
-            client.temperature = temperature
+        client.temperature = temperature
 
         return client
 
@@ -126,32 +71,9 @@ class LLMRotator:
             self._index = next_idx
             return True
 
-        next_provider = self._next_provider()
-
-        if next_provider:
-            self._provider = next_provider
-            self._index = 0
-            return True
-
         return False
 
     # ─────────────────────────────────────────────
     def current_info(self):
         clients = self._clients[self._provider]
-        return f"{self._provider} clé {self._index + 1}/{len(clients)}"
-
-    # ─────────────────────────────────────────────
-    def _first_available_provider(self):
-        for p in PROVIDER_ORDER:
-            if self._clients[p]:
-                return p
-        raise RuntimeError("Aucun provider configuré")
-
-    def _next_provider(self):
-        current_idx = PROVIDER_ORDER.index(self._provider)
-
-        for p in PROVIDER_ORDER[current_idx + 1:]:
-            if self._clients[p]:
-                return p
-
-        return None
+        return f"{self._provider}:{self._model} key {self._index + 1}/{len(clients)}"

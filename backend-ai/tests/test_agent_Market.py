@@ -14,6 +14,13 @@ import json
 import logging
 import sys
 import time
+from pathlib import Path
+
+# Ensure local absolute imports (agents, tools, llm, ...) work
+# even when script is launched from repo root.
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 from agents.base_agent import PipelineState
 from agents.market_analysis import MarketAnalysisAgent
@@ -54,19 +61,19 @@ async def main():
                 with open(arg, "r", encoding="utf-8") as f:
                     idea = json.load(f)
         except Exception as e:
-            print(f"❌ Erreur chargement idée : {e}")
+            print(f"[ERROR] Erreur chargement idee : {e}")
             sys.exit(1)
     else:
         idea = DEFAULT_IDEA
-        print("ℹ️  Aucun argument — utilisation de l'idée exemple (EdTech Tunisie)\n")
+        print("[INFO] Aucun argument - utilisation de l'idee exemple (EdTech Tunisie)\n")
 
-    print("═" * 60)
+    print("=" * 60)
     print("  MARKET ANALYSIS AGENT")
-    print("═" * 60)
+    print("=" * 60)
     print(f"  Secteur  : {idea.get('sector', '?')}")
     print(f"  Cible    : {idea.get('target', '?')}")
     print(f"  Problème : {idea.get('problem', '?')[:60]}...")
-    print("═" * 60 + "\n")
+    print("=" * 60 + "\n")
 
     # ── Création du state
     state = PipelineState(
@@ -86,39 +93,39 @@ async def main():
     elapsed = round(time.time() - start, 1)
 
     # ── Résultat
-    print("\n" + "═" * 60)
+    print("\n" + "=" * 60)
 
     if state.status == "error":
-        print(f"❌ ERREUR après {elapsed}s")
+        print(f"[ERROR] ERREUR apres {elapsed}s")
         for err in state.errors:
-            print(f"   → {err}")
+            print(f"   -> {err}")
         sys.exit(1)
 
-    print(f"✅ SUCCÈS en {elapsed}s")
-    print("═" * 60)
+    print(f"[OK] SUCCES en {elapsed}s")
+    print("=" * 60)
 
     # Aperçu rapide
     ma = state.market_analysis
     if ma:
         overview = ma.get("market_overview", {})
-        print(f"\n📊 Secteur      : {overview.get('sector', '?')}")
+        print(f"\n[Market] Secteur      : {overview.get('sector', '?')}")
         print(f"   TAM Global   : {overview.get('tam_global_usd', '?')}")
         print(f"   SAM Local    : {overview.get('sam_local_usd', '?')}")
         print(f"   Maturité     : {overview.get('market_maturity_label', '?')} ({overview.get('market_maturity_score', '?')}/100)")
         print(f"   Timing       : {overview.get('timing_signal', '?')[:80]}...")
 
         competitors = ma.get("competitors", [])
-        print(f"\n🏆 Concurrents  : {len(competitors)} identifiés")
+        print(f"\n[Competition] Concurrents  : {len(competitors)} identifies")
         for c in competitors[:3]:
-            print(f"   • {c.get('name', '?')} — threat={c.get('threat_score', '?')}/100")
+            print(f"   - {c.get('name', '?')} - threat={c.get('threat_score', '?')}/100")
 
         dq = ma.get("data_quality", {})
-        print(f"\n📈 Confiance    : {dq.get('confidence_score', '?')}/100")
+        print(f"\n[DataQuality] Confiance    : {dq.get('confidence_score', '?')}/100")
         print(f"   Sources      : {', '.join(dq.get('sources_used', []))}")
 
-    print("\n📁 Fichiers générés :")
-    print("   • market_raw_data.json   (données brutes des APIs)")
-    print("   • market_analysis.json   (analyse finale structurée)")
+    print("\n[Files] Fichiers generes :")
+    print("   - market_raw_data.json   (donnees brutes des APIs)")
+    print("   - market_analysis.json   (analyse finale structuree)")
     print()
 
 

@@ -21,9 +21,8 @@ from tools.market_tools import (
 )
 
 from utils.market_utils import build_queries
+from utils.market_output_normalize import normalize_market_analysis
 from prompts.market_prompts import SYSTEM_PROMPT, build_user_prompt
-
-from llm.llm_rotator import LLMRotator
 
 class MarketAnalysisAgent(BaseAgent):
 
@@ -33,10 +32,10 @@ class MarketAnalysisAgent(BaseAgent):
             agent_name="market_analysis",
             temperature=0.3,
             max_retries=3,
+            llm_model="openai/gpt-oss-120b",
+            # Gros JSON marché : éviter la coupure au milieu d'une string (Unterminated string)
+            llm_max_tokens=8192,
         )
-
-        # 🔥 GROQ + GPT OSS
-        self.llm_rotator = LLMRotator.groq_gpt_only()
 
     # ─────────────────────────────────────────────
     # MAIN RUN
@@ -139,6 +138,7 @@ class MarketAnalysisAgent(BaseAgent):
             # ══════════════════════════════════
 
             parsed = self._parse_json(response)
+            parsed = normalize_market_analysis(parsed)
 
             # ══════════════════════════════════
             # 7. SAVE RESULT

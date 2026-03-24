@@ -48,6 +48,6 @@ if not (OPENROUTER_KEYS or GEMINI_KEYS or GROQ_KEYS):
 # ─────────────────────────────────────────────
 print(
     f"[settings] Loaded .env from: {ENV_PATH}\n"
-    f"[settings] Keys → OpenRouter={len(OPENROUTER_KEYS)} | "
+    f"[settings] Keys -> OpenRouter={len(OPENROUTER_KEYS)} | "
     f"Gemini={len(GEMINI_KEYS)} | Groq={len(GROQ_KEYS)}"
 )

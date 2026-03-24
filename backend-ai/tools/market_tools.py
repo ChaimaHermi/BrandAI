@@ -193,14 +193,9 @@ async def fetch_news(queries: dict) -> dict:
 # ══════════════════════════════════════════════════════════════
 
 async def fetch_reddit(queries: dict) -> dict:
-    """Scrape Reddit via Apify pour pain points et mentions concurrents."""
+    """Fetch Reddit posts via public Reddit JSON API (free, no Apify)."""
 
     logger.info("[tools] REDDIT start")
-    token = os.getenv("APIFY_TOKEN")
-
-    if not token:
-        logger.warning("[tools] APIFY_TOKEN manquant")
-        return {"posts": [], "pain_points": [], "competitor_mentions": []}
 
     results = {
         "posts":                [],
@@ -210,36 +205,83 @@ async def fetch_reddit(queries: dict) -> dict:
 
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
-            resp = await client.post(
-                "https://api.apify.com/v2/acts/apify~reddit-scraper/run-sync-get-dataset-items",
-                params={"token": token},
-                json={
-                    "searches":   queries.get("reddit", []),
-                    "maxItems":   20,
-                    "sort":       "top",
-                    "time":       "year",
-                },
-            )
-        posts = resp.json() if isinstance(resp.json(), list) else []
-
-        for post in posts:
-            clean = {
-                "title":     post.get("title", ""),
-                "body":      post.get("body", "")[:300],
-                "subreddit": post.get("subreddit", ""),
-                "score":     post.get("score", 0),
-                "url":       post.get("url", ""),
+            reddit_queries = queries.get("reddit", [])[:4]
+            headers = {
+                # Reddit requires a descriptive User-Agent for public endpoints.
+                "User-Agent": "BrandAI/1.0 (market research bot)",
             }
-            results["posts"].append(clean)
 
-            # Détection pain points
-            text = (clean["title"] + " " + clean["body"]).lower()
-            if any(kw in text for kw in ["problem", "issue", "frustrated", "hate", "worst", "broken", "can't"]):
-                results["pain_points"].append(clean["title"])
+            for q in reddit_queries:
+                params = {
+                    "q": q,
+                    "sort": "top",
+                    "t": "year",
+                    "limit": 10,
+                    "raw_json": 1,
+                }
+                resp = await client.get(
+                    "https://www.reddit.com/search.json",
+                    params=params,
+                    headers=headers,
+                )
 
-            # Détection mentions concurrents
-            if any(kw in text for kw in ["vs", "alternative", "better than", "switch from"]):
-                results["competitor_mentions"].append(clean["title"])
+                # Some environments are challenged on www.reddit.com.
+                # Retry on old.reddit.com before giving up.
+                if resp.status_code in (401, 403, 429):
+                    resp = await client.get(
+                        "https://old.reddit.com/search.json",
+                        params=params,
+                        headers=headers,
+                    )
+
+                if resp.status_code >= 400:
+                    logger.warning(
+                        f"[tools] REDDIT HTTP {resp.status_code} for query='{q}' | body={resp.text[:200]}"
+                    )
+                    continue
+
+                payload = resp.json()
+                children = (
+                    payload.get("data", {}).get("children", [])
+                    if isinstance(payload, dict)
+                    else []
+                )
+
+                for child in children:
+                    post = child.get("data", {}) if isinstance(child, dict) else {}
+                    clean = {
+                        "title":     post.get("title", ""),
+                        "body":      (post.get("selftext", "") or "")[:300],
+                        "subreddit": post.get("subreddit", ""),
+                        "score":     post.get("score", 0),
+                        "url":       f"https://www.reddit.com{post.get('permalink', '')}",
+                    }
+                    if not clean["title"]:
+                        continue
+
+                    results["posts"].append(clean)
+
+                    # Détection pain points
+                    text = (clean["title"] + " " + clean["body"]).lower()
+                    if any(kw in text for kw in ["problem", "issue", "frustrated", "hate", "worst", "broken", "can't"]):
+                        results["pain_points"].append(clean["title"])
+
+                    # Détection mentions concurrents
+                    if any(kw in text for kw in ["vs", "alternative", "better than", "switch from"]):
+                        results["competitor_mentions"].append(clean["title"])
+
+        # Déduplication simple
+        seen = set()
+        unique_posts = []
+        for p in results["posts"]:
+            key = (p.get("title", "").strip().lower(), p.get("subreddit", "").strip().lower())
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_posts.append(p)
+        results["posts"] = unique_posts[:30]
+        results["pain_points"] = list(dict.fromkeys(results["pain_points"]))[:10]
+        results["competitor_mentions"] = list(dict.fromkeys(results["competitor_mentions"]))[:10]
 
     except Exception as e:
         logger.warning(f"[tools] REDDIT error: {e}")

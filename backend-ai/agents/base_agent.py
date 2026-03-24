@@ -60,14 +60,21 @@ class PipelineState:
 
 class BaseAgent(ABC):
 
-    def __init__(self, agent_name: str, temperature: float = 0.7, max_retries: int = 3):
+    def __init__(
+        self,
+        agent_name: str,
+        temperature: float = 0.7,
+        max_retries: int = 3,
+        llm_model: str = "llama3-70b-8192",
+        llm_max_tokens: int | None = None,
+    ):
 
         self.agent_name  = agent_name
         self.temperature = temperature
         self.max_retries = max_retries
 
         self.logger      = logging.getLogger(f"brandai.{agent_name}")
-        self.llm_rotator = LLMRotator()
+        self.llm_rotator = LLMRotator.groq_model(llm_model, max_tokens=llm_max_tokens)
 
     # ──────────────────────────────────────────────────────────
 
@@ -167,21 +174,68 @@ class BaseAgent(ABC):
     # JSON parsing robuste
     # ──────────────────────────────────────────────────────────
 
+    def _repair_json_text(self, s: str) -> str:
+        """Corrige erreurs fréquentes du LLM (guillemets typographiques, virgules traînantes)."""
+        for bad, good in (
+            ("\u201c", '"'),
+            ("\u201d", '"'),
+            ("\u00ab", '"'),
+            ("\u00bb", '"'),
+            ("\u2018", "'"),
+            ("\u2019", "'"),
+            ("\u2011", "-"),
+            ("\u2013", "-"),
+            ("\u2014", "-"),
+        ):
+            s = s.replace(bad, good)
+        s = re.sub(r",\s*([}\]])", r"\1", s)
+        return s
+
+    def _extract_outer_json_object(self, s: str) -> str | None:
+        """Extrait le premier objet JSON équilibré { ... } (ignore le bruit avant/après)."""
+        start = s.find("{")
+        if start < 0:
+            return None
+        depth = 0
+        for i, c in enumerate(s[start:], start):
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    return s[start : i + 1]
+        return None
+
     def _parse_json(self, raw: str) -> dict:
-        """Parse la réponse LLM en JSON, tolère les backticks markdown."""
+        """Parse la réponse LLM en JSON, tolère markdown + réparations légères."""
 
         cleaned = re.sub(r"```json\s*", "", raw)
-        cleaned = re.sub(r"```\s*",     "", cleaned)
+        cleaned = re.sub(r"```\s*", "", cleaned)
         cleaned = cleaned.strip()
 
-        try:
-            return json.loads(cleaned)
-        except json.JSONDecodeError as e:
-            self.logger.error(
-                f"[{self.agent_name}] JSON parse error: {e} | "
-                f"raw[:300]={raw[:300]}"
-            )
-            raise
+        candidates = [cleaned]
+        blob = self._extract_outer_json_object(cleaned)
+        if blob and blob != cleaned:
+            candidates.append(blob)
+
+        last_err: json.JSONDecodeError | None = None
+        for cand in candidates:
+            for variant in (cand, self._repair_json_text(cand)):
+                try:
+                    data = json.loads(variant)
+                    if isinstance(data, dict):
+                        return data
+                except json.JSONDecodeError as e:
+                    last_err = e
+                    continue
+
+        self.logger.error(
+            f"[{self.agent_name}] JSON parse error: {last_err} | "
+            f"raw[:300]={raw[:300]}"
+        )
+        if last_err:
+            raise last_err
+        raise json.JSONDecodeError("empty", raw, 0)
 
     # ──────────────────────────────────────────────────────────
     # Logging helpers

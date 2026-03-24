@@ -1,0 +1,230 @@
+{
+  "market_overview": {
+    "sector": "EdTech",
+    "tam_global_usd": "$136.8B",
+    "tam_cagr_pct": 34.5,
+    "sam_local_usd": "$121M",
+    "sam_rationale": "Population jeune 66% de 12,3M ≈ 8,1M étudiants ; 30% potentiellement payants à $50/an ≈ $121M",
+    "market_maturity_score": 2,
+    "market_maturity_label": "growing",
+    "timing_signal": "Croissance rapide de l'AI en éducation, forte pénétration mobile et internet, forte demande locale de soutien scolaire en ligne"
+  },
+  "competitors": [
+    {
+      "name": "Eduschool",
+      "url": "https://www.saasadviser.co/eduschool/alternatives",
+      "type": "indirect",
+      "strengths": [
+        "Large catalogue",
+        "Notoriété internationale"
+      ],
+      "weaknesses": [
+        "Pas de focus sur le tutorat local",
+        "Pas de paiement sécurisé dédié"
+      ],
+      "threat_score": 30,
+      "data_source": "serpapi"
+    },
+    {
+      "name": "Top 10 LMS Platforms",
+      "url": "https://www.youtube.com/watch?v=KiudalAKWTw",
+      "type": "indirect",
+      "strengths": [
+        "Fonctionnalités complètes de gestion de cours"
+      ],
+      "weaknesses": [
+        "Pas de mise en relation tuteur‑étudiant",
+        "Pas de paiement intégré"
+      ],
+      "threat_score": 20,
+      "data_source": "serpapi"
+    },
+    {
+      "name": "Edmodo / Schoology (liste LinkedIn)",
+      "url": "https://www.linkedin.com/pulse/top-online-education-technology-companies-how-compare-ntute/",
+      "type": "indirect",
+      "strengths": [
+        "Plateformes sociales d'apprentissage",
+        "Intégration scolaire"
+      ],
+      "weaknesses": [
+        "Pas de marché tunisien",
+        "Modèle B2B plutôt que B2C"
+      ],
+      "threat_score": 25,
+      "data_source": "serpapi"
+    },
+    {
+      "name": "Capterra EdTech alternatives",
+      "url": "https://www.capterra.ca/alternatives/1062788/edutech",
+      "type": "indirect",
+      "strengths": [
+        "Large éventail de solutions",
+        "Comparatifs utilisateurs"
+      ],
+      "weaknesses": [
+        "Pas de service de tutorat vidéo dédié",
+        "Pas de présence locale"
+      ],
+      "threat_score": 15,
+      "data_source": "serpapi"
+    }
+  ],
+  "swot": {
+    "strengths": [
+      "Plateforme locale adaptée à la Tunisie",
+      "Tuteurs vérifiés",
+      "Paiement sécurisé",
+      "Scheduling automatisé"
+    ],
+    "weaknesses": [
+      "Manque de notoriété initiale",
+      "Ressources limitées pour acquisition",
+      "Dépendance à la connectivité internet"
+    ],
+    "opportunities": [
+      "Croissance de l'AI en EdTech",
+      "Jeune population très élevée",
+      "Internet mobile en hausse"
+    ],
+    "threats": [
+      "Concurrence internationale",
+      "Régulation des services éducatifs",
+      "Instabilité économique locale"
+    ]
+  },
+  "trends": [
+    {
+      "keyword": "AI in education",
+      "direction": "RISING",
+      "signal_strength": "HIGH",
+      "insight": "L'IA va permettre des outils de matching et de feedback automatisés, opportunité d'intégrer des fonctionnalités intelligentes.",
+      "data_source": "newsapi"
+    },
+    {
+      "keyword": "EdTech market size",
+      "direction": "RISING",
+      "signal_strength": "MEDIUM",
+      "insight": "Le marché mondial en forte expansion indique un appétit croissant pour les solutions numériques éducatives.",
+      "data_source": "organic_signals"
+    },
+    {
+      "keyword": "Cours en ligne soutien scolaire",
+      "direction": "RISING",
+      "signal_strength": "MEDIUM",
+      "insight": "Demande locale croissante pour le soutien scolaire en ligne, valide le besoin d'une plateforme de tutorat.",
+      "data_source": "organic_signals"
+    }
+  ],
+  "voice_of_customer": {
+    "top_pain_points": [
+      "Manque de tutoriels pratiques pour les enseignants",
+      "Complexité d'utilisation des outils EdTech",
+      "Absence de sessions vidéo interactives pour le soutien scolaire"
+    ],
+    "desired_features": [
+      "Sessions vidéo haute qualité",
+      "Planification automatisée",
+      "Vérification des tuteurs",
+      "Paiement sécurisé"
+    ],
+    "competitor_frustrations": [
+      "Plateformes existantes trop génériques, pas de focus sur le tutorat local"
+    ],
+    "youtube_voc_signals": [
+      "tutoriels EdTech",
+      "Google Classroom",
+      "activités drag‑and‑drop",
+      "contenu humoristique enseignant",
+      "programmation Python"
+    ],
+    "sources": [
+      "reddit",
+      "youtube"
+    ]
+  },
+  "risks": [
+    {
+      "category": "regulatory",
+      "description": "Exigences de certification ou d'agrément pour les tuteurs en Tunisie",
+      "severity": "MEDIUM",
+      "mitigation": "Obtenir les accréditations locales et se conformer aux lois éducatives"
+    },
+    {
+      "category": "market",
+      "description": "Pouvoir d'achat limité des étudiants tunisiens",
+      "severity": "HIGH",
+      "mitigation": "Adopter un modèle freemium avec prix bas et commissions modestes"
+    },
+    {
+      "category": "competition",
+      "description": "Entrée de plateformes internationales de tutorat",
+      "severity": "MEDIUM",
+      "mitigation": "Différenciation par la localisation, partenariats universitaires et vérification des tuteurs"
+    }
+  ],
+  "opportunities": [
+    {
+      "title": "Intégration IA pour le matching tuteur‑étudiant",
+      "description": "Utiliser l'IA afin de recommander le tuteur le plus adapté en fonction de la matière, disponibilité et notes.",
+      "time_horizon": "short"
+    },
+    {
+      "title": "Partenariats avec universités publiques",
+      "description": "Obtenir l'adhésion des départements pour offrir la plateforme aux étudiants et garantir la qualité des tuteurs.",
+      "time_horizon": "medium"
+    },
+    {
+      "title": "Extension aux cours de langues en ligne",
+      "description": "Répondre à la demande de \"Prof de langue en ligne\" détectée dans les signaux organiques.",
+      "time_horizon": "long"
+    }
+  ],
+  "kpis": {
+    "addressable_students_local": 8100000,
+    "internet_penetration_pct": 72,
+    "mobile_penetration_per100": 134,
+    "gdp_per_capita_usd": 4181,
+    "recommended_pricing_model": "freemium avec commission sur chaque session",
+    "estimated_cac_usd": "$5-10",
+    "market_maturity_score": 2
+  },
+  "recommendations": [
+    {
+      "title": "Lancer MVP ciblant les universités de Tunis, Sfax, Sousse",
+      "description": "Développer une version web/mobile, recruter 50 tuteurs pilotes et tester le pricing auprès d'étudiants.",
+      "priority": "HIGH",
+      "rationale": "Jeune population élevée et internet >70 % favorisent l'adoption rapide"
+    },
+    {
+      "title": "Construire un système de vérification des tuteurs",
+      "description": "Mettre en place un processus de validation académique et de notation par les étudiants.",
+      "priority": "HIGH",
+      "rationale": "Renforce la confiance et différencie la plateforme localement"
+    },
+    {
+      "title": "Intégrer un module IA de matching",
+      "description": "Développer un algorithme simple basé sur matières, disponibilité et évaluations pour recommander les tuteurs.",
+      "priority": "MEDIUM",
+      "rationale": "Tendance forte de l'AI en EdTech (CAGR 34,5 %)"
+    },
+    {
+      "title": "Établir des partenariats avec les départements universitaires",
+      "description": "Offrir des crédits ou avantages aux étudiants qui utilisent la plateforme pour leurs cours.",
+      "priority": "MEDIUM",
+      "rationale": "Opportunité de visibilité locale et d'accès à une base d'utilisateurs qualifiée"
+    }
+  ],
+  "data_quality": {
+    "sources_used": [
+      "serpapi",
+      "youtube",
+      "newsapi",
+      "reddit",
+      "google_trends",
+      "worldbank"
+    ],
+    "confidence_score": 55,
+    "missing_data_notes": "Absence de données précises sur concurrents tunisiens, pas de Google Trends, Reddit peu pertinent, pas de chiffres d'usage local détaillés"
+  }
+}

@@ -5,7 +5,6 @@ import logging
 from agents.base_agent import BaseAgent, PipelineState
 from guardrails.safety_checks import get_refusal_message
 from tools.idea_tools import validate_idea_input
-
 logger = logging.getLogger(__name__)
 
 
@@ -243,8 +242,12 @@ class IdeaClarifierAgent(BaseAgent):
     """
 
     def __init__(self):
-        super().__init__(agent_name="idea_clarifier", temperature=0.3, max_retries=3)
-        self.llm_rotator = self.llm_rotator.groq_only()
+        super().__init__(
+            agent_name="idea_clarifier",
+            temperature=0.3,
+            max_retries=3,
+            llm_model="llama3-70b-8192",
+        )
 
     # ─────────────────────────────────────────────────────────
     # Construction du contexte utilisateur

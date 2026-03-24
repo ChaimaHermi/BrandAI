@@ -5,17 +5,19 @@
 # ══════════════════════════════════════════════════════════════
 
 from langchain_groq import ChatGroq
+
 from config.settings import GROQ_KEYS
 
 
 # ─────────────────────────────────────────────
 # GROQ CLIENTS (DYNAMIQUE)
 # ─────────────────────────────────────────────
-def create_groq_clients(model: str = None) -> list:
+def create_groq_clients(model: str = None, max_tokens: int | None = None) -> list:
     """
     Crée des clients Groq.
     - Par défaut → LLaMA
     - Sinon → modèle passé (ex: GPT OSS)
+    - max_tokens → limite de sortie (requis pour gros JSON type market_analysis)
     """
     clients = []
 
@@ -23,13 +25,14 @@ def create_groq_clients(model: str = None) -> list:
     model_name = model if model else "llama3-70b-8192"
 
     for key in GROQ_KEYS:
-        clients.append(
-            ChatGroq(
-                api_key=key,
-                model=model_name,
-                temperature=0.3,
-            )
-        )
+        kwargs = {
+            "api_key": key,
+            "model": model_name,
+            "temperature": 0.3,
+        }
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        clients.append(ChatGroq(**kwargs))
 
     return clients
 
