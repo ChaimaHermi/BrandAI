@@ -82,6 +82,9 @@ export default function ClarifierPage() {
         solution_description: idea.clarity_solution || "",
         short_pitch: idea.clarity_short_pitch || "",
         score: idea.clarity_score ?? 0,
+        country: idea.clarity_country || "Non précisé",
+        country_code: idea.clarity_country_code || "",
+        language: idea.clarity_language || "fr",
       };
       setClarifiedIdea(restored);
       setClarityScore(idea.clarity_score ?? 0);

@@ -16,6 +16,7 @@ export function useClarifierAgent(idea, token, options = {}) {
     problem: "",
     target: "",
     solution: "",
+    geography: "",
   });
   const [clarifiedIdea, setClarifiedIdea] = useState(null);
   const [clarityScore, setClarityScore] = useState(0);
@@ -164,7 +165,7 @@ export function useClarifierAgent(idea, token, options = {}) {
   const submitAnswers = useCallback(async () => {
     if (!idea || currentStep !== "questions") return;
 
-    const keys = ["problem", "target", "solution"];
+    const keys = ["problem", "target", "solution", "geography"];
     const getAxis = (q, i) => {
       if (typeof q === "string") return keys[i] || null;
       return q?.axis || keys[i] || null;
@@ -210,6 +211,7 @@ export function useClarifierAgent(idea, token, options = {}) {
           answer_problem: answers.problem.trim(),
           answer_target: answers.target.trim(),
           answer_solution: answers.solution.trim(),
+          answer_geography: (answers.geography || "").trim(),
         },
         (eventType, data) => {
           if (eventType === "step") {
@@ -252,6 +254,7 @@ export function useClarifierAgent(idea, token, options = {}) {
                     problem: answers.problem || "",
                     target: answers.target || "",
                     solution: answers.solution || "",
+                    geography: answers.geography || "",
                   },
                 },
                 token,

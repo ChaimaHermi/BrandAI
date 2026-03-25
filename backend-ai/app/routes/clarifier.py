@@ -34,6 +34,7 @@ class ClarifierAnswerRequest(BaseModel):
     answer_problem:  Optional[str] = ""
     answer_target:   Optional[str] = ""
     answer_solution: Optional[str] = ""
+    answer_geography: Optional[str] = ""
 
 
 # ══════════════════════════════════════════════════════════════
@@ -138,6 +139,7 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
             "problem":  (body.answer_problem  or "").strip(),
             "target":   (body.answer_target   or "").strip(),
             "solution": (body.answer_solution or "").strip(),
+            "geography": (body.answer_geography or "").strip(),
         }
 
         # 1 seul appel — sécurité sur réponses + structuration
@@ -163,6 +165,7 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
                     "problem":  bool(result.get("problem")),
                     "target":   bool(result.get("target_users")),
                     "solution": bool(result.get("solution_description")),
+                    "geography": bool(result.get("country")) and result.get("country") != "Non précisé",
                 },
                 "sector":     result.get("sector", ""),
                 "model":      agent.llm_rotator.current_info(),
@@ -220,6 +223,7 @@ async def clarifier_answer(body: ClarifierAnswerRequest):
         "problem":  (body.answer_problem  or "").strip(),
         "target":   (body.answer_target   or "").strip(),
         "solution": (body.answer_solution or "").strip(),
+        "geography": (body.answer_geography or "").strip(),
     }
     agent = IdeaClarifierAgent()
     return await agent.run_answer(state, answers)

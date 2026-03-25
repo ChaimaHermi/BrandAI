@@ -72,7 +72,7 @@ _ANALYSE_PROMPT = """Tu es l'agent Idea Clarifier de BrandAI.
 
 Ta mission en UN SEUL appel :
 1. Vérifier si le projet est safe (légal, non nuisible)
-2. Si safe → analyser si les 3 axes sont présents
+2. Si safe → analyser si les 4 axes sont présents
 3. Retourner le bon type de réponse
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -92,12 +92,21 @@ Règles de sécurité :
 - En cas de doute → safe
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ÉTAPE 2 — ANALYSE DES 3 AXES (si safe)
+ÉTAPE 2 — ANALYSE DES 4 AXES (si safe)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Une idée est CLAIRE si ces 3 éléments sont présents et précis :
-1. PROBLÈME — quel problème concret est résolu ?
-2. CIBLE    — qui sont les utilisateurs ?
-3. SOLUTION — comment fonctionne la solution ?
+Une idée est CLAIRE si ces 4 éléments sont présents et précis :
+1. PROBLÈME   — quel problème concret est résolu ?
+2. CIBLE      — qui sont les utilisateurs ?
+3. SOLUTION   — comment fonctionne la solution ?
+4. GÉOGRAPHIE — dans quel pays / région / marché opère la solution ?
+
+Considérer géographie comme "non claire" si :
+- pays non mentionné ET impossible à déduire du contexte
+- "monde entier" sans précision = non clair
+- Si pays clairement déductible du contexte (ex: "étudiants tunisiens", "utilisateurs marocains", "marché français")
+  → géographie = claire, ne pas poser de question
+
+RÈGLE GÉOGRAPHIE : déduire le pays si possible, poser la question seulement si vraiment impossible à deviner.
 
 Considérer comme "non clair" si : trop vague, trop général, implicite, ambigu, absent.
 
@@ -122,9 +131,9 @@ CAS 2 — AXES MANQUANTS (questions nécessaires) :
 {
   "type": "questions",
   "message": "Message court et naturel en français (1-2 phrases)",
-  "missing_axes": ["problem"] | ["target"] | ["solution"] | combinaison,
+  "missing_axes": ["problem"] | ["target"] | ["solution"] | ["geography"] | combinaison,
   "questions": [
-    {"axis": "problem" | "target" | "solution", "text": "Question courte et précise"}
+    {"axis": "problem" | "target" | "solution" | "geography", "text": "Question courte et précise"}
   ],
   "sector": "secteur détecté"
 }
@@ -138,7 +147,10 @@ CAS 3 — IDÉE CLAIRE (tous les axes présents) :
   "problem": "problème reformulé clairement",
   "solution_description": "solution expliquée concrètement",
   "short_pitch": "phrase de 8 à 12 mots maximum",
-  "score": nombre entre 80 et 100
+  "score": nombre entre 80 et 100,
+  "country": "string — nom du pays en français (ex: Tunisie, France, Maroc)",
+  "country_code": "string — code ISO2 (ex: TN, FR, MA, DZ, SN, CI)",
+  "language": "string — langue principale du marché (ex: fr, ar, en)"
 }
 
 RÈGLES ABSOLUES :
@@ -186,6 +198,11 @@ Construire une idée claire à partir de la description + réponses.
 Ne jamais inventer d'informations non fournies.
 Ne jamais proposer de stratégie ou business model.
 
+DÉTECTION GÉOGRAPHIE :
+- Si l'utilisateur mentionne un pays/ville → extraire country + country_code
+- Pays francophones courants : TN=Tunisie, MA=Maroc, DZ=Algérie, FR=France, SN=Sénégal, CI=Côte d'Ivoire, BE=Belgique, CH=Suisse
+- Si aucun pays mentionné et impossible à déduire → country="Non précisé", country_code="", language="fr" par défaut
+
 SCORING :
 - problème clair    : +33 pts
 - cible claire      : +33 pts
@@ -213,7 +230,10 @@ CAS 2 — IDÉE CLARIFIÉE :
   "problem": "problème reformulé clairement",
   "solution_description": "solution expliquée concrètement",
   "short_pitch": "phrase de 8 à 12 mots maximum",
-  "score": nombre entre 0 et 100
+  "score": nombre entre 0 et 100,
+  "country": "string — nom du pays en français (ex: Tunisie, France, Maroc)",
+  "country_code": "string — code ISO2 (ex: TN, FR, MA, DZ, SN, CI)",
+  "language": "string — langue principale du marché (ex: fr, ar, en)"
 }
 
 RÈGLES ABSOLUES :
@@ -246,7 +266,7 @@ class IdeaClarifierAgent(BaseAgent):
             agent_name="idea_clarifier",
             temperature=0.3,
             max_retries=3,
-            llm_model="llama3-70b-8192",
+            llm_model="openai/gpt-oss-120b",
         )
 
     # ─────────────────────────────────────────────────────────
@@ -282,6 +302,8 @@ class IdeaClarifierAgent(BaseAgent):
                 parts.append(f"Cible déclarée    : {answers['target']}")
             if answers.get("solution"):
                 parts.append(f"Solution déclarée : {answers['solution']}")
+            if answers.get("geography"):
+                parts.append(f"Géographie déclarée : {answers['geography']}")
             parts.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
         return "\n".join(parts)
@@ -311,7 +333,7 @@ class IdeaClarifierAgent(BaseAgent):
             questions = raw_result.get("questions") or []
             missing_axes = raw_result.get("missing_axes") or []
             # Sécurité : garantir la cohérence questions / missing_axes
-            valid_axes = {"problem", "target", "solution"}
+            valid_axes = {"problem", "target", "solution", "geography"}
             questions = [
                 q for q in questions
                 if isinstance(q, dict)
@@ -344,6 +366,9 @@ class IdeaClarifierAgent(BaseAgent):
                 "solution_description": (raw_result.get("solution_description") or "").strip(),
                 "short_pitch": (raw_result.get("short_pitch") or "").strip(),
                 "score": score,
+                "country": (raw_result.get("country") or "Non précisé").strip(),
+                "country_code": (raw_result.get("country_code") or "").strip().upper(),
+                "language": (raw_result.get("language") or "fr").strip(),
             }
 
         # Type inattendu → erreur remontée à la route
@@ -486,6 +511,9 @@ class IdeaClarifierAgent(BaseAgent):
         if result["type"] == "clarified":
             score = result.get("score", 50)
             clarified = {k: v for k, v in result.items() if k not in ("type", "message", "detected_sector")}
+            clarified.setdefault("country", "Non précisé")
+            clarified.setdefault("country_code", "")
+            clarified.setdefault("language", "fr")
             clarified["clarity_score"] = score
             state.clarified_idea = clarified
             state.clarity_score = score

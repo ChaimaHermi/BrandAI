@@ -89,7 +89,7 @@ class BaseAgent(ABC):
         agent_name:     str,
         temperature:    float = 0.7,
         max_retries:    int   = 3,
-        llm_model:      str   = "llama3-70b-8192",
+        llm_model:      str   = "openai/gpt-oss-120b",
         llm_max_tokens: int | None = None,
     ):
         self.agent_name     = agent_name

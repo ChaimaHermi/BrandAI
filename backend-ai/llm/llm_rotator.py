@@ -10,7 +10,7 @@ logger = logging.getLogger("brandai.llm_rotator")
 
 class LLMRotator:
 
-    def __init__(self, model: str = "llama3-70b-8192", max_tokens: int | None = None):
+    def __init__(self, model: str = "openai/gpt-oss-120b", max_tokens: int | None = None):
         self._provider = "groq"
         self._model = model
         self._clients = {"groq": create_groq_clients(model=model, max_tokens=max_tokens)}
@@ -29,7 +29,7 @@ class LLMRotator:
     # ─────────────────────────────────────────────
     @classmethod
     def groq_only(cls):
-        return cls(model="llama3-70b-8192")
+        return cls(model="openai/gpt-oss-120b")
 
     # ─────────────────────────────────────────────
     # 🔥 GROQ GPT ONLY (TON CAS EXACT)

@@ -7,6 +7,10 @@ export default function ClarifiedBlock({ data, score }) {
   if (!data) return null;
 
   const messageText = (data.message || "").trim();
+  const hasCountry = !!data.country && data.country !== "Non précisé";
+  const countryBadge = hasCountry
+    ? `🌍 ${data.country}${data.country_code ? ` (${data.country_code})` : ""}`
+    : null;
 
   // ── Score insuffisant → bloc warning ────────────────
   if (score < CLARITY_SCORE_MIN_DISPLAY) {
@@ -169,6 +173,12 @@ export default function ClarifiedBlock({ data, score }) {
         {messageText && (
           <div className="rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] px-[14px] py-[10px] text-xs font-semibold leading-[1.6] text-gray-700">
             {messageText}
+          </div>
+        )}
+
+        {countryBadge && (
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#e8e4ff] bg-white px-3 py-1 text-[11px] font-bold text-[#3C3489] shadow-[0_1px_6px_rgba(124,58,237,0.08)]">
+            {countryBadge}
           </div>
         )}
 
