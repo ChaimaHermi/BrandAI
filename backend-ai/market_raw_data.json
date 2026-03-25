@@ -2,248 +2,218 @@
   "idea": {
     "problem": "Les étudiants tunisiens n'ont pas accès à du tutorat de qualité abordable",
     "solution": "Plateforme de mise en relation étudiants / tuteurs avec sessions vidéo",
-    "pitch": "Airbnb du tutorat en Tunisie — tuteurs vérifiés, paiement sécurisé, scheduling auto",
+    "pitch": "Airbnb du tutorat en Tunisie — tuteurs vérifiés, paiement sécurisé",
     "target": "Étudiants universitaires 18-26 ans, Tunisie",
-    "sector": "EdTech"
+    "sector": "EdTech",
+    "country": "Tunisie",
+    "country_code": "TN",
+    "language": "fr"
   },
   "raw_competitors": [
     {
-      "title": "Eduschool Alternatives & Competitors in 2026",
-      "link": "https://www.saasadviser.co/eduschool/alternatives",
-      "snippet": "List of A comprehensive list of Eduschool alternatvies and competitors · SnatchBot · QnA Maker · Wordsmith · Spark NLP · Amazon Comprehend · Unbabel · NLP-API ..."
+      "title": "Almourabi - Plateforme E-Learning Tunisie | Cours en Ligne .",
+      "link": "https://almourabi.com/",
+      "snippet": "Almourabi propose des cours en ligne en Tunisie avec exercices corrigés et corrections du Bac pour les sciences, techniq"
     },
     {
-      "title": "Top 10 LMS Platforms Ranked for 2025! *honest review*",
-      "link": "https://www.youtube.com/watch?v=KiudalAKWTw",
-      "snippet": "... platform options for modern organizations. Get clear recommendations ... EdTech reviews that help you make better technology decisions ..."
+      "title": "Soutien-scolaire-en-ligne",
+      "link": "https://www.tadris.tn/soutien-scolaire-en-ligne.html?srsltid=AfmBOoqohk8K3ZP7IzrMTVgqO_-4Y6nXWGiHSfqyxTINUrwZt_QtVyoI",
+      "snippet": "Découvrez la plateforme Tadris.TN et offrez à votre enfant des cours particuliers, un soutien scolaire personnalisé et u"
     },
     {
-      "title": "Top Online Education Technology Companies & How to ...",
-      "link": "https://www.linkedin.com/pulse/top-online-education-technology-companies-how-compare-ntute/",
-      "snippet": "Edmodo: Social learning platform connecting teachers, students, and parents. Schoology: Combines LMS features with social networking for ..."
+      "title": "Rivezli.tn | Plateforme Éducative Pour Étudiants Tunisiens",
+      "link": "https://rivezli.tn/",
+      "snippet": "Accédez à des cours universitaires tunisiens de qualité. Rivezli.tn offre des ressources pédagogiques conformes au progr"
     },
     {
-      "title": "Alternatives to Edutech",
-      "link": "https://www.capterra.ca/alternatives/1062788/edutech",
-      "snippet": "Alternatives to Edutech · Alma SISOpens in a new tab · Modern Campus Lifelong LearningOpens in a new tab · Classe365 · Classter · Populi · STARS · OpenEduCat."
+      "title": "Plateforme d'apprentissage en ligne",
+      "link": "http://www.prof.tn/",
+      "snippet": "Formation pédagogique pour les suppléants. Veuillez concevoir votre espace pour un éventuel partage avec les élèves. Veu"
     },
     {
-      "title": "Best Edx Alternatives for Budget-Friendly Online Learning",
-      "link": "https://www.youtube.com/watch?v=DAu2zUAI-i8",
-      "snippet": "I break down the top EdX alternatives that are affordable, flexible, reputable, and focused on real skill development."
+      "title": "Ressources Pédagogiques pour tutorat en ligne",
+      "link": "https://utm.rnu.tn/utm/documents/Kit_Ressources_UVT_v2.pdf",
+      "snippet": "tutorat en ligne. I. RESSOURCES VIDEO. Cible. Activité. Lien. Présentation de la plateforme ENT.UVT.RNU.TN. Installation"
     },
     {
-      "title": "10 updates and edTech trends from 2024",
-      "link": "https://www.youtube.com/watch?v=dk3QOljFTx0",
-      "snippet": "... best in class products including the Zone learn wired headset by ... Stanford Graduate School of Business and Think Fast Talk Smart•51M views."
+      "title": "Webinaire des enseignants-tuteurs de l'UVT",
+      "link": "https://www.uvt.rnu.tn/news/1200-webinaire-des-enseignants-tuteurs-de-l%E2%80%99uvt-%E2%80%93-d%C3%A9marrage-de-l%E2%80%99ann%C3%A9e-universitaire-2025-2026",
+      "snippet": "Présentation des services et outils numériques de l'UVT : Accès et utilisation des plateformes pédagogiques (Moodle, Tea"
     },
     {
-      "title": "2 $1M+ EdTech Startups you can launch tomorrow",
-      "link": "https://www.youtube.com/watch?v=Swxsv1SgCiA",
-      "snippet": "Join me as I chat with Sarah Lacy, Co-Founder of The Best Book Store , as we discuss a variety of EdTech startup ideas."
+      "title": "Agence Universitaire de la Francophonie - Mentorat",
+      "link": "https://mentorat.auf.org/",
+      "snippet": "Ce programme ambitionne de fournir la première plateforme francophone internationale de mise en relation de jeunes porte"
     },
     {
-      "title": "Voted Best Ed Tech 2024- Based on Teacher Feedback ...",
-      "link": "https://www.youtube.com/watch?v=3S9i5S8-NUY",
-      "snippet": "I review the best tools for 2024 plus one amazing bonus tool we found recently Sign up to my newsletter ..."
-    },
-    {
-      "title": "How EdTech startups are leveraging AI for education",
-      "link": "https://www.youtube.com/watch?v=psU7qaABP0k",
-      "snippet": "This is the fourth webinar in the MIT Jameel World Education Lab's AI Innovator Series. This panel explores how entrepreneurial companies ..."
-    },
-    {
-      "title": "AI in Education: How Edtech Is Attracting Investments | WSJ ...",
-      "link": "https://www.youtube.com/watch?v=96O8j_1LKOU",
-      "snippet": "If generative artificial intelligence is going to upend learning, then startups and investors want to be part of it."
+      "title": "Cours de tutorat en ligne personnalisé - Tunis",
+      "link": "https://www.apprentus.com/fr/cours-particuliers/tunis/soutien-scolaire/algebre/maitriser-mathematiques-tutorat-ligne-pers",
+      "snippet": "Accédez à des ressources, soumettez des devoirs et communiquez avec votre tuteur en toute transparence dans le confort d"
     }
   ],
   "organic_signals": [
-    "Prof de langue en ligne",
-    "Site de cours particuliers",
-    "GoStudent devenir prof",
-    "Qui diagnostique la dyscalculie",
-    "Cours en ligne soutien scolaire",
-    "Groupe réussite ressources",
-    "GoStudent recrutement",
-    "Cours particulier en groupe",
-    "EdTech market size",
-    "EdTech industry trends"
+    "Plateforme éducation en ligne Tunisie",
+    "Cours en ligne Tunisie",
+    "Formation en ligne Tunisie gratuit",
+    "Cours en ligne primaire tunisie",
+    "E learning tunisie great site",
+    "E LEARNING rns tn"
+  ],
+  "local_ratings": [
+    {
+      "name": "Boosteno Med 5 ( Cours d'Allemand )",
+      "rating": 5,
+      "reviews": 569,
+      "website": "http://boosteno.com/"
+    },
+    {
+      "name": "Boosteno Tunis l Cours d'Allemand",
+      "rating": 4.7,
+      "reviews": 292,
+      "website": "http://www.boosteno.com/"
+    }
+  ],
+  "tavily_competitor_summaries": [
+    {
+      "title": "Résumé Tavily",
+      "content": "Main competitors of online tutoring platforms in North Africa in 2025 include Orcas, Smartprof, and Tuteria. These platforms offer personalized and group tutoring services."
+    },
+    {
+      "title": "Top startups in Academic Tutoring in North Africa (Oct, 2025",
+      "content": "Your browser was unable to load all of Tracxn resources. Press **Ctrl+F5** or **Ctrl+Shift+R** to have your browser try again and if that doesn't work, **click here to retry** or mail us at **hi@tracxn.com**. # Academic Tutoring Startups in North Afr"
+    },
+    {
+      "title": "8 Free Online Teaching Platforms for Nigerian Teachers in 20",
+      "content": "# Private School Proprietors and Proprietress | 8 Free Sites to Teach Online and Boost Your Income in 2025 | Facebook. 8 Free Online Teaching Platforms for Nigerian Teachers in 2025. Summarized by AI from the post below. ## Private School Proprietors"
+    },
+    {
+      "title": "Nigeria Online Tutoring Services Market (2025-2031) - 6Wrese",
+      "content": "#### Nigeria Online Tutoring Services Market (2025-2031) | Competitive Landscape, Outlook, Size & Revenue, Analysis, Value, Forecast, Industry, Segmentation, Growth, Trends, Share, Companies. # Nigeria Online Tutoring Services Market (2025-2031) | Co"
+    },
+    {
+      "title": "EdTech Startups Reshaping Tutoring Services in Nigeria",
+      "content": "This dynamism extends to the realm of education technology, where Lagos stands at the vanguard of Africa’s digital transformation, fostering innovation and shaping the future of learning. Nigenius smartly links teachers and learners for quality tutor"
+    }
   ],
   "top_youtube_signals": [
     {
-      "title": "Transform Your Teaching: Magical Edtech Hacks for 2023",
-      "description": "Description: Discover the magic behind modern teaching! Learn edtech hacks that will transform your classroom and engage ...",
-      "channel": "Zui Zui",
-      "published": "2026-02-03T06:40:39Z"
+      "title": "Earn Money Online : 2 New Methods 🤑 #techiela #shorts #techshorts #ear",
+      "description": "1. MyFavTutor It is a platform for connecting Tutors with Students in their own locality. It is desi"
     },
     {
-      "title": "Getting Started with Google Classroom | EDTech Made Easy - GOOGLE CLASSROOM TUTORIAL",
-      "description": "Don't forget to like, comment, and subscribe so you don't miss future videos! MY TEACHERSPAYTEACHERS STORE: ...",
-      "channel": "Pocketful of Primary",
-      "published": "2019-07-07T11:00:05Z"
+      "title": "Digital Board for online teaching #digitalboard #shorts  @Edusquadz",
+      "description": "For Studio Setup Contact Us On - 91 96693 79370 For Digital Marketing Contact Us On - 91 81096 96232"
     },
     {
-      "title": "How to Create Drag and Drop Activities on Google Slides | EDTech Made Easy Tutorial",
-      "description": "Don't forget to like, comment, and subscribe so you don't miss future videos! MY TEACHERSPAYTEACHERS STORE: ...",
-      "channel": "Pocketful of Primary",
-      "published": "2020-06-07T11:00:01Z"
+      "title": "5 Part-Time Work From Home Jobs For Students, Freshers &amp; Housewive",
+      "description": "5 Best Part-Time Work From Home Jobs For Students, Freshers & Housewives | No Investment Needed | Fl"
     },
     {
-      "title": "Online Teacher KA SACH! 😂 #funny #edtech #ytshorts #shorts",
-      "description": "Channel Link: https://www.youtube.com/@NEETLEADERAUROUSDIGITAL APP Link: ...",
-      "channel": "Kshitiz Kanik - Aurous Digital",
-      "published": "2025-07-25T11:01:40Z"
-    },
-    {
-      "title": "Python Game Programming Tutorial: Snake Game Part 1",
-      "description": "DOWNLOAD my FREE Intro to Python eBook here: ...",
-      "channel": "TokyoEdtech",
-      "published": "2018-09-02T08:58:24Z"
+      "title": "Best Pen Tablet for online teaching | One by Wacom CTL-672 review and ",
+      "description": "You can buy this pen tablet here- https://amzn.to/2Ca73Dp Get 5% discount on XP Pen store price, app"
     }
   ],
   "news_articles": [
     {
-      "title": "#StartupsToWatch - Diese 13 KI-Gründerinnen solltet ihr kennen",
-      "description": "Auch 2026 sind Gründerinnen in der deutschen Startup-Szene in der Minderheit. Hinzu kommt ein massiver Gender Funding Gap. VCs investieren sehr viel häufiger und vor allem mit viel höheren Summen in Startups, die von Gründern ins Leben gerufen worden sind.",
-      "source": "Deutsche-startups.de",
-      "url": "https://www.deutsche-startups.de/2026/03/06/diese-13-ki-gruenderinnen-solltet-ihr-kennen/",
-      "publishedAt": "2026-03-06T07:15:00Z"
+      "title": "African tech startups to receive backing via EIB financing for Speedinvest - Dev",
+      "description": "African technology startups – including mobile-focused initiatives – will receive a financing boost through a €40 million (about US$46million) commitm",
+      "source": "tavily"
     },
     {
-      "title": "Plurio Raises $3.5 Million to Bring Agentic AI to Performance Marketing",
-      "description": "The startup predicts outcomes from early signals and executes budget and creative changes across channels.",
-      "source": "Adweek",
-      "url": "https://www.adweek.com/performance-marketing/plurio-startup-agentic-ai-performance-marketing-seed-funding/",
-      "publishedAt": "2026-03-02T06:00:00Z"
+      "title": "Finland’s digital edge sees it grab a bigger share of Nordic PE - PitchBook",
+      "description": "Total PE investment in Finland reached a record €9.6 billion (about $11.1 billion) in 2025, growing its share of Nordic PE investment to 18.3%, with I",
+      "source": "tavily"
     },
     {
-      "title": "Upgrad, Unacademy betting on AI to disrupt edtech",
-      "description": "Gaurav Munjal, who will stay on as the cofounder and CEO of Unacademy, said the startup redefined the edtech playbook when it entered the market. \"Along the way we lost some focus and market share, and the sector itself has not seen enough real product innova…",
-      "source": "The Times of India",
-      "url": "https://economictimes.indiatimes.com/tech/technology/upgrad-unacademy-betting-on-ai-to-disrupt-edtech/articleshow/129604052.cms",
-      "publishedAt": "2026-03-16T08:02:17Z"
+      "title": "Vodafone Egypt and Tunisie Telecom announce mobile payment deals - Developing Te",
+      "description": "## Vodafone Egypt and Tunisie Telecom announce mobile payment deals. Mobile payment-based offerings are growing rapidly across Africa, driven, as ever",
+      "source": "tavily"
     },
     {
-      "title": "Sciens Software Technologies Celebrates 11+ Years of Innovation: From Web Studio to Global AI Innovation Partner",
-      "description": "Hyderabad innovator grows from custom web development to AI, data analytics, automation, and workforce solutions, powering enterprise transformation worldwide. Hyderabad innovator grows from custom web development to AI, data analytics, automation, and workfo…",
-      "source": "GlobeNewswire",
-      "url": "https://www.globenewswire.com/news-release/2026/03/12/3254828/0/en/Sciens-Software-Technologies-Celebrates-11-Years-of-Innovation-From-Web-Studio-to-Global-AI-Innovation-Partner.html",
-      "publishedAt": "2026-03-12T14:00:00Z"
+      "title": "Tony Elumelu Foundation to announce 2026 cohort of TEF Entrepreneurship Programm",
+      "description": "The Tony Elumelu Foundation (TEF), the leading philanthropy empowering young African entrepreneurs will announce the 12th cohort of the flagship TEF E",
+      "source": "tavily"
     },
     {
-      "title": "Startup Mafia 3.0: Razorpay, Cred, Meesho help spawn 200+ founders",
-      "description": "India’s new-generation startups are creating a fresh wave of founders, with executives from 111 firms launching over 200 new companies. Razorpay, Cred, Meesho and PhonePe lead in producing entrepreneurs. Wider investor support and Esops among others, are fuel…",
-      "source": "The Times of India",
-      "url": "https://economictimes.indiatimes.com/tech/technology/startup-mafia-3-0-razorpay-cred-meesho-help-spawn-200-founders/articleshow/129616890.cms",
-      "publishedAt": "2026-03-17T00:30:00Z"
-    },
-    {
-      "title": "AI in Education Market Size to Surpass USD 136.79 Billion by 2035 Amid Rapid EdTech Expansion and AI Adoption",
-      "description": "The global AI in education market size was calculated at USD 7.05 billion in 2025 and is predicted to surpass around USD 136.79 billion by 2035, expanding at a strong CAGR of 34.52% from 2026 to 2035. The growing investments in EdTech and the increased demand…",
-      "source": "GlobeNewswire",
-      "url": "https://www.globenewswire.com/news-release/2026/02/25/3244350/0/en/AI-in-Education-Market-Size-to-Surpass-USD-136-79-Billion-by-2035-Amid-Rapid-EdTech-Expansion-and-AI-Adoption.html",
-      "publishedAt": "2026-02-25T09:55:00Z"
-    },
-    {
-      "title": "Everybody Loves Languages Corp. Reschedules Meeting, To Provide Supplemental Disclosure on Acquisition by ELL Ventures Ltd.",
-      "description": "TORONTO — Everybody Loves Languages Corp. (“ELLC” or the “Company“) (TSX-V: ELL; OTC: LMDCF; FSE: LIMA), www.everybodyloveslanguages.com, an edtech language learning edutainment and content development company, today announces that it has rescheduled its annu…",
-      "source": "Financial Post",
-      "url": "https://financialpost.com/pmn/business-wire-news-releases-pmn/everybody-loves-languages-corp-reschedules-meeting-to-provide-supplemental-disclosure-on-acquisition-by-ell-ventures-ltd",
-      "publishedAt": "2026-02-27T13:05:47Z"
-    },
-    {
-      "title": "Ultimate Guide to Ethical AI Scalability in EdTech",
-      "description": "Practical guidance for scaling AI in education while protecting fairness, privacy, and accountability with bias audits, governance, and human oversight.\nThe post Ultimate Guide to Ethical AI Scalability in EdTech appeared first on Treehouse Blog.",
-      "source": "Teamtreehouse.com",
-      "url": "https://blog.teamtreehouse.com/ultimate-ethical-ai-scalability-edtech-guide",
-      "publishedAt": "2026-03-06T12:59:43Z"
+      "title": "NSF Awards $11M to Expand AI Training for K-12 Teachers - GovTech",
+      "description": "The National Science Foundation (NSF) is giving $11 million to the Computer Science Teachers Association (CSTA) to launch a multistate professional de",
+      "source": "tavily"
     }
   ],
   "funding_signals": [
-    "Plurio Raises $3.5 Million to Bring Agentic AI to Performance Marketing"
+    "African tech startups to receive backing via EIB financing for Speedinvest - Developing Telecoms",
+    "Finland’s digital edge sees it grab a bigger share of Nordic PE - PitchBook",
+    "Tony Elumelu Foundation to announce 2026 cohort of TEF Entrepreneurship Programme on 22 March - Premium Times Nigeria"
   ],
   "regulatory_signals": [
-    "Ignoring the Science: Curious Case of Cell Phone Bans",
-    "The curious case of cell-phone bans"
+    "African tech startups to receive backing via EIB financing for Speedinvest - Developing Telecoms",
+    "Vodafone Egypt and Tunisie Telecom announce mobile payment deals - Developing Telecoms"
   ],
   "reddit_posts": [
     {
-      "title": "Charlie Hebdo front cover from 30th July portraying Netanyahu: \"Honey, I shrunk the kids.\"",
-      "body": "",
-      "subreddit": "europe",
-      "score": 52068,
-      "url": "https://www.reddit.com/r/europe/comments/1mh8gyt/charlie_hebdo_front_cover_from_30th_july/"
+      "title": "Résumé Tavily",
+      "body": "Common frustrations in online tutoring include poor internet connections and students lacking basic knowledge. Tutors often face students who blame th"
     },
     {
-      "title": "45th General Election - Liberals are projected to form Government in the 45th Canadian Parliament Megathread #3",
-      "body": "As votes continue to be tabulated across the country, news media, pollsters and various supporting analysts have declared that the Liberals are projected to win sufficient ridings across Canada and are expected to form Government in Canada's 45th Parliament.  \n\nIn the hours and maybe days to come, t",
-      "subreddit": "canada",
-      "score": 13638,
-      "url": "https://www.reddit.com/r/canada/comments/1kad3p2/45th_general_election_liberals_are_projected_to/"
+      "title": "So frustrated with online tutorials : r/codingbootcamp - Reddit",
+      "body": "Here is some way to get around: Be clear on the problem you want to solve. Learn the constructs / library of the language you are learning."
     },
     {
-      "title": "🚨 DO NOT BUY THESE BROWNIES 🚨",
-      "body": "So, uh… just a heads up. The Ghirardelli brownie mix at Costco? Don’t buy it.\nAnd if you do, please do NOT sub the water with milk, and do NOT swap the oil for butter.\n\nUnless, of course, you want the richest, fudgeyest, most dangerous brownies ever created.\nBrownies that will call to you from the k",
-      "subreddit": "CostcoCanada",
-      "score": 10480,
-      "url": "https://www.reddit.com/r/CostcoCanada/comments/1n8ibj5/do_not_buy_these_brownies/"
+      "title": "What are some of your frustrations with remote tutoring? - Reddit",
+      "body": "Have you ever thought \"There's gotta be an app for that\" or \"There must be a better way\" when it comes to remote tutoring?"
     },
     {
-      "title": "Katara est un princesse ?",
-      "body": "Je viens de voir ce post sur facebook et je me demandais si Katara était techniquement la princesse de la tribu de l'eau du sud ? Sahàt que le chef de cette ́ation est le chef de la tribu de l'eau du nord.\n\nEt deuxièmement : \nPleaain de gens dans les commentaires argumentait sur le fait que la trib",
-      "subreddit": "AvatarMemebending",
-      "score": 9280,
-      "url": "https://www.reddit.com/r/AvatarMemebending/comments/1rs1r0f/katara_est_un_princesse/"
+      "title": "What frustrates you the most about being a tutor? - Reddit",
+      "body": "Students who are mean, unwilling to work, and who make any issue they're having \"my problem,\" like blaming me when they're in a rush with an assignmen"
     },
     {
-      "title": "And the award for the worst back of cover art ever goes to Battlefield 6. Why the wall of text!",
-      "body": "",
-      "subreddit": "gaming",
-      "score": 8962,
-      "url": "https://www.reddit.com/r/gaming/comments/1o89kn7/and_the_award_for_the_worst_back_of_cover_art/"
+      "title": "Frustrated with students who come in with no prior knowledge - Reddit",
+      "body": "A person comes into a computer programming session with no understanding of basic concepts, yet expects that I'm to do their assignment."
     },
     {
-      "title": "So... you come here often?",
-      "body": "",
-      "subreddit": "OneOrangeBraincell",
-      "score": 5718,
-      "url": "https://www.reddit.com/r/OneOrangeBraincell/comments/1roicsr/so_you_come_here_often/"
+      "title": "Most annoying part of online tutoring : r/Preply - Reddit",
+      "body": "From your experience, what's the most annoying part of online tutoring? Me first: students with terrible internet connections."
     },
     {
-      "title": "Had no sauce packets available, had to use what was on hand",
-      "body": "These two and their two siblings were born a few days back and are being well looked after by their sweet mom! \n\nTheir mom was rescued after her previous owner tried to abandon her on the beach after finding out she was pregnant, luckily a neighbour stepped in and took them to an animal rescue inste",
-      "subreddit": "IllegallySmolCats",
-      "score": 4387,
-      "url": "https://www.reddit.com/r/IllegallySmolCats/comments/1oi8y92/had_no_sauce_packets_available_had_to_use_what/"
+      "title": "What is your frustration and how to solve them? : r/TutorsHelpingTutors",
+      "body": "# What is your frustration and how to solve them? Skip to main contentWhat is your frustration and how to solve them? # What is your frustration and h"
     },
     {
-      "title": "IMPORTANT SUB ANNOUNCEMENT! / SOUS-ANNONCE IMPORTANTE!",
-      "body": "**Salutations utilisateurs !**\n\nAprès avoir choisi une date générée aléatoirement, NCD a décidé de célébrer la culture française, compte tenu de la situation mondiale actuelle.\n\nÀ l'avenir, tous les titres de publication devront être en français. Tout message ne contenant pas de texte français sera ",
-      "subreddit": "NonCredibleDefense",
-      "score": 3846,
-      "url": "https://www.reddit.com/r/NonCredibleDefense/comments/1jo0s89/important_sub_announcement_sousannonce_importante/"
-    },
-    {
-      "title": "Suite à ma plainte, Free condamné à 42 millions d'euros d'amende",
-      "body": "Suite et fin de mon post de novembre 2024 : [https://imgur.com/FYZrSBJ](https://imgur.com/FYZrSBJ)\n\nRappel des faits :\n\n>En octobre 2024, après le blocage sans raison de mon compte email u/free.fr, j'entame les démarches classiques de récupération auprès du DPO d'Iliad.\n\n>Jusque-là, tout va bien.\n\n>",
-      "subreddit": "france",
-      "score": 3801,
-      "url": "https://www.reddit.com/r/france/comments/1qcu2kj/suite_à_ma_plainte_free_condamné_à_42_millions/"
-    },
-    {
-      "title": "Youtuber who used genshin impact music has apologised and removed the song",
-      "body": "The Youtuber who  used genshin music and made copyright claim has apologised and taken down the song. \n\n**GENSHIN:**  \nI understand your frustration, I understand your hatred for what I did, and I am a thousand times sorry for my actions. Many have rightly pointed out that it was a mistake—a huge mi",
-      "subreddit": "Genshin_Impact",
-      "score": 3624,
-      "url": "https://www.reddit.com/r/Genshin_Impact/comments/1ljadu1/youtuber_who_used_genshin_impact_music_has/"
+      "title": "Résumé Tavily",
+      "body": "Essential features for online tutoring platforms include video chat, interactive whiteboards, and personalized learning support. These tools enhance c"
     }
   ],
   "reddit_pain_points": [
-    "And the award for the worst back of cover art ever goes to Battlefield 6. Why the wall of text!"
+    "Résumé Tavily",
+    "So frustrated with online tutorials : r/codingbootcamp - Reddit",
+    "What frustrates you the most about being a tutor? - Reddit",
+    "Frustrated with students who come in with no prior knowledge - Reddit"
   ],
   "competitor_mentions": [],
-  "growth_trends": [],
+  "growth_trends": [
+    {
+      "keyword": "tutorat en ligne",
+      "avg_volume": 10,
+      "last_volume": 17,
+      "direction": "RISING",
+      "rising_queries": []
+    },
+    {
+      "keyword": "edtech",
+      "avg_volume": 59,
+      "last_volume": 59,
+      "direction": "STABLE",
+      "rising_queries": []
+    },
+    {
+      "keyword": "formation en ligne",
+      "avg_volume": 61,
+      "last_volume": 52,
+      "direction": "STABLE",
+      "rising_queries": []
+    }
+  ],
+  "tiktok_signals": [],
   "macro_context": {
     "country": "TN",
     "gdp_per_capita": 4181.13789301228,
@@ -251,5 +221,19 @@
     "mobile_per_100": 134.136,
     "population": 12277109,
     "youth_population_pct": 66.4314172009062
-  }
+  },
+  "regulatory_data": [
+    {
+      "title": "Résumé Tavily",
+      "content": "The online tutoring regulation in Tunisia is governed by a decree-law that sets the permitted scope and conditions for private tutoring and distance education. The government is working on reforming t"
+    },
+    {
+      "title": "Les cours particuliers, désormais, régis par un décret-loi .",
+      "content": "La loi fixe les espaces permis pour la pratique de cette activité, cours particuliers et de soutien scolaire. Le texte détermine, également, les"
+    },
+    {
+      "title": "Décret gouvernemental n° 2019-430 du 6 mai 2019, fixant les ",
+      "content": "Art. 3 - L'université virtuelle de Tunis fixe son règlement intérieur dans la limite des dispositions du présent décret gouvernemental, et ce par décision du conseil de l’université approuvé par le mi"
+    }
+  ]
 }

@@ -83,11 +83,14 @@ def market_analysis_template() -> dict:
             "desired_features": [],
             "competitor_frustrations": [],
             "youtube_voc_signals": [],
+            "tiktok_signals": [],
             "sources": [],
         },
         "risks": [],
         "opportunities": [],
         "kpis": {
+            # Le prompt/schema attend `addressable_market_local` (et certains runs ont `addressable_students_local` en plus).
+            "addressable_market_local": 0,
             "addressable_students_local": 0,
             "internet_penetration_pct": 0,
             "mobile_penetration_per100": 0,
@@ -217,6 +220,7 @@ def normalize_market_analysis(data: Any) -> dict:
         if k not in kp or kp[k] is None:
             kp[k] = copy.deepcopy(default)
     for nk in (
+        "addressable_market_local",
         "addressable_students_local",
         "internet_penetration_pct",
         "mobile_penetration_per100",
@@ -233,6 +237,38 @@ def normalize_market_analysis(data: Any) -> dict:
         elif not isinstance(kp[sk], str):
             kp[sk] = str(kp[sk])
     out["kpis"] = kp
+
+    # ──────────────────────────────────────────────────────────
+    # Fallback calcul addressable_market_local
+    # ──────────────────────────────────────────────────────────
+    # Cas demandé : si 0, et macro_context contient (population, internet_penetration, youth_population_pct)
+    # Note : macro_context n'est pas dans le schema de sortie normal, mais on le supporte si le LLM l'ajoute.
+    try:
+        macro_context = data.get("macro_context")
+        if not isinstance(macro_context, dict):
+            macro_context = None
+
+        current = kp.get("addressable_market_local", 0)
+        if current == 0 and macro_context:
+            pop = macro_context.get("population")
+            inet = macro_context.get("internet_penetration")
+            youth = macro_context.get("youth_population_pct")
+
+            pop_f = float(pop) if pop is not None else None
+            inet_f = float(inet) if inet is not None else None
+            youth_f = float(youth) if youth is not None else None
+
+            if pop_f is not None and inet_f is not None and youth_f is not None:
+                computed = pop_f * (inet_f / 100.0) * (youth_f / 100.0)
+                kp["addressable_market_local"] = int(round(computed))
+
+                # Compat : si un ancien champ `addressable_students_local` est présent à 0,
+                # on le synchronise (sans toutefois l'imposer si déjà non nul).
+                if kp.get("addressable_students_local", 0) == 0:
+                    kp["addressable_students_local"] = kp["addressable_market_local"]
+    except Exception:
+        # Ne jamais casser la normalisation pour un calcul best-effort
+        pass
 
     out["recommendations"] = _ensure_list_of_dicts(out.get("recommendations"), _empty_recommendation())
 
@@ -255,6 +291,21 @@ def normalize_market_analysis(data: Any) -> dict:
         dq["missing_data_notes"] = ""
     elif not isinstance(dq["missing_data_notes"], str):
         dq["missing_data_notes"] = str(dq["missing_data_notes"])
+
+    # TAM global manquant → "Non estimé" + note de qualité
+    try:
+        mo = out.get("market_overview", {}) if isinstance(out.get("market_overview"), dict) else {}
+        if mo.get("tam_global_usd", "") == "":
+            mo["tam_global_usd"] = "Non estimé"
+            note = "TAM global non estimé (champ tam_global_usd manquant)."
+            if dq.get("missing_data_notes"):
+                if note not in dq["missing_data_notes"]:
+                    dq["missing_data_notes"] = dq["missing_data_notes"].strip() + " | " + note
+            else:
+                dq["missing_data_notes"] = note
+            out["market_overview"] = mo
+    except Exception:
+        pass
     out["data_quality"] = dq
 
     # Réinjecter clés LLM additionnelles non listées dans le template
