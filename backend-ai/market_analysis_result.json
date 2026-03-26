@@ -1,0 +1,368 @@
+{
+  "sector": "Applications de gestion d'emploi du temps pour étudiants",
+  "kpis": {
+    "tam": 0.04,
+    "sam": 0.03,
+    "cagr_pct": 25,
+    "recommended_pricing_model": "abonnement mensuel à 2 USD ou version freemium avec fonctionnalités premium",
+    "market_maturity_score": 35
+  },
+  "som": {
+    "sam_base": 30000000,
+    "conservateur": 150000,
+    "realiste": 300000,
+    "optimiste": 900000,
+    "confidence": "medium",
+    "note": "hypothèse : population cible 15.77M × taux adoption 30% × ARPU 8USD → SAM 30M USD ; confidence medium car adoption et ARPU estimés"
+  },
+  "porter": {
+    "rivalry": {
+      "score": 3,
+      "level": "medium",
+      "summary": "Présence de plusieurs apps locales et de solutions globales crée une concurrence modérée"
+    },
+    "new_entrants": {
+      "score": 4,
+      "level": "high",
+      "summary": "Barrières techniques faibles et forte pénétration mobile facilitent l'entrée de nouveaux acteurs"
+    },
+    "substitutes": {
+      "score": 3,
+      "level": "medium",
+      "summary": "Agenda papier, Google Calendar et solutions maison restent des alternatives viables"
+    },
+    "buyers": {
+      "score": 3,
+      "level": "medium",
+      "summary": "Les étudiants sont sensibles au prix mais recherchent des fonctionnalités d'automatisation"
+    },
+    "suppliers": {
+      "score": 1,
+      "level": "low",
+      "summary": "Les plateformes iOS/Android sont les principaux fournisseurs, avec peu de pouvoir de négociation"
+    }
+  },
+  "gartner": {
+    "quadrants": {
+      "leaders": [
+        {
+          "name": "MyU By Honoris",
+          "vision_score": 8,
+          "execution_score": 9
+        }
+      ],
+      "challengers": [
+        {
+          "name": "Emploi Du Temps Agenda",
+          "vision_score": 6,
+          "execution_score": 7
+        }
+      ],
+      "visionaries": [
+        {
+          "name": "Bright Campus",
+          "vision_score": 8,
+          "execution_score": 5
+        }
+      ],
+      "niche_players": [
+        {
+          "name": "ISIMG Mobile",
+          "vision_score": 4,
+          "execution_score": 4
+        }
+      ]
+    },
+    "our_position": {
+      "quadrant": "visionaries",
+      "vision_score": 7,
+      "execution_score": 4,
+      "rationale": "Produit à forte capacité d'innovation (IA auto‑génération) mais ressources limitées pour le lancement"
+    }
+  },
+  "competitors": [
+    {
+      "name": "Emploi Du Temps Agenda",
+      "url": "https://apps.apple.com/tn/app/emploi-du-temps-agenda/id489566160?l=fr-FR",
+      "type": "direct",
+      "strengths": [
+        "Interface simple",
+        "Disponible sur iOS"
+      ],
+      "weaknesses": [
+        "Pas d'ajustement en temps réel",
+        "Pas d'intégration IA"
+      ],
+      "threat_score": 75,
+      "data_source": "App Store"
+    },
+    {
+      "name": "MyU By Honoris",
+      "url": "https://play.google.com/store/apps/details?id=com.honoris.myu&hl=ln",
+      "type": "direct",
+      "strengths": [
+        "Intégration avec classes virtuelles",
+        "Base d'utilisateurs universitaires"
+      ],
+      "weaknesses": [
+        "Fonctionnalités limitées aux universités partenaires",
+        "Pas d'auto‑génération complète"
+      ],
+      "threat_score": 100,
+      "data_source": "Google Play"
+    },
+    {
+      "name": "Bright Campus",
+      "url": "https://www.facebook.com/INATunisie/posts/chers-%C3%A9tudiants-afin-de-vous-faciliter-la-consultation-de-lemploi-du-temps-et-le/594708869056196/",
+      "type": "direct",
+      "strengths": [
+        "Support institutionnel",
+        "Calendrier universitaire officiel"
+      ],
+      "weaknesses": [
+        "Interface vieillissante",
+        "Manque d'IA"
+      ],
+      "threat_score": 65,
+      "data_source": "Facebook"
+    },
+    {
+      "name": "ISIMG Mobile",
+      "url": "https://isimg.rnu.tn/fra/pages/224/",
+      "type": "indirect",
+      "strengths": [
+        "Informations d'absences et notes",
+        "Ciblage d'une école spécifique"
+      ],
+      "weaknesses": [
+        "Couverture limitée à un campus",
+        "Pas d'auto‑planification"
+      ],
+      "threat_score": 50,
+      "data_source": "Site institutionnel"
+    }
+  ],
+  "competitive_positioning": {
+    "main_gap": "Absence d'auto‑génération dynamique et de synchronisation en temps réel",
+    "differentiation_angle": "IA qui crée et ajuste automatiquement l'emploi du temps selon les contraintes de l'étudiant",
+    "weakest_competitor": "ISIMG Mobile – couverture très restreinte et fonctionnalités limitées",
+    "local_advantage": "Pénétration mobile très élevée (134 % d'appareils par habitant) et forte urbanisation (70 %)",
+    "threat_level": "medium"
+  },
+  "trends": [
+    {
+      "keyword": "emploi du temps étudiant",
+      "direction": "STABLE",
+      "signal_strength": "MEDIUM",
+      "insight": "Intérêt constant, aucune forte hausse ou baisse, indique un besoin stable mais non explosif.",
+      "data_source": "Google Trends"
+    },
+    {
+      "keyword": "organisation scolaire",
+      "direction": "STABLE",
+      "signal_strength": "MEDIUM",
+      "insight": "Recherche régulière, montre que les étudiants cherchent des outils d'organisation.",
+      "data_source": "Google Trends"
+    }
+  ],
+  "voice_of_customer": {
+    "top_pain_points": [
+      "Gestion manuelle des cours",
+      "Oublis de devoirs et d'examens",
+      "Manque de rappels en temps réel"
+    ],
+    "desired_features": [
+      "Génération automatique d'emploi du temps",
+      "Mise à jour instantanée en cas de changement",
+      "Notifications push personnalisées"
+    ],
+    "competitor_frustrations": [
+      "Interface peu intuitive",
+      "Absence d'intégration IA",
+      "Mise à jour lente des emplois du temps"
+    ],
+    "youtube_voc_signals": [
+      "vidéo \"7 apps qui ont changé ma vie\" mentionne les planners comme besoin croissant"
+    ],
+    "tiktok_signals": [
+      "courtes démonstrations d'apps de productivité étudiantes avec >10k vues"
+    ],
+    "sources": [
+      "Reddit",
+      "YouTube",
+      "TikTok"
+    ]
+  },
+  "swot": {
+    "strengths": [
+      "Pénétration mobile élevée",
+      "Connaissance du marché tunisien",
+      "Concept IA différenciant"
+    ],
+    "weaknesses": [
+      "Ressources de développement limitées",
+      "Notoriété de marque faible",
+      "Dépendance à la conformité des données"
+    ],
+    "opportunities": [
+      "Partenariats avec universités publiques",
+      "Croissance de l'EdTech en Afrique du Nord",
+      "Monétisation via abonnement premium"
+    ],
+    "threats": [
+      "Réglementation stricte sur les données personnelles",
+      "Concurrence d'apps établies",
+      "Réticence à payer chez les étudiants"
+    ]
+  },
+  "risks": [
+    {
+      "category": "competition",
+      "description": "Présence de plusieurs apps locales déjà adoptées",
+      "severity": "HIGH",
+      "mitigation": "Développer des fonctionnalités IA exclusives et nouer des accords avec établissements"
+    },
+    {
+      "category": "regulatory",
+      "description": "Obligations de localisation et protection des données personnelles",
+      "severity": "MEDIUM",
+      "mitigation": "Mettre en place un data‑center local et conformité à la loi 2004‑63"
+    },
+    {
+      "category": "technology",
+      "description": "Complexité de l'algorithme d'auto‑planification",
+      "severity": "MEDIUM",
+      "mitigation": "Phase de prototypage avec validation académique"
+    },
+    {
+      "category": "market",
+      "description": "Adoption potentiellement basse si le prix est perçu comme élevé",
+      "severity": "MEDIUM",
+      "mitigation": "Modèle freemium avec options premium abordables"
+    },
+    {
+      "category": "financial",
+      "description": "Coût de développement et de marketing supérieur aux revenus initiaux",
+      "severity": "MEDIUM",
+      "mitigation": "Lever des fonds seed et co‑financement avec universités"
+    }
+  ],
+  "opportunities": [
+    {
+      "title": "Pilote universitaire",
+      "description": "Déployer l'app dans une université publique pour valider le produit et obtenir des retours",
+      "time_horizon": "short"
+    },
+    {
+      "title": "Extension aux lycées",
+      "description": "Adapter les fonctionnalités aux contraintes du secondaire (emploi du temps plus fixe)",
+      "time_horizon": "medium"
+    },
+    {
+      "title": "Expansion régionale Maghreb",
+      "description": "Reproduire le modèle en Algérie et Maroc où la pénétration mobile est similaire",
+      "time_horizon": "long"
+    }
+  ],
+  "market_entry_signal": {
+    "timing": "now",
+    "timing_rationale": "Pénétration mobile élevée, besoin stable d'organisation et absence d'outil IA local",
+    "key_risks_to_enter": [
+      "concurrence établie",
+      "conformité aux lois de protection des données"
+    ],
+    "key_enablers": [
+      "partenariats universitaires",
+      "forte adoption mobile"
+    ],
+    "first_action": "Lancer une étude de besoins auprès d'étudiants et concevoir un MVP"
+  },
+  "regulatory": {
+    "key_regulations": [
+      "Loi n°2004‑63 sur la protection des données personnelles",
+      "RGPD pour les données d'étudiants européens éventuels"
+    ],
+    "entry_barriers": [
+      "Obligation de stockage local des données",
+      "Consentement explicite des mineurs"
+    ],
+    "compliance_risks": [
+      "Transfert transfrontalier non autorisé",
+      "Sanctions en cas de fuite de données"
+    ],
+    "regulatory_outlook": "neutral",
+    "licenses_required": [
+      "Enregistrement auprès de l'Instance Nationale de Protection des Données (INPDP)"
+    ]
+  },
+  "recommendations": [
+    {
+      "title": "Développer le moteur IA d'auto‑planification",
+      "description": "Prioriser le core produit pour créer un avantage concurrentiel durable",
+      "priority": "HIGH",
+      "rationale": "Différenciation clé identifiée dans le gap du marché"
+    },
+    {
+      "title": "Signer des accords de partenariat avec 2‑3 universités publiques",
+      "description": "Accès à une base d'utilisateurs importante et validation institutionnelle",
+      "priority": "HIGH",
+      "rationale": "Facilite l'adoption et réduit les coûts d'acquisition"
+    },
+    {
+      "title": "Mettre en place une conformité data locale dès le lancement",
+      "description": "Déployer les serveurs en Tunisie et obtenir le certificat de conformité",
+      "priority": "MEDIUM",
+      "rationale": "Évite des blocages réglementaires majeurs"
+    },
+    {
+      "title": "Lancer une version freemium avec options premium",
+      "description": "Attirer les étudiants sensibles au prix tout en monétisant les fonctionnalités avancées",
+      "priority": "MEDIUM",
+      "rationale": "Réduit le risque d'adoption faible"
+    }
+  ],
+  "go_no_go": {
+    "verdict": "GO CONDITIONNEL",
+    "confidence": 7,
+    "main_reasons": [
+      "Marché cible suffisamment grand (≈30 M USD SAM)",
+      "Forte pénétration mobile",
+      "Gap fonctionnel clairement identifié"
+    ],
+    "conditions": [
+      "Assurer la conformité aux lois de protection des données",
+      "Obtenir au moins un partenariat universitaire avant le lancement"
+    ],
+    "rationale": "Le potentiel de revenu justifie l'investissement, à condition de maîtriser les risques réglementaires et d'exécution"
+  },
+  "_meta": {
+    "idea": "Organisez vos cours automatiquement, gagnez du temps. Application mobile qui génère automatiquement un emploi du temps personnalisé avec rappels et ajustements en temps réel. Cible : Étudiants tunisiens (lycéens, universitaires). Problème : Les étudiants peinent à gérer leurs cours, devoirs et activités — stress et mauvaise organisation.",
+    "country_code": "TN",
+    "queries_used": {
+      "competitors": "application emploi du temps étudiant Tunisie",
+      "maps": "cours particuliers Tunis",
+      "tavily": "student schedule app market size revenue 2024",
+      "reddit": "student schedule app review productivity tool",
+      "news": "startup EdTech Tunisie éducation numérique",
+      "trends_1": "emploi du temps étudiant",
+      "trends_2": "organisation scolaire",
+      "youtube": "application étudiant organisation avis test",
+      "tiktok": "étudiant organisation cours",
+      "regulatory": "protection données éducation Tunisie loi"
+    },
+    "sources_fetched": [
+      "serp_competitors",
+      "serp_maps",
+      "tavily",
+      "reddit",
+      "newsapi",
+      "trends_1",
+      "trends_2",
+      "youtube",
+      "tiktok",
+      "regulatory",
+      "worldbank"
+    ],
+    "context_chars": 6322
+  }
+}
