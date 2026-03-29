@@ -1,368 +1,323 @@
 {
-  "sector": "Applications de gestion d'emploi du temps pour étudiants",
-  "kpis": {
-    "tam": 0.04,
-    "sam": 0.03,
-    "cagr_pct": 25,
-    "recommended_pricing_model": "abonnement mensuel à 2 USD ou version freemium avec fonctionnalités premium",
-    "market_maturity_score": 35
-  },
-  "som": {
-    "sam_base": 30000000,
-    "conservateur": 150000,
-    "realiste": 300000,
-    "optimiste": 900000,
-    "confidence": "medium",
-    "note": "hypothèse : population cible 15.77M × taux adoption 30% × ARPU 8USD → SAM 30M USD ; confidence medium car adoption et ARPU estimés"
-  },
-  "porter": {
-    "rivalry": {
-      "score": 3,
-      "level": "medium",
-      "summary": "Présence de plusieurs apps locales et de solutions globales crée une concurrence modérée"
+  "overview": {
+    "demande": {
+      "niveau": "modere",
+      "label": "Demande modérée pour les chips sains en Tunisie"
     },
-    "new_entrants": {
-      "score": 4,
-      "level": "high",
-      "summary": "Barrières techniques faibles et forte pénétration mobile facilitent l'entrée de nouveaux acteurs"
+    "probleme": {
+      "niveau": "discute",
+      "label": "Guerre des prix et besoin d'innovation régulièrement évoqués"
     },
-    "substitutes": {
-      "score": 3,
-      "level": "medium",
-      "summary": "Agenda papier, Google Calendar et solutions maison restent des alternatives viables"
+    "concurrence": {
+      "niveau": "saturee",
+      "label": "Concurrence saturée avec acteurs locaux peu différenciés"
     },
-    "buyers": {
-      "score": 3,
-      "level": "medium",
-      "summary": "Les étudiants sont sensibles au prix mais recherchent des fonctionnalités d'automatisation"
-    },
-    "suppliers": {
-      "score": 1,
-      "level": "low",
-      "summary": "Les plateformes iOS/Android sont les principaux fournisseurs, avec peu de pouvoir de négociation"
+    "tendance": {
+      "niveau": "stable",
+      "label": "Tendance du marché stable"
     }
   },
-  "gartner": {
-    "quadrants": {
-      "leaders": [
-        {
-          "name": "MyU By Honoris",
-          "vision_score": 8,
-          "execution_score": 9
-        }
-      ],
-      "challengers": [
-        {
-          "name": "Emploi Du Temps Agenda",
-          "vision_score": 6,
-          "execution_score": 7
-        }
-      ],
-      "visionaries": [
-        {
-          "name": "Bright Campus",
-          "vision_score": 8,
-          "execution_score": 5
-        }
-      ],
-      "niche_players": [
-        {
-          "name": "ISIMG Mobile",
-          "vision_score": 4,
-          "execution_score": 4
-        }
-      ]
-    },
-    "our_position": {
-      "quadrant": "visionaries",
-      "vision_score": 7,
-      "execution_score": 4,
-      "rationale": "Produit à forte capacité d'innovation (IA auto‑génération) mais ressources limitées pour le lancement"
-    }
-  },
-  "competitors": [
-    {
-      "name": "Emploi Du Temps Agenda",
-      "url": "https://apps.apple.com/tn/app/emploi-du-temps-agenda/id489566160?l=fr-FR",
-      "type": "direct",
-      "strengths": [
-        "Interface simple",
-        "Disponible sur iOS"
-      ],
-      "weaknesses": [
-        "Pas d'ajustement en temps réel",
-        "Pas d'intégration IA"
-      ],
-      "threat_score": 75,
-      "data_source": "App Store"
-    },
-    {
-      "name": "MyU By Honoris",
-      "url": "https://play.google.com/store/apps/details?id=com.honoris.myu&hl=ln",
-      "type": "direct",
-      "strengths": [
-        "Intégration avec classes virtuelles",
-        "Base d'utilisateurs universitaires"
-      ],
-      "weaknesses": [
-        "Fonctionnalités limitées aux universités partenaires",
-        "Pas d'auto‑génération complète"
-      ],
-      "threat_score": 100,
-      "data_source": "Google Play"
-    },
-    {
-      "name": "Bright Campus",
-      "url": "https://www.facebook.com/INATunisie/posts/chers-%C3%A9tudiants-afin-de-vous-faciliter-la-consultation-de-lemploi-du-temps-et-le/594708869056196/",
-      "type": "direct",
-      "strengths": [
-        "Support institutionnel",
-        "Calendrier universitaire officiel"
-      ],
-      "weaknesses": [
-        "Interface vieillissante",
-        "Manque d'IA"
-      ],
-      "threat_score": 65,
-      "data_source": "Facebook"
-    },
-    {
-      "name": "ISIMG Mobile",
-      "url": "https://isimg.rnu.tn/fra/pages/224/",
-      "type": "indirect",
-      "strengths": [
-        "Informations d'absences et notes",
-        "Ciblage d'une école spécifique"
-      ],
-      "weaknesses": [
-        "Couverture limitée à un campus",
-        "Pas d'auto‑planification"
-      ],
-      "threat_score": 50,
-      "data_source": "Site institutionnel"
-    }
-  ],
-  "competitive_positioning": {
-    "main_gap": "Absence d'auto‑génération dynamique et de synchronisation en temps réel",
-    "differentiation_angle": "IA qui crée et ajuste automatiquement l'emploi du temps selon les contraintes de l'étudiant",
-    "weakest_competitor": "ISIMG Mobile – couverture très restreinte et fonctionnalités limitées",
-    "local_advantage": "Pénétration mobile très élevée (134 % d'appareils par habitant) et forte urbanisation (70 %)",
-    "threat_level": "medium"
-  },
-  "trends": [
-    {
-      "keyword": "emploi du temps étudiant",
-      "direction": "STABLE",
-      "signal_strength": "MEDIUM",
-      "insight": "Intérêt constant, aucune forte hausse ou baisse, indique un besoin stable mais non explosif.",
-      "data_source": "Google Trends"
-    },
-    {
-      "keyword": "organisation scolaire",
-      "direction": "STABLE",
-      "signal_strength": "MEDIUM",
-      "insight": "Recherche régulière, montre que les étudiants cherchent des outils d'organisation.",
-      "data_source": "Google Trends"
-    }
-  ],
-  "voice_of_customer": {
-    "top_pain_points": [
-      "Gestion manuelle des cours",
-      "Oublis de devoirs et d'examens",
-      "Manque de rappels en temps réel"
-    ],
-    "desired_features": [
-      "Génération automatique d'emploi du temps",
-      "Mise à jour instantanée en cas de changement",
-      "Notifications push personnalisées"
-    ],
-    "competitor_frustrations": [
-      "Interface peu intuitive",
-      "Absence d'intégration IA",
-      "Mise à jour lente des emplois du temps"
-    ],
-    "youtube_voc_signals": [
-      "vidéo \"7 apps qui ont changé ma vie\" mentionne les planners comme besoin croissant"
-    ],
-    "tiktok_signals": [
-      "courtes démonstrations d'apps de productivité étudiantes avec >10k vues"
-    ],
-    "sources": [
-      "Reddit",
-      "YouTube",
-      "TikTok"
+  "tendances": {
+    "direction": "STABLE",
+    "signal_strength": "LOW",
+    "peak_period": null,
+    "rising_queries": [],
+    "hashtags": [],
+    "hashtags_disponibles": false,
+    "viral_score": "NONE",
+    "viral_signals": [],
+    "sector_context": "Le secteur concerne les snacks à base de légumes sains destinés au marché tunisien, avec un intérêt croissant pour les chips végétales. La réglementation tunisienne impose des obligations de sécurité sanitaire et de conformité aux normes alimentaires.",
+    "news_signals": [],
+    "regulatory_barriers": [
+      "le manquement à l’obligation générale de la sécurité sanitaire",
+      "texte législatif et réglementaire relatif aux produits alimentaires en Tunisie",
+      "l’obligation de sécurité : les distributeurs doivent présenter des produits conformes aux normes et réglementations"
     ]
+  },
+  "market_voc": {
+    "demand_level": "modere",
+    "demand_summary": "Le marché tunisien des chips sains montre un potentiel de croissance mais fait face à une forte concurrence prix et à des attentes non satisfaites en termes de goût et de praticité. Les consommateurs expriment des frustrations liées à la saveur, au packaging et au rapport qualité‑prix.",
+    "top_voc": [
+      {
+        "theme": "Guerre des prix et marges comprimées",
+        "recurrence": "moderee",
+        "citation": "Le marché des chips, confronté à une concurrence très rude entre diverses marques en lice pour des parts de marché, tourne souvent à la saturation avec une guerre des prix qui s'ensuit, ce qui a un impact négatif sur les marges bénéficiaires et augmente la pression sur les marques pour se différencier par l'innovation de produits ou des stratégies de prix compétitifs.",
+        "source": "tavily"
+      },
+      {
+        "theme": "Besoin d'innovation pour se différencier",
+        "recurrence": "moderee",
+        "citation": "Le marché des chips, confronté à une concurrence très rude entre diverses marques en lice pour des parts de marché, tourne souvent à la saturation avec une guerre des prix qui s'ensuit, ce qui a un impact négatif sur les marges bénéficiaires et augmente la pression sur les marques pour se différencier par l'innovation de produits ou des stratégies de prix compétitifs.",
+        "source": "tavily"
+      },
+      {
+        "theme": "Déception du goût / saveur non authentique",
+        "recurrence": "faible",
+        "citation": "Just tried Craize Sweet Corn and it tastes like sweetened Kellogg's cereal pressed into a wafer. I just find the labeling “authentic flavor”",
+        "source": "reddit"
+      },
+      {
+        "theme": "Problèmes de fermeture du packaging",
+        "recurrence": "faible",
+        "citation": "We love the refillable pouches! We got Haaka brand, my only complaint is the tops don't screw on.",
+        "source": "reddit"
+      }
+    ],
+    "personas": [
+      {
+        "segment": "Jeunes actifs urbains soucieux de santé",
+        "tranche_age": "25-40 ans",
+        "comportement": "Achète des snacks à emporter pour le travail, recherche des produits perçus comme sains et pratiques.",
+        "pain_points": [
+          "Goût perçu comme artificiel ou peu authentique",
+          "Prix élevés comparés aux snacks classiques",
+          "Fermeture du sachet difficile"
+        ],
+        "motivations": [
+          "Maintenir une alimentation équilibrée",
+          "Gain de temps et praticité",
+          "Image de consommateur moderne et responsable"
+        ],
+        "signal_niveau": "modere"
+      },
+      {
+        "segment": "Consommateurs véganes / flexitariens",
+        "tranche_age": "non détecté",
+        "comportement": "Recherche des alternatives végétales, lit attentivement les étiquettes et les allégations de santé.",
+        "pain_points": [
+          "Offre limitée de chips 100 % végétales",
+          "Saveur parfois jugée insuffisante"
+        ],
+        "motivations": [
+          "Éthique animale",
+          "Santé et bien‑être"
+        ],
+        "signal_niveau": "faible"
+      },
+      {
+        "segment": "Familles à revenu moyen",
+        "tranche_age": "non détecté",
+        "comportement": "Achète en grande quantité pour les enfants, sensible aux promotions et au rapport qualité‑prix.",
+        "pain_points": [
+          "Prix perçu comme trop élevé pour un snack quotidien",
+          "Manque de produits sains à prix abordable"
+        ],
+        "motivations": [
+          "Offrir des encas plus sains aux enfants",
+          "Respecter le budget familial"
+        ],
+        "signal_niveau": "modere"
+      }
+    ],
+    "macro": {
+      "population": 12277109.0,
+      "gdp_per_capita": 4181.14,
+      "internet_pct": 72.35,
+      "mobile_per100": 134.14,
+      "urban_pct": 70.36,
+      "youth_pct": 66.43
+    },
+    "news_signals": []
+  },
+  "competitor": {
+    "top_competitors": [
+      {
+        "nom": "Healthy & Bnin",
+        "type": "digital",
+        "faiblesse_principale": "Marque locale peu présente en ligne — faiblesses non documentées",
+        "weaknesses": [],
+        "key_strengths": [],
+        "positioning": "Marque tunisienne proposant des snacks et petits‑déjeuners sains à base de dattes, mise en avant de la nutrition et livraison sur le Grand Tunis."
+      },
+      {
+        "nom": "Kartago Dattes",
+        "type": "digital",
+        "faiblesse_principale": "Marque locale peu présente en ligne — faiblesses non documentées",
+        "weaknesses": [],
+        "key_strengths": [],
+        "positioning": "Producteur et vendeur de dattes et de granola, présent sur les réseaux sociaux et ciblant les consommateurs cherchant des encas typiquement tunisiens et sains."
+      },
+      {
+        "nom": "ILEYCOM",
+        "type": "digital",
+        "faiblesse_principale": "Marque locale peu présente en ligne — faiblesses non documentées",
+        "weaknesses": [],
+        "key_strengths": [],
+        "positioning": "Boutique en ligne spécialisée dans les snacks sains (cookies à l'avoine, fruits séchés, sans additifs) pour toute la famille, mise en avant du naturel et de l’équilibre."
+      },
+      {
+        "nom": "Tunisie Bio",
+        "type": "local",
+        "faiblesse_principale": "Marque locale peu présente en ligne — faiblesses non documentées",
+        "weaknesses": [],
+        "key_strengths": [],
+        "positioning": "Magasin d’alimentation bio à Mégrine, proposant une gamme de produits sains dont des snacks bio, avec une forte présence physique et une réputation locale."
+      },
+      {
+        "nom": "Promofood Tunisie",
+        "type": "local",
+        "faiblesse_principale": "Marque locale peu présente en ligne — faiblesses non documentées",
+        "weaknesses": [],
+        "key_strengths": [],
+        "positioning": "Fournisseur de produits alimentaires basé à Tunis, incluant des options de snacks sains pour la distribution locale et les points de vente."
+      }
+    ],
+    "opportunite_niveau": "saturee",
+    "opportunite_summary": "Le marché tunisien des snacks sains compte plusieurs acteurs locaux et digitaux, mais aucune faiblesse majeure n’est clairement documentée. La différenciation devra donc s’appuyer sur l’innovation produit, la transparence des ingrédients et une expérience d’achat simplifiée."
   },
   "swot": {
-    "strengths": [
-      "Pénétration mobile élevée",
-      "Connaissance du marché tunisien",
-      "Concept IA différenciant"
+    "forces": [
+      {
+        "point": "Demande existante et stable qui assure un volume de consommation minimum",
+        "source": "tendances.direction"
+      },
+      {
+        "point": "Marché saturé mais sans leader clairement dominant, offrant de la place pour une offre différenciée",
+        "source": "tendances.direction"
+      }
     ],
-    "weaknesses": [
-      "Ressources de développement limitées",
-      "Notoriété de marque faible",
-      "Dépendance à la conformité des données"
+    "faiblesses": [
+      {
+        "point": "Faible présence en ligne des concurrents locaux, limitant la visibilité digitale et les ventes e‑commerce",
+        "source": "competitor.top_competitors"
+      }
     ],
-    "opportunities": [
-      "Partenariats avec universités publiques",
-      "Croissance de l'EdTech en Afrique du Nord",
-      "Monétisation via abonnement premium"
+    "opportunites": [
+      {
+        "point": "Guerre des prix crée une opportunité de se différencier par une proposition de valeur premium (goût authentique, packaging pratique) justifiant un prix plus élevé",
+        "source": "market_voc.top_voc[0]"
+      }
     ],
-    "threats": [
-      "Réglementation stricte sur les données personnelles",
-      "Concurrence d'apps établies",
-      "Réticence à payer chez les étudiants"
+    "menaces": [
+      {
+        "point": "Obligations strictes de sécurité sanitaire et conformité aux normes alimentaires tunisiennes",
+        "source": "tendances.regulatory_barriers"
+      }
     ]
   },
-  "risks": [
+  "risques": [
     {
-      "category": "competition",
-      "description": "Présence de plusieurs apps locales déjà adoptées",
-      "severity": "HIGH",
-      "mitigation": "Développer des fonctionnalités IA exclusives et nouer des accords avec établissements"
+      "type": "reglementaire",
+      "description": "Non‑conformité aux exigences de sécurité sanitaire et aux textes législatifs sur les produits alimentaires en Tunisie",
+      "source": "tendances.regulatory_barriers"
     },
     {
-      "category": "regulatory",
-      "description": "Obligations de localisation et protection des données personnelles",
-      "severity": "MEDIUM",
-      "mitigation": "Mettre en place un data‑center local et conformité à la loi 2004‑63"
+      "type": "macro",
+      "description": "Pouvoir d'achat limité (GDP per capita ~4 200 USD) et sensibilité forte au prix parmi les consommateurs tunisiens",
+      "source": "market_voc.macro"
     },
     {
-      "category": "technology",
-      "description": "Complexité de l'algorithme d'auto‑planification",
-      "severity": "MEDIUM",
-      "mitigation": "Phase de prototypage avec validation académique"
-    },
-    {
-      "category": "market",
-      "description": "Adoption potentiellement basse si le prix est perçu comme élevé",
-      "severity": "MEDIUM",
-      "mitigation": "Modèle freemium avec options premium abordables"
-    },
-    {
-      "category": "financial",
-      "description": "Coût de développement et de marketing supérieur aux revenus initiaux",
-      "severity": "MEDIUM",
-      "mitigation": "Lever des fonds seed et co‑financement avec universités"
+      "type": "concurrentiel",
+      "description": "Multiplicité d’acteurs locaux avec peu de différenciation et faible visibilité digitale, rendant la conquête de parts de marché difficile",
+      "source": "competitor.top_competitors"
     }
   ],
-  "opportunities": [
+  "recommandations": [
     {
-      "title": "Pilote universitaire",
-      "description": "Déployer l'app dans une université publique pour valider le produit et obtenir des retours",
-      "time_horizon": "short"
+      "priorite": 1,
+      "action": "Développer une gamme premium de chips végétales avec des saveurs authentiques et un packaging refermable, afin de justifier un positionnement prix supérieur et répondre à la demande d'innovation.",
+      "source": "market_voc.top_voc[0]"
     },
     {
-      "title": "Extension aux lycées",
-      "description": "Adapter les fonctionnalités aux contraintes du secondaire (emploi du temps plus fixe)",
-      "time_horizon": "medium"
+      "priorite": 2,
+      "action": "Construire une stratégie digitale forte (site e‑commerce, réseaux sociaux, influenceurs) pour combler le vide de visibilité en ligne des concurrents et faciliter l’achat pratique.",
+      "source": "competitor.opportunite_summary"
     },
     {
-      "title": "Expansion régionale Maghreb",
-      "description": "Reproduire le modèle en Algérie et Maroc où la pénétration mobile est similaire",
-      "time_horizon": "long"
+      "priorite": 3,
+      "action": "Mettre en place un dispositif de veille sur les requêtes émergentes (social listening, forums) afin d’identifier rapidement les nouvelles attentes gustatives ou fonctionnelles.",
+      "source": "tendances.rising_queries"
     }
   ],
-  "market_entry_signal": {
-    "timing": "now",
-    "timing_rationale": "Pénétration mobile élevée, besoin stable d'organisation et absence d'outil IA local",
-    "key_risks_to_enter": [
-      "concurrence établie",
-      "conformité aux lois de protection des données"
-    ],
-    "key_enablers": [
-      "partenariats universitaires",
-      "forte adoption mobile"
-    ],
-    "first_action": "Lancer une étude de besoins auprès d'étudiants et concevoir un MVP"
-  },
-  "regulatory": {
-    "key_regulations": [
-      "Loi n°2004‑63 sur la protection des données personnelles",
-      "RGPD pour les données d'étudiants européens éventuels"
-    ],
-    "entry_barriers": [
-      "Obligation de stockage local des données",
-      "Consentement explicite des mineurs"
-    ],
-    "compliance_risks": [
-      "Transfert transfrontalier non autorisé",
-      "Sanctions en cas de fuite de données"
-    ],
-    "regulatory_outlook": "neutral",
-    "licenses_required": [
-      "Enregistrement auprès de l'Instance Nationale de Protection des Données (INPDP)"
-    ]
-  },
-  "recommendations": [
-    {
-      "title": "Développer le moteur IA d'auto‑planification",
-      "description": "Prioriser le core produit pour créer un avantage concurrentiel durable",
-      "priority": "HIGH",
-      "rationale": "Différenciation clé identifiée dans le gap du marché"
+  "data_quality": {
+    "score_global": 88,
+    "interpretation": "élevée",
+    "sections": {
+      "tendances": {
+        "direction": {
+          "status": "api",
+          "ok": true
+        },
+        "rising_queries": {
+          "status": "absent",
+          "ok": false
+        },
+        "sector_context": {
+          "status": "api",
+          "ok": true
+        },
+        "regulatory_barriers": {
+          "status": "api",
+          "ok": true
+        },
+        "tiktok": {
+          "status": "desactive",
+          "ok": false
+        }
+      },
+      "market_voc": {
+        "top_voc": {
+          "status": "api",
+          "ok": true
+        },
+        "personas": {
+          "status": "llm_inference",
+          "ok": true,
+          "note": "personas inférés par LLM depuis les données VOC"
+        },
+        "macro": {
+          "status": "api",
+          "ok": true
+        },
+        "news": {
+          "status": "absent",
+          "ok": false
+        }
+      },
+      "competitor": {
+        "top_competitors": {
+          "status": "api",
+          "ok": true,
+          "count": 5
+        },
+        "avec_weaknesses": {
+          "status": "llm_inference",
+          "ok": false,
+          "count": 0,
+          "note": "weaknesses extraites par LLM depuis les snippets"
+        },
+        "avec_strengths": {
+          "status": "llm_inference",
+          "ok": false,
+          "count": 0,
+          "note": "key_strengths extraites par LLM depuis les snippets"
+        }
+      }
     },
-    {
-      "title": "Signer des accords de partenariat avec 2‑3 universités publiques",
-      "description": "Accès à une base d'utilisateurs importante et validation institutionnelle",
-      "priority": "HIGH",
-      "rationale": "Facilite l'adoption et réduit les coûts d'acquisition"
-    },
-    {
-      "title": "Mettre en place une conformité data locale dès le lancement",
-      "description": "Déployer les serveurs en Tunisie et obtenir le certificat de conformité",
-      "priority": "MEDIUM",
-      "rationale": "Évite des blocages réglementaires majeurs"
-    },
-    {
-      "title": "Lancer une version freemium avec options premium",
-      "description": "Attirer les étudiants sensibles au prix tout en monétisant les fonctionnalités avancées",
-      "priority": "MEDIUM",
-      "rationale": "Réduit le risque d'adoption faible"
+    "legende": {
+      "api": "valeur extraite directement depuis une API — vérifiable",
+      "llm_inference": "valeur inférée par le LLM à partir des données brutes",
+      "absent": "donnée non disponible — API n'a pas retourné de résultat",
+      "desactive": "source désactivée dans cette version"
     }
-  ],
-  "go_no_go": {
-    "verdict": "GO CONDITIONNEL",
-    "confidence": 7,
-    "main_reasons": [
-      "Marché cible suffisamment grand (≈30 M USD SAM)",
-      "Forte pénétration mobile",
-      "Gap fonctionnel clairement identifié"
-    ],
-    "conditions": [
-      "Assurer la conformité aux lois de protection des données",
-      "Obtenir au moins un partenariat universitaire avant le lancement"
-    ],
-    "rationale": "Le potentiel de revenu justifie l'investissement, à condition de maîtriser les risques réglementaires et d'exécution"
   },
-  "_meta": {
-    "idea": "Organisez vos cours automatiquement, gagnez du temps. Application mobile qui génère automatiquement un emploi du temps personnalisé avec rappels et ajustements en temps réel. Cible : Étudiants tunisiens (lycéens, universitaires). Problème : Les étudiants peinent à gérer leurs cours, devoirs et activités — stress et mauvaise organisation.",
-    "country_code": "TN",
-    "queries_used": {
-      "competitors": "application emploi du temps étudiant Tunisie",
-      "maps": "cours particuliers Tunis",
-      "tavily": "student schedule app market size revenue 2024",
-      "reddit": "student schedule app review productivity tool",
-      "news": "startup EdTech Tunisie éducation numérique",
-      "trends_1": "emploi du temps étudiant",
-      "trends_2": "organisation scolaire",
-      "youtube": "application étudiant organisation avis test",
-      "tiktok": "étudiant organisation cours",
-      "regulatory": "protection données éducation Tunisie loi"
-    },
-    "sources_fetched": [
-      "serp_competitors",
-      "serp_maps",
+  "meta": {
+    "projet": "Chips de légumes locaux healthy et vegan",
+    "secteur": "Healthy Food",
+    "geo": "TN",
+    "date_analyse": "2026-03-29",
+    "duree_secondes": 30.13,
+    "sources": [
+      "google_trends",
       "tavily",
-      "reddit",
-      "newsapi",
-      "trends_1",
-      "trends_2",
+      "reddit_via_tavily",
       "youtube",
-      "tiktok",
-      "regulatory",
-      "worldbank"
+      "gnews",
+      "worldbank",
+      "serpapi_search",
+      "serpapi_maps"
     ],
-    "context_chars": 6322
+    "appels_llm": 2,
+    "appels_api": 10
   }
 }
