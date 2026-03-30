@@ -1,9 +1,13 @@
 import asyncio
 import json
-import sys
 import re
+import sys
+from pathlib import Path
 
-sys.path.insert(0, ".")
+# Racine backend-ai (fonctionne depuis Brand AI ou backend-ai)
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+if str(_BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_ROOT))
 
 from agents.base_agent import PipelineState
 from agents.market_analysis import MarketAnalysisAgent
@@ -13,11 +17,11 @@ from agents.market_analysis import MarketAnalysisAgent
 # ══════════════════════════════════════════════════════
 
 IDEA = {
-    "short_pitch": "Healthy meal delivery platform",
-    "solution_description": "Platform that delivers healthy meals prepared by local chefs with personalized nutrition plans",
-    "target_users": "Busy professionals, fitness enthusiasts, and families",
-    "problem": "People lack time to cook healthy meals and rely on unhealthy fast food",
-    "sector": "FoodTech / Delivery",
+    "short_pitch": "AI meeting assistant",
+    "solution_description": "AI tool that records, summarizes, and extracts action items from meetings automatically",
+    "target_users": "Remote teams, startups, managers",
+    "problem": "People waste time in meetings and forget key decisions and tasks",
+    "sector": "SaaS / Productivity",
     "country_code": "US",
     "language": "en",
 }
@@ -25,6 +29,7 @@ IDEA = {
 # ══════════════════════════════════════════════════════
 # BUILD STATE
 # ══════════════════════════════════════════════════════
+
 
 def build_state_from_idea(idea: dict) -> PipelineState:
     state = PipelineState(
@@ -43,6 +48,7 @@ def build_state_from_idea(idea: dict) -> PipelineState:
 # SAFE FILE NAME
 # ══════════════════════════════════════════════════════
 
+
 def safe_filename(text: str) -> str:
     return re.sub(r"[^a-zA-Z0-9_]", "_", text)
 
@@ -50,6 +56,7 @@ def safe_filename(text: str) -> str:
 # ══════════════════════════════════════════════════════
 # MAIN TEST
 # ══════════════════════════════════════════════════════
+
 
 async def main():
     agent = MarketAnalysisAgent()
@@ -68,20 +75,16 @@ async def main():
 
     report = state.market_analysis
 
-    # ── VALIDATION OUTPUT ─────────────────────
     if not report:
         print("❌ Aucun résultat généré")
         return
 
-    # Debug rapide
     print("\n🔍 DEBUG CHECK")
     print("Tendances OK :", bool(report.get("tendances")))
     print("VOC OK       :", bool(report.get("market_voc")))
     print("Competitor OK:", bool(report.get("competitor")))
 
-    # ── SAVE ──────────────────────────────────
     filename = f"market_analysis_{safe_filename(IDEA['sector'])}.json"
-
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
@@ -90,7 +93,6 @@ async def main():
 
     print(f"\n✅ Rapport sauvegardé : {filename}")
 
-    # ── WARNINGS ──────────────────────────────
     if report.get("data_quality", {}).get("warnings"):
         print("\n⚠ WARNINGS :")
         for w in report["data_quality"]["warnings"]:
@@ -99,8 +101,6 @@ async def main():
     if state.errors:
         print("\n❌ Erreurs pipeline :", state.errors)
 
-
-# ══════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     asyncio.run(main())

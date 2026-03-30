@@ -9,6 +9,12 @@ Tu reçois les outputs de :
 OBJECTIF :
 Produire une synthèse STRATÉGIQUE claire, basée uniquement sur les données.
 
+IMPORTANT :
+
+* Ne jamais générer de chiffres financiers (ex: milliards, croissance %)
+* Utiliser uniquement les chiffres présents dans les données sources
+* Si aucun chiffre → ne rien inventer
+
 ══════════════════════════════════════
 RÈGLES GÉNÉRALES
 ══════════════════════════════════════

@@ -120,6 +120,9 @@ class SignalAgent(BaseAgent):
             )
             data = self._parse_json(llm_response)
             data = self._validate_output(data, raw_data)
+            data["rising_queries"] = self._clean_rising_queries(
+                data.get("rising_queries", [])
+            )
 
             output = Tendances(**data)
             self._log_success(output)
@@ -127,8 +130,10 @@ class SignalAgent(BaseAgent):
         except Exception as e:
             self._log_error(e)
             # Fallback complet sans LLM
-            fallback_rising = self._fallback_rising_queries(
-                {"trends_merged": {}, "autocomplete_merged": {}, "tavily_trends_merged": {}}
+            fallback_rising = self._clean_rising_queries(
+                self._fallback_rising_queries(
+                    {"trends_merged": {}, "autocomplete_merged": {}, "tavily_trends_merged": {}}
+                )
             )
             fallback = {
                 "direction": "STABLE",
@@ -144,6 +149,35 @@ class SignalAgent(BaseAgent):
                 "regulatory_barriers": [],
             }
             return Tendances(**fallback).dict()
+
+    def _clean_rising_queries(self, queries):
+        INVALID_TERMS = ["news", "market", "stock", "brand", "evaluation", "business"]
+
+        cleaned = []
+
+        for q in queries or []:
+            if not q:
+                continue
+
+            q = str(q).strip()
+
+            if len(q) < 5:
+                continue
+
+            if q.isdigit():
+                continue
+
+            if "|" in q:
+                continue
+
+            lower = q.lower()
+
+            if any(term in lower for term in INVALID_TERMS):
+                continue
+
+            cleaned.append(q)
+
+        return cleaned[:5]
 
     def _validate_queries(self, queries, idea, sector):
         q = dict(queries or {})

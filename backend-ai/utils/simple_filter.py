@@ -3,10 +3,26 @@ def simple_filter(items, max_items=8, max_chars=300):
         return []
 
     results = []
-    for item in items[:max_items]:
+
+    for item in items:
+        title = (item.get("title") or "").strip()
+        snippet = (item.get("snippet") or "").strip()
+
+        # ignorer snippets trop courts
+        if len(snippet) < 30:
+            continue
+
+        # ignorer snippets bruités
+        if snippet.lower().startswith(("stated", "pt using", "de access", "ave to")):
+            continue
+
         results.append({
-            "title": (item.get("title") or "")[:120],
-            "snippet": (item.get("snippet") or "")[:max_chars],
+            "title": title[:120],
+            "snippet": snippet[:max_chars],
             "url": item.get("url", "")
         })
+
+        if len(results) >= max_items:
+            break
+
     return results
