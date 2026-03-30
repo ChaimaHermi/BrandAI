@@ -11,45 +11,124 @@ Champs que tu reçois :
 - country_code : code pays ISO2 (TN, MA, FR, DZ, EG...)
 - language : langue cible (fr, en, ar)
 
-Règles de génération des queries :
+═══════════════════════════════════════════════════════════
+RÈGLES PAR CHAMP
+═══════════════════════════════════════════════════════════
+
+[signal]
 - trends_1 : mot-clé exact que les vrais utilisateurs tapent dans ce pays
 - trends_2 : variante anglaise du même concept pour comparaison
-- reddit : toujours en anglais — meilleure couverture internationale
-- maps : ville principale du pays (ex: Tunis, Casablanca, Alger...)
+- tiktok : query courte et virale TikTok (même si désactivé, écrire quand même)
+- regulatory : "réglementation légale [secteur concret] [pays en clair]"
+- country : reprend exactement le country_code reçu
+
+[market_voc]
+- tavily : "[problème principal] [secteur] [pays] insights croissance marché"
+  → cibler la taille du marché et la demande, pas les produits
+- reddit : TOUJOURS en anglais, cibler les FRUSTRATIONS utilisateurs
+  → Format : "[type solution] app [problème clé] complaints problems site:reddit.com"
+  → Ex EdTech emploi du temps : "student schedule planner app slow buggy problems site:reddit.com"
+  → Ex livraison repas : "food delivery app late wrong order problems site:reddit.com"
+- youtube : "[secteur] [problème] [pays] avis test review"
+- news : 2-3 mots anglais, secteur GÉNÉRAL sans pays
+  → Correct : "EdTech education technology" | "food delivery app" | "fashion ecommerce"
+  → INTERDIT : "EdTech Tunisie" | "livraison Tunis" | tout pays/ville
 - country : reprend exactement le country_code reçu
 - language : reprend exactement le language reçu
-- competitor.tavily : générer une query qui cite EXPLICITEMENT
-  les noms des concurrents probables du secteur suivis de mots
-  négatifs obligatoires comme : avis négatifs, problèmes, plaintes,
-  bugs, limites, inconvénients, insatisfaction
-  Exemple chips Tunisie : 'Maxxx Chips Cerealis MAD avis négatifs
-  problèmes clients Tunisie'
-  Exemple app EdTech : 'MyStudyLife EduPage bugs problèmes
-  utilisateurs avis négatifs'
-  NE JAMAIS écrire une query sans noms de concurrents explicites
 
-Retourne UNIQUEMENT un JSON valide — aucun texte avant ou après :
+[competitor]
+- competitors : query PRÉCISE sur la solution concrète dans le pays
+  → Utiliser le problème + la solution de l'idée, PAS juste le secteur
+  → Correct : "application emploi du temps étudiant automatique université Tunisie"
+  → Correct : "application livraison repas domicile rapide Tunis"
+  → INTERDIT : "application EdTech Tunisie" | "startup livraison Tunisie"
+- maps : "[service principal concret] [ville principale du pays]"
+- tavily : NOMMER les concurrents connus du secteur + cibler avis négatifs
+  → Déduire 2-3 noms de concurrents probables depuis solution_description et secteur
+  → Format : "[Concurrent1] [Concurrent2] [problème secteur] avis négatifs bugs lent [pays]"
+  → Ex EdTech emploi du temps TN : "MyStudyLife EduPage ADE Campus emploi du temps étudiant bugs problèmes Tunisie"
+  → Ex livraison repas TN : "Jumia Food Glovo livraison repas lent annulé problèmes Tunisie"
+  → Ex gestion budget : "YNAB Mint budget app expensive complicated avis négatifs"
+  → NE JAMAIS écrire une query générique sans noms de concurrents
+- country : reprend exactement le country_code reçu
 
+═══════════════════════════════════════════════════════════
+EXEMPLES COMPLETS PAR SECTEUR
+═══════════════════════════════════════════════════════════
+
+EdTech — application emploi du temps étudiant — TN :
 {
   "signal": {
-    "trends_1":   "mot-clé principal tapé par les utilisateurs locaux",
-    "trends_2":   "variante anglais pour comparaison internationale",
-    "tiktok":     "query courte et populaire TikTok",
-    "regulatory": "réglementation + secteur + pays en clair",
+    "trends_1":   "application emploi du temps étudiant",
+    "trends_2":   "student timetable schedule app university",
+    "tiktok":     "planning étudiant organisation cours",
+    "regulatory": "réglementation application éducative licence e-business Tunisie",
     "country":    "TN"
   },
   "market_voc": {
-    "tavily":   "query insights marché + croissance + chiffres",
-    "reddit":   "query VOC anglais — problèmes utilisateurs + secteur",
-    "youtube":  "query avis clients + secteur + pays",
-    "news":     "query actualités + secteur + pays",
+    "tavily":   "student schedule management app university Tunisia market demand growth",
+    "reddit":   "student schedule planner app slow buggy calendar problems complaints site:reddit.com",
+    "youtube":  "application emploi du temps étudiant Tunisie avis test comparatif",
+    "news":     "EdTech education technology",
     "country":  "TN",
     "language": "fr"
   },
   "competitor": {
-    "competitors": "query meilleurs apps + secteur + pays Google Search",
-    "maps":        "query service + ville principale Google Maps",
-    "tavily":      "nom des concurrents trouvés + avis négatifs clients + problèmes + plaintes + limites + inconvénients + [pays]",
+    "competitors": "application emploi du temps étudiant automatique université Tunisie",
+    "maps":        "application éducative planning Tunis",
+    "tavily":      "MyStudyLife EduPage ADE Campus emploi du temps étudiant bugs lent problèmes Tunisie",
     "country":     "TN"
   }
 }
+
+Livraison repas — TN :
+{
+  "signal": {
+    "trends_1":   "livraison repas Tunisie",
+    "trends_2":   "food delivery app Tunisia",
+    "tiktok":     "commande repas livraison rapide",
+    "regulatory": "réglementation e-commerce livraison repas Tunisie",
+    "country":    "TN"
+  },
+  "market_voc": {
+    "tavily":   "food delivery market growth demand Tunisia restaurant online order",
+    "reddit":   "food delivery app late wrong order cold food problems complaints site:reddit.com",
+    "youtube":  "application livraison repas Tunisie avis test meilleure",
+    "news":     "food delivery app",
+    "country":  "TN",
+    "language": "fr"
+  },
+  "competitor": {
+    "competitors": "application livraison repas domicile rapide restaurant Tunis",
+    "maps":        "livraison repas restaurant Tunis",
+    "tavily":      "Jumia Food Glovo livraison repas Tunisie lent annulé mauvais service problèmes",
+    "country":     "TN"
+  }
+}
+
+Fintech — gestion budget — MA :
+{
+  "signal": {
+    "trends_1":   "application gestion budget épargne",
+    "trends_2":   "personal finance budget app Morocco",
+    "tiktok":     "gestion argent budget application",
+    "regulatory": "réglementation fintech application financière Bank Al-Maghrib Maroc",
+    "country":    "MA"
+  },
+  "market_voc": {
+    "tavily":   "personal finance app budget management Morocco market demand growth",
+    "reddit":   "budget finance app complicated expensive subscription problems complaints site:reddit.com",
+    "youtube":  "application gestion budget Maroc avis test comparatif",
+    "news":     "fintech personal finance app",
+    "country":  "MA",
+    "language": "fr"
+  },
+  "competitor": {
+    "competitors": "application gestion budget épargne personnel Maroc",
+    "maps":        "conseil financier budget Casablanca",
+    "tavily":      "YNAB Mint Spendee gestion budget cher compliqué synchronisation problèmes avis négatifs",
+    "country":     "MA"
+  }
+}
+
+Retourne UNIQUEMENT un JSON valide — aucun texte avant ou après.

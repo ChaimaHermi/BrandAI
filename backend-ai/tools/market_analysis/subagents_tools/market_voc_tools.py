@@ -7,6 +7,7 @@ import asyncio, hashlib, logging, os, shelve, tempfile, time
 from datetime import datetime, timedelta
 from typing import Any
 import httpx
+import config.settings  # charge .env racine (GNEWS_API_KEY, TAVILY, YOUTUBE…)
 from config.market_analysis_config import LIMITS, DELAYS, CACHE_TTL, SEMAPHORES
 
 logger      = logging.getLogger("brandai.market_voc_tools")
@@ -191,35 +192,24 @@ async def fetch_newsapi(query: str, language: str = "fr") -> dict:
     k = _key("gnews", query, language)
     if c := _cget(k): return c
 
-    api_key = os.getenv("GNEWS_API_KEY") or os.getenv("GNEWSAPI_KEY") or ""
+    api_key = (
+        os.getenv("GNEWS_API_KEY") or os.getenv("GNEWSAPI_KEY") or ""
+    ).strip()
     if not api_key:
         logger.warning("[market_voc_tools] GNEWS_API_KEY ou GNEWSAPI_KEY manquant — ajoutez-le dans .env")
         return {"source": "gnews", "query": query, "articles": []}
 
-    # GNews supporte lang=fr/en/ar et max=10 sur le plan gratuit
-    lang_map = {"fr": "fr", "en": "en", "ar": "ar"}
-    lang = lang_map.get(language, "fr")
+    # Simplifier la query — garder seulement les 3 premiers mots
+    simple_query = " ".join(query.split()[:3])
 
-    # Essaie d'abord dans la langue cible
     data = await _get("https://gnews.io/api/v4/search", {
-        "q":      query,
-        "lang":   lang,
+        "q":      simple_query,
+        "lang":   "en",
         "max":    min(LIMITS["newsapi_results"], 10),
         "apikey": api_key,
     }, _SEM_NEWS, DELAYS["gnews"])
 
     articles = _sl(data.get("articles", []), LIMITS["newsapi_results"])
-
-    # Si aucun résultat en fr/ar → retry en anglais
-    if not articles and lang != "en":
-        logger.info(f"[market_voc_tools] GNews: aucun résultat en '{lang}' — retry en anglais")
-        data = await _get("https://gnews.io/api/v4/search", {
-            "q":      query,
-            "lang":   "en",
-            "max":    min(LIMITS["newsapi_results"], 10),
-            "apikey": api_key,
-        }, _SEM_NEWS, DELAYS["gnews"])
-        articles = _sl(data.get("articles", []), LIMITS["newsapi_results"])
 
     result = {
         "source":   "gnews",

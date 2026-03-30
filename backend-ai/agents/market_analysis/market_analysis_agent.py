@@ -1,6 +1,7 @@
 # ══════════════════════════════════════════════════════════════
-# agents/market_analysis/market_analysis_agent.py
-# Agent racine — génère queries + orchestre + synthèse finale
+# agents/market_analysis/market_analysis_agent.py  [v4]
+# Changement unique vs v3 :
+#   → executive_summary extrait depuis synthesis et exposé au niveau racine
 # ══════════════════════════════════════════════════════════════
 
 import asyncio, json, logging, time
@@ -37,11 +38,10 @@ class MarketAnalysisAgent(BaseAgent):
         start = time.time()
 
         try:
-            # ── LLM 1 : génère toutes les queries ─────────────
-            # Utilise clarified_idea (IdeaClarifier) en priorité
-            # Fallback sur les champs de base du state si vide
-            logger.info("[market_analysis_agent] LLM 1 — génération queries")
             idea = state.clarified_idea or {}
+
+            # ── LLM 1 : génère toutes les queries ─────────────
+            logger.info("[market_analysis_agent] LLM 1 — génération queries")
             queries_raw = await self._call_llm(
                 system_prompt=self._queries_system_prompt(),
                 user_prompt=json.dumps({
@@ -69,18 +69,21 @@ class MarketAnalysisAgent(BaseAgent):
             synthesis_raw = await self._call_llm(
                 system_prompt=self._synthesis_system_prompt(state),
                 user_prompt=json.dumps({
-                    "tendances":   tendances,
-                    "market_voc":  market_voc,
-                    "competitor":  competitor,
+                    "tendances":  tendances,
+                    "market_voc": market_voc,
+                    "competitor": competitor,
                 }, ensure_ascii=False),
             )
             synthesis = self._parse_json(synthesis_raw)
 
-            # ── Data quality — trace APIs vs LLM ──────────────
+            # ── Data quality ───────────────────────────────────
             data_quality = self._build_data_quality(tendances, market_voc, competitor)
 
-            # ── Rapport final ─────────────────────────────────
+            # ── Rapport final ──────────────────────────────────
             state.market_analysis = {
+                # Résumé exécutif au niveau racine — accessible directement
+                "executive_summary": synthesis.get("executive_summary", ""),
+
                 "overview":        synthesis.get("overview", {}),
                 "tendances":       tendances,
                 "market_voc":      market_voc,
@@ -97,12 +100,13 @@ class MarketAnalysisAgent(BaseAgent):
                     "duree_secondes": round(time.time() - start, 2),
                     "sources": [
                         "google_trends",
-                        "tavily", "reddit_via_tavily",
+                        "tavily", "tavily_weakness", "tavily_compare",
+                        "reddit_via_tavily",
                         "youtube", "gnews",
                         "worldbank", "serpapi_search", "serpapi_maps",
                     ],
                     "appels_llm": 2,
-                    "appels_api": 10,
+                    "appels_api": 13,
                 },
             }
 
@@ -115,7 +119,7 @@ class MarketAnalysisAgent(BaseAgent):
             raise
 
     # ──────────────────────────────────────────────────────────
-    # PROMPTS
+    # PROMPT LLM 1 — génération des queries
     # ──────────────────────────────────────────────────────────
 
     def _queries_system_prompt(self) -> str:
@@ -124,54 +128,95 @@ class MarketAnalysisAgent(BaseAgent):
                 return f.read()
         except FileNotFoundError:
             return """Tu es un expert en analyse de marché.
-Tu reçois une idée clarifiée (issue de IdeaClarifier) et tu génères
-des queries de recherche optimisées pour 3 agents spécialisés.
+Tu reçois une idée clarifiée et tu génères des queries PRÉCISES pour 3 agents.
 
-Champs reçus :
-- short_pitch : pitch court
-- solution_description : description solution
-- target_users : cible utilisateurs
-- problem : problème résolu
-- secteur : secteur détecté
-- country_code : code pays ISO2 (TN, MA, FR, DZ...)
-- language : langue cible (fr, en, ar)
+RÈGLE CRITIQUE pour competitor.tavily :
+→ Nommer 2-3 concurrents probables du secteur + cibler avis négatifs
+→ Format : "[Concurrent1] [Concurrent2] [problème] avis négatifs bugs [pays]"
+→ Ex EdTech TN : "MyStudyLife EduPage ADE Campus emploi du temps bugs problèmes Tunisie"
+→ Ex FoodTech TN : "Jumia Food Glovo livraison repas lent annulé problèmes Tunisie"
+→ JAMAIS une query générique sans noms de concurrents
 
-- competitor.tavily : citer EXPLICITEMENT les noms des concurrents
-  probables du secteur + mots négatifs obligatoires :
-  ex: 'Maxxx Chips Cerealis avis négatifs problèmes clients Tunisie'
-  ou 'MyStudyLife bugs problèmes utilisateurs avis négatifs'
-  NE JAMAIS générer une query générique sans noms de concurrents
+RÈGLE pour market_voc.news : 2-3 mots anglais, secteur SANS pays.
 
-Génère des queries précises et adaptées au contexte réel.
 Retourne UNIQUEMENT un JSON valide :
-
 {
   "signal": {
-    "trends_1":   "mot-clé principal exact tapé par les utilisateurs locaux",
-    "trends_2":   "variante anglais pour comparaison internationale",
-    "tiktok":     "query courte et populaire TikTok",
-    "regulatory": "réglementation + secteur + pays en clair",
-    "country":    "code ISO2 — ex: TN"
+    "trends_1":   "mot-clé exact utilisateurs locaux",
+    "trends_2":   "variante anglais",
+    "tiktok":     "query courte TikTok",
+    "regulatory": "réglementation secteur pays en clair",
+    "country":    "code ISO2"
   },
   "market_voc": {
-    "tavily":   "query insights marché + croissance",
-    "reddit":   "query VOC anglais — problèmes utilisateurs + secteur",
-    "youtube":  "query avis clients + secteur + pays",
-    "news":     "query actualités + secteur + pays",
+    "tavily":   "problème secteur pays insights croissance",
+    "reddit":   "solution type app problème complaints site:reddit.com",
+    "youtube":  "secteur problème pays avis test",
+    "news":     "2-3 mots secteur en anglais sans pays",
     "country":  "code ISO2",
     "language": "fr|en|ar"
   },
   "competitor": {
-    "competitors": "query concurrents + secteur + pays Google Search",
-    "maps":        "query service + ville principale Google Maps",
-    "tavily":      "nom des concurrents trouvés + avis négatifs clients + problèmes + plaintes + limites + inconvénients + [pays]",
+    "competitors": "solution concrète + problème + pays — jamais juste le secteur",
+    "maps":        "service principal ville principale",
+    "tavily":      "Concurrent1 Concurrent2 problèmes avis négatifs bugs pays",
     "country":     "code ISO2"
   }
 }"""
 
+    # ──────────────────────────────────────────────────────────
+    # PROMPT LLM 2 — synthèse finale
+    # Lit depuis prompts/market_analysis/synthesis_agent.txt
+    # Le fichier .txt est la source de vérité — fallback inline minimal
+    # ──────────────────────────────────────────────────────────
+
+    def _synthesis_system_prompt(self, state: PipelineState) -> str:
+        try:
+            with open("prompts/market_analysis/synthesis_agent.txt", encoding="utf-8") as f:
+                return f.read()
+        except FileNotFoundError:
+            return f"""Tu es un expert senior en stratégie pour : {state.sector}.
+Tu reçois les outputs de 3 agents (tendances, market_voc, competitor).
+Retourne UNIQUEMENT un JSON valide :
+
+{{
+  "executive_summary": "3 phrases factuelles : marché. problème+opportunité. condition prioritaire.",
+  "overview": {{
+    "demande":     {{"niveau": "fort|modere|faible|inexistant", "label": "phrase courte"}},
+    "probleme":    {{"niveau": "tres_discute|discute|peu|absent",  "label": "phrase courte"}},
+    "concurrence": {{"niveau": "vulnerable|forte|saturee|absente", "label": "phrase courte"}},
+    "tendance":    {{"niveau": "hausse|stable|baisse", "label": "phrase courte"}}
+  }},
+  "swot": {{
+    "forces":       [{{"point": "...", "source": "champ.exact"}}],
+    "faiblesses":   [{{"point": "...", "source": "champ.exact"}}],
+    "opportunites": [{{"point": "...", "source": "champ.exact"}}],
+    "menaces":      [{{"point": "...", "source": "champ.exact"}}]
+  }},
+  "risques": [
+    {{
+      "type": "reglementaire|macro|concurrentiel",
+      "niveau": "elevé|moyen|faible",
+      "description": "...",
+      "source": "champ.exact",
+      "mitigation": "action concrète"
+    }}
+  ],
+  "recommandations": [
+    {{
+      "priorite": 1,
+      "horizon": "court_terme|moyen_terme|long_terme",
+      "action": "verbe + quoi + comment + critère mesurable",
+      "source": "champ.exact",
+      "impact_attendu": "résultat concret"
+    }}
+  ]
+}}
+
+Règles : ton neutre, jamais de GO/NO-GO, 3 risques, 3 recommandations une par horizon."""
 
     # ──────────────────────────────────────────────────────────
-    # DATA QUALITY — trace ce qui vient des APIs vs LLM
+    # DATA QUALITY
     # ──────────────────────────────────────────────────────────
 
     def _build_data_quality(
@@ -180,88 +225,108 @@ Retourne UNIQUEMENT un JSON valide :
         market_voc: dict,
         competitor: dict,
     ) -> dict:
-        """
-        Construit un rapport de qualité des données.
-        Pour chaque champ clé : indique si la valeur vient
-        d'une API (vérifiable) ou a été inférée par le LLM.
-        """
 
-        def _has_data(val) -> bool:
-            if val is None:
-                return False
-            if isinstance(val, (list, dict, str)):
-                return bool(val)
+        def _has(val) -> bool:
+            if val is None: return False
+            if isinstance(val, (list, dict, str)): return bool(val)
             return True
 
         # ── SignalAgent ───────────────────────────────────────
-        trends_ok    = _has_data(tendances.get("rising_queries"))
-        sector_ctx_ok = _has_data(tendances.get("sector_context"))
-        reg_ok       = _has_data(tendances.get("regulatory_barriers"))
-        direction_ok = tendances.get("direction") in ("RISING", "STABLE", "FALLING")
+        direction_ok  = tendances.get("direction") in ("RISING", "STABLE", "FALLING")
+        trends_ok     = _has(tendances.get("rising_queries"))
+        sector_ctx_ok = _has(tendances.get("sector_context"))
+        reg_ok        = _has(tendances.get("regulatory_barriers"))
 
         # ── MarketVocAgent ────────────────────────────────────
-        voc_ok     = _has_data(market_voc.get("top_voc"))
-        macro_ok   = _has_data(market_voc.get("macro", {}).get("population"))
-        persona_ok = _has_data(market_voc.get("personas"))
-        news_ok    = _has_data(market_voc.get("news_signals"))
+        voc_ok     = _has(market_voc.get("top_voc"))
+        macro_ok   = _has(market_voc.get("macro", {}).get("population"))
+        persona_ok = _has(market_voc.get("personas"))
+        news_ok    = _has(market_voc.get("news_signals"))
 
         # ── CompetitorAgent ───────────────────────────────────
-        comp_ok    = _has_data(competitor.get("top_competitors"))
-        n_comp     = len(competitor.get("top_competitors", []))
-        with_weak  = sum(
+        comp_ok   = _has(competitor.get("top_competitors"))
+        n_comp    = len(competitor.get("top_competitors", []))
+        with_weak = sum(
             1 for c in competitor.get("top_competitors", [])
-            if _has_data(c.get("weaknesses"))
+            if _has(c.get("weaknesses"))
         )
-        with_str   = sum(
+        with_str  = sum(
             1 for c in competitor.get("top_competitors", [])
-            if _has_data(c.get("key_strengths"))
+            if _has(c.get("key_strengths"))
         )
 
         # ── Score global ──────────────────────────────────────
-        checks = [trends_ok, sector_ctx_ok, reg_ok, direction_ok,
-                  voc_ok, macro_ok, persona_ok, comp_ok]
+        checks = [
+            direction_ok, trends_ok, sector_ctx_ok, reg_ok,
+            voc_ok, macro_ok, persona_ok, comp_ok, news_ok,
+        ]
         base_score = round(sum(checks) / len(checks) * 100)
 
-        # Pénalités pour données critiques absentes
         penalties = 0
-        if not news_ok:       penalties += 10
-        if not trends_ok:     penalties += 10
-        if with_weak == 0:    penalties += 15
-        if with_str == 0:     penalties += 5
+        if not trends_ok:  penalties += 10
+        if with_weak == 0: penalties += 15
+        if with_str  == 0: penalties += 5
 
         score = max(0, base_score - penalties)
 
+        warnings = []
+        if with_weak == 0:
+            warnings.append(
+                "⚠ Aucune faiblesse concurrente extraite — "
+                "tavily_weakness trop générique ou concurrents non documentés en ligne"
+            )
+        if not trends_ok:
+            warnings.append(
+                "⚠ rising_queries vide — "
+                "Google Trends n'a pas retourné de requêtes montantes"
+            )
+        if not news_ok:
+            warnings.append("⚠ news_signals vide — GNews sans résultats pour cette période")
+
         return {
-            "score_global": score,          # % de sections avec données réelles
+            "score_global":   score,
             "interpretation": (
                 "élevée" if score >= 75
                 else "moyenne" if score >= 50
                 else "faible"
             ),
+            "warnings": warnings,
             "sections": {
                 "tendances": {
-                    "direction":            {"status": "api" if direction_ok else "llm_inference", "ok": direction_ok},
-                    "rising_queries":       {"status": "api" if trends_ok else "absent",          "ok": trends_ok},
-                    "sector_context":       {"status": "api" if sector_ctx_ok else "absent",          "ok": sector_ctx_ok},
-                    "regulatory_barriers":  {"status": "api" if reg_ok    else "absent",          "ok": reg_ok},
-                    "tiktok":               {"status": "desactive", "ok": False},
+                    "direction":           {"status": "api" if direction_ok   else "llm_inference", "ok": direction_ok},
+                    "rising_queries":      {"status": "api" if trends_ok      else "absent",        "ok": trends_ok},
+                    "sector_context":      {"status": "api" if sector_ctx_ok  else "absent",        "ok": sector_ctx_ok},
+                    "regulatory_barriers": {"status": "api" if reg_ok         else "absent",        "ok": reg_ok},
+                    "tiktok":              {"status": "desactive", "ok": False},
                 },
                 "market_voc": {
-                    "top_voc":    {"status": "api" if voc_ok     else "absent", "ok": voc_ok},
-                    "personas":   {"status": "llm_inference" if persona_ok else "absent", "ok": persona_ok,
-                                   "note": "personas inférés par LLM depuis les données VOC"},
-                    "macro":      {"status": "api" if macro_ok   else "absent", "ok": macro_ok},
-                    "news":       {"status": "api" if news_ok    else "absent", "ok": news_ok},
+                    "top_voc":  {"status": "api" if voc_ok    else "absent", "ok": voc_ok},
+                    "personas": {
+                        "status": "llm_inference" if persona_ok else "absent",
+                        "ok":     persona_ok,
+                        "note":   "inférés par LLM depuis les données VOC",
+                    },
+                    "macro":    {"status": "api" if macro_ok  else "absent", "ok": macro_ok},
+                    "news":     {"status": "api" if news_ok   else "absent", "ok": news_ok},
                 },
                 "competitor": {
-                    "top_competitors":  {"status": "api" if comp_ok else "absent", "ok": comp_ok,
-                                         "count": n_comp},
-                    "avec_weaknesses":  {"status": "llm_inference", "ok": with_weak > 0,
-                                         "count": with_weak,
-                                         "note": "weaknesses extraites par LLM depuis les snippets"},
-                    "avec_strengths":   {"status": "llm_inference", "ok": with_str > 0,
-                                         "count": with_str,
-                                         "note": "key_strengths extraites par LLM depuis les snippets"},
+                    "top_competitors": {
+                        "status": "api" if comp_ok else "absent",
+                        "ok":     comp_ok,
+                        "count":  n_comp,
+                    },
+                    "avec_weaknesses": {
+                        "status": "llm_inference",
+                        "ok":     with_weak > 0,
+                        "count":  with_weak,
+                        "note":   "extraites depuis snippets Tavily",
+                    },
+                    "avec_strengths": {
+                        "status": "llm_inference",
+                        "ok":     with_str > 0,
+                        "count":  with_str,
+                        "note":   "extraites depuis snippets Tavily",
+                    },
                 },
             },
             "legende": {
@@ -271,39 +336,3 @@ Retourne UNIQUEMENT un JSON valide :
                 "desactive":     "source désactivée dans cette version",
             },
         }
-    def _synthesis_system_prompt(self, state: PipelineState) -> str:
-        try:
-            with open("prompts/market_analysis/synthesis_agent.txt", encoding="utf-8") as f:
-                return f.read()
-        except FileNotFoundError:
-            return f"""Tu es un expert senior en stratégie pour : {state.sector}.
-Tu reçois les outputs de 3 agents spécialisés.
-Génère la synthèse finale. Retourne UNIQUEMENT un JSON valide :
-
-{{
-  "overview": {{
-    "demande":     {{"niveau": "fort|modere|faible|inexistant", "label": "phrase courte"}},
-    "probleme":    {{"niveau": "tres_discute|discute|peu|absent", "label": "phrase courte"}},
-    "concurrence": {{"niveau": "vulnerable|forte|saturee|absente", "label": "phrase courte"}},
-    "tendance":    {{"niveau": "hausse|stable|baisse", "label": "phrase courte"}}
-  }},
-  "swot": {{
-    "forces":       [{{"point": "", "source": ""}}],
-    "faiblesses":   [{{"point": "", "source": ""}}],
-    "opportunites": [{{"point": "", "source": ""}}],
-    "menaces":      [{{"point": "", "source": ""}}]
-  }},
-  "risques": [
-    {{"type": "reglementaire|macro|concurrentiel", "description": "", "source": ""}}
-  ],
-  "recommandations": [
-    {{"priorite": 1, "action": "recommandation actionnable", "source": ""}}
-  ]
-}}
-
-Règles :
-- overview : synthèse des 3 agents — pas d'invention
-- swot : 2-3 points par quadrant max — chaque point référence sa source
-- risques : basés sur regulatory_barriers + macro + competitor
-- recommandations : exactement 3 actions concrètes et actionnables
-- Retourne UNIQUEMENT le JSON"""
