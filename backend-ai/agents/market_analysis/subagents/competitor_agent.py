@@ -1,30 +1,33 @@
 # ══════════════════════════════════════════════════════════════
-# agents/market_analysis/subagents/competitor_agent.py  [v2]
-# Fix principal : construction correcte des queries Tavily weakness
+# agents/market_analysis/subagents/competitor_agent.py
+# Robuste : multi-query Tavily + fallback déterministe + enrichissement
 # ══════════════════════════════════════════════════════════════
 
 import asyncio
 import json
+import re
 
 from agents.base_agent import BaseAgent, PipelineState
-from config.market_analysis_config import LLM_CONFIG
-from schemas.market_analysis_schemas import CompetitorSection
+from config.market_analysis_config import LLM_CONFIG, LLM_LIMITS
 from tools.market_analysis.subagents_tools.competitor_tools import (
     fetch_serp_competitors,
     fetch_serp_maps,
     fetch_tavily_competitor_insights,
 )
+from utils.simple_filter import simple_filter
 
 
 class CompetitorAgent(BaseAgent):
-
-    # Mots négatifs pour post-processing si LLM rate les weaknesses
     _NEGATIVE_KW = [
-        "slow", "crash", "bug", "buggy", "broken", "issue", "problem", "bad",
-        "missing", "lacking", "limited", "expensive", "complicated", "confusing",
-        "lent", "bugué", "problème", "erreur", "manque", "instable", "limité",
-        "cher", "compliqué", "difficile", "mauvais", "absent", "dépassé",
-        "horrible", "worst", "useless", "annoying", "ugly", "outdated",
+        "bug", "buggy", "crash", "crashes", "issue", "issues", "problem", "problems",
+        "complaint", "complaints", "bad", "worst", "slow", "lag", "broken", "error",
+        "expensive", "limited", "missing", "refund", "delay", "late", "spam",
+        "lent", "bugue", "buguee", "probleme", "problemes", "plainte", "plaintes",
+        "mauvais", "instable", "cher", "limite", "limitee", "manque", "retard",
+    ]
+    _POSITIVE_KW = [
+        "simple", "easy", "fast", "reliable", "popular", "trusted", "intuitive",
+        "complet", "fiable", "rapide", "officiel", "best", "top", "excellent",
     ]
 
     def __init__(self):
@@ -36,150 +39,347 @@ class CompetitorAgent(BaseAgent):
         )
 
     async def run(self, state: PipelineState, queries: dict) -> dict:
-        """
-        queries reçues de l'orchestrateur :
-        {
-            "competitors": "application emploi du temps étudiant université Tunisie",
-            "maps":        "application éducative planning Tunis",
-            "tavily":      "MyStudyLife EduPage bugs problèmes Tunisie",
-            "country":     "TN"
-        }
-        """
         self._log_start(state)
-        country    = queries.get("country", "TN")
-        base_query = queries.get("tavily", "")
+        country = queries.get("country", "TN")
+        base_query = (queries.get("tavily") or "").strip()
 
         try:
-            # ── Construire 2 queries Tavily complémentaires ──────────────
-            #
-            # weakness_q : cibler Reddit + mots négatifs explicites
-            #   → On ne retire PAS "site:reddit.com" car il n'est pas forcément là
-            #   → On AJOUTE site:reddit.com + mots négatifs
-            weakness_q = (
-                f"site:reddit.com {base_query} "
-                "bugs problems slow crash bad review worst complaints"
-            )
-
-            # compare_q : comparaisons utilisateurs = meilleure source de faiblesses
-            compare_q = f"{base_query} vs alternative better switch problems"
-
-            # ── 5 appels en parallèle ────────────────────────────────────
-            (
-                serp_search,
-                serp_maps,
-                tavily_main,
-                tavily_weakness,
-                tavily_compare,
-            ) = await asyncio.gather(
-                fetch_serp_competitors(queries["competitors"], country),
+            tavily_queries = self._build_tavily_queries(base_query, queries.get("tavily_multi"))
+            tasks = [
+                fetch_serp_competitors(queries.get("competitors", ""), country),
                 fetch_serp_maps(queries.get("maps", ""), country),
-                fetch_tavily_competitor_insights(base_query),
-                fetch_tavily_competitor_insights(weakness_q),
-                fetch_tavily_competitor_insights(compare_q),
-            )
+                *[fetch_tavily_competitor_insights(q) for q in tavily_queries],
+            ]
+            all_results = await asyncio.gather(*tasks)
+            serp_search = all_results[0]
+            serp_maps = all_results[1]
+            tavily_batches = all_results[2:]
 
+            tavily_merged = {
+                "source": "tavily_merged",
+                "queries": tavily_queries,
+                "results": self._merge_tavily_results(tavily_batches),
+            }
             raw_data = {
-                "serp_search":     serp_search,
-                "serp_maps":       serp_maps,
-                "tavily_main":     tavily_main,      # positionnement général
-                "tavily_weakness": tavily_weakness,  # plaintes Reddit
-                "tavily_compare":  tavily_compare,   # comparaisons utilisateurs
+                "serp_search": serp_search,
+                "serp_maps": serp_maps,
+                "tavily_batches": tavily_batches,
+                "tavily_merged": tavily_merged,
             }
 
-            llm_response = await self._call_llm(
-                system_prompt=self._load_prompt("competitor_agent.txt", state),
-                user_prompt=json.dumps(raw_data, ensure_ascii=False, default=str),
-            )
-
-            data = self._parse_json(llm_response)
-
-            # ── Post-processing : récupérer weaknesses si LLM a raté ─────
-            data = self._fill_missing_weaknesses(data, raw_data)
-
-            output = CompetitorSection(**data)
-            self._log_success(output)
-            return output.dict()
-
+            llm_data = await self._call_llm_safely(state, raw_data)
+            final_data = self._post_process(llm_data, raw_data)
+            self._log_success(final_data)
+            return final_data
         except Exception as e:
             self._log_error(e)
-            raise
+            # Fallback dur sans LLM
+            fallback_raw = {
+                "serp_search": await fetch_serp_competitors(queries.get("competitors", ""), country),
+                "serp_maps": await fetch_serp_maps(queries.get("maps", ""), country),
+                "tavily_merged": {"results": []},
+            }
+            return self._post_process({}, fallback_raw)
 
-    # ──────────────────────────────────────────────────────────────────
-    # Post-processing : scan de mots négatifs dans les snippets bruts
-    # Déclenché UNIQUEMENT si weaknesses=[] après le LLM
-    # ──────────────────────────────────────────────────────────────────
+    async def _call_llm_safely(self, state: PipelineState, raw_data: dict) -> dict:
+        try:
+            prompt = self._load_prompt("competitor_agent.txt", state)
+            raw_data_filtered = {
+                "serp_search": simple_filter(raw_data.get("serp_search", {}).get("results", []), LLM_LIMITS["max_items"], LLM_LIMITS["snippet_max_chars"]),
+                "serp_maps": simple_filter(
+                    [
+                        {
+                            "title": r.get("name", ""),
+                            "snippet": f"rating={r.get('rating')} reviews={r.get('reviews')} {r.get('address', '')}",
+                            "url": r.get("website", ""),
+                        }
+                        for r in raw_data.get("serp_maps", {}).get("results", [])
+                    ],
+                    LLM_LIMITS["max_items"],
+                    LLM_LIMITS["snippet_max_chars"],
+                ),
+                "tavily": simple_filter(raw_data.get("tavily_merged", {}).get("results", []), LLM_LIMITS["max_items"], LLM_LIMITS["snippet_max_chars"]),
+            }
+            payload = json.dumps(raw_data_filtered, ensure_ascii=False, default=str)
+            if len(payload) > LLM_LIMITS["max_payload_chars"]:
+                payload = payload[:LLM_LIMITS["max_payload_chars"]]
+            llm_response = await self._call_llm(
+                system_prompt=prompt,
+                user_prompt=payload,
+            )
+            return self._parse_json(llm_response)
+        except Exception:
+            return {}
 
-    def _fill_missing_weaknesses(self, data: dict, raw_data: dict) -> dict:
-        # Collecter tous les snippets de toutes les sources Tavily
-        all_snippets: list[tuple[str, str]] = []  # (title, snippet)
-        for src in ("tavily_weakness", "tavily_compare", "tavily_main"):
-            for r in raw_data.get(src, {}).get("results", []):
-                title   = r.get("title", "").lower()
-                snippet = r.get("snippet", "").lower()
-                all_snippets.append((title, snippet))
+    def _build_tavily_queries(self, base_query: str, multi) -> list[str]:
+        queries = []
+        if base_query:
+            queries.append(base_query)
+            queries.append(f"site:reddit.com {base_query} complaints problems bad reviews")
+            queries.append(f"{base_query} vs alternatives comparison")
+            queries.append(f"{base_query} user frustrations")
+        if isinstance(multi, list):
+            queries.extend([str(q).strip() for q in multi if str(q).strip()])
+        elif isinstance(multi, str) and multi.strip():
+            queries.extend([q.strip() for q in multi.split("||") if q.strip()])
+        return self._dedup_keep_order(queries)[:8]
 
-        for competitor in data.get("top_competitors", []):
-            if competitor.get("weaknesses"):
-                continue  # déjà rempli par le LLM — ne pas toucher
-
-            comp_name  = competitor.get("nom", "").lower()
-            # Mots clés du nom (filtre les mots trop courts comme "app")
-            name_words = [w for w in comp_name.split() if len(w) > 3]
-
-            found = []
-            for title, snippet in all_snippets:
-                full_text = title + " " + snippet
-
-                # Vérifier si le concurrent est mentionné dans ce snippet
-                name_present = any(w in full_text for w in name_words) if name_words else True
-
-                if not name_present:
+    def _merge_tavily_results(self, batches: list[dict]) -> list[dict]:
+        seen = set()
+        merged = []
+        for b in batches:
+            for r in b.get("results", []):
+                title = (r.get("title") or "").strip()
+                snippet = (r.get("snippet") or "").strip()
+                key = (title.lower(), snippet.lower())
+                if key in seen or not (title or snippet):
                     continue
+                seen.add(key)
+                merged.append({"title": title, "snippet": snippet})
+        return merged
 
-                # Chercher des mots négatifs
-                for kw in self._NEGATIVE_KW:
-                    if kw not in full_text:
-                        continue
-                    idx     = full_text.find(kw)
-                    extract = full_text[max(0, idx - 50): idx + 100].strip()
-                    extract = extract[:130]
-                    if extract and extract not in found:
-                        found.append(extract)
-                    if len(found) >= 2:
-                        break
-                if len(found) >= 2:
-                    break
+    def _post_process(self, llm_data: dict, raw_data: dict) -> dict:
+        serp_results = raw_data.get("serp_search", {}).get("results", [])
+        maps_results = raw_data.get("serp_maps", {}).get("results", [])
+        tavily_results = raw_data.get("tavily_merged", {}).get("results", [])
 
-            if found:
-                competitor["weaknesses"]         = found
-                competitor["faiblesse_principale"] = found[0]
+        serp_index = self._build_serp_index(serp_results)
+        maps_index = self._build_maps_index(maps_results)
 
-        return data
+        llm_competitors = llm_data.get("top_competitors", []) if isinstance(llm_data, dict) else []
+        competitors = []
+        for c in llm_competitors:
+            enriched = self._enrich_competitor(c, serp_index, maps_index, tavily_results)
+            if enriched:
+                competitors.append(enriched)
 
-    # ──────────────────────────────────────────────────────────────────
-    # CHARGEMENT DU PROMPT
-    # ──────────────────────────────────────────────────────────────────
+        # Fallback déterministe si LLM insuffisant
+        if len(competitors) < 3:
+            competitors = self._merge_with_fallback_competitors(competitors, serp_results, maps_index, tavily_results)
+
+        competitors = self._dedup_competitors(competitors)[:5]
+        if len(competitors) < 3:
+            competitors.extend(self._build_minimum_competitors(serp_results, maps_index)[: 3 - len(competitors)])
+
+        with_weak = sum(1 for c in competitors if c.get("weaknesses"))
+        opportunite_niveau = "fenetre_ouverte" if with_weak >= 2 else "partielle" if with_weak == 1 else "saturee"
+        opportunite_summary = (
+            "Plusieurs faiblesses concurrentes exploitables ont ete detectees."
+            if with_weak >= 2 else
+            "Quelques signaux de faiblesse existent mais la differenciation reste partielle."
+            if with_weak == 1 else
+            "Faiblesses publiques limitees; valider par interviews utilisateurs."
+        )
+
+        return {
+            "top_competitors": competitors,
+            "opportunite_niveau": llm_data.get("opportunite_niveau", opportunite_niveau),
+            "opportunite_summary": llm_data.get("opportunite_summary", opportunite_summary),
+        }
+
+    def _enrich_competitor(self, c: dict, serp_index: dict, maps_index: dict, tavily_results: list[dict]) -> dict | None:
+        name = self._clean_name(c.get("nom", ""))
+        if not name:
+            return None
+        k = name.lower()
+        serp = serp_index.get(k, {})
+        maps = maps_index.get(k, {})
+
+        weaknesses = c.get("weaknesses") or self._extract_weaknesses(name, tavily_results)
+        weaknesses = self._dedup_keep_order(weaknesses)[:4]
+        strengths = c.get("key_strengths") or self._extract_strengths(name, tavily_results)
+        strengths = self._dedup_keep_order(strengths)[:4]
+
+        website = c.get("website") or serp.get("website", "")
+        desc = c.get("description") or serp.get("description", "") or c.get("positioning", "")
+        source = c.get("source") or ("serp+tavily" if website else "tavily")
+        rating = maps.get("rating")
+
+        return {
+            "nom": name,
+            "type": c.get("type") or ("digital" if website else "local"),
+            "website": website,
+            "description": desc[:220],
+            "source": source,
+            "rating": rating,
+            "faiblesse_principale": c.get("faiblesse_principale") or (
+                weaknesses[0] if weaknesses else "Non documente dans les sources disponibles"
+            ),
+            "weaknesses": weaknesses,
+            "key_strengths": strengths,
+            "positioning": c.get("positioning") or desc[:180],
+        }
+
+    def _build_serp_index(self, serp_results: list[dict]) -> dict:
+        out = {}
+        for r in serp_results:
+            name = self._clean_name(r.get("title", ""))
+            if not name:
+                continue
+            out[name.lower()] = {
+                "website": r.get("url", ""),
+                "description": (r.get("snippet") or "")[:220],
+            }
+        return out
+
+    def _build_maps_index(self, maps_results: list[dict]) -> dict:
+        out = {}
+        for m in maps_results:
+            name = self._clean_name(m.get("name", ""))
+            if not name:
+                continue
+            out[name.lower()] = {"rating": m.get("rating"), "reviews": m.get("reviews")}
+        return out
+
+    def _extract_weaknesses(self, name: str, snippets: list[dict]) -> list[str]:
+        name_tokens = [t for t in re.split(r"\W+", name.lower()) if len(t) > 2]
+        scored = []
+        for r in snippets:
+            text = f"{r.get('title','')} {r.get('snippet','')}".lower()
+            if name_tokens and not any(t in text for t in name_tokens):
+                continue
+            hit_count = sum(1 for kw in self._NEGATIVE_KW if kw in text)
+            if hit_count == 0:
+                continue
+            extract = self._extract_fragment(text, self._NEGATIVE_KW, 150)
+            if extract:
+                scored.append((hit_count, extract))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [x[1] for x in scored[:4]]
+
+    def _extract_strengths(self, name: str, snippets: list[dict]) -> list[str]:
+        name_tokens = [t for t in re.split(r"\W+", name.lower()) if len(t) > 2]
+        out = []
+        for r in snippets:
+            text = f"{r.get('title','')} {r.get('snippet','')}".lower()
+            if name_tokens and not any(t in text for t in name_tokens):
+                continue
+            if not any(kw in text for kw in self._POSITIVE_KW):
+                continue
+            frag = self._extract_fragment(text, self._POSITIVE_KW, 130)
+            if frag and frag not in out:
+                out.append(frag)
+            if len(out) >= 4:
+                break
+        return out
+
+    def _merge_with_fallback_competitors(self, current: list[dict], serp_results: list[dict], maps_index: dict, tavily_results: list[dict]) -> list[dict]:
+        out = list(current)
+        existing = {self._clean_name(c.get("nom", "")).lower() for c in out}
+        for r in serp_results:
+            name = self._clean_name(r.get("title", ""))
+            if not name or name.lower() in existing:
+                continue
+            base = {
+                "nom": name,
+                "type": "digital" if r.get("url") else "local",
+                "website": r.get("url", ""),
+                "description": (r.get("snippet") or "")[:220],
+                "source": "serp",
+                "rating": maps_index.get(name.lower(), {}).get("rating"),
+                "weaknesses": self._extract_weaknesses(name, tavily_results)[:4],
+                "key_strengths": self._extract_strengths(name, tavily_results)[:4],
+                "positioning": (r.get("snippet") or "")[:180],
+            }
+            base["faiblesse_principale"] = (
+                base["weaknesses"][0] if base["weaknesses"] else "Non documente dans les sources disponibles"
+            )
+            out.append(base)
+            existing.add(name.lower())
+            if len(out) >= 5:
+                break
+        return out
+
+    def _build_minimum_competitors(self, serp_results: list[dict], maps_index: dict) -> list[dict]:
+        out = []
+        for r in serp_results[:5]:
+            name = self._clean_name(r.get("title", ""))
+            if not name:
+                continue
+            out.append({
+                "nom": name,
+                "type": "digital" if r.get("url") else "local",
+                "website": r.get("url", ""),
+                "description": (r.get("snippet") or "")[:220],
+                "source": "serp",
+                "rating": maps_index.get(name.lower(), {}).get("rating"),
+                "faiblesse_principale": "Non documente dans les sources disponibles",
+                "weaknesses": [],
+                "key_strengths": [],
+                "positioning": (r.get("snippet") or "")[:180],
+            })
+        return out
+
+    def _dedup_competitors(self, competitors: list[dict]) -> list[dict]:
+        seen = set()
+        out = []
+        for c in competitors:
+            name = self._clean_name(c.get("nom", ""))
+            k = name.lower()
+            if not name or k in seen:
+                continue
+            c["nom"] = name
+            seen.add(k)
+            out.append(c)
+        return out
+
+    def _clean_name(self, raw: str) -> str:
+        s = (raw or "").strip()
+        if not s:
+            return ""
+        s = re.sub(r"\s+", " ", s)
+        s = re.split(r"\s[-|–:]\s", s)[0].strip()
+        s = s.replace("Applications sur Google Play", "").strip(" -|:")
+        return s[:90]
+
+    def _extract_fragment(self, text: str, kws: list[str], width: int) -> str:
+        idx = -1
+        for kw in kws:
+            i = text.find(kw)
+            if i != -1:
+                idx = i
+                break
+        if idx == -1:
+            return ""
+        frag = text[max(0, idx - 45): idx + width].strip()
+        return re.sub(r"\s+", " ", frag)[:150]
+
+    def _dedup_keep_order(self, items: list[str]) -> list[str]:
+        seen = set()
+        out = []
+        for x in items:
+            k = x.lower().strip()
+            if not k or k in seen:
+                continue
+            seen.add(k)
+            out.append(x.strip())
+        return out
 
     def _load_prompt(self, filename: str, state: PipelineState) -> str:
         try:
             with open(f"prompts/market_analysis/{filename}", encoding="utf-8") as f:
                 content = f.read()
-            # Vérification minimale de validité
-            if "faiblesse_principale" not in content:
+            if "website" not in content:
                 raise ValueError("Prompt incomplet")
             return content
         except (FileNotFoundError, ValueError):
-            # Fallback inline minimal (le fichier txt est la vraie source)
             return f"""Tu es un expert en intelligence concurrentielle pour : {state.sector}.
-Tu reçois serp_search, serp_maps, tavily_main, tavily_weakness, tavily_compare.
-Extrais les concurrents depuis serp_search et leurs faiblesses depuis tavily_weakness/tavily_compare.
-Retourne UNIQUEMENT un JSON :
+Tu recois serp_search, serp_maps, tavily_batches, tavily_merged.
+Priorite: extraire nom, website, description, faiblesses et forces reelles.
+Retourne UNIQUEMENT un JSON valide:
 {{
   "top_competitors": [{{
-    "nom": "...", "type": "digital|local|regional|international",
-    "faiblesse_principale": "extrait snippet ou 'Non documenté dans les sources disponibles'",
-    "weaknesses": [], "key_strengths": [], "positioning": "..."
+    "nom": "",
+    "type": "digital|local|regional|international",
+    "website": "",
+    "description": "",
+    "source": "serp|tavily|serp+tavily",
+    "rating": null,
+    "faiblesse_principale": "snippet negatif ou 'Non documente dans les sources disponibles'",
+    "weaknesses": [],
+    "key_strengths": [],
+    "positioning": ""
   }}],
   "opportunite_niveau": "fenetre_ouverte|partielle|saturee",
-  "opportunite_summary": "..."
+  "opportunite_summary": ""
 }}"""

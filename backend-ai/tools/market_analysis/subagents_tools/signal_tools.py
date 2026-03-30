@@ -1,43 +1,44 @@
 # ══════════════════════════════════════════════════════════════
-# tools/market_analysis/subagents_tools/signal_tools.py  [v2]
-# Changements :
-#   fetch_google_trends : 3 data_types en parallèle au lieu de TIMESERIES seul
-#     → TIMESERIES       : timeline (inchangé)
-#     → RELATED_QUERIES  : rising_queries fiables même avec faible volume
-#     → RELATED_TOPICS   : topics montants — plus robuste marchés émergents
-#   fetch_google_autocomplete (NOUVEAU) : suggestions temps réel → tendances
-#   fetch_tavily_trends (NOUVEAU)       : tendances via news Tavily
-#   fetch_tiktok_signals : inchangé (désactivé)
-#   fetch_regulatory     : inchangé
+# tools/market_analysis/subagents_tools/signal_tools.py
+# Robust signal extraction: multi-query, normalization, enrichment
 # ══════════════════════════════════════════════════════════════
 
-import asyncio, hashlib, logging, os, shelve, tempfile, time
+import asyncio
+import hashlib
+import logging
+import os
+import shelve
+import tempfile
+import time
 from typing import Any
-import httpx
-from config.market_analysis_config import LIMITS, DELAYS, CACHE_TTL, SEMAPHORES
 
-logger      = logging.getLogger("brandai.signal_tools")
-_SEM_SERP   = asyncio.Semaphore(SEMAPHORES["serpapi"])
+import httpx
+
+from config.market_analysis_config import CACHE_TTL, DELAYS, LIMITS, SEMAPHORES
+
+logger = logging.getLogger("brandai.signal_tools")
+_SEM_SERP = asyncio.Semaphore(SEMAPHORES["serpapi"])
 _SEM_TAVILY = asyncio.Semaphore(SEMAPHORES["tavily"])
-TIMEOUT     = httpx.Timeout(15.0, connect=5.0)
-_SERP_BASE  = "https://serpapi.com/search"
+TIMEOUT = httpx.Timeout(15.0, connect=5.0)
+_SERP_BASE = "https://serpapi.com/search"
+_TAVILY_URL = "https://api.tavily.com/search"
 _CACHE_FILE = os.path.join(tempfile.gettempdir(), "ma_cache")
 
-
-# ── Cache ──────────────────────────────────────────────────────
 
 def _key(*args) -> str:
     return hashlib.md5(":".join(str(a) for a in args).encode()).hexdigest()
 
+
 def _cget(key: str) -> Any | None:
     try:
         with shelve.open(_CACHE_FILE) as db:
-            e = db.get(key)
-            if e and time.time() < e["exp"]:
-                return e["data"]
+            entry = db.get(key)
+            if entry and time.time() < entry["exp"]:
+                return entry["data"]
     except Exception:
         pass
     return None
+
 
 def _cset(key: str, data: Any, ttl: int) -> None:
     try:
@@ -46,8 +47,6 @@ def _cset(key: str, data: Any, ttl: int) -> None:
     except Exception as e:
         logger.warning(f"[cache] {e}")
 
-
-# ── HTTP ───────────────────────────────────────────────────────
 
 async def _get(url: str, params: dict, sem: asyncio.Semaphore, delay: float = 0) -> dict:
     async with sem:
@@ -62,277 +61,362 @@ async def _get(url: str, params: dict, sem: asyncio.Semaphore, delay: float = 0)
             logger.error(f"[signal_tools] GET {url}: {e}")
             return {}
 
+
 async def _post(url: str, payload: dict, sem: asyncio.Semaphore) -> dict:
     async with sem:
         try:
             async with httpx.AsyncClient(timeout=TIMEOUT) as c:
-                r = await c.post(url, json=payload,
-                                 headers={"Content-Type": "application/json"})
+                r = await c.post(url, json=payload, headers={"Content-Type": "application/json"})
                 r.raise_for_status()
                 return r.json()
         except Exception as e:
             logger.error(f"[signal_tools] POST {url}: {e}")
             return {}
 
+
 def _sl(obj: Any, n: int) -> list:
     return obj[:n] if isinstance(obj, list) else []
 
 
-# ══════════════════════════════════════════════════════════════
-# TOOL 1 — Google Trends via SerpAPI [VERSION AMÉLIORÉE]
-# Lance 3 data_types en parallèle pour maximiser les résultats
-# ══════════════════════════════════════════════════════════════
+def _clean_text(text: str, max_len: int = 500) -> str:
+    s = (text or "").replace("\n", " ").replace("\r", " ").strip()
+    s = " ".join(s.split())
+    return s[:max_len]
+
+
+def _norm(text: str) -> str:
+    return _clean_text(text, 500).lower().strip()
+
+
+def _dedup_str(items: list[str], keep_case: bool = True, max_items: int | None = None) -> list[str]:
+    out = []
+    seen = set()
+    for x in items:
+        val = _clean_text(str(x), 250)
+        key = _norm(val)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(val if keep_case else key)
+        if max_items and len(out) >= max_items:
+            break
+    return out
+
+
+def _dedup_dict(items: list[dict], keys: tuple[str, ...], max_items: int | None = None) -> list[dict]:
+    out = []
+    seen = set()
+    for it in items:
+        sig = tuple(_norm(str(it.get(k, ""))) for k in keys)
+        if not any(sig) or sig in seen:
+            continue
+        seen.add(sig)
+        out.append(it)
+        if max_items and len(out) >= max_items:
+            break
+    return out
+
+
+def _extract_peak_period(timeline: list[dict]) -> str | None:
+    best_date = None
+    best_value = -1
+    for p in timeline:
+        v = p.get("value", 0) or 0
+        if v > best_value:
+            best_value = v
+            best_date = p.get("date")
+    return best_date
+
 
 async def fetch_google_trends(keyword: str, country_code: str = "TN") -> dict:
-    """
-    Lance 3 requêtes SerpAPI Google Trends en parallèle :
-    - TIMESERIES      → timeline historique
-    - RELATED_QUERIES → rising_queries (fonctionne même avec faible volume)
-    - RELATED_TOPICS  → topics montants (plus robuste que RELATED_QUERIES)
-    """
-    k = _key("trends_v2", keyword, country_code)
-    if c := _cget(k): return c
+    k = _key("trends_v3", keyword, country_code)
+    if c := _cget(k):
+        return c
 
-    api_key = os.getenv("SERPAPI_KEY", "")
+    api_key = os.getenv("SERPAPI_KEY", "").strip()
     if not api_key:
-        return {"source": "google_trends", "keyword": keyword, "error": "missing key"}
+        return {"source": "google_trends", "keyword": keyword, "country": country_code.upper(), "timeline": [], "rising_queries": [], "rising_topics": [], "top_queries": [], "peak_period": None, "source_count": 0, "_debug": {"error": "missing key"}}
 
     base_params = {
-        "engine":  "google_trends",
-        "q":       keyword,
+        "engine": "google_trends",
+        "q": keyword,
         "api_key": api_key,
-        "geo":     country_code.upper(),
-        "date":    "today 12-m",
+        "geo": country_code.upper(),
+        "date": "today 12-m",
     }
 
-    # 3 appels en parallèle
-    timeseries_data, related_queries_data, related_topics_data = await asyncio.gather(
-        _get(_SERP_BASE, {**base_params, "data_type": "TIMESERIES"},      _SEM_SERP, DELAYS["serpapi"]),
+    ts, rq, rt = await asyncio.gather(
+        _get(_SERP_BASE, {**base_params, "data_type": "TIMESERIES"}, _SEM_SERP, DELAYS["serpapi"]),
         _get(_SERP_BASE, {**base_params, "data_type": "RELATED_QUERIES"}, _SEM_SERP, DELAYS["serpapi"]),
-        _get(_SERP_BASE, {**base_params, "data_type": "RELATED_TOPICS"},  _SEM_SERP, DELAYS["serpapi"]),
+        _get(_SERP_BASE, {**base_params, "data_type": "RELATED_TOPICS"}, _SEM_SERP, DELAYS["serpapi"]),
     )
 
-    # ── TIMESERIES → timeline ─────────────────────────────────
-    timeline_raw = _sl(
-        timeseries_data.get("interest_over_time", {}).get("timeline_data", []),
-        LIMITS["serp_trends_points"],
-    )
+    timeline_raw = _sl(ts.get("interest_over_time", {}).get("timeline_data", []), LIMITS["serp_trends_points"])
     timeline = []
-    for p in timeline_raw:
-        v = p.get("values", [{}])
-        if v and isinstance(v[0], dict):
-            timeline.append({
-                "date":  p.get("date", ""),
-                "value": v[0].get("extracted_value", 0),
-            })
+    for row in timeline_raw:
+        vals = row.get("values", [{}])
+        value = vals[0].get("extracted_value", 0) if vals and isinstance(vals[0], dict) else 0
+        timeline.append({"date": row.get("date", ""), "value": value})
 
-    # ── RELATED_QUERIES → rising_queries ──────────────────────
-    rq_data      = related_queries_data.get("related_queries", {})
-    rising_raw   = _sl(rq_data.get("rising", []), LIMITS.get("rising_queries", 8))
-    top_raw      = _sl(rq_data.get("top",    []), 5)
+    rq_data = rq.get("related_queries", {})
+    rising_q = [q.get("query", "") for q in _sl(rq_data.get("rising", []), LIMITS.get("rising_queries", 8)) if q.get("query")]
+    top_q = [q.get("query", "") for q in _sl(rq_data.get("top", []), 8) if q.get("query")]
 
-    rising_queries = [q.get("query", "") for q in rising_raw if q.get("query")]
-    top_queries    = [q.get("query", "") for q in top_raw    if q.get("query")]
-
-    # ── RELATED_TOPICS → rising_topics ────────────────────────
-    rt_data         = related_topics_data.get("related_topics", {})
-    rising_topics_r = _sl(rt_data.get("rising", []), 5)
-    top_topics_r    = _sl(rt_data.get("top",    []), 5)
-
-    rising_topics = [
+    rt_data = rt.get("related_topics", {})
+    rising_t = [
         t.get("topic", {}).get("title", "") or t.get("title", "")
-        for t in rising_topics_r
+        for t in _sl(rt_data.get("rising", []), 8)
         if t.get("topic", {}).get("title") or t.get("title")
     ]
-    top_topics = [
-        t.get("topic", {}).get("title", "") or t.get("title", "")
-        for t in top_topics_r
-        if t.get("topic", {}).get("title") or t.get("title")
-    ]
-
-    # ── Fusion rising : queries + topics ──────────────────────
-    all_rising = list(dict.fromkeys(rising_queries + rising_topics))  # dédupliqué
 
     result = {
-        "source":         "google_trends",
-        "keyword":        keyword,
-        "country":        country_code.upper(),
-        "timeline":       timeline,
-        "rising_queries": all_rising,           # fusion queries + topics
-        "top_queries":    top_queries,
-        "rising_topics":  rising_topics,        # gardé séparément pour le LLM
-        "top_topics":     top_topics,
-        # Diagnostic : savoir quelle source a fourni des données
+        "source": "google_trends",
+        "keyword": keyword,
+        "country": country_code.upper(),
+        "timeline": timeline,
+        "rising_queries": _dedup_str(rising_q + rising_t, max_items=12),
+        "rising_topics": _dedup_str(rising_t, max_items=8),
+        "top_queries": _dedup_str(top_q, max_items=8),
+        "peak_period": _extract_peak_period(timeline),
+        "source_count": 3,
         "_debug": {
-            "timeseries_points":   len(timeline),
-            "rising_queries_raw":  len(rising_queries),
-            "rising_topics_raw":   len(rising_topics),
+            "timeseries_points": len(timeline),
+            "related_queries_count": len(rising_q),
+            "related_topics_count": len(rising_t),
         },
     }
-
     _cset(k, result, CACHE_TTL["serpapi_trends"])
-    logger.info(
-        f"[signal_tools] Trends '{keyword}' ({country_code}): "
-        f"{len(timeline)} pts, {len(all_rising)} rising"
-    )
+    logger.info(f"[signal_tools] Trends '{keyword}' ({country_code}): {len(result['rising_queries'])} rising")
     return result
 
 
-# ══════════════════════════════════════════════════════════════
-# TOOL 2 — Google Autocomplete via SerpAPI (NOUVEAU)
-# Suggestions en temps réel = proxy fiable des tendances actuelles
-# ══════════════════════════════════════════════════════════════
+async def fetch_google_trends_multi(keywords: list[str], country_code: str = "TN") -> dict:
+    clean = _dedup_str([str(k) for k in (keywords or []) if str(k).strip()], max_items=12)
+    cache_key = _key("trends_multi_v1", country_code, *clean)
+    if c := _cget(cache_key):
+        return c
+    if not clean:
+        return {"source": "google_trends_multi", "country": country_code.upper(), "keywords": [], "timeline": [], "rising_queries": [], "rising_topics": [], "top_queries": [], "peak_period": None, "source_count": 0, "_debug": {"batches": 0}}
+
+    batches = await asyncio.gather(*[fetch_google_trends(k, country_code) for k in clean])
+    timeline = []
+    rising = []
+    topics = []
+    tops = []
+    for b in batches:
+        timeline.extend(b.get("timeline", []))
+        rising.extend(b.get("rising_queries", []))
+        topics.extend(b.get("rising_topics", []))
+        tops.extend(b.get("top_queries", []))
+    timeline = _dedup_dict(timeline, ("date", "value"), max_items=200)
+    result = {
+        "source": "google_trends_multi",
+        "country": country_code.upper(),
+        "keywords": clean,
+        "timeline": timeline,
+        "rising_queries": _dedup_str(rising, max_items=20),
+        "rising_topics": _dedup_str(topics, max_items=20),
+        "top_queries": _dedup_str(tops, max_items=20),
+        "peak_period": _extract_peak_period(timeline),
+        "source_count": len(batches),
+        "_debug": {"batches": len(batches)},
+    }
+    _cset(cache_key, result, CACHE_TTL["serpapi_trends"])
+    return result
+
 
 async def fetch_google_autocomplete(keyword: str, country_code: str = "TN") -> dict:
-    """
-    Google Autocomplete = ce que les gens tapent MAINTENANT.
-    Fonctionne même avec un faible volume de recherche local.
-    Retourne 5-10 suggestions ordonnées par popularité.
-    """
-    k = _key("autocomplete", keyword, country_code)
-    if c := _cget(k): return c
+    k = _key("autocomplete_v2", keyword, country_code)
+    if c := _cget(k):
+        return c
 
-    api_key = os.getenv("SERPAPI_KEY", "")
+    api_key = os.getenv("SERPAPI_KEY", "").strip()
     if not api_key:
-        return {"source": "google_autocomplete", "keyword": keyword, "suggestions": []}
+        return {"source": "google_autocomplete", "keyword": keyword, "country": country_code.upper(), "suggestions": [], "source_count": 0}
 
-    data = await _get(_SERP_BASE, {
-        "engine":  "google_autocomplete",
-        "q":       keyword,
-        "api_key": api_key,
-        "gl":      country_code.lower(),
-        "hl":      "fr",
-    }, _SEM_SERP, DELAYS["serpapi"])
+    data = await _get(
+        _SERP_BASE,
+        {
+            "engine": "google_autocomplete",
+            "q": keyword,
+            "api_key": api_key,
+            "gl": country_code.lower(),
+            "hl": "en",
+        },
+        _SEM_SERP,
+        DELAYS["serpapi"],
+    )
 
     suggestions_raw = data.get("suggestions", [])
-    suggestions = [
-        s.get("value", "")
-        for s in _sl(suggestions_raw, 10)
-        if s.get("value") and s.get("value", "").lower() != keyword.lower()
-    ]
+    cleaned = []
+    key_norm = _norm(keyword)
+    for s in _sl(suggestions_raw, 20):
+        v = _clean_text(s.get("value", ""), 180)
+        v_norm = _norm(v)
+        if not v_norm or v_norm == key_norm:
+            continue
+        # retire variantes inutiles trop proches (prefix/suffix simples)
+        if v_norm.startswith(key_norm) and len(v_norm.split()) <= len(key_norm.split()) + 1:
+            continue
+        cleaned.append(v)
 
+    cleaned = _dedup_str(cleaned, max_items=10)
     result = {
-        "source":      "google_autocomplete",
-        "keyword":     keyword,
-        "country":     country_code.upper(),
-        "suggestions": suggestions,
+        "source": "google_autocomplete",
+        "keyword": keyword,
+        "country": country_code.upper(),
+        "suggestions": cleaned,
+        "source_count": 1,
     }
     _cset(k, result, CACHE_TTL.get("serpapi_autocomplete", 3600))
-    logger.info(f"[signal_tools] Autocomplete '{keyword}': {len(suggestions)} suggestions")
+    logger.info(f"[signal_tools] Autocomplete '{keyword}': {len(cleaned)} suggestions")
     return result
 
-
-# ══════════════════════════════════════════════════════════════
-# TOOL 3 — Trending topics via Tavily (NOUVEAU)
-# Extrait les tendances depuis les titres de news récentes
-# Gratuit, aucune clé supplémentaire nécessaire
-# ══════════════════════════════════════════════════════════════
 
 async def fetch_tavily_trends(query: str, country_code: str = "TN") -> dict:
-    """
-    Utilise Tavily pour extraire les tendances actuelles du secteur
-    depuis les articles récents. Complète Google Trends quand le
-    volume local est trop faible.
-    """
-    k = _key("tavily_trends", query, country_code)
-    if c := _cget(k): return c
+    k = _key("tavily_trends_v3", query, country_code)
+    if c := _cget(k):
+        return c
 
-    api_key = os.getenv("TAVILY_API_KEY", "")
+    api_key = os.getenv("TAVILY_API_KEY", "").strip()
     if not api_key:
-        return {"source": "tavily_trends", "query": query, "signals": []}
+        return {"source": "tavily_trends", "query": query, "country": country_code.upper(), "results": [], "signals": [], "snippet_keywords": [], "source_count": 0}
 
-    # Query orientée actualités récentes pour capter les tendances
-    trend_query = f"{query} trending popular growing demand 2025"
+    trend_query = f"{query} market trend growth demand"
+    data = await _post(
+        _TAVILY_URL,
+        {
+            "api_key": api_key,
+            "query": trend_query,
+            "search_depth": "advanced",
+            "max_results": max(5, LIMITS.get("tavily_insights_results", 6)),
+            "include_answer": False,
+            "include_raw_content": False,
+        },
+        _SEM_TAVILY,
+    )
 
-    data = await _post("https://api.tavily.com/search", {
-        "api_key":       api_key,
-        "query":         trend_query,
-        "search_depth":  "basic",
-        "max_results":   5,
-        "include_answer": False,
-    }, _SEM_TAVILY)
+    raw_results = _sl(data.get("results", []), 10)
+    enriched = []
+    for r in raw_results:
+        title = _clean_text(r.get("title", ""), 220)
+        url = _clean_text(r.get("url", ""), 300)
+        snippet = _clean_text(r.get("content", ""), 600)
+        enriched.append({"title": title, "url": url, "snippet": snippet})
+    enriched = _dedup_dict(enriched, ("url", "title", "snippet"), max_items=10)
 
-    results_raw = _sl(data.get("results", []), 5)
-
-    # Extraire les titres comme signaux de tendance
-    signals = [
-        r.get("title", "")
-        for r in results_raw
-        if r.get("title") and len(r.get("title", "")) > 10
-    ]
-
-    # Extraire des mots-clés depuis les snippets (proxy rising_queries)
+    signals = _dedup_str([x["title"] for x in enriched if x.get("title")], max_items=10)
     snippet_keywords = []
-    for r in results_raw:
-        snippet = r.get("content", "")[:200]
-        # Garder les extraits qui contiennent des signaux positifs
-        if any(w in snippet.lower() for w in [
-            "growing", "trending", "popular", "increase", "demand",
-            "croissance", "tendance", "populaire", "hausse",
-        ]):
-            snippet_keywords.append(snippet[:100])
+    for x in enriched:
+        sn = x.get("snippet", "")
+        s_norm = _norm(sn)
+        if any(w in s_norm for w in ("growing", "trending", "popular", "increase", "demand", "croissance", "tendance", "hausse")):
+            snippet_keywords.append(sn[:140])
+    snippet_keywords = _dedup_str(snippet_keywords, max_items=10)
 
     result = {
-        "source":            "tavily_trends",
-        "query":             query,
-        "country":           country_code.upper(),
-        "signals":           signals,           # titres d'articles récents
-        "snippet_keywords":  snippet_keywords,  # extraits avec signaux positifs
+        "source": "tavily_trends",
+        "query": query,
+        "country": country_code.upper(),
+        "results": enriched,
+        "signals": signals,
+        "snippet_keywords": snippet_keywords,
+        "source_count": len(enriched),
     }
     _cset(k, result, CACHE_TTL.get("tavily", 3600))
-    logger.info(f"[signal_tools] Tavily trends '{query}': {len(signals)} signaux")
+    logger.info(f"[signal_tools] Tavily trends '{query}': {len(enriched)} results")
     return result
 
 
-# ══════════════════════════════════════════════════════════════
-# TOOL 4 — TikTok (désactivé — plan payant SerpAPI)
-# ══════════════════════════════════════════════════════════════
+async def fetch_tavily_trends_multi(queries: list[str], country_code: str = "TN") -> dict:
+    clean = _dedup_str([str(q) for q in (queries or []) if str(q).strip()], max_items=12)
+    cache_key = _key("tavily_trends_multi_v1", country_code, *clean)
+    if c := _cget(cache_key):
+        return c
+    if not clean:
+        return {"source": "tavily_trends_multi", "country": country_code.upper(), "queries": [], "results": [], "signals": [], "snippet_keywords": [], "source_count": 0}
+
+    batches = await asyncio.gather(*[fetch_tavily_trends(q, country_code) for q in clean])
+    results = []
+    signals = []
+    snippets = []
+    for b in batches:
+        results.extend(b.get("results", []))
+        signals.extend(b.get("signals", []))
+        snippets.extend(b.get("snippet_keywords", []))
+
+    results = _dedup_dict(results, ("url", "title", "snippet"), max_items=30)
+    result = {
+        "source": "tavily_trends_multi",
+        "country": country_code.upper(),
+        "queries": clean,
+        "results": results,
+        "signals": _dedup_str(signals, max_items=20),
+        "snippet_keywords": _dedup_str(snippets, max_items=20),
+        "source_count": len(results),
+        "_debug": {"batches": len(batches)},
+    }
+    _cset(cache_key, result, CACHE_TTL.get("tavily", 3600))
+    return result
+
 
 async def fetch_tiktok_signals(query: str) -> dict:
-    logger.debug(f"[signal_tools] TikTok désactivé pour: {query}")
+    logger.debug(f"[signal_tools] TikTok disabled for: {query}")
     return {
-        "source":               "tiktok",
-        "query":                query,
-        "results":              [],
-        "hashtags":             [],
+        "source": "tiktok",
+        "query": query,
+        "results": [],
+        "hashtags": [],
         "hashtags_disponibles": False,
-        "disponible":           False,
+        "disponible": False,
+        "source_count": 0,
     }
 
 
-# ══════════════════════════════════════════════════════════════
-# TOOL 5 — Regulatory via Tavily (inchangé)
-# ══════════════════════════════════════════════════════════════
-
 async def fetch_regulatory(query: str, country_code: str = "") -> dict:
-    k = _key("regulatory", query, country_code)
-    if c := _cget(k): return c
+    k = _key("regulatory_v2", query, country_code)
+    if c := _cget(k):
+        return c
 
-    api_key = os.getenv("TAVILY_API_KEY", "")
+    api_key = os.getenv("TAVILY_API_KEY", "").strip()
     if not api_key:
-        return {"source": "regulatory", "query": query, "results": []}
+        return {"source": "regulatory_via_tavily", "query": query, "results": [], "source_count": 0}
 
-    reg_query = f"réglementation légale conformité licence {query}"
+    reg_query = f"regulation legal compliance license {query}"
     if country_code:
         reg_query += f" {country_code}"
 
-    data = await _post("https://api.tavily.com/search", {
-        "api_key":       api_key,
-        "query":         reg_query,
-        "search_depth":  "basic",
-        "max_results":   LIMITS["tavily_regulatory_results"],
-        "include_answer": False,
-    }, _SEM_TAVILY)
+    data = await _post(
+        _TAVILY_URL,
+        {
+            "api_key": api_key,
+            "query": reg_query,
+            "search_depth": "advanced",
+            "max_results": LIMITS["tavily_regulatory_results"],
+            "include_answer": False,
+        },
+        _SEM_TAVILY,
+    )
 
-    results = _sl(data.get("results", []), LIMITS["tavily_regulatory_results"])
-    result  = {
-        "source":  "regulatory_via_tavily",
-        "query":   query,
-        "results": [
-            {"title": r.get("title", ""), "snippet": r.get("content", "")[:300]}
-            for r in results
-        ],
+    rows = _sl(data.get("results", []), LIMITS["tavily_regulatory_results"])
+    results = []
+    for r in rows:
+        results.append(
+            {
+                "title": _clean_text(r.get("title", ""), 220),
+                "url": _clean_text(r.get("url", ""), 300),
+                "snippet": _clean_text(r.get("content", ""), 400),
+            }
+        )
+    results = _dedup_dict(results, ("url", "title", "snippet"))
+
+    result = {
+        "source": "regulatory_via_tavily",
+        "query": query,
+        "country": country_code.upper() if country_code else "",
+        "results": results,
+        "source_count": len(results),
     }
     _cset(k, result, CACHE_TTL["tavily"])
-    logger.info(f"[signal_tools] Regulatory: {len(result['results'])} résultats")
+    logger.info(f"[signal_tools] Regulatory: {len(results)} results")
     return result

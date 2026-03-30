@@ -9,6 +9,13 @@ LLM_CONFIG = {
     "temperature": 0.1,
 }
 
+LLM_LIMITS = {
+    "max_items": 8,
+    "snippet_max_chars": 300,
+    "title_max_chars": 120,
+    "max_payload_chars": 20000
+}
+
 # ── Limites résultats par API ─────────────────────────────────
 LIMITS = {
     "serp_competitors_results":  8,
