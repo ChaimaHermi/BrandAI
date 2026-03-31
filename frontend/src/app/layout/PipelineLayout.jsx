@@ -343,6 +343,7 @@ export default function PipelineLayout() {
                   navigate(`/ideas/${id}/market`, {
                     state: {
                       autoStartMarket: true,
+                      sourceIdeaId: idea?.id,
                       clarifiedIdea: {
                         short_pitch: idea?.clarity_short_pitch || idea?.name || "",
                         solution_description: idea?.clarity_solution || idea?.description || "",

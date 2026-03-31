@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useLocation, useOutletContext } from "react-router-dom";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useMarketAgent } from "../hooks/useMarketAgent";
 import MarketHeader from "../components/MarketHeader";
 import MarketTabs from "../components/MarketTabs";
@@ -22,6 +22,7 @@ function EmptyState() {
 export default function MarketPage() {
   const { idea, token, refetchIdea } = useOutletContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const autoStartedRef = useRef(false);
 
   const {
@@ -46,14 +47,23 @@ export default function MarketPage() {
     if (autoStartedRef.current) return;
 
     const state = location.state || {};
-    if (state.autoStartMarket && state.clarifiedIdea) {
+    if (state.autoStartMarket && state.sourceIdeaId === idea.id) {
       autoStartedRef.current = true;
       startMarketAnalysis({
-        clarifiedIdea: state.clarifiedIdea,
+        clarifiedIdea: state.clarifiedIdea || undefined,
         onDone: () => refetchIdea?.(),
       });
+
+      // Clear one-shot navigation state to avoid replay on future mounts.
+      navigate(location.pathname, { replace: true, state: null });
+      return;
     }
-  }, [idea?.id, token, location.state, startMarketAnalysis, refetchIdea]);
+
+    // Safety: ignore stale navigation state coming from another idea.
+    if (state.autoStartMarket && state.sourceIdeaId && state.sourceIdeaId !== idea.id) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [idea?.id, token, location.state, startMarketAnalysis, refetchIdea, navigate, location.pathname]);
 
   const renderActiveTab = () => {
     if (!report) return <EmptyState />;

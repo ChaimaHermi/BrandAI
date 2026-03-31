@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
 import XaiBlock from "../components/XaiBlock";
 import QuestionsBlock from "../components/QuestionsBlock";
@@ -7,7 +7,6 @@ import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
-  const navigate = useNavigate();
   const { idea, token, refetchIdea } = useOutletContext();
   const xaiHideTimerRef = useRef(null);
   const {
@@ -33,15 +32,8 @@ export default function ClarifierPage() {
     submitAnswers,
   } = useClarifierAgent(idea, token, {
     onPersisted: refetchIdea,
-    onClarified: (clarifiedData) => {
-      if (!idea?.id) return;
-      navigate(`/ideas/${idea.id}/market`, {
-        state: {
-          autoStartMarket: true,
-          clarifiedIdea: clarifiedData,
-        },
-      });
-    },
+    // Clarifier ends here. Market pipeline starts only by explicit user action.
+    onClarified: () => {},
   });
 
   const scheduleHideXai = (delayMs = 50000) => {
