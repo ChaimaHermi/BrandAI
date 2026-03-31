@@ -13,6 +13,7 @@ import SubmitIdeaPage from "@/pages/SubmitIdeaPage";
 import IdeaPage from "@/pages/IdeaPage";
 import PipelineLayout from "@/app/layout/PipelineLayout";
 import ClarifierPage from "@/agents/clarifier/pages/ClarifierPage";
+import MarketPage from "@/agents/market/pages/MarketPage";
 
 function PlaceholderPage({ name }) {
   return (
@@ -116,12 +117,8 @@ export default function App() {
             <Route index element={<Navigate to="clarifier" replace />} />
             <Route path="clarifier" element={<ClarifierPage />} />
             <Route
-              path="enhancer"
-              element={<PlaceholderPage name="Idea Enhancer" />}
-            />
-            <Route
               path="market"
-              element={<PlaceholderPage name="Market Analysis" />}
+              element={<MarketPage />}
             />
             <Route
               path="brand"

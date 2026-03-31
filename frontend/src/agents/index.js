@@ -10,16 +10,6 @@ export const AGENTS = [
     doneColor: "#085041",
   },
   {
-    id: "enhancer",
-    label: "Idea Enhancer",
-    short: "IE",
-    color: "#1D9E75",
-    gradient: "linear-gradient(135deg,#1D9E75,#085041)",
-    doneBg: "#f0fdf4",
-    doneBorder: "#9FE1CB",
-    doneColor: "#085041",
-  },
-  {
     id: "market",
     label: "Market Analysis",
     short: "MA",

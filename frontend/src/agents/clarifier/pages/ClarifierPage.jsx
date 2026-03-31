@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
 import XaiBlock from "../components/XaiBlock";
 import QuestionsBlock from "../components/QuestionsBlock";
@@ -7,6 +7,7 @@ import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
+  const navigate = useNavigate();
   const { idea, token, refetchIdea } = useOutletContext();
   const xaiHideTimerRef = useRef(null);
   const {
@@ -30,7 +31,18 @@ export default function ClarifierPage() {
     setRefusalData,
     startAnalysis,
     submitAnswers,
-  } = useClarifierAgent(idea, token, { onPersisted: refetchIdea });
+  } = useClarifierAgent(idea, token, {
+    onPersisted: refetchIdea,
+    onClarified: (clarifiedData) => {
+      if (!idea?.id) return;
+      navigate(`/ideas/${idea.id}/market`, {
+        state: {
+          autoStartMarket: true,
+          clarifiedIdea: clarifiedData,
+        },
+      });
+    },
+  });
 
   const scheduleHideXai = (delayMs = 50000) => {
     if (xaiHideTimerRef.current) {
@@ -195,7 +207,7 @@ export default function ClarifierPage() {
               color: "#9ca3af",
             }}
           >
-            Analyse et structure votre idée · Étape 1 sur 7
+            Analyse et structure votre idée · Étape 1 sur 6
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -230,8 +242,8 @@ export default function ClarifierPage() {
                   height: "100%",
                   width:
                     currentStep === "clarified"
-                      ? "14%"
-                      : "7%",
+                      ? "17%"
+                      : "8%",
                   background: "linear-gradient(90deg,#7F77DD,#534AB7)",
                   borderRadius: 99,
                   transition: "width 0.5s ease",
@@ -245,7 +257,7 @@ export default function ClarifierPage() {
                 color: "#534AB7",
               }}
             >
-              {currentStep === "clarified" ? "14%" : "7%"}
+              {currentStep === "clarified" ? "17%" : "8%"}
             </span>
           </div>
         </div>

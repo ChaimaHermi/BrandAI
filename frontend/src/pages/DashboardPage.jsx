@@ -157,9 +157,9 @@ export default function DashboardPage() {
     const steps = idea?.pipeline_progress?.clarifier_steps;
     if (!Array.isArray(steps) || steps.length <= 0) return 0;
 
-    // UI actuelle: "1/7" => 14%. On ramène donc 7 steps => 14%.
+    // Pipeline actuel : 6 étapes total, Clarifier ~= 17%.
     const clarifierTotalSteps = 7;
-    const clarifierMaxPct = 14;
+    const clarifierMaxPct = 17;
 
     const pct = Math.round((steps.length / clarifierTotalSteps) * clarifierMaxPct);
     return clamp(pct, 0, clarifierMaxPct);
@@ -167,12 +167,11 @@ export default function DashboardPage() {
 
   const getProgress = (idea) => {
     const statusMap = {
-      clarifier_done: 14,
-      enhancer_done: 28,
-      market_done: 42,
-      brand_done: 57,
-      content_done: 71,
-      website_done: 85,
+      clarifier_done: 17,
+      market_done: 33,
+      brand_done: 50,
+      content_done: 67,
+      website_done: 83,
       done: 100,
     };
 
@@ -200,10 +199,6 @@ export default function DashboardPage() {
       clarifier_done: {
         label: `Clarifier ✓ · ${progress}%`,
         color: "#7F77DD",
-      },
-      enhancer_done: {
-        label: `Enhancer ✓ · ${progress}%`,
-        color: "#1D9E75",
       },
       done: {
         label: `Pipeline complet ✓ · ${progress}%`,

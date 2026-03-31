@@ -17,6 +17,7 @@ from app.core.config import settings
 from app.core.database import Base
 import app.models.user  # noqa
 import app.models.idea  # noqa
+import app.models.market_analysis  # noqa
 
 config = context.config
 

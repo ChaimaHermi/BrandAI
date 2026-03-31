@@ -183,7 +183,7 @@ export default function PipelineLayout() {
             />
           </div>
           <span className="text-[10px] font-bold text-[#534AB7]">
-            {activeIndex + 1}/7
+            {activeIndex + 1}/{AGENTS.length}
           </span>
         </div>
 
@@ -340,7 +340,7 @@ export default function PipelineLayout() {
             <button
               onClick={() => {
                 if (pipelineEnabled) {
-                  navigate(`/ideas/${id}/enhancer`);
+                  navigate(`/ideas/${id}/market`);
                 }
               }}
               disabled={!pipelineEnabled}

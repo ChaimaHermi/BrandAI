@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import re
 import sys
 from pathlib import Path
@@ -59,6 +60,11 @@ def safe_filename(text: str) -> str:
 
 
 async def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    )
+
     agent = MarketAnalysisAgent()
     state = build_state_from_idea(IDEA)
 

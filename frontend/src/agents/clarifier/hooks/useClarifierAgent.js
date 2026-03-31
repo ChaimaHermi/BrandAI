@@ -142,6 +142,7 @@ export function useClarifierAgent(idea, token, options = {}) {
                 },
                 token,
               ).then(() => options.onPersisted?.());
+              options.onClarified?.(data);
             }
           }
 
@@ -259,6 +260,7 @@ export function useClarifierAgent(idea, token, options = {}) {
                 },
                 token,
               ).then(() => options.onPersisted?.());
+              options.onClarified?.(data);
             }
           }
 
