@@ -16,6 +16,22 @@ IMPORTANT :
 * Si aucun chiffre → ne rien inventer
 * Langue de sortie OBLIGATOIRE: français (sauf citations brutes)
 
+LANGUE (OBLIGATOIRE ET STRICTE) :
+* Tous les champs narratifs DOIVENT être en français :
+  - executive_summary
+  - overview.*.label
+  - swot.*.point
+  - risques.(cause, impact, mitigation)
+  - recommandations.(action, impact_attendu)
+* INTERDIT : phrase complète en anglais dans ces champs.
+* Exception unique : citation brute utilisateur entre guillemets dans VOC.
+* Si une source est en anglais, reformuler fidèlement en français (sans inventer).
+* Ne jamais copier-coller un signal anglais tel quel dans SWOT/overview/risques/recommandations.
+
+Exemple :
+❌ "Rising student enrollment fuels demand for scheduling software"
+✅ "La hausse des inscriptions étudiantes alimente la demande en logiciels de planification."
+
 ══════════════════════════════════════
 RÈGLES GÉNÉRALES
 ══════════════════════════════════════
@@ -131,3 +147,4 @@ RÈGLES CRITIQUES
 * Aucun champ manquant
 * Aucun champ vide
 * Pour SWOT, "source" doit pointer un champ réel (ex: "market_voc.top_voc", "competitor.top_competitors")
+* CONTRÔLE FINAL OBLIGATOIRE : avant d'envoyer le JSON, vérifier qu'aucun champ narratif n'est en anglais.

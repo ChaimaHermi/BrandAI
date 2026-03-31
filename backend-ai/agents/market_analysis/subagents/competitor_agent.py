@@ -37,6 +37,16 @@ class CompetitorAgent(BaseAgent):
         "###", "| |", "rated 1 out of 5", "how is the trustscore",
         "troubleshoot", "site:reddit.com", "raw but fast",
     )
+    _WEAKNESS_HINTS = (
+        "absence", "faible", "faibles", "peu", "difficile", "complexe", "probleme", "problème",
+        "retard", "lente", "lent", "instable", "manque", "limite", "limité", "limitee",
+        "cher", "coût", "cout", "erreur", "frustration", "support lent", "support faible",
+    )
+    _BOILERPLATE_PATTERNS = (
+        "page d'accueil", "mentions legales", "politique de confidentialite", "politique de confidentialité",
+        "cookies", "tous droits reserves", "copyright", "applications sur google play", "app store",
+        "plateforme", "est une plateforme", "leader", "solution complete", "solution complète",
+    )
 
     def __init__(self):
         super().__init__(
@@ -194,7 +204,7 @@ class CompetitorAgent(BaseAgent):
         maps = maps_index.get(k, {})
 
         weaknesses = c.get("weaknesses") or self._extract_weaknesses(name, tavily_results)
-        weaknesses = self._dedup_keep_order([w for w in (self._sanitize_issue_text(x) for x in weaknesses) if w])[:4]
+        weaknesses = self._clean_weaknesses(weaknesses)[:4]
         strengths = c.get("key_strengths") or self._extract_strengths(name, tavily_results)
         strengths = self._dedup_keep_order([s for s in (self._sanitize_issue_text(x) for x in strengths) if s])[:4]
 
@@ -254,7 +264,7 @@ class CompetitorAgent(BaseAgent):
             if extract:
                 scored.append((hit_count, extract))
         scored.sort(key=lambda x: x[0], reverse=True)
-        return [x[1] for x in scored[:4]]
+        return self._clean_weaknesses([x[1] for x in scored[:4]])
 
     def _extract_strengths(self, name: str, snippets: list[dict]) -> list[str]:
         name_tokens = [t for t in re.split(r"\W+", name.lower()) if len(t) > 2]
@@ -358,19 +368,59 @@ class CompetitorAgent(BaseAgent):
         s = re.sub(r"\s+", " ", str(text or "")).strip()
         if not s:
             return ""
+        s = re.sub(r"^[#>\-\*\|\s]+", "", s).strip()
+        s = re.sub(r"\s*[|#]{1,}\s*", " ", s).strip()
         low = s.lower()
         if any(p in low for p in self._NOISY_PATTERNS):
             return ""
+        if self._looks_like_boilerplate(low):
+            return ""
         # Remove heavily polluted fragments with too many separators.
-        if s.count("|") >= 2 or s.count("...") >= 2:
+        if s.count("|") >= 2 or s.count("...") >= 2 or s.count("#") >= 1:
+            return ""
+        if re.search(r"https?://|www\.", low):
             return ""
         # Keep concise readable sentences only.
         tokens = [t for t in re.split(r"\s+", s) if t]
         if len(tokens) < 5:
             return ""
+        if self._is_repetitive(tokens):
+            return ""
         if len(tokens) > 30:
             s = " ".join(tokens[:30]).rstrip(" ,;:-") + "..."
         return s
+
+    def _clean_weaknesses(self, weaknesses: list[str]) -> list[str]:
+        cleaned = []
+        for w in weaknesses or []:
+            s = self._sanitize_issue_text(w)
+            if not s:
+                continue
+            if self._is_actionable_weakness(s):
+                cleaned.append(s)
+        return self._dedup_keep_order(cleaned)
+
+    def _is_actionable_weakness(self, text: str) -> bool:
+        low = text.lower()
+        if any(kw in low for kw in self._NEGATIVE_KW):
+            return True
+        return any(hint in low for hint in self._WEAKNESS_HINTS)
+
+    def _looks_like_boilerplate(self, low: str) -> bool:
+        if any(p in low for p in self._BOILERPLATE_PATTERNS):
+            # Accept only if there is a clear negative signal too.
+            return not any(kw in low for kw in self._NEGATIVE_KW) and not any(h in low for h in self._WEAKNESS_HINTS)
+        return False
+
+    def _is_repetitive(self, tokens: list[str]) -> bool:
+        if not tokens:
+            return True
+        norm = [re.sub(r"[^\wàâçéèêëîïôûùüÿñæœ-]", "", t.lower()) for t in tokens]
+        norm = [t for t in norm if t]
+        if not norm:
+            return True
+        uniq_ratio = len(set(norm)) / len(norm)
+        return uniq_ratio < 0.45
 
     def _dedup_keep_order(self, items: list[str]) -> list[str]:
         seen = set()

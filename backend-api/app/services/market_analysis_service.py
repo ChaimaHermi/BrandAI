@@ -26,7 +26,7 @@ def create_market_analysis(
     user_id: int,
     payload: MarketAnalysisCreate,
 ) -> MarketAnalysisResult:
-    _get_user_idea_or_404(db, idea_id, user_id)
+    idea = _get_user_idea_or_404(db, idea_id, user_id)
     row = MarketAnalysisResult(
         idea_id=idea_id,
         status=payload.status,
@@ -37,6 +37,15 @@ def create_market_analysis(
         completed_at=payload.completed_at,
     )
     db.add(row)
+
+    # Keep idea status aligned with pipeline progression.
+    if payload.status == "done":
+        idea.status = "market_done"
+    elif payload.status == "error":
+        idea.status = "error"
+    elif payload.status in {"pending", "running"}:
+        idea.status = "running"
+
     db.commit()
     db.refresh(row)
     return row

@@ -340,7 +340,20 @@ export default function PipelineLayout() {
             <button
               onClick={() => {
                 if (pipelineEnabled) {
-                  navigate(`/ideas/${id}/market`);
+                  navigate(`/ideas/${id}/market`, {
+                    state: {
+                      autoStartMarket: true,
+                      clarifiedIdea: {
+                        short_pitch: idea?.clarity_short_pitch || idea?.name || "",
+                        solution_description: idea?.clarity_solution || idea?.description || "",
+                        target_users: idea?.clarity_target_users || idea?.target_audience || "",
+                        problem: idea?.clarity_problem || idea?.description || "",
+                        sector: idea?.clarity_sector || idea?.sector || "",
+                        country_code: idea?.clarity_country_code || "TN",
+                        language: idea?.clarity_language || "fr",
+                      },
+                    },
+                  });
                 }
               }}
               disabled={!pipelineEnabled}

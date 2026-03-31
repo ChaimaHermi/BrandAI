@@ -9,6 +9,8 @@ export const MARKET_TABS = [
 
 export const XAI_STAGE_LABELS = {
   build_state: "Préparation des données",
+  clarifier: "Validation Clarifier",
+  run_pipeline_graph: "Orchestration LangGraph",
   run_market_analysis: "Analyse de marché multi-agent",
   persist_result: "Sauvegarde en base de données",
 };

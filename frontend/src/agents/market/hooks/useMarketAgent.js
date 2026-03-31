@@ -21,29 +21,45 @@ export function useMarketAgent({ idea, token }) {
   }, [idea?.id, token]);
 
   const startMarketAnalysis = useCallback(
-    async ({ clarifiedIdea, onDone } = {}) => {
+    async ({ clarifiedIdea, onDone, mode = "pipeline" } = {}) => {
       if (!idea || !token) return;
       setIsLoading(true);
       setError("");
       setXaiSteps([]);
 
+      const resolvedShortPitch =
+        clarifiedIdea?.short_pitch || idea.clarity_short_pitch || idea.name || "";
+      const resolvedSolutionDescription =
+        clarifiedIdea?.solution_description || idea.clarity_solution || idea.description || "";
+      const resolvedTargetUsers =
+        clarifiedIdea?.target_users || idea.clarity_target_users || idea.target_audience || "";
+      const resolvedProblem =
+        clarifiedIdea?.problem || idea.clarity_problem || idea.description || "";
+      const resolvedSector = clarifiedIdea?.sector || idea.clarity_sector || idea.sector || "";
+      const resolvedCountryCode =
+        clarifiedIdea?.country_code || idea.clarity_country_code || "TN";
+      const resolvedLanguage = clarifiedIdea?.language || idea.clarity_language || "fr";
+
       const payload = {
         idea_id: idea.id,
-        name: idea.name || clarifiedIdea?.short_pitch || "",
-        sector: clarifiedIdea?.sector || idea.sector || "",
-        description: idea.description || clarifiedIdea?.solution_description || "",
-        target_audience: idea.target_audience || clarifiedIdea?.target_users || "",
-        short_pitch: clarifiedIdea?.short_pitch || idea.name || "",
-        solution_description: clarifiedIdea?.solution_description || idea.description || "",
-        target_users: clarifiedIdea?.target_users || idea.target_audience || "",
-        problem: clarifiedIdea?.problem || idea.description || "",
-        country_code: clarifiedIdea?.country_code || "TN",
-        language: clarifiedIdea?.language || "fr",
+        name: resolvedShortPitch || idea.name || "",
+        sector: resolvedSector,
+        description: resolvedSolutionDescription || idea.description || "",
+        target_audience: resolvedTargetUsers || idea.target_audience || "",
+        short_pitch: resolvedShortPitch,
+        solution_description: resolvedSolutionDescription,
+        target_users: resolvedTargetUsers,
+        problem: resolvedProblem,
+        country_code: resolvedCountryCode,
+        language: resolvedLanguage,
         access_token: token,
       };
 
       try {
-        await readSSEStream(marketApi.streamUrl(), payload, async (eventType, data) => {
+        const streamUrl =
+          mode === "market_only" ? marketApi.marketOnlyStreamUrl() : marketApi.streamUrl();
+
+        await readSSEStream(streamUrl, payload, async (eventType, data) => {
           if (eventType === "step") {
             setXaiSteps((prev) => [
               ...prev,
@@ -62,8 +78,12 @@ export function useMarketAgent({ idea, token }) {
 
           if (eventType === "done") {
             if (data?.success) {
-              await loadLatest();
-              onDone?.();
+              if (mode !== "market_only" && data?.stopped_at === "clarifier") {
+                setError("Le pipeline s'est arrêté au Clarifier (questions/refus).");
+              } else {
+                await loadLatest();
+                onDone?.();
+              }
             }
             setIsLoading(false);
           }

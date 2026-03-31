@@ -66,9 +66,21 @@ export default function MarketPage() {
     return <OverviewTab report={report} />;
   };
 
+  const handleRelaunchMarketOnly = () => {
+    startMarketAnalysis({
+      mode: "market_only",
+      onDone: () => refetchIdea?.(),
+    });
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-      <MarketHeader meta={report?.meta} overview={report?.overview} />
+      <MarketHeader
+        meta={report?.meta}
+        idea={idea}
+        onRelaunch={handleRelaunchMarketOnly}
+        isLoading={isLoading}
+      />
       <MarketXaiBlock steps={xaiSteps} isLoading={isLoading} error={error} />
 
       <div className="rounded-xl border border-[#e8e4ff] bg-[#f7f6ff] p-3">

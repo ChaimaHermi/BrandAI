@@ -22,6 +22,12 @@ REGLES FAIBLESSES
 - Nettoyer les interférences: supprimer artefacts markdown/SEO (###, |, concat cassée, snippets pollués)
 - Garder uniquement des phrases claires et lisibles (5-25 mots)
 - Si fragment ambigu ou bruité, l'ignorer
+- Interdire completement les fragments de navigation ou boilerplate de site:
+  - "page d'accueil", "accueil", "mentions legales", "politique de confidentialite", "cookies", "copyright"
+  - titres SEO/markdown: "#", "##", "###", menus, breadcrumbs, "Applications sur Google Play", "App Store"
+- Interdire les textes generiques non actionnables du type:
+  - "plateforme X est une plateforme...", "solution complete...", "leader du marche..."
+- Chaque faiblesse doit etre exploitable business (limitation produit, UX faible, prix, support, fiabilite, integration, performance)
 - Si rien trouve :
   faiblesse_principale = "Non documente dans les sources disponibles"
   weaknesses = []
