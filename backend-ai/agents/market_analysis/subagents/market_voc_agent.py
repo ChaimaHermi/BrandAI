@@ -6,6 +6,7 @@
 import asyncio
 import json
 from typing import Any, Callable, Awaitable
+from pathlib import Path
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.market_analysis_config import LLM_CONFIG, LLM_LIMITS
@@ -18,6 +19,9 @@ from tools.market_analysis.subagents_tools.market_voc_tools import (
     fetch_youtube_voc,
 )
 from utils.simple_filter import simple_filter
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+PROMPTS_DIR = BASE_DIR / "prompts" / "market_analysis"
 
 
 class MarketVocAgent(BaseAgent):
@@ -267,7 +271,7 @@ class MarketVocAgent(BaseAgent):
 
     def _load_prompt(self, filename: str, state: PipelineState) -> str:
         try:
-            with open(f"prompts/market_analysis/{filename}", encoding="utf-8") as f:
+            with open(PROMPTS_DIR / filename, encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             return f"""Tu es un expert VOC pour : {state.sector}.

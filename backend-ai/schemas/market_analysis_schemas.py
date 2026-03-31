@@ -2,8 +2,9 @@
 # schemas/market_analysis_schemas.py
 # ══════════════════════════════════════════════════════════════
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field, root_validator, model_validator
 
 
 # ── Section 1 : Overview ──────────────────────────────────────
@@ -73,10 +74,14 @@ class MarketVoc(BaseModel):
 class Competitor(BaseModel):
     nom:                  str
     type:                 str       = Field(..., description="digital | local | regional | international")
-    faiblesse_principale: str
-    weaknesses:           list[str] = Field(default_factory=list)
-    key_strengths:        list[str] = Field(default_factory=list)
-    positioning:          str       = ""
+    website:              Optional[str] = None
+    description:          Optional[str] = None
+    source:               Optional[str] = None
+    rating:               Optional[float] = None
+    faiblesse_principale: Optional[str] = None
+    weaknesses:           List[str] = Field(default_factory=list)
+    key_strengths:        List[str] = Field(default_factory=list)
+    positioning:          Optional[str] = None
 
 class CompetitorSection(BaseModel):
     top_competitors:     list[Competitor] = Field(default_factory=list)
@@ -88,7 +93,18 @@ class CompetitorSection(BaseModel):
 
 class SwotItem(BaseModel):
     point:  str
-    source: str
+    source: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_swot_item(cls, values):
+        if isinstance(values, str):
+            return {"point": values, "source": "inference"}
+        if isinstance(values, dict):
+            if not values.get("point"):
+                values["point"] = values.get("description") or values.get("label") or ""
+            values.setdefault("source", values.get("source") or "inference")
+        return values
 
 class Swot(BaseModel):
     forces:       list[SwotItem] = Field(default_factory=list)
@@ -100,17 +116,34 @@ class Swot(BaseModel):
 # ── Section 6 : Risques ───────────────────────────────────────
 
 class Risque(BaseModel):
-    type:        str  = Field(..., description="reglementaire | macro | concurrentiel")
-    description: str
-    source:      str
+    type:        str = Field(..., description="reglementaire | macro | concurrentiel")
+    cause:       str
+    impact:      str
+    probabilite: str
+    mitigation:  Optional[str] = None
+
+    @root_validator(pre=True)
+    def _coerce_legacy_risque_fields(cls, values):
+        # Compat legacy synthesis payloads.
+        if not values.get("cause"):
+            values["cause"] = values.get("description") or "Non precisé"
+        if not values.get("impact"):
+            values["impact"] = values.get("impact_attendu") or values.get("description") or "Non precisé"
+        if not values.get("probabilite"):
+            values["probabilite"] = values.get("niveau") or "moyen"
+        if values.get("mitigation") is None:
+            values["mitigation"] = values.get("mitigation")
+        return values
 
 
 # ── Section 7 : Recommandations ──────────────────────────────
 
 class Recommandation(BaseModel):
-    priorite: int
-    action:   str
-    source:   str
+    action:         str
+    horizon:        Optional[str] = None
+    impact_attendu: Optional[str] = None
+    priorite:       Optional[int] = None
+    source:         Optional[str] = None
 
 
 # ── Meta ──────────────────────────────────────────────────────
@@ -129,6 +162,7 @@ class Meta(BaseModel):
 # ── Rapport final ─────────────────────────────────────────────
 
 class MarketReport(BaseModel):
+    executive_summary: str = ""
     overview:        Overview
     tendances:       Tendances
     market_voc:      MarketVoc
@@ -137,3 +171,4 @@ class MarketReport(BaseModel):
     risques:         list[Risque]        = Field(default_factory=list)
     recommandations: list[Recommandation] = Field(default_factory=list)
     meta:            Meta
+    data_quality:    Dict[str, Any] = Field(default_factory=dict)

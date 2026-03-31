@@ -34,6 +34,8 @@ RÈGLES OBLIGATOIRES :
 * Dédupliquer
 * Maximum 8 éléments
 * Minimum 2 éléments SI données disponibles
+* Garder uniquement des requêtes liées au use case (produit / problème / secteur)
+* Supprimer les termes ambigus hors contexte (ex: mots génériques, marque non liée, one-word sans contexte)
 
 INTERDICTION :
 Ne jamais retourner [] si au moins une source contient des données
@@ -110,6 +112,18 @@ RÈGLES :
 * max 4
 * texte réel extrait
 * pas d’invention
+* pour B2B SaaS: prioriser consentement enregistrement, confidentialité, conservation données,
+  conformité GDPR/SOC2, transfert transfrontalier, exigences sécurité entreprise
+* si aucun résultat: [] + mention explicite du manque de données dans sector_context
+
+══════════════════════════════════════
+NEWS_SIGNALS — NORMALISATION
+══════════════════════════════════════
+
+* max 5 signaux
+* 1 signal = 1 phrase courte (<= 140 caractères)
+* pas de markdown (###), pas de texte brut tronqué, pas de copier-coller long
+* format attendu: "Signal clé — impact marché"
 
 ══════════════════════════════════════
 FORMAT STRICT

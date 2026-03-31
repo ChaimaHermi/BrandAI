@@ -204,7 +204,7 @@ async def fetch_newsapi(query: str, language: str = "fr") -> dict:
 
     data = await _get("https://gnews.io/api/v4/search", {
         "q":      simple_query,
-        "lang":   "en",
+        "lang":   language or "en",
         "max":    min(LIMITS["newsapi_results"], 10),
         "apikey": api_key,
     }, _SEM_NEWS, DELAYS["gnews"])

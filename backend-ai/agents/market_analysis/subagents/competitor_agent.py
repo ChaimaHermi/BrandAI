@@ -6,6 +6,7 @@
 import asyncio
 import json
 import re
+from pathlib import Path
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.market_analysis_config import LLM_CONFIG, LLM_LIMITS
@@ -15,6 +16,9 @@ from tools.market_analysis.subagents_tools.competitor_tools import (
     fetch_tavily_competitor_insights,
 )
 from utils.simple_filter import simple_filter
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+PROMPTS_DIR = BASE_DIR / "prompts" / "market_analysis"
 
 
 class CompetitorAgent(BaseAgent):
@@ -29,6 +33,10 @@ class CompetitorAgent(BaseAgent):
         "simple", "easy", "fast", "reliable", "popular", "trusted", "intuitive",
         "complet", "fiable", "rapide", "officiel", "best", "top", "excellent",
     ]
+    _NOISY_PATTERNS = (
+        "###", "| |", "rated 1 out of 5", "how is the trustscore",
+        "troubleshoot", "site:reddit.com", "raw but fast",
+    )
 
     def __init__(self):
         super().__init__(
@@ -186,9 +194,9 @@ class CompetitorAgent(BaseAgent):
         maps = maps_index.get(k, {})
 
         weaknesses = c.get("weaknesses") or self._extract_weaknesses(name, tavily_results)
-        weaknesses = self._dedup_keep_order(weaknesses)[:4]
+        weaknesses = self._dedup_keep_order([w for w in (self._sanitize_issue_text(x) for x in weaknesses) if w])[:4]
         strengths = c.get("key_strengths") or self._extract_strengths(name, tavily_results)
-        strengths = self._dedup_keep_order(strengths)[:4]
+        strengths = self._dedup_keep_order([s for s in (self._sanitize_issue_text(x) for x in strengths) if s])[:4]
 
         website = c.get("website") or serp.get("website", "")
         desc = c.get("description") or serp.get("description", "") or c.get("positioning", "")
@@ -242,6 +250,7 @@ class CompetitorAgent(BaseAgent):
             if hit_count == 0:
                 continue
             extract = self._extract_fragment(text, self._NEGATIVE_KW, 150)
+            extract = self._sanitize_issue_text(extract)
             if extract:
                 scored.append((hit_count, extract))
         scored.sort(key=lambda x: x[0], reverse=True)
@@ -257,6 +266,7 @@ class CompetitorAgent(BaseAgent):
             if not any(kw in text for kw in self._POSITIVE_KW):
                 continue
             frag = self._extract_fragment(text, self._POSITIVE_KW, 130)
+            frag = self._sanitize_issue_text(frag)
             if frag and frag not in out:
                 out.append(frag)
             if len(out) >= 4:
@@ -344,6 +354,24 @@ class CompetitorAgent(BaseAgent):
         frag = text[max(0, idx - 45): idx + width].strip()
         return re.sub(r"\s+", " ", frag)[:150]
 
+    def _sanitize_issue_text(self, text: str) -> str:
+        s = re.sub(r"\s+", " ", str(text or "")).strip()
+        if not s:
+            return ""
+        low = s.lower()
+        if any(p in low for p in self._NOISY_PATTERNS):
+            return ""
+        # Remove heavily polluted fragments with too many separators.
+        if s.count("|") >= 2 or s.count("...") >= 2:
+            return ""
+        # Keep concise readable sentences only.
+        tokens = [t for t in re.split(r"\s+", s) if t]
+        if len(tokens) < 5:
+            return ""
+        if len(tokens) > 30:
+            s = " ".join(tokens[:30]).rstrip(" ,;:-") + "..."
+        return s
+
     def _dedup_keep_order(self, items: list[str]) -> list[str]:
         seen = set()
         out = []
@@ -357,7 +385,7 @@ class CompetitorAgent(BaseAgent):
 
     def _load_prompt(self, filename: str, state: PipelineState) -> str:
         try:
-            with open(f"prompts/market_analysis/{filename}", encoding="utf-8") as f:
+            with open(PROMPTS_DIR / filename, encoding="utf-8") as f:
                 content = f.read()
             if "website" not in content:
                 raise ValueError("Prompt incomplet")

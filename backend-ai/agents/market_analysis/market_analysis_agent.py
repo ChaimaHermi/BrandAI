@@ -6,14 +6,18 @@
 
 import asyncio, json, logging, time
 from datetime import datetime
+from pathlib import Path
 
 from agents.base_agent import BaseAgent, PipelineState
 from agents.market_analysis.subagents.signal_agent import SignalAgent
 from agents.market_analysis.subagents.market_voc_agent import MarketVocAgent
 from agents.market_analysis.subagents.competitor_agent import CompetitorAgent
 from config.market_analysis_config import LLM_CONFIG
+from schemas.market_analysis_schemas import MarketReport
 
 logger = logging.getLogger("brandai.market_analysis_agent")
+BASE_DIR = Path(__file__).resolve().parents[2]
+PROMPTS_DIR = BASE_DIR / "prompts" / "market_analysis"
 
 
 class MarketAnalysisAgent(BaseAgent):
@@ -75,12 +79,13 @@ class MarketAnalysisAgent(BaseAgent):
                 }, ensure_ascii=False),
             )
             synthesis = self._parse_json(synthesis_raw)
+            synthesis = self._normalize_synthesis_payload(synthesis)
 
             # ── Data quality ───────────────────────────────────
             data_quality = self._build_data_quality(tendances, market_voc, competitor)
 
             # ── Rapport final ──────────────────────────────────
-            state.market_analysis = {
+            final_output = {
                 # Résumé exécutif au niveau racine — accessible directement
                 "executive_summary": synthesis.get("executive_summary", ""),
 
@@ -109,6 +114,8 @@ class MarketAnalysisAgent(BaseAgent):
                     "appels_api": 13,
                 },
             }
+            validated = MarketReport(**final_output)
+            state.market_analysis = validated.dict()
 
             self._log_success()
             return state
@@ -124,7 +131,7 @@ class MarketAnalysisAgent(BaseAgent):
 
     def _queries_system_prompt(self) -> str:
         try:
-            with open("prompts/market_analysis/market_analysis_agent.txt", encoding="utf-8") as f:
+            with open(PROMPTS_DIR / "market_analysis_agent.txt", encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             return """Tu es un expert en analyse de marché.
@@ -172,7 +179,7 @@ Retourne UNIQUEMENT un JSON valide :
 
     def _synthesis_system_prompt(self, state: PipelineState) -> str:
         try:
-            with open("prompts/market_analysis/synthesis_agent.txt", encoding="utf-8") as f:
+            with open(PROMPTS_DIR / "synthesis_agent.txt", encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             return f"""Tu es un expert senior en stratégie pour : {state.sector}.
@@ -196,18 +203,16 @@ Retourne UNIQUEMENT un JSON valide :
   "risques": [
     {{
       "type": "reglementaire|macro|concurrentiel",
-      "niveau": "elevé|moyen|faible",
-      "description": "...",
-      "source": "champ.exact",
+      "cause": "...",
+      "impact": "...",
+      "probabilite": "elevee|moyenne|faible",
       "mitigation": "action concrète"
     }}
   ],
   "recommandations": [
     {{
-      "priorite": 1,
-      "horizon": "court_terme|moyen_terme|long_terme",
       "action": "verbe + quoi + comment + critère mesurable",
-      "source": "champ.exact",
+      "horizon": "court_terme|moyen_terme|long_terme",
       "impact_attendu": "résultat concret"
     }}
   ]
@@ -336,3 +341,64 @@ Règles : ton neutre, jamais de GO/NO-GO, 3 risques, 3 recommandations une par h
                 "desactive":     "source désactivée dans cette version",
             },
         }
+
+    def _normalize_synthesis_payload(self, synthesis: dict) -> dict:
+        if not isinstance(synthesis, dict):
+            return {}
+
+        # Normalize overview fields to {"niveau","label"} objects.
+        ov = synthesis.get("overview")
+        if isinstance(ov, dict):
+            for key in ("demande", "probleme", "concurrence", "tendance"):
+                val = ov.get(key)
+                if isinstance(val, str):
+                    ov[key] = {"niveau": "modere", "label": val}
+                elif isinstance(val, dict):
+                    ov[key] = {
+                        "niveau": val.get("niveau") or "modere",
+                        "label": val.get("label") or val.get("description") or "",
+                    }
+                else:
+                    ov[key] = {"niveau": "modere", "label": ""}
+            synthesis["overview"] = ov
+
+        # Normalize SWOT entries to object form.
+        swot = synthesis.get("swot")
+        if isinstance(swot, dict):
+            for bucket in ("forces", "faiblesses", "opportunites", "menaces"):
+                items = swot.get(bucket) or []
+                norm_items = []
+                if isinstance(items, list):
+                    for it in items[:3]:
+                        if isinstance(it, str):
+                            norm_items.append({"point": it, "source": "inference"})
+                        elif isinstance(it, dict):
+                            point = it.get("point") or it.get("description") or ""
+                            source = it.get("source") or "inference"
+                            norm_items.append({"point": point, "source": source})
+                swot[bucket] = norm_items
+            synthesis["swot"] = swot
+
+        # Normalize recommendations to object form.
+        recs = synthesis.get("recommandations")
+        if isinstance(recs, list):
+            norm_recs = []
+            horizon_default = ["court", "moyen", "long"]
+            for i, r in enumerate(recs[:3]):
+                if isinstance(r, str):
+                    norm_recs.append({
+                        "action": r,
+                        "horizon": horizon_default[i] if i < len(horizon_default) else None,
+                        "impact_attendu": "",
+                    })
+                elif isinstance(r, dict):
+                    norm_recs.append({
+                        "action": r.get("action") or r.get("description") or "",
+                        "horizon": r.get("horizon"),
+                        "impact_attendu": r.get("impact_attendu") or "",
+                        "priorite": r.get("priorite"),
+                        "source": r.get("source"),
+                    })
+            synthesis["recommandations"] = norm_recs
+
+        return synthesis

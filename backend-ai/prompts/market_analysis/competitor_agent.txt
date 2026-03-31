@@ -19,12 +19,16 @@ PRIORITE D'EXTRACTION
 REGLES FAIBLESSES
 - Utiliser uniquement des fragments reels de snippets (pas d'invention)
 - Jusqu'a 4 weaknesses max par concurrent
+- Nettoyer les interférences: supprimer artefacts markdown/SEO (###, |, concat cassée, snippets pollués)
+- Garder uniquement des phrases claires et lisibles (5-25 mots)
+- Si fragment ambigu ou bruité, l'ignorer
 - Si rien trouve :
   faiblesse_principale = "Non documente dans les sources disponibles"
   weaknesses = []
 
 REGLES FORCES
 - Extraire key_strengths depuis snippets (tavily_merged puis serp_search)
+- Appliquer le meme nettoyage qualité (pas de fragments bruités)
 - Si rien trouve : []
 
 FORMAT DE SORTIE (JSON UNIQUEMENT)

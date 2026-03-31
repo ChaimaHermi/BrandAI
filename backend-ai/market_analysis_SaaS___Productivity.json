@@ -1,117 +1,128 @@
 {
-  "executive_summary": "Le marché des assistants IA de réunion montre une forte demande avec une tendance stable, porté par l’automatisation et le télétravail, tandis que la conformité GDPR devient un enjeu majeur. Les professionnels peinent à convertir les notes en actions claires et jugent les solutions actuelles peu fiables, alors que les concurrents affichent des faiblesses de précision, de confidentialité et de scalabilité, ouvrant un créneau pour une offre fiable et sécurisée. La condition critique de succès est d’assurer une conformité totale aux exigences de protection des données tout en garantissant une précision de transcription élevée.",
+  "executive_summary": "Le marché des assistants IA de réunion montre une demande forte mais une offre déjà saturée, avec une croissance stable portée par le travail à distance et l'IA générative. Les utilisateurs rencontrent des problèmes critiques d'items d'action hallucinated et d'inexactitudes, créant une opportunité d'améliorer la fiabilité et la conformité. La réussite dépendra de la capacité à livrer des solutions hors‑ligne précises et conformes aux nouvelles régulations.",
   "overview": {
-    "demande": "Les professionnels expriment une frustration croissante face à la perte de temps en réunions et à la difficulté de transformer les notes en actions concrètes. Les assistants IA de réunion sont perçus comme peu fiables ou intrusifs, ce qui limite leur adoption malgré un fort besoin d’efficacité.",
-    "probleme": "Conversion des notes de réunion en actions claires (très élevée) et fiabilité des assistants IA (élevée).",
-    "concurrence": "opportunite_niveau: partielle – le marché est fourni mais des faiblesses de précision, de confidentialité et de personnalisation laissent des créneaux ouverts.",
-    "tendance": "STABLE"
+    "demande": {
+      "niveau": "fort",
+      "label": "Forte demande d'améliorations des assistants IA de réunion"
+    },
+    "probleme": {
+      "niveau": "critique",
+      "label": "Actions hallucinated et inexactitudes réduisent la valeur perçue"
+    },
+    "concurrence": {
+      "niveau": "saturee",
+      "label": "Présence de plusieurs acteurs établis (Otter, Read.ai, Zoom)"
+    },
+    "tendance": {
+      "niveau": "stable",
+      "label": "Croissance stable portée par le travail à distance et l'IA générative"
+    }
   },
   "tendances": {
     "direction": "STABLE",
     "signal_strength": "MEDIUM",
     "peak_period": "Jun 15 – 21, 2025",
     "rising_queries": [
-      "cluely"
+      "Transcription",
+      "Meeting",
+      "Artificial intelligence"
     ],
-    "hashtags": [],
-    "hashtags_disponibles": false,
+    "hashtags": [
+      "Transcription",
+      "Meeting",
+      "Artificial intelligence"
+    ],
+    "hashtags_disponibles": true,
     "viral_score": "NONE",
     "viral_signals": [],
-    "sector_context": "AI meeting assistants are experiencing strong market expansion driven by automation and remote‑work demand. Regulatory focus centers on data‑privacy compliance such as GDPR for SaaS deployments.",
+    "sector_context": "The market is driven by the surge in remote‑work adoption and the emergence of generative AI for meeting summarisation. Regulators emphasize the need for compliance with emerging AI legislation and data‑privacy obligations.",
     "news_signals": [
-      "global AI meeting assistants market size was valued in 2024",
-      "expected to reach significant scale by 2032",
-      "rising demand for automation in the workplace",
-      "notable surge in demand for remote‑work solutions"
+      "Rising demand for remote‑work tools — boosts AI meeting assistant adoption",
+      "Generative AI and conversational intelligence poised to dominate — expands feature set",
+      "Asia‑Pacific identified as fastest‑growing market — regional expansion opportunities",
+      "Regulators emphasize AI compliance and data‑privacy — increases adoption scrutiny"
     ],
     "regulatory_barriers": [
-      "General Data Protection Regulation (GDPR) - This EU regulation mandates strict data privacy",
-      "data privacy laws, consumer protection regulations",
-      "SaaS license compliance is important for organizations to avoid financial penalties",
-      "SaaS compliance management"
+      "ce règlement laisserait aux Etats membres de larges marges pour sa mise en œuvre."
     ]
   },
   "market_voc": {
     "demand_level": "fort",
-    "demand_summary": "Les professionnels expriment une frustration croissante face à la perte de temps en réunions et à la difficulté de transformer les notes en actions concrètes. Les assistants IA de réunion sont perçus comme peu fiables ou intrusifs, ce qui limite leur adoption malgré un fort besoin d’efficacité.",
+    "demand_summary": "Les utilisateurs signalent que les assistants IA de réunion génèrent souvent des actions halluciné­es ou vagues, créant plus de problèmes que de solutions. Cette frustration se retrouve chez les équipes de centre d’appels, les cadres en réunion et les travailleurs à distance, indiquant une forte demande d’améliorations.",
     "top_voc": [
       {
-        "theme": "Conversion des notes de réunion en actions claires",
+        "theme": "Action items hallucinated ou vagues",
         "recurrence": "tres_elevee",
-        "citation": "# I don’t hate meetings. r/projectmanagement - I’m fine with meetings; I struggle turning notes into clear actions, owners, approvals, and JIRA tickets without losing hours. I leave with pages of notes, then spend way too long translating them into action items, fig",
+        "citation": "it feels like every week i see all this excitement for the latest innovation with AI notetakers for meetings, but when I actually test them out, all i get is. - 'action items' that are either hallucinated or so vague they're useless.",
         "source": "reddit"
       },
       {
-        "theme": "Fiabilité et pertinence des assistants IA de réunion",
+        "theme": "IA assistants créent plus de problèmes que de solutions",
         "recurrence": "elevee",
         "citation": "Call center workers say their AI assistants create more problems than they solve | \"The AI assistant isn't that smart in reality\"",
         "source": "reddit"
       },
       {
-        "theme": "Temps gaspillé en réunions",
-        "recurrence": "tres_elevee",
-        "citation": "Time Wasted In Meetings: 36 Meeting Statistics ... employees spend an average of 31 hours per month in meetings, and 50% of that time is considered wasted.",
-        "source": "tavily"
-      },
-      {
-        "theme": "Préoccupations de confidentialité et d’éthique des assistants IA",
+        "theme": "Back‑tracking des décisions client impactant santé mentale",
         "recurrence": "moderee",
-        "citation": "The ethics of AI meeting assistants: Where do we draw ... Privacy concerns when one party records without others knowing. Creates unfair advantages in interviews/sales calls. Could erode trust in",
+        "citation": "I am having a recurring issue with my client that is continuously impacting timelines and staff mental health. ... the client backtracking on their prior decisions and approvals",
         "source": "reddit"
       },
       {
-        "theme": "Délais irréalistes imposés aux équipes",
+        "theme": "Besoin d’un assistant IA complet (planification, préparation, enregistrement)",
         "recurrence": "faible",
-        "citation": "If any manager complains about not meeting about arbitrary 2-week deadline he invented, pull up your list of accomplishments for say year 2024.",
+        "citation": "We're diving deep into Himala AI, the all-in-one meeting assistant that actually handles scheduling, prep, and error-free recording.",
+        "source": "youtube"
+      },
+      {
+        "theme": "Préoccupations de sécurité et de blocage des IA de prise de notes",
+        "recurrence": "faible",
+        "citation": "AI Meeting Assistant/AI Notetaking Software. Are you guys totally blocking them in your environment? If you do allow then which one are you",
         "source": "reddit"
       }
     ],
     "personas": [
       {
-        "segment": "Chefs de projet / responsables d’équipes",
+        "segment": "Agents de centre d’appels",
         "tranche_age": "non détecté",
-        "comportement": "Organisent et animent des réunions, prennent des notes et doivent ensuite assigner des tâches et des approbations.",
+        "comportement": "Utilisent des assistants IA pour transcrire les appels et générer des résumés, mais constatent des inexactitudes fréquentes.",
         "pain_points": [
-          "Difficulté à transformer les notes en actions concrètes",
-          "Sur‑charge de réunions et perte de temps",
-          "Manque de visibilité sur les propriétaires de tâches"
+          "Transcriptions inexactes",
+          "Augmentation de la charge de travail pour corriger les erreurs",
+          "Préoccupations de confidentialité"
         ],
         "motivations": [
-          "Réduire le temps passé en réunions",
-          "Améliorer la traçabilité des décisions",
-          "Accroître la productivité de l’équipe"
-        ],
-        "signal_niveau": "fort"
-      },
-      {
-        "segment": "Travailleurs du savoir en télétravail / employés SaaS",
-        "tranche_age": "non détecté",
-        "comportement": "Testent et adoptent des outils d’assistance IA pour les réunions, mais restent prudents quant à la précision et à la confidentialité.",
-        "pain_points": [
-          "Inexactitudes des transcriptions IA",
-          "Risques de fuite de données sensibles",
-          "Manque de confiance dans les recommandations de l’IA"
-        ],
-        "motivations": [
-          "Gagner du temps grâce à une vraie assistance",
-          "Conserver la confidentialité des échanges",
-          "Obtenir des résumés fiables et actionnables"
+          "Réduire le temps de traitement des appels",
+          "Améliorer la qualité du service client"
         ],
         "signal_niveau": "modere"
       },
       {
-        "segment": "Agents de centre d’appels",
+        "segment": "Cadres et participants à des réunions d’entreprise",
         "tranche_age": "non détecté",
-        "comportement": "Utilisent des assistants IA pendant les appels pour aider à la prise de notes et à la résolution de requêtes.",
+        "comportement": "Dépendent d’assistants IA pour capturer décisions, actions et minutes, mais rencontrent des actions halluciné­es et des retours en arrière des décisions.",
         "pain_points": [
-          "L’assistant IA n’est pas assez intelligent",
-          "Création de nouveaux problèmes plutôt que de les résoudre",
-          "Érosion de la confiance des agents"
+          "Action items vagues ou inexistants",
+          "Stress lié aux changements de décision non tracés",
+          "Perte de productivité à cause de corrections post‑réunion"
         ],
         "motivations": [
-          "Améliorer la qualité du service client",
-          "Réduire les erreurs de traitement",
-          "Avoir un outil fiable et simple à intégrer"
+          "Obtenir des comptes‑rendus fiables",
+          "Assurer le suivi des décisions"
+        ],
+        "signal_niveau": "fort"
+      },
+      {
+        "segment": "Travailleurs à distance / multinationales",
+        "tranche_age": "non détecté",
+        "comportement": "Participent à des réunions multi‑fuseaux horaires avec des accents variés et recherchent une assistance en temps réel.",
+        "pain_points": [
+          "Difficulté à suivre les discussions rapides",
+          "Manque de traduction ou de résumés instantanés"
+        ],
+        "motivations": [
+          "Rester aligné avec les équipes dispersées",
+          "Gagner du temps de travail concentré"
         ],
         "signal_niveau": "faible"
       }
@@ -125,9 +136,9 @@
       "youth_pct": 64.75
     },
     "news_signals": [
-      "JPMorgan encourages engineers to boost productivity with AI tools (50‑100% gain).",
-      "Nvidia CEO proposes AI token usage as a new metric for hiring and pay.",
-      "OECD highlights rapid digital investment as a driver of productivity growth in advanced economies."
+      "Reddit CEO Steve Huffman estime que l'IA peut augmenter la productivité des ingénieurs logiciels de 50‑100 %.",
+      "JPMorgan fixe de nouveaux objectifs pour les ingénieurs afin de booster la productivité avec l'IA.",
+      "Nvidia CEO Jensen Huang prévoit que l'usage de tokens IA deviendra un critère clé d'évaluation des ingénieurs."
     ]
   },
   "competitor": {
@@ -136,128 +147,180 @@
         "nom": "Otter.ai",
         "type": "digital",
         "website": "https://otter.ai/",
-        "description": "Otter turns every meeting into a clear summary with decisions, action items, and insights.",
+        "description": "AI meeting assistant offering real-time transcription, live chat, automated summaries, insights, and action items.",
         "source": "serp+tavily",
         "rating": null,
-        "faiblesse_principale": "I signed up for Otter briefly while exploring transcription tools, but even after I stopped using it, the account remained linked to my Microsoft profile without my awareness.",
+        "faiblesse_principale": "Otter lacks offline transcription capability.",
         "weaknesses": [
-          "Account remained linked to Microsoft profile without awareness",
-          "When the team grew, the workflow around Otter fell apart"
+          "Otter lacks offline transcription capability.",
+          "Otter can be slow and unresponsive on Windows.",
+          "Reliability issues reported with multiple support tickets."
         ],
         "key_strengths": [
-          "Fast summaries ready before the meeting ends",
-          "Clean, uncluttered interface",
-          "Strong real‑time transcription accuracy"
+          "Real-time transcription with speaker identification.",
+          "Automated summaries and actionable insights.",
+          "Live chat integration during meetings."
         ],
-        "positioning": "Assistant IA de réunion orienté productivité avec résumés instantanés et interface simple."
-      },
-      {
-        "nom": "Fireflies.ai",
-        "type": "digital",
-        "website": "https://fireflies.ai/",
-        "description": "Fireflies joins your calls, records them, and turns conversations into transcripts, summaries and actionable items.",
-        "source": "tavily",
-        "rating": null,
-        "faiblesse_principale": "Transcription accuracy degrades significantly under challenging conditions (background noise, accents).",
-        "weaknesses": [
-          "Accuracy drops with noisy audio or strong accents",
-          "Summaries treat every meeting type the same, lacking contextual nuance",
-          "Free minutes vanish quickly, limiting long‑term use",
-          "Scaling issues: workflow broke when the team grew"
-        ],
-        "key_strengths": [
-          "Good integration library with many SaaS tools",
-          "Fast summaries often ready before the meeting ends",
-          "Unlimited free transcription for individual users"
-        ],
-        "positioning": "Solution polyvalente qui mise sur l’intégration massive et la rapidité de synthèse."
+        "positioning": "A well‑known AI note‑taker focused on real‑time transcription and collaborative features."
       },
       {
         "nom": "Read.ai",
         "type": "digital",
         "website": "https://www.read.ai/",
-        "description": "Turn conversations into action with AI, providing recaps, a Search Copilot and actionable insights when you need them.",
+        "description": "Fast‑growing AI meeting assistant delivering real-time transcription, smart summaries, and AI‑powered search across meetings.",
         "source": "serp",
         "rating": null,
         "faiblesse_principale": "Non documente dans les sources disponibles",
         "weaknesses": [
-          "ining their meetings. this led to a bunch of issues, and a whole it security meltdown. but after multiple email blasts, and security talks, we had to",
-          "6? - convo what i liked: 1. actually free. unlimited transcription, unlimited meetings, no time limits. for individuals, this is unbeatable value. 2.",
-          "s not cheap—especially when the free tier is limited to 300 minutes. best for: teams who need searchable meeting archives and don't mind visible bots.",
-          "all the company without your permission and spam everyone that you are not paying the account lol, avoid at all costs, we switch to"
+          "software, you're liable for what it records. bug or not bug, the liablity is yours. the only way you would get otter.ai in a courtroom would be a civi"
         ],
         "key_strengths": [
-          "Recaps instantanés et recherche intelligente dans les transcriptions",
-          "Mise en avant d’insights pertinents pour chaque réunion"
+          "Fastest growing AI meeting assistant delivering real-time transcription.",
+          "Smart summaries and AI search and discovery across all meetings."
         ],
-        "positioning": "Assistant IA centré sur la recherche et l’extraction d’insights directement exploitable."
+        "positioning": "Emerging AI transcription platform emphasizing searchable meeting archives."
       },
       {
-        "nom": "SummaryAI",
+        "nom": "Zoom AI Assistant",
         "type": "digital",
-        "website": "https://summaryai.app/",
-        "description": "Summary AI captures key insights, action items and decisions from meetings and turns them into perfectly structured meeting minutes.",
+        "website": "https://www.zoom.com/en/products/ai-assistant/",
+        "description": "AI note‑taker that transcribes meetings, generates summaries, key takeaways, and next steps to keep work moving forward.",
         "source": "serp",
         "rating": null,
         "faiblesse_principale": "Non documente dans les sources disponibles",
-        "weaknesses": [],
-        "key_strengths": [
-          "Production de minutes parfaitement structurées",
-          "Capture fiable des points clés et des décisions"
+        "weaknesses": [
+          "s well, even when someone joined midway with bad audio. however, we did notice a few embarrassing mislabels when background talk stepped in. fireflies",
+          "o cloud recording) the tools solve different problems. most \"ai meeting assistant\" comparisons miss this distinction. for deeper dives, see our otter",
+          "ter does the job well. but here’s the catch: limited integrations → you still need to copy notes manually into tools like slack or hubspot. minimal au"
         ],
-        "positioning": "Outil spécialisé dans la génération de comptes‑rendus détaillés et structurés."
+        "key_strengths": [
+          "Transcribes meetings and generates concise summaries.",
+          "Provides key takeaways and next‑step recommendations."
+        ],
+        "positioning": "Integrated AI note‑taking feature within the Zoom ecosystem for seamless workflow."
       }
     ],
     "opportunite_niveau": "partielle",
-    "opportunite_summary": "Le marché des assistants IA de réunion est déjà bien fourni, mais la demande croissante d’intégrations sécurisées, de précision multilingue et de résumés contextuels laisse des créneaux ouverts pour des solutions spécialisées qui résolvent les faiblesses de précision et de personnalisation."
+    "opportunite_summary": "Le marché des assistants IA de réunion est déjà compétitif, mais la demande croissante pour des analyses approfondies et des fonctionnalités hors‑ligne crée des espaces d’innovation. Les acteurs qui offrent une fiabilité multiplateforme et des insights actionnables gagneront des parts significatives."
   },
   "swot": {
     "forces": [
-      "Demande forte et stable alimentée par l’automatisation et le besoin de productivité en télétravail.",
-      "Adoption notable parmi les chefs de projet qui recherchent une meilleure traçabilité des décisions.",
-      "Expansion du secteur IA de réunions reconnue dans les signaux macro (investissements digitaux, productivité)."
+      {
+        "point": "Transcription en temps réel avec identification des intervenants",
+        "source": "competitor.top_competitors.key_strengths"
+      },
+      {
+        "point": "Résumés automatisés et insights actionnables",
+        "source": "competitor.top_competitors.key_strengths"
+      },
+      {
+        "point": "Intégration de chat en direct pendant les réunions",
+        "source": "competitor.top_competitors.key_strengths"
+      }
     ],
     "faiblesses": [
-      "Barrières réglementaires strictes (GDPR, lois sur la confidentialité des données).",
-      "Perception d’intrusivité et de manque de fiabilité des assistants IA actuels.",
-      "Problèmes d’intégration et de scalabilité signalés chez les concurrents (workflow qui casse, limites de minutes gratuites)."
+      {
+        "point": "Items d'action hallucinated ou vagues",
+        "source": "market_voc.top_voc.theme"
+      },
+      {
+        "point": "Assistants IA créent plus de problèmes que de solutions",
+        "source": "market_voc.top_voc.theme"
+      },
+      {
+        "point": "Préoccupations de sécurité et blocage des IA de prise de notes",
+        "source": "market_voc.top_voc.theme"
+      }
     ],
     "opportunites": [
-      "Développer une fonction de conversion automatique des notes en actions, owners et tickets, répondant à la frustration la plus récurrente.",
-      "Améliorer la précision multilingue et la robustesse des transcriptions pour surmonter les faiblesses de fiabilité.",
-      "Proposer des intégrations sécurisées et conformes GDPR, répondant aux préoccupations de confidentialité et d’éthique."
+      {
+        "point": "Expansion régionale en Asie‑Pacifique, marché à forte croissance",
+        "source": "tendances.news_signals"
+      },
+      {
+        "point": "Demande accrue pour des analyses approfondies et fonctionnalités hors‑ligne",
+        "source": "competitor.opportunite_summary"
+      },
+      {
+        "point": "Réglementations IA renforcent la nécessité de conformité, créant un avantage pour les solutions sécurisées",
+        "source": "tendances.sector_context"
+      }
     ],
     "menaces": [
-      "Réglementation GDPR pouvant entraîner sanctions et perte de confiance si la conformité n’est pas assurée.",
-      "Concurrence déjà bien établie (Otter.ai, Fireflies.ai) avec des forces reconnues sur la rapidité et l’interface.",
-      "Contraintes macro liées aux exigences de protection des données et aux attentes de transparence des utilisateurs."
+      {
+        "point": "Barrières réglementaires et exigences de conformité IA",
+        "source": "tendances.regulatory_barriers"
+      },
+      {
+        "point": "Problèmes de fiabilité et tickets de support multiples chez les concurrents",
+        "source": "competitor.top_competitors.weaknesses"
+      },
+      {
+        "point": "Hallucinations d'actions réduisent la confiance des utilisateurs",
+        "source": "market_voc.top_voc.theme"
+      }
     ]
   },
   "risques": [
     {
-      "type": "réglementaire",
-      "cause": "Non‑conformité aux exigences GDPR et aux lois locales de protection des données.",
-      "impact": "Sanctions financières, perte de confiance client et retrait du marché européen.",
-      "probabilité": "modérée"
-    },
-    {
-      "type": "macro",
-      "cause": "Saturation du marché avec de nombreuses solutions similaires et attentes élevées en matière de confidentialité.",
-      "impact": "Difficulté à se différencier, ralentissement de l’acquisition client.",
-      "probabilité": "élevée"
+      "type": "reglementaire",
+      "cause": "Exigences de conformité IA et protection des données",
+      "impact": "Retard d'adoption ou sanctions",
+      "probabilite": "elevee",
+      "mitigation": "Intégrer des contrôles de conformité dès la conception"
     },
     {
       "type": "concurrentiel",
-      "cause": "Réaction rapide des concurrents pour corriger leurs faiblesses de précision et de sécurité.",
-      "impact": "Érosion de l’avantage premier entrant, perte de parts de marché.",
-      "probabilité": "modérée"
+      "cause": "Présence d'acteurs établis avec fonctionnalités similaires",
+      "impact": "Perte de parts de marché",
+      "probabilite": "moyenne",
+      "mitigation": "Différencier par fiabilité hors‑ligne et précision accrue"
     }
   ],
   "recommandations": [
-    "Court terme : réaliser un audit GDPR complet et implémenter le chiffrement des données en transit et au repos pour garantir la conformité et rassurer les utilisateurs.",
-    "Moyen terme : développer un moteur de transcription multilingue à haute précision couplé à une génération automatique d’actions (tickets, owners) afin de résoudre le problème principal de conversion des notes.",
-    "Long terme : créer un écosystème d’intégrations sécurisées avec les principales plateformes SaaS (Jira, Asana, Teams) et offrir une personnalisation contextuelle des résumés pour verrouiller la clientèle et soutenir la croissance durable."
+    {
+      "action": "Développer une fonctionnalité de transcription hors‑ligne fiable",
+      "horizon": "court",
+      "impact_attendu": "Réduction des barrières de conformité et différenciation",
+      "priorite": null,
+      "source": null
+    },
+    {
+      "action": "Améliorer la précision des items d'action via validation hybride IA‑humain",
+      "horizon": "moyen",
+      "impact_attendu": "Augmentation de la satisfaction client et réduction des hallucinations",
+      "priorite": null,
+      "source": null
+    },
+    {
+      "action": "Cibler l'expansion en Asie‑Pacifique avec des partenariats locaux",
+      "horizon": "long",
+      "impact_attendu": "Capture de la croissance régionale",
+      "priorite": null,
+      "source": null
+    }
   ],
+  "meta": {
+    "projet": "AI meeting assistant",
+    "secteur": "SaaS / Productivity",
+    "geo": "US",
+    "date_analyse": "2026-03-31",
+    "duree_secondes": 50.25,
+    "sources": [
+      "google_trends",
+      "tavily",
+      "tavily_weakness",
+      "tavily_compare",
+      "reddit_via_tavily",
+      "youtube",
+      "gnews",
+      "worldbank",
+      "serpapi_search",
+      "serpapi_maps"
+    ],
+    "appels_llm": 2,
+    "appels_api": 13
+  },
   "data_quality": {
     "score_global": 100,
     "interpretation": "élevée",
@@ -308,7 +371,7 @@
         "top_competitors": {
           "status": "api",
           "ok": true,
-          "count": 4
+          "count": 3
         },
         "avec_weaknesses": {
           "status": "llm_inference",
@@ -319,7 +382,7 @@
         "avec_strengths": {
           "status": "llm_inference",
           "ok": true,
-          "count": 4,
+          "count": 3,
           "note": "extraites depuis snippets Tavily"
         }
       }
@@ -330,26 +393,5 @@
       "absent": "donnée non disponible — API n'a pas retourné de résultat",
       "desactive": "source désactivée dans cette version"
     }
-  },
-  "meta": {
-    "projet": "AI meeting assistant",
-    "secteur": "SaaS / Productivity",
-    "geo": "US",
-    "date_analyse": "2026-03-30",
-    "duree_secondes": 53.05,
-    "sources": [
-      "google_trends",
-      "tavily",
-      "tavily_weakness",
-      "tavily_compare",
-      "reddit_via_tavily",
-      "youtube",
-      "gnews",
-      "worldbank",
-      "serpapi_search",
-      "serpapi_maps"
-    ],
-    "appels_llm": 2,
-    "appels_api": 13
   }
 }

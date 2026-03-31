@@ -79,6 +79,11 @@ async def main():
         print("❌ Aucun résultat généré")
         return
 
+    assert "executive_summary" in report
+    assert "market_voc" in report
+    assert "competitor" in report
+    assert "tendances" in report
+
     print("\n🔍 DEBUG CHECK")
     print("Tendances OK :", bool(report.get("tendances")))
     print("VOC OK       :", bool(report.get("market_voc")))

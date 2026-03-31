@@ -11,9 +11,10 @@ Produire une synthèse STRATÉGIQUE claire, basée uniquement sur les données.
 
 IMPORTANT :
 
-* Ne jamais générer de chiffres financiers (ex: milliards, croissance %)
-* Utiliser uniquement les chiffres présents dans les données sources
+* Ne jamais générer de chiffres financiers
+* Utiliser uniquement les chiffres présents
 * Si aucun chiffre → ne rien inventer
+* Langue de sortie OBLIGATOIRE: français (sauf citations brutes)
 
 ══════════════════════════════════════
 RÈGLES GÉNÉRALES
@@ -21,98 +22,97 @@ RÈGLES GÉNÉRALES
 
 * Ne jamais inventer de données
 * Prioriser les signaux les PLUS FORTS
-* Si une donnée manque → utiliser une hypothèse raisonnable basée sur les autres signaux
 * Toujours produire un output complet
 
 ══════════════════════════════════════
-EXECUTIVE SUMMARY (OBLIGATOIRE)
+EXECUTIVE SUMMARY
 ══════════════════════════════════════
 
 3 phrases MAX :
 
-1. ÉTAT DU MARCHÉ
-   → market_voc.demand_level + tendances.direction + macro
-
-2. PROBLÈME PRINCIPAL + OPPORTUNITÉ
-   → top_voc + competitor weaknesses ou absence de faiblesse
-
-3. CONDITION CRITIQUE DE SUCCÈS
-   → principal risque + action clé
-
-⚠️ Toujours :
-
-* concret
-* basé sur données
-* pas de généralité
+1. état du marché
+2. problème + opportunité
+3. condition critique
 
 ══════════════════════════════════════
-OVERVIEW
+OVERVIEW (FORMAT STRICT)
 ══════════════════════════════════════
 
-Mapper directement :
+Tu DOIS retourner des objets :
 
-* demande → market_voc
-* problème → top_voc dominant
-* concurrence → competitor.opportunite_niveau
-* tendance → tendances.direction
-
-══════════════════════════════════════
-SWOT (INTELLIGENT)
-══════════════════════════════════════
-
-RÈGLES :
-
-* max 3 points par catégorie
-* chaque point = insight réel, pas simple mapping
-
-Forces :
-→ demande + tendances + adoption
-
-Faiblesses :
-→ barrières + contraintes + limites marché
-
-Opportunités :
-→ frustrations clients + rising_queries + faiblesses concurrentes
-
-Menaces :
-→ réglementation + concurrence + contraintes macro
-
-⚠️ IMPORTANT :
-Si aucune faiblesse concurrente :
-→ créer opportunité basée sur frustrations utilisateurs
+"overview": {
+"demande": {
+"niveau": "fort | modere | faible",
+"label": "description courte"
+},
+"probleme": {
+"niveau": "critique | important | modere",
+"label": "description courte"
+},
+"concurrence": {
+"niveau": "saturee | partielle | faible",
+"label": "description courte"
+},
+"tendance": {
+"niveau": "hausse | stable | baisse",
+"label": "description courte"
+}
+}
 
 ══════════════════════════════════════
-RISQUES (INTELLIGENTS)
+SWOT (FORMAT STRICT)
 ══════════════════════════════════════
 
-3 risques MAX :
+Chaque élément DOIT être un objet avec traçabilité :
 
-* réglementaire
-* macro
-* concurrentiel
+"swot": {
+"forces": [
+{"point": "insight réel", "source": "champ.exact"}
+],
+"faiblesses": [
+{"point": "insight réel", "source": "champ.exact"}
+],
+"opportunites": [
+{"point": "insight réel", "source": "champ.exact"}
+],
+"menaces": [
+{"point": "insight réel", "source": "champ.exact"}
+]
+}
 
-Chaque risque doit inclure :
-
-* cause
-* impact
-* probabilité
-
-══════════════════════════════════════
-RECOMMANDATIONS
-══════════════════════════════════════
-
-3 recommandations MAX :
-
-* court terme
-* moyen terme
-* long terme
-
-Format :
-verbe + action + méthode + résultat attendu
+Max 3 éléments par catégorie.
 
 ══════════════════════════════════════
-FORMAT JSON STRICT
+RISQUES (FORMAT STRICT)
 ══════════════════════════════════════
+
+"risques": [
+{
+"type": "reglementaire | macro | concurrentiel",
+"cause": "",
+"impact": "",
+"probabilite": "faible | moyenne | elevee",
+"mitigation": ""
+}
+]
+
+══════════════════════════════════════
+RECOMMANDATIONS (FORMAT STRICT)
+══════════════════════════════════════
+
+"recommandations": [
+{
+"action": "",
+"horizon": "court | moyen | long",
+"impact_attendu": ""
+}
+]
+
+══════════════════════════════════════
+FORMAT FINAL
+══════════════════════════════════════
+
+Retourne UNIQUEMENT :
 
 {
 "executive_summary": "",
@@ -123,9 +123,11 @@ FORMAT JSON STRICT
 }
 
 ══════════════════════════════════════
-RÈGLES FINALES
+RÈGLES CRITIQUES
 ══════════════════════════════════════
 
-* JSON uniquement
-* aucun champ vide
-* privilégier la clarté et la logique business
+* Ne jamais retourner de string seule
+* Toujours retourner des objets JSON conformes
+* Aucun champ manquant
+* Aucun champ vide
+* Pour SWOT, "source" doit pointer un champ réel (ex: "market_voc.top_voc", "competitor.top_competitors")

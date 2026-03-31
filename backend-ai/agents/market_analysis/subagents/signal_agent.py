@@ -6,6 +6,8 @@
 import asyncio
 import json
 import logging
+import re
+from pathlib import Path
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.market_analysis_config import LLM_CONFIG, LLM_LIMITS
@@ -20,9 +22,21 @@ from tools.market_analysis.subagents_tools.signal_tools import (
 from utils.simple_filter import simple_filter
 
 logger = logging.getLogger("brandai.signal_agent")
+BASE_DIR = Path(__file__).resolve().parents[3]
+PROMPTS_DIR = BASE_DIR / "prompts" / "market_analysis"
 
 
 class SignalAgent(BaseAgent):
+    _RISING_NOISE = {
+        "news", "market", "stock", "brand", "evaluation", "business", "health", "economy",
+        "report", "trend", "trends", "global", "world", "analysis",
+    }
+    _REGULATORY_KW = (
+        "licence", "license", "authorization", "autorisation", "conformite", "compliance",
+        "gdpr", "soc2", "security", "securite", "privacy", "confidentialite",
+        "data retention", "consent", "enregistrement", "transfert",
+    )
+
     def __init__(self):
         super().__init__(
             agent_name="signal_agent",
@@ -121,7 +135,7 @@ class SignalAgent(BaseAgent):
             data = self._parse_json(llm_response)
             data = self._validate_output(data, raw_data)
             data["rising_queries"] = self._clean_rising_queries(
-                data.get("rising_queries", [])
+                data.get("rising_queries", []), context_terms=trends_queries
             )
 
             output = Tendances(**data)
@@ -150,8 +164,11 @@ class SignalAgent(BaseAgent):
             }
             return Tendances(**fallback).dict()
 
-    def _clean_rising_queries(self, queries):
-        INVALID_TERMS = ["news", "market", "stock", "brand", "evaluation", "business"]
+    def _clean_rising_queries(self, queries, context_terms=None):
+        context_terms = context_terms or []
+        context_tokens = set()
+        for term in context_terms:
+            context_tokens.update(t for t in re.split(r"\W+", str(term).lower()) if len(t) >= 4)
 
         cleaned = []
 
@@ -172,7 +189,12 @@ class SignalAgent(BaseAgent):
 
             lower = q.lower()
 
-            if any(term in lower for term in INVALID_TERMS):
+            if any(term in lower for term in self._RISING_NOISE):
+                continue
+
+            # Reject isolated one-word noisy terms without context signal.
+            parts = [p for p in re.split(r"\W+", lower) if p]
+            if len(parts) == 1 and parts[0] not in context_tokens and len(parts[0]) < 8:
                 continue
 
             cleaned.append(q)
@@ -289,9 +311,54 @@ class SignalAgent(BaseAgent):
         data.setdefault("viral_score", "NONE")
         data.setdefault("viral_signals", [])
         data.setdefault("sector_context", "")
-        data.setdefault("news_signals", [])
-        data.setdefault("regulatory_barriers", [])
+        data["news_signals"] = self._clean_news_signals(data.get("news_signals", []))
+        reg = data.get("regulatory_barriers") or []
+        if not reg:
+            reg = self._extract_regulatory_barriers(raw_data.get("regulatory", {}))
+        data["regulatory_barriers"] = reg[:4]
         return data
+
+    def _clean_news_signals(self, signals):
+        out = []
+        seen = set()
+        for s in signals or []:
+            txt = re.sub(r"#+\s*", "", str(s or ""))
+            txt = re.sub(r"\s+", " ", txt).strip()
+            if not txt:
+                continue
+            if len(txt) > 140:
+                txt = txt[:137].rstrip() + "..."
+            key = txt.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(txt)
+            if len(out) >= 5:
+                break
+        return out
+
+    def _extract_regulatory_barriers(self, regulatory_payload: dict) -> list[str]:
+        rows = (regulatory_payload or {}).get("results", [])
+        out = []
+        seen = set()
+        for r in rows:
+            snippet = str(r.get("snippet", "") or "")
+            low = snippet.lower()
+            if not any(kw in low for kw in self._REGULATORY_KW):
+                continue
+            cleaned = re.sub(r"\s+", " ", snippet).strip()
+            if not cleaned:
+                continue
+            if len(cleaned) > 180:
+                cleaned = cleaned[:177].rstrip() + "..."
+            key = cleaned.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(cleaned)
+            if len(out) >= 4:
+                break
+        return out
 
     def _compute_peak_period(self, trends_results: list[dict]):
         peak_date = None
@@ -320,7 +387,7 @@ class SignalAgent(BaseAgent):
 
     def _load_prompt(self, filename: str, state: PipelineState) -> str:
         try:
-            with open(f"prompts/market_analysis/{filename}", encoding="utf-8") as f:
+            with open(PROMPTS_DIR / filename, encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             return f"""Tu es un expert en signaux marché pour : {state.sector}.
