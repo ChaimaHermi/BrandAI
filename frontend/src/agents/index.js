@@ -20,6 +20,16 @@ export const AGENTS = [
     doneColor: "#0C447C",
   },
   {
+    id: "marketing",
+    label: "Marketing Plan",
+    short: "MP",
+    color: "#16A34A",
+    gradient: "linear-gradient(135deg,#16A34A,#166534)",
+    doneBg: "#ECFDF3",
+    doneBorder: "#9FE1CB",
+    doneColor: "#14532D",
+  },
+  {
     id: "brand",
     label: "Brand Identity",
     short: "BI",

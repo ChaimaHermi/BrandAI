@@ -84,7 +84,7 @@ export default function MarketPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+    <div className="app-content-scroll flex flex-1 flex-col gap-3">
       <MarketHeader
         meta={report?.meta}
         idea={idea}

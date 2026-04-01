@@ -62,6 +62,25 @@ async def _persist_market_result(
         return resp.json()
 
 
+async def _persist_marketing_result(
+    *,
+    idea_id: int,
+    result_json: dict,
+    access_token: str,
+) -> dict:
+    base = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
+    url = f"{base}/marketing-plans/{idea_id}"
+    payload = {
+        "status": "done",
+        "result_json": result_json,
+    }
+    headers = {"Authorization": f"Bearer {access_token}"}
+    async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0)) as client:
+        resp = await client.post(url, json=payload, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
+
+
 async def _stream_pipeline(body: PipelineStreamRequest):
     started_at = datetime.now(timezone.utc)
     t0 = time.time()
@@ -100,6 +119,7 @@ async def _stream_pipeline(body: PipelineStreamRequest):
             "target_audience": body.target_audience or "",
             "clarified_idea": clarified_idea,
             "market_analysis": {},
+            "marketing_plan": {},
             "status": "running",
             "errors": [],
         }
@@ -118,6 +138,7 @@ async def _stream_pipeline(body: PipelineStreamRequest):
         status = graph_result.get("status", "error")
         errors = graph_result.get("errors", []) or []
         market_analysis = graph_result.get("market_analysis") or {}
+        marketing_plan = graph_result.get("marketing_plan") or {}
 
         if not market_analysis:
             # Clarifier may have stopped with questions/refused.
@@ -143,13 +164,32 @@ async def _stream_pipeline(body: PipelineStreamRequest):
             access_token=body.access_token,
         )
 
-        yield sse_event("result", market_analysis)
+        persisted_marketing = None
+        if marketing_plan:
+            yield sse_event("step", {
+                "status": "loading",
+                "stage": "persist_marketing_result",
+                "message": "Sauvegarde du plan marketing...",
+            })
+            persisted_marketing = await _persist_marketing_result(
+                idea_id=body.idea_id,
+                result_json=marketing_plan,
+                access_token=body.access_token,
+            )
+
+        yield sse_event("result", {
+            "market_analysis": market_analysis,
+            "marketing_plan": marketing_plan,
+        })
         elapsed_ms = int((time.time() - t0) * 1000)
         yield sse_event("done", {
             "success": True,
             "idea_id": body.idea_id,
             "status": status,
             "persisted_id": persisted.get("id"),
+            "persisted_marketing_id": (
+                persisted_marketing.get("id") if persisted_marketing else None
+            ),
             "elapsed_ms": elapsed_ms,
         })
     except Exception as e:

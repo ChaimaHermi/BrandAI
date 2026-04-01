@@ -12,15 +12,39 @@ export default function PipelineLayout() {
 
   const [idea, setIdea] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [hasMarketResult, setHasMarketResult] = useState(false);
+  const [hasMarketingResult, setHasMarketingResult] = useState(false);
 
   const activeAgent =
     AGENTS.find((a) => location.pathname.includes("/" + a.id)) || AGENTS[0];
 
   const activeIndex = AGENTS.findIndex((a) => a.id === activeAgent.id);
 
-  const progressPct = Math.round(((activeIndex + 1) / AGENTS.length) * 100);
+  const clarifierDone = idea?.clarity_status === "clarified";
+  const marketDone = hasMarketResult || ["market_done", "done"].includes(idea?.status);
+  const marketingDone = hasMarketingResult || idea?.status === "done";
+  const pipelineCompleted = marketDone || marketingDone;
+
+  const completedImplemented = [
+    clarifierDone,
+    marketDone,
+    marketingDone,
+  ].filter(Boolean).length;
+  const progressPct = pipelineCompleted
+    ? 100
+    : Math.round((completedImplemented / 3) * 100);
 
   const getStatus = (agentId) => {
+    if (agentId === "clarifier") return clarifierDone ? "done" : "active";
+    if (agentId === "market") {
+      if (marketDone) return "done";
+      return activeAgent.id === "market" ? "active" : "pending";
+    }
+    if (agentId === "marketing") {
+      if (marketingDone) return "done";
+      return activeAgent.id === "marketing" ? "active" : "pending";
+    }
+    if (pipelineCompleted) return "pending";
     const idx = AGENTS.findIndex((a) => a.id === agentId);
     if (idx < activeIndex) return "done";
     if (idx === activeIndex) return "active";
@@ -29,14 +53,27 @@ export default function PipelineLayout() {
 
   const refetchIdea = useCallback(() => {
     if (!id || !token) return;
-    fetch(import.meta.env.VITE_API_URL + "/ideas/" + id, {
-      headers: { Authorization: "Bearer " + token },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
+    const API_URL = import.meta.env.VITE_API_URL;
+    const authHeaders = { Authorization: "Bearer " + token };
+
+    fetch(API_URL + "/ideas/" + id, { headers: authHeaders })
+      .then(async (r) => {
+        const data = r.ok ? await r.json() : null;
         if (data) setIdea(data);
+
+        const [marketRes, marketingRes] = await Promise.all([
+          fetch(API_URL + "/market-analysis/" + id + "/latest", { headers: authHeaders }),
+          fetch(API_URL + "/marketing-plans/" + id + "/latest", { headers: authHeaders }),
+        ]);
+
+        setHasMarketResult(marketRes.ok);
+        setHasMarketingResult(marketingRes.ok);
       })
-      .catch(console.error);
+      .catch((e) => {
+        console.error(e);
+        setHasMarketResult(false);
+        setHasMarketingResult(false);
+      });
   }, [id, token]);
 
   useEffect(() => {
@@ -98,7 +135,7 @@ export default function PipelineLayout() {
   };
 
   return (
-    <div style={S.page}>
+    <div className="app-shell">
       {/* TOP BAR */}
       <div className="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#e8e4ff] bg-white px-5 shadow-[0_1px_8px_rgba(124,58,237,0.06)]">
         {/* Logo */}
@@ -217,12 +254,16 @@ export default function PipelineLayout() {
       </div>
 
       {/* BODY */}
-      <div style={S.body}>
+      <div className="app-shell-body">
         {/* SIDEBAR */}
         <div
-          className={`flex shrink-0 flex-col overflow-hidden border-r border-[#f0eeff] bg-white transition-[width,min-width] duration-200 ease-in-out ${sidebarOpen ? "w-56 min-w-56 shadow-[2px_0_16px_rgba(124,58,237,0.06)]" : "w-0 min-w-0 shadow-none"}`}
+          className={`app-sidebar flex shrink-0 flex-col overflow-hidden border-r border-[#f0eeff] bg-white transition-[width,min-width] duration-200 ease-in-out ${
+            sidebarOpen
+              ? "shadow-[2px_0_16px_rgba(124,58,237,0.06)]"
+              : "is-collapsed shadow-none"
+          }`}
         >
-          <div className="min-w-56 border-b border-[#f0eeff] px-[14px] pb-[10px] pt-[14px]">
+          <div className={`min-w-0 border-b border-[#f0eeff] px-[14px] pb-[10px] pt-[14px] ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             <button
               onClick={() => navigate("/dashboard")}
               className="mb-3 flex cursor-pointer items-center gap-[5px] whitespace-nowrap border-0 bg-transparent p-0 font-[var(--font-sans)] text-xs font-medium text-gray-400"
@@ -259,7 +300,7 @@ export default function PipelineLayout() {
           </div>
 
           {/* Agents */}
-          <div className="flex min-w-56 flex-1 flex-col gap-[3px] overflow-y-auto p-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-[3px] overflow-y-auto p-2">
             {AGENTS.map((agent) => {
               const status = getStatus(agent.id);
               const isActive = agent.id === activeAgent.id;
@@ -310,7 +351,7 @@ export default function PipelineLayout() {
                     )}
                   </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div className={`min-w-0 flex-1 ${sidebarOpen ? "block" : "hidden"}`}>
                     <div
                       className={`overflow-hidden text-ellipsis whitespace-nowrap text-[11px] ${isDone || isActive ? "font-bold" : "font-medium"} ${isActive ? "text-[#3C3489]" : "text-gray-500"}`}
                       style={isDone ? { color: agent.doneColor } : undefined}
@@ -336,10 +377,10 @@ export default function PipelineLayout() {
           </div>
 
           {/* Pipeline button */}
-          <div className="min-w-56 border-t border-[#f0eeff] p-3">
+          <div className={`min-w-0 border-t border-[#f0eeff] p-3 ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             <button
               onClick={() => {
-                if (pipelineEnabled) {
+                if (pipelineEnabled && !pipelineCompleted) {
                   navigate(`/ideas/${id}/market`, {
                     state: {
                       autoStartMarket: true,
@@ -357,10 +398,14 @@ export default function PipelineLayout() {
                   });
                 }
               }}
-              disabled={!pipelineEnabled}
-              className={`flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-[10px] py-2.5 text-xs font-bold transition-all duration-200 ${pipelineEnabled ? "cursor-pointer bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_10px_rgba(124,58,237,0.25)] opacity-100" : "cursor-not-allowed border border-[#e8e4ff] bg-[#f3f0ff] text-[#AFA9EC] opacity-60"}`}
+              disabled={!pipelineEnabled || pipelineCompleted}
+              className={`flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-[10px] py-2.5 text-xs font-bold transition-all duration-200 ${
+                pipelineEnabled && !pipelineCompleted
+                  ? "cursor-pointer bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_10px_rgba(124,58,237,0.25)] opacity-100"
+                  : "cursor-not-allowed border border-[#e8e4ff] bg-[#f3f0ff] text-[#AFA9EC] opacity-60"
+              }`}
             >
-              {pipelineEnabled ? (
+              {pipelineEnabled && !pipelineCompleted ? (
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path
                     d="M2 6h8M7 3l3 3-3 3"
@@ -389,10 +434,16 @@ export default function PipelineLayout() {
                   />
                 </svg>
               )}
-              {pipelineEnabled ? "Lancer le pipeline" : "Pipeline verrouillé"}
+              {pipelineCompleted
+                ? "Pipeline terminé"
+                : pipelineEnabled
+                  ? "Lancer le pipeline"
+                  : "Pipeline verrouillé"}
             </button>
             <div className="mt-1.5 text-center text-[10px] text-[#AFA9EC]">
-              {idea?.clarity_status === "refused"
+              {pipelineCompleted
+                ? "Résultat disponible depuis le backend"
+                : idea?.clarity_status === "refused"
                 ? "Idée refusée — non conforme"
                 : idea?.clarity_status === "clarified" &&
                     (idea?.clarity_score ?? 0) < CLARITY_SCORE_MIN_PIPELINE
@@ -405,7 +456,7 @@ export default function PipelineLayout() {
         </div>
 
         {/* CONTENU */}
-        <div style={S.content}>
+        <div className="app-shell-content">
           <Outlet context={{ idea, setIdea, token, refetchIdea }} />
         </div>
       </div>
