@@ -10,7 +10,7 @@ export default function MarketTabs({ activeTab, onChange }) {
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`min-w-max flex-1 rounded-md border px-3 py-1 text-sm font-semibold transition ${
+            className={`min-w-max flex-1 rounded-md border px-3 py-1 text-[13px] font-medium transition ${
               isActive
                 ? "border-[#378ADD] bg-[#378ADD] text-white"
                 : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"

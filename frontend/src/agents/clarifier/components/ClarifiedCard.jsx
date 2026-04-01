@@ -6,7 +6,7 @@ function ClarityBar({ score }) {
     score >= 80 ? "#16A34A" : score >= 55 ? "#7C3AED" : "#DC2626";
   return (
     <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F9FAFB] py-1 px-2">
-      <span className="text-xs font-medium text-[#6B7280]">
+      <span className="text-[11px] font-medium text-[#6B7280]">
         Clarity Score
       </span>
       <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]">
@@ -15,7 +15,7 @@ function ClarityBar({ score }) {
           style={{ width: `${score}%`, background: color }}
         />
       </div>
-      <span className="text-xs font-semibold" style={{ color }}>
+      <span className="text-[11px] font-medium" style={{ color }}>
         {score}/100
       </span>
     </div>
@@ -26,10 +26,10 @@ function Section({ label, value }) {
   if (!value) return null;
   return (
     <div className="rounded-lg bg-[#F9FAFB] p-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">
         {label}
       </p>
-      <p className="mt-0.5 text-sm text-[#111827]">→ {value}</p>
+      <p className="mt-0.5 text-[13px] font-normal leading-[1.6] text-[#111827]">→ {value}</p>
     </div>
   );
 }

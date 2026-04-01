@@ -24,11 +24,11 @@ function readableSource(source) {
 function SwotColumn({ title, items = [], colorClass, icon: Icon }) {
   return (
     <div className="rounded-lg border border-[#e8e4ff] bg-white p-3 shadow-sm">
-      <p className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.07em] ${colorClass}`}>
+      <p className={`inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] ${colorClass}`}>
         {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
         {title}
       </p>
-      <ul className="mt-2 space-y-1.5 text-sm text-[#5f5a84]">
+      <ul className="mt-2 space-y-1.5 text-[13px] font-normal leading-[1.6] text-[#5f5a84]">
         {items.map((item, idx) => {
           const label = item.point || item;
           const src = readableSource(item?.source);
@@ -36,7 +36,7 @@ function SwotColumn({ title, items = [], colorClass, icon: Icon }) {
             <li key={idx}>
               - {label}
               {src ? (
-                <span className="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                <span className="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] font-normal text-slate-600">
                   {src}
                 </span>
               ) : null}

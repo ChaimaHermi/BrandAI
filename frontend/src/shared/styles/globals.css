@@ -43,11 +43,16 @@
   --content-padding-tablet: 20px;
   --content-padding-mobile: 16px;
 
-  /* Universal typography scale */
-  --font-title: 18px;
-  --font-subtitle: 14px;
+  /* Universal typography scale (Idea Clarifier reference) */
+  --font-title: 15px;
+  --font-subtitle: 12px;
   --font-body: 13px;
   --font-label: 11px;
+  --font-meta: 11px;
+  --font-section: 12px;
+  --font-card-title: 13px;
+  --font-tag: 11px;
+  --font-nav: 13px;
 }
 
 *,
@@ -145,6 +150,52 @@ body {
   border-radius: 12px;
   border: 0.5px solid #e2e8f0;
   background: #fff;
+}
+
+/* Typography utilities for agent result screens */
+.typo-label {
+  font-size: var(--font-label);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.typo-section {
+  font-size: var(--font-section);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.typo-title {
+  font-size: var(--font-title);
+  font-weight: 500;
+}
+
+.typo-card-title {
+  font-size: var(--font-card-title);
+  font-weight: 500;
+}
+
+.typo-body {
+  font-size: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.typo-secondary {
+  font-size: var(--font-subtitle);
+  font-weight: 400;
+}
+
+.typo-meta {
+  font-size: var(--font-meta);
+  font-weight: 400;
+}
+
+.typo-tag {
+  font-size: var(--font-tag);
+  font-weight: 500;
 }
 
 @media (max-width: 1024px) {

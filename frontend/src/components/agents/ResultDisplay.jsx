@@ -36,7 +36,7 @@ export function TypewriterLines({ lines, className = "" }) {
   const showCursor = currentLineIndex < lines.length && currentCharIndex < currentLine.length;
 
   return (
-    <div className={`font-mono text-sm text-[#111827] ${className}`}>
+    <div className={`font-mono text-[13px] font-normal text-[#111827] ${className}`}>
       {displayedLines.slice(0, currentLineIndex).map((line, i) => (
         <div key={i}>{line}</div>
       ))}
@@ -51,8 +51,8 @@ export function TypewriterLines({ lines, className = "" }) {
 function StatCard({ label, value, accentColor = "text-[#7C3AED]" }) {
   return (
     <div className="rounded-[10px] border border-[#E5E7EB] border-l-[3px] border-l-[#7C3AED] bg-[#F9FAFB] p-3">
-      <p className="text-xs text-[#6B7280]">{label}</p>
-      <p className={`mt-0.5 text-base font-semibold ${accentColor}`}>{value}</p>
+      <p className="text-[11px] font-normal text-[#6B7280]">{label}</p>
+      <p className={`mt-0.5 text-[13px] font-medium ${accentColor}`}>{value}</p>
     </div>
   );
 }
@@ -60,8 +60,8 @@ function StatCard({ label, value, accentColor = "text-[#7C3AED]" }) {
 function SummaryBlock({ title, children }) {
   return (
     <div className="rounded-lg bg-[#F9FAFB] p-3">
-      <p className="text-xs font-medium text-[#111827]">{title}</p>
-      <div className="mt-0.5 text-sm text-[#6B7280]">{children}</div>
+      <p className="text-[13px] font-medium text-[#111827]">{title}</p>
+      <div className="mt-0.5 text-[13px] font-normal leading-[1.6] text-[#6B7280]">{children}</div>
     </div>
   );
 }
@@ -70,7 +70,7 @@ export function ResultDisplay({ agentId, data, status }) {
   if (status === "waiting")
     return (
       <Card className="flex flex-col items-center justify-center py-10" hover={false}>
-        <p className="text-sm text-[#6B7280]">En attente de génération...</p>
+        <p className="text-[13px] font-normal leading-[1.6] text-[#6B7280]">En attente de génération...</p>
       </Card>
     );
 

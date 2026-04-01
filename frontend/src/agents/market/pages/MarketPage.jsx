@@ -13,7 +13,7 @@ import MarketXaiBlock from "../components/MarketXaiBlock";
 
 function EmptyState() {
   return (
-    <div className="rounded-xl border border-[#e8e4ff] bg-white p-6 text-center text-sm text-[#7a76a3]">
+    <div className="rounded-xl border border-[#e8e4ff] bg-white p-6 text-center text-[13px] font-normal leading-[1.6] text-[#7a76a3]">
       Aucun rapport de marché disponible. Lance une analyse depuis Clarifier.
     </div>
   );

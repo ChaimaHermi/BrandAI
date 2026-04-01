@@ -33,7 +33,7 @@ function PremiumCard({ children, className = "" }) {
 
 function Tag({ children, className = "" }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${className}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${className}`}>
       {children}
     </span>
   );
@@ -44,7 +44,7 @@ function SectionHeader({ id, title }) {
   return (
     <div className="mb-2 flex items-center gap-2">
       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: accent }} />
-      <p className="text-[13px] font-semibold uppercase tracking-[0.08em]" style={{ color: accent }}>
+      <p className="text-[12px] font-medium uppercase tracking-[0.08em]" style={{ color: accent }}>
         {title}
       </p>
       <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
@@ -55,7 +55,7 @@ function SectionHeader({ id, title }) {
 function EmptyState() {
   return (
     <PremiumCard>
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-[13px] font-normal leading-[1.6] text-slate-600 dark:text-slate-300">
         Aucun plan marketing disponible. Lance le pipeline après l'analyse de marché.
       </p>
     </PremiumCard>
@@ -76,7 +76,7 @@ function HighlightValueText({ text }) {
   return (
     <>
       {before}
-      <span className="font-semibold text-[#378ADD]">{match}</span>
+      <span className="font-medium text-[#378ADD]">{match}</span>
       {after}
     </>
   );
@@ -112,7 +112,7 @@ export default function MarketingPage() {
     return (
       <div className="app-content-scroll flex flex-1 flex-col gap-4 bg-[#F8F9FC]">
         <PremiumCard>
-          <p className="text-sm text-slate-600 dark:text-slate-300">Chargement du plan marketing...</p>
+          <p className="text-[13px] font-normal leading-[1.6] text-slate-600 dark:text-slate-300">Chargement du plan marketing...</p>
         </PremiumCard>
       </div>
     );
@@ -123,7 +123,7 @@ export default function MarketingPage() {
       <div className="app-content-scroll flex flex-1 flex-col gap-4 bg-[#F8F9FC]">
         {error ? (
           <PremiumCard className="border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/30">
-            <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
+            <p className="text-[13px] font-normal leading-[1.6] text-rose-700 dark:text-rose-300">{error}</p>
           </PremiumCard>
         ) : null}
         <EmptyState />
@@ -144,7 +144,7 @@ export default function MarketingPage() {
     <div className="app-content-scroll flex flex-1 flex-col gap-4 bg-[#F8F9FC] dark:bg-slate-950">
       {error ? (
         <PremiumCard className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
-          <p className="text-sm text-amber-700 dark:text-amber-300">{error}</p>
+          <p className="text-[13px] font-normal leading-[1.6] text-amber-700 dark:text-amber-300">{error}</p>
         </PremiumCard>
       ) : null}
 
@@ -154,7 +154,7 @@ export default function MarketingPage() {
             <p className="text-[11px] uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
               Plan marketing · étape 3/7
             </p>
-            <p className="text-[18px] font-semibold text-slate-900 dark:text-slate-100">{projectName}</p>
+            <p className="text-[15px] font-medium text-slate-900 dark:text-slate-100">{projectName}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Tag className="bg-blue-50 text-[#2E6EA6] dark:bg-blue-900/40 dark:text-blue-200">{sector}</Tag>
@@ -173,7 +173,7 @@ export default function MarketingPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveSection(tab.id)}
-                className="min-w-max rounded-[10px] border px-5 py-2 text-[14px] font-semibold transition"
+                className="min-w-max rounded-[10px] border px-5 py-2 text-[13px] font-medium transition"
                 style={
                   active
                     ? {
@@ -202,7 +202,7 @@ export default function MarketingPage() {
           <PremiumCard className="border-blue-100 p-0" style={{ background: "#DCE8F6" }}>
             <div className="border-l-[3px] border-[#378ADD] pl-4">
               <p className="px-4 py-4 text-[15px] leading-relaxed text-[#003A75] dark:text-blue-100">
-                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#225E97]">
+                <span className="mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#225E97]">
                   Proposition de valeur
                 </span>
                 <HighlightValueText text={plan.positioning?.value_proposition || "-"} />
@@ -219,9 +219,9 @@ export default function MarketingPage() {
                     <path d="M4 16c0-3 2.7-5 6-5s6 2 6 5" stroke="#378ADD" strokeWidth="1.4" strokeLinecap="round" />
                   </svg>
                 </IconBox>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0A4E8F]">Segment cible</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#0A4E8F]">Segment cible</p>
               </div>
-              <div className="p-4 text-[16px] font-semibold leading-relaxed text-[#111827]">{plan.positioning?.target_segment || "-"}</div>
+              <div className="p-4 text-[13px] font-normal leading-[1.6] text-[#111827]">{plan.positioning?.target_segment || "-"}</div>
             </PremiumCard>
 
             <PremiumCard className="p-0" style={{ borderColor: "#D0D6DE" }}>
@@ -231,25 +231,25 @@ export default function MarketingPage() {
                     <path d="M10 2l2.4 4.9 5.4.8-3.9 3.8.9 5.3-4.8-2.5-4.8 2.5.9-5.3-3.9-3.8 5.4-.8L10 2z" stroke="#13795B" strokeWidth="1.2" fill="none" />
                   </svg>
                 </IconBox>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0D6A53]">Différenciateur clé</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#0D6A53]">Différenciateur clé</p>
               </div>
-              <div className="p-4 text-[16px] font-semibold leading-relaxed text-[#111827]">{plan.positioning?.differentiation || "-"}</div>
+              <div className="p-4 text-[13px] font-normal leading-[1.6] text-[#111827]">{plan.positioning?.differentiation || "-"}</div>
             </PremiumCard>
           </div>
 
           <PremiumCard className="p-5" style={{ borderColor: "#D0D6DE" }}>
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0A4E8F]">Message principal</p>
-            <p className="border-l-[3px] border-[#378ADD] pl-4 text-[20px] font-medium leading-snug text-[#111827]">
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#0A4E8F]">Message principal</p>
+            <p className="border-l-[3px] border-[#378ADD] pl-4 text-[15px] font-medium leading-[1.6] text-[#111827]">
               "{plan.messaging?.main_message || "-"}"
             </p>
             <div className="mt-4 space-y-2">
               <div className="flex items-start gap-2 rounded-[8px] bg-[#F7E1E1] p-3">
                 <Tag className="gap-1 bg-[#F2B8B8] text-[#7A1111]">pain point</Tag>
-                <p className="text-[14px] text-[#7A1111]">{plan.messaging?.pain_point_focus || "-"}</p>
+                <p className="text-[13px] font-normal leading-[1.6] text-[#7A1111]">{plan.messaging?.pain_point_focus || "-"}</p>
               </div>
               <div className="flex items-start gap-2 rounded-[8px] bg-[#DDEBCF] p-3">
                 <Tag className="gap-1 bg-[#A8D07E] text-[#1F4D1F]">accroche</Tag>
-                <p className="text-[14px] text-[#1F4D1F]">{plan.messaging?.emotional_hook || "-"}</p>
+                <p className="text-[13px] font-normal leading-[1.6] text-[#1F4D1F]">{plan.messaging?.emotional_hook || "-"}</p>
               </div>
             </div>
           </PremiumCard>
@@ -265,12 +265,12 @@ export default function MarketingPage() {
               <div className="rounded-[8px] bg-[#E5E6F8] px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#5B4FCB] text-[22px] font-bold text-white">
+                    <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#5B4FCB] text-[15px] font-medium text-white">
                       {primaryPersona.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-[18px] font-semibold leading-tight text-[#1F2E74]">{primaryPersona}</p>
-                      <p className="text-[14px] text-[#2C3A96]">22-27 ans · usage intensif mobile · frustration face aux arnaques</p>
+                      <p className="text-[13px] font-medium leading-tight text-[#1F2E74]">{primaryPersona}</p>
+                      <p className="text-[12px] font-normal text-[#2C3A96]">22-27 ans · usage intensif mobile · frustration face aux arnaques</p>
                     </div>
                   </div>
                   <Tag className="bg-[#7066D8] text-white">prioritaire</Tag>
@@ -281,12 +281,12 @@ export default function MarketingPage() {
             <div className="px-5 pb-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#BB3B3B]">Pain points</p>
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#BB3B3B]">Pain points</p>
                   <div className="flex flex-wrap gap-1.5">
                     {(painPoints.length ? painPoints : ["Processus long", "Risque d'arnaques", "Offres non rémunérées"]).map((p, i) => (
                       <span
                         key={`${p}-${i}`}
-                        className="rounded-[8px] border border-[#EEB2B2] bg-[#FBE9E9] px-2.5 py-1 text-[13px] font-medium text-[#992E2E]"
+                        className="rounded-[8px] border border-[#EEB2B2] bg-[#FBE9E9] px-2.5 py-1 text-[11px] font-medium text-[#992E2E]"
                       >
                         {p}
                       </span>
@@ -294,12 +294,12 @@ export default function MarketingPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#4B7E1A]">Motivations</p>
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#4B7E1A]">Motivations</p>
                   <div className="flex flex-wrap gap-1.5">
                     {(motivations.length ? motivations : ["Expérience reconnue", "Employabilité int."]).map((m, i) => (
                       <span
                         key={`${m}-${i}`}
-                        className="rounded-[8px] border border-[#B8D893] bg-[#EDF8E2] px-2.5 py-1 text-[13px] font-medium text-[#355E10]"
+                        className="rounded-[8px] border border-[#B8D893] bg-[#EDF8E2] px-2.5 py-1 text-[11px] font-medium text-[#355E10]"
                       >
                         {m}
                       </span>
@@ -308,7 +308,7 @@ export default function MarketingPage() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-[8px] bg-[#ECEAE5] px-4 py-3 text-[16px] italic text-[#111827]">
+              <div className="mt-4 rounded-[8px] bg-[#ECEAE5] px-4 py-3 text-[15px] font-medium italic text-[#111827]">
                 "{plan.targeting?.market_segment_focus || "Des stages vérifiés et rémunérés, trouvés en 5 minutes via notre IA de matching."}"
               </div>
             </div>
@@ -323,7 +323,7 @@ export default function MarketingPage() {
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-[14px] font-semibold"
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-[13px] font-medium"
                     style={{
                       backgroundColor: idx === 0 ? "#F3E8D8" : "#DDF2EA",
                       color: idx === 0 ? "#8A5B16" : "#116A49",
@@ -332,15 +332,15 @@ export default function MarketingPage() {
                     {persona.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-[18px] font-semibold text-[#111827]">
+                    <p className="text-[13px] font-medium text-[#111827]">
                       {idx === 0 ? "Jeune professionnel" : "Entreprise tunisienne"}
                     </p>
-                    <p className="text-[13px] text-[#374151]">
+                    <p className="text-[12px] font-normal text-[#374151]">
                       {idx === 0 ? "Reconversion via stage" : "PME, start-ups, grands groupes"}
                     </p>
                   </div>
                 </div>
-                <p className="mt-3 text-[16px] italic text-[#111827]">
+                <p className="mt-3 text-[15px] font-medium italic text-[#111827]">
                   "{idx === 0
                     ? "Revaloriser mes compétences avec un stage de reconversion validé."
                     : "Recruter rapidement des stagiaires qualifiés et vérifiés."}"
@@ -356,12 +356,12 @@ export default function MarketingPage() {
           <SectionHeader id="channels" title="Canaux" />
 
           <PremiumCard className="border-[#D5D6E4]">
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#046C70]">Canaux prioritaires</p>
+            <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-[#046C70]">Canaux prioritaires</p>
             <div className="divide-y divide-slate-200 dark:divide-slate-700">
               {(plan.channels?.primaryChannels || []).map((channel, idx) => (
                 <div key={`${channel}-${idx}`} className="flex items-start justify-between gap-3 py-3">
                   <div className="flex items-start gap-3">
-                    <span className="mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#CFEAE3] text-xs font-semibold text-[#046C70]">
+                    <span className="mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#CFEAE3] text-[11px] font-medium text-[#046C70]">
                       {idx + 1}
                     </span>
                     <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#CFEAE3] text-[#046C70]">
@@ -383,8 +383,8 @@ export default function MarketingPage() {
                       )}
                     </div>
                     <div>
-                      <p className="text-[18px] font-semibold text-[#111827]">{channel}</p>
-                      <p className="text-[13px] text-[#374151]">{plan.channels?.justification || "-"}</p>
+                      <p className="text-[13px] font-medium text-[#111827]">{channel}</p>
+                      <p className="text-[12px] font-normal text-[#374151]">{plan.channels?.justification || "-"}</p>
                     </div>
                   </div>
                   <Tag className="bg-[#DDEBCF] text-[#355E10]">priorité {idx + 1}</Tag>
@@ -395,12 +395,12 @@ export default function MarketingPage() {
 
           <div className="grid gap-3 md:grid-cols-2">
             <PremiumCard className="border-[#D5D6E4]">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#046C70]">Canaux secondaires</p>
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#046C70]">Canaux secondaires</p>
               <div className="flex flex-wrap gap-1.5">
                 {(plan.channels?.secondaryChannels || []).map((channel, idx) => (
                   <span
                     key={`${channel}-${idx}`}
-                    className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[13px] text-[#1F2937]"
+                    className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[11px] font-medium text-[#1F2937]"
                   >
                     {channel}
                   </span>
@@ -409,8 +409,8 @@ export default function MarketingPage() {
             </PremiumCard>
 
             <PremiumCard className="border-[#A8D4C8] bg-[#CFE3DE]">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#046C70]">Ton de communication</p>
-              <p className="text-[16px] leading-relaxed text-[#003A44]">{plan.contentDirection?.tone || "-"}</p>
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#046C70]">Ton de communication</p>
+              <p className="text-[13px] font-normal leading-[1.6] text-[#003A44]">{plan.contentDirection?.tone || "-"}</p>
             </PremiumCard>
           </div>
         </div>
@@ -424,43 +424,43 @@ export default function MarketingPage() {
             <PremiumCard className="overflow-hidden border-[#2A68A8] p-0">
               <div className="bg-[#2868AA] px-5 py-4 text-white">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em]">B2C — Étudiant</p>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.08em]">B2C — Étudiant</p>
                   <Tag className="bg-[#0E4C8D] text-[#D6ECFF]">adoption max</Tag>
                 </div>
-                <p className="mt-2 text-[32px] font-semibold leading-none">Gratuit</p>
-                <p className="mt-2 text-[14px] text-[#9BC8F1]">Matching IA · alertes · offres vérifiées</p>
+                <p className="mt-2 text-[15px] font-medium leading-none">Gratuit</p>
+                <p className="mt-2 text-[12px] font-normal text-[#9BC8F1]">Matching IA · alertes · offres vérifiées</p>
               </div>
               <div className="bg-[#154C86] px-5 py-3 text-white">
-                <p className="text-[13px] font-medium text-[#A6D0FB]">Premium — abonnement mensuel</p>
+                <p className="text-[12px] font-normal text-[#A6D0FB]">Premium — abonnement mensuel</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  <span className="rounded-[8px] border border-[#5FA2E7] bg-[#1E5F9F] px-2.5 py-1 text-[13px] text-[#A8D5FF]">Analytics</span>
-                  <span className="rounded-[8px] border border-[#5FA2E7] bg-[#1E5F9F] px-2.5 py-1 text-[13px] text-[#A8D5FF]">Alertes prioritaires</span>
-                  <span className="rounded-[8px] border border-[#5FA2E7] bg-[#1E5F9F] px-2.5 py-1 text-[13px] text-[#A8D5FF]">Coaching IA</span>
+                  <span className="rounded-[8px] border border-[#5FA2E7] bg-[#1E5F9F] px-2.5 py-1 text-[11px] font-medium text-[#A8D5FF]">Analytics</span>
+                  <span className="rounded-[8px] border border-[#5FA2E7] bg-[#1E5F9F] px-2.5 py-1 text-[11px] font-medium text-[#A8D5FF]">Alertes prioritaires</span>
+                  <span className="rounded-[8px] border border-[#5FA2E7] bg-[#1E5F9F] px-2.5 py-1 text-[11px] font-medium text-[#A8D5FF]">Coaching IA</span>
                 </div>
               </div>
             </PremiumCard>
 
             <PremiumCard className="border-[#D5D6E4]">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#4B7E1A]">B2B — Entreprise</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#4B7E1A]">B2B — Entreprise</p>
                 <Tag className="bg-[#DDEBCF] text-[#355E10]">revenus principaux</Tag>
               </div>
-              <p className="mt-2 text-[18px] font-semibold text-[#111827]">{plan.pricingStrategy?.model || "Abonnement / poste"}</p>
-              <p className="mt-1 text-[16px] text-[#111827]">Publication + frais vérification optionnels</p>
+              <p className="mt-2 text-[13px] font-medium text-[#111827]">{plan.pricingStrategy?.model || "Abonnement / poste"}</p>
+              <p className="mt-1 text-[12px] font-normal text-[#111827]">Publication + frais vérification optionnels</p>
               <div className="my-3 border-t border-slate-200 dark:border-slate-700" />
               <div className="flex flex-wrap gap-1.5">
-                <span className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[13px] text-[#1F2937]">Publication offres vérifiées</span>
-                <span className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[13px] text-[#1F2937]">Dashboard recruteur</span>
-                <span className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[13px] text-[#1F2937]">Vivier candidats</span>
+                <span className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[11px] font-medium text-[#1F2937]">Publication offres vérifiées</span>
+                <span className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[11px] font-medium text-[#1F2937]">Dashboard recruteur</span>
+                <span className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[11px] font-medium text-[#1F2937]">Vivier candidats</span>
               </div>
             </PremiumCard>
           </div>
 
           <PremiumCard className="border-[#E0D2B5] bg-[#F3E8D5]">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8A5B16]">Hypothèses clés</p>
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A5B16]">Hypothèses clés</p>
             <ul className="space-y-1.5">
               {(plan.assumptions || []).map((item, idx) => (
-                <li key={`${item}-${idx}`} className="flex items-start gap-2 text-[17px] text-[#7A4A10]">
+                <li key={`${item}-${idx}`} className="flex items-start gap-2 text-[13px] font-normal leading-[1.6] text-[#7A4A10]">
                   <span className="mt-1">·</span>
                   {item}
                 </li>
@@ -475,29 +475,29 @@ export default function MarketingPage() {
           <SectionHeader id="gtm" title="Go-to-Market" />
 
           <PremiumCard className="border-[#D5D6E4]">
-            <p className="text-[20px] font-semibold uppercase tracking-[0.08em] text-[#C24E1D]">Premiers utilisateurs ciblés</p>
-            <p className="mt-2 text-[16px] font-semibold leading-[1.4] text-[#111827]">{plan.goToMarket?.targetFirstUsers || "-"}</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#C24E1D]">Premiers utilisateurs ciblés</p>
+            <p className="mt-2 text-[13px] font-normal leading-[1.6] text-[#111827]">{plan.goToMarket?.targetFirstUsers || "-"}</p>
 
             <div className="relative mt-4 pl-5">
               <div className="absolute left-[12px] top-[10px] h-[54px] w-[1px] bg-[#CFCFCF]" />
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <span className="mt-[1px] flex h-7 w-7 items-center justify-center rounded-full bg-[#F2DADA] text-[13px] font-semibold text-[#A64A4A]">
+                  <span className="mt-[1px] flex h-7 w-7 items-center justify-center rounded-full bg-[#F2DADA] text-[13px] font-medium text-[#A64A4A]">
                     1
                   </span>
                   <div>
-                    <p className="text-[30px] font-semibold leading-[1.2] text-[#111827]">Beta fermée — 3 mois</p>
-                    <p className="mt-0.5 text-[14px] text-[#111827]">{(plan.goToMarket?.launchStrategy || "").split("puis")[0] || "-"}</p>
+                    <p className="text-[13px] font-medium leading-[1.6] text-[#111827]">Beta fermée — 3 mois</p>
+                    <p className="mt-0.5 text-[12px] font-normal text-[#111827]">{(plan.goToMarket?.launchStrategy || "").split("puis")[0] || "-"}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <span className="mt-[1px] flex h-7 w-7 items-center justify-center rounded-full bg-[#DDEBCF] text-[13px] font-semibold text-[#355E10]">
+                  <span className="mt-[1px] flex h-7 w-7 items-center justify-center rounded-full bg-[#DDEBCF] text-[13px] font-medium text-[#355E10]">
                     2
                   </span>
                   <div>
-                    <p className="text-[30px] font-semibold leading-[1.2] text-[#111827]">Lancement national</p>
-                    <p className="mt-0.5 text-[14px] text-[#111827]">
+                    <p className="text-[13px] font-medium leading-[1.6] text-[#111827]">Lancement national</p>
+                    <p className="mt-0.5 text-[12px] font-normal text-[#111827]">
                       {(plan.goToMarket?.launchStrategy || "").split("puis")[1] || plan.goToMarket?.launchStrategy || "-"}
                     </p>
                   </div>
@@ -508,10 +508,10 @@ export default function MarketingPage() {
 
           <div className="grid gap-3 lg:grid-cols-2">
             <PremiumCard className="border-[#D5D6E4]">
-              <p className="mb-2 text-[20px] font-semibold uppercase tracking-[0.08em] text-[#C24E1D]">Partenariats clés</p>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#C24E1D]">Partenariats clés</p>
               <div className="flex flex-wrap gap-1.5">
                 {(plan.goToMarket?.partnerships || []).map((p, idx) => (
-                  <span key={`${p}-${idx}`} className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[14px] text-[#1F2937]">
+                  <span key={`${p}-${idx}`} className="rounded-[8px] border border-[#CFCFCF] bg-[#ECEAE5] px-2.5 py-1 text-[11px] font-medium text-[#1F2937]">
                     {p}
                   </span>
                 ))}
@@ -519,10 +519,10 @@ export default function MarketingPage() {
             </PremiumCard>
 
             <PremiumCard className="border-[#D5D6E4]">
-              <p className="mb-2 text-[20px] font-semibold uppercase tracking-[0.08em] text-[#C24E1D]">Tactiques de croissance</p>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#C24E1D]">Tactiques de croissance</p>
               <ul className="space-y-1">
                 {(plan.goToMarket?.earlyGrowthTactics || []).map((item, idx) => (
-                  <li key={`${item}-${idx}`} className="flex items-start gap-2 text-[14px] font-medium text-[#111827]">
+                  <li key={`${item}-${idx}`} className="flex items-start gap-2 text-[13px] font-normal leading-[1.6] text-[#111827]">
                     <span className="mt-[2px] text-[#D84C1B]">↗</span>
                     {item}
                   </li>
@@ -539,42 +539,42 @@ export default function MarketingPage() {
 
           <div className="grid gap-3 lg:grid-cols-3">
             <PremiumCard className="p-0">
-              <div className="rounded-t-[12px] bg-rose-600 px-4 py-3 text-sm font-semibold text-white">Court terme 0-3 mois</div>
+              <div className="rounded-t-[12px] bg-rose-600 px-4 py-3 text-[12px] font-medium uppercase tracking-[0.08em] text-white">Court terme 0-3 mois</div>
               <div className="space-y-2 p-4">
                 {(plan.actionPlan?.shortTerm || []).map((step, idx) => (
                   <div key={`${step}-${idx}`} className="flex items-start gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-xs font-semibold text-rose-700 dark:bg-rose-900/60 dark:text-rose-300">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-[11px] font-medium text-rose-700 dark:bg-rose-900/60 dark:text-rose-300">
                       {idx + 1}
                     </span>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{step}</p>
+                    <p className="text-[13px] font-normal leading-[1.6] text-slate-700 dark:text-slate-300">{step}</p>
                   </div>
                 ))}
               </div>
             </PremiumCard>
 
             <PremiumCard className="border-l-2 border-l-amber-300 p-0">
-              <div className="rounded-t-[12px] bg-amber-500 px-4 py-3 text-sm font-semibold text-white">Moyen terme 3-12 mois</div>
+              <div className="rounded-t-[12px] bg-amber-500 px-4 py-3 text-[12px] font-medium uppercase tracking-[0.08em] text-white">Moyen terme 3-12 mois</div>
               <div className="space-y-2 p-4">
                 {(plan.actionPlan?.midTerm || []).map((step, idx) => (
                   <div key={`${step}-${idx}`} className="flex items-start gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-[11px] font-medium text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
                       {idx + 1}
                     </span>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{step}</p>
+                    <p className="text-[13px] font-normal leading-[1.6] text-slate-700 dark:text-slate-300">{step}</p>
                   </div>
                 ))}
               </div>
             </PremiumCard>
 
             <PremiumCard className="border-l-2 border-l-blue-300 p-0">
-              <div className="rounded-t-[12px] bg-blue-600 px-4 py-3 text-sm font-semibold text-white">Long terme 12 mois+</div>
+              <div className="rounded-t-[12px] bg-blue-600 px-4 py-3 text-[12px] font-medium uppercase tracking-[0.08em] text-white">Long terme 12 mois+</div>
               <div className="space-y-2 p-4">
                 {(plan.actionPlan?.longTerm || []).map((step, idx) => (
                   <div key={`${step}-${idx}`} className="flex items-start gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-[11px] font-medium text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
                       {idx + 1}
                     </span>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{step}</p>
+                    <p className="text-[13px] font-normal leading-[1.6] text-slate-700 dark:text-slate-300">{step}</p>
                   </div>
                 ))}
               </div>
@@ -589,7 +589,7 @@ export default function MarketingPage() {
             type="button"
             disabled={activeIndex === 0}
             onClick={() => setActiveSection(SECTION_TABS[Math.max(0, activeIndex - 1)].id)}
-            className="inline-flex items-center gap-1 rounded-[10px] border border-[#A9B6C5] bg-[#F5F6F8] px-4 py-2 text-[14px] font-semibold text-[#111827] transition hover:bg-[#ECEFF3] disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-[10px] border border-[#A9B6C5] bg-[#F5F6F8] px-4 py-2 text-[13px] font-medium text-[#111827] transition hover:bg-[#ECEFF3] disabled:opacity-40"
           >
             <span>←</span> Précédent
           </button>
@@ -614,7 +614,7 @@ export default function MarketingPage() {
             type="button"
             disabled={activeIndex === SECTION_TABS.length - 1}
             onClick={() => setActiveSection(SECTION_TABS[Math.min(SECTION_TABS.length - 1, activeIndex + 1)].id)}
-            className="inline-flex items-center gap-1 rounded-[10px] border border-[#A9B6C5] bg-[#F5F6F8] px-4 py-2 text-[14px] font-semibold text-[#111827] transition hover:bg-[#ECEFF3] disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-[10px] border border-[#A9B6C5] bg-[#F5F6F8] px-4 py-2 text-[13px] font-medium text-[#111827] transition hover:bg-[#ECEFF3] disabled:opacity-40"
           >
             Suivant <span>→</span>
           </button>
