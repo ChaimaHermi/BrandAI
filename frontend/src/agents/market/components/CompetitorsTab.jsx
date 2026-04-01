@@ -33,7 +33,7 @@ function limitItems(items, max = 4) {
 function MetaBadge({ children }) {
   if (!children) return null;
   return (
-    <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[11px] font-semibold text-[#5b53a9]">
+    <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[11px] font-medium text-[#5b53a9]">
       {children}
     </span>
   );
@@ -46,7 +46,7 @@ export default function CompetitorsTab({ report }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs font-bold uppercase tracking-[0.07em] text-[#a09bc6]">
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#a09bc6]">
         {competitors.length} concurrents analysés
       </p>
 
@@ -59,7 +59,7 @@ export default function CompetitorsTab({ report }) {
             <div key={`${c.nom}-${idx}`} className="rounded-xl border border-[#e8e4ff] bg-white p-4 shadow-sm">
               {/* Header */}
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="flex items-center gap-1.5 text-base font-semibold leading-tight text-[#2f285c]">
+                <p className="flex items-center gap-1.5 text-[13px] font-medium leading-tight text-[#2f285c]">
                   <HiBuildingOffice2 className="h-4 w-4 text-[#6a60d8]" />
                   {c.nom || "Concurrent"}
                 </p>
@@ -67,13 +67,13 @@ export default function CompetitorsTab({ report }) {
               </div>
 
               {/* Meta */}
-              <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#8f89bb]">
+              <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-normal text-[#8f89bb]">
                 {c.website ? (
                   <a
                     href={normalizeUrl(c.website)}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 font-medium text-[#4d67d1] underline-offset-2 hover:underline"
+                    className="inline-flex items-center gap-1 font-normal text-[#4d67d1] underline-offset-2 hover:underline"
                   >
                     <HiLink className="h-3.5 w-3.5" />
                     {hostLabel(c.website)}
@@ -89,36 +89,36 @@ export default function CompetitorsTab({ report }) {
 
               {/* Positioning + description */}
               {c.positioning ? (
-                <p className="mb-1 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-[#4f45c8]">
+                <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#4f45c8]">
                   <HiSparkles className="h-3.5 w-3.5" />
                   Positionnement
                 </p>
               ) : null}
               {c.positioning ? (
-                <p className="mb-1 rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-[#574fb2]">{c.positioning}</p>
+                <p className="mb-1 rounded-md bg-violet-50 px-2 py-1 text-[13px] font-medium text-[#574fb2]">{c.positioning}</p>
               ) : null}
               {c.description ? (
-                <p className="line-clamp-2 text-sm text-[#5f5a84]">{c.description}</p>
+                <p className="line-clamp-2 text-[13px] font-normal leading-[1.6] text-[#5f5a84]">{c.description}</p>
               ) : null}
 
               {/* Forces */}
               <div className="mt-3">
-                <p className="mb-1 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-emerald-700">
+                <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-emerald-700">
                   <HiShieldCheck className="h-3.5 w-3.5" />
                   Forces clés
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {strengths.shown.length > 0 ? (
                     strengths.shown.map((s, i) => (
-                      <span key={i} className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                      <span key={i} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                         {s}
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs text-[#b0abc9]">Aucune force explicite</span>
+                    <span className="text-[11px] font-normal text-[#b0abc9]">Aucune force explicite</span>
                   )}
                   {strengths.remaining > 0 ? (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                       +{strengths.remaining}
                     </span>
                   ) : null}
@@ -127,22 +127,22 @@ export default function CompetitorsTab({ report }) {
 
               {/* Weaknesses */}
               <div className="mt-2.5">
-                <p className="mb-1 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-rose-700">
+                <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-rose-700">
                   <HiExclamationTriangle className="h-3.5 w-3.5" />
                   Faiblesses clés
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {weaknesses.shown.length > 0 ? (
                     weaknesses.shown.map((w, i) => (
-                      <span key={i} className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                      <span key={i} className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
                         {w}
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs text-[#b0abc9]">Aucune faiblesse explicite</span>
+                    <span className="text-[11px] font-normal text-[#b0abc9]">Aucune faiblesse explicite</span>
                   )}
                   {weaknesses.remaining > 0 ? (
-                    <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                    <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700">
                       +{weaknesses.remaining}
                     </span>
                   ) : null}
@@ -155,12 +155,12 @@ export default function CompetitorsTab({ report }) {
       </div>
 
       <div className="rounded-xl border border-[#e8e4ff] bg-white p-4 shadow-sm">
-        <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.07em] text-amber-700">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-amber-700">
           <HiLightBulb className="h-3.5 w-3.5" />
           Opportunité identifiée
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-[#5f5a84]">{opportunitySummary}</p>
-        <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+        <p className="mt-2 text-[13px] font-normal leading-[1.6] text-[#5f5a84]">{opportunitySummary}</p>
+        <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
           opportunité {String(opportunityLevel).replaceAll("_", " ")}
         </span>
       </div>

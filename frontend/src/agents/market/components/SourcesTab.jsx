@@ -103,17 +103,17 @@ export default function SourcesTab({ report }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="border-r border-[#ebe8ff] pr-3">
-              <p className="text-xs font-bold uppercase tracking-[0.07em] text-[#a09bc6]">Score qualité</p>
-              <p className="mt-1 text-3xl font-extrabold leading-none text-[#4f45c8]">
+              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#a09bc6]">Score qualité</p>
+              <p className="mt-1 text-[15px] font-medium leading-none text-[#4f45c8]">
                 {dq?.score_global ?? "-"}
               </p>
             </div>
-            <p className="max-w-[560px] text-sm leading-relaxed text-[#5f5a84]">
+            <p className="max-w-[560px] text-[13px] font-normal leading-[1.6] text-[#5f5a84]">
               Toutes les sections clés couvertes par données API vérifiables. Personas et
               faiblesses concurrentes inférées par LLM depuis données brutes.
             </p>
           </div>
-          <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
+          <div className="flex flex-wrap gap-1.5 text-[11px] font-medium">
             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">API vérifiable</span>
             <span className="rounded-full bg-violet-50 px-2 py-0.5 text-violet-700">Inféré LLM</span>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">Désactivé</span>
@@ -122,7 +122,7 @@ export default function SourcesTab({ report }) {
       </div>
 
       <div>
-        <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.07em] text-[#5f57b3]">
+        <p className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#5f57b3]">
           <HiServerStack className="h-3.5 w-3.5" />
           {sources.length} sources utilisées
         </p>
@@ -137,14 +137,14 @@ export default function SourcesTab({ report }) {
                     <Icon className="h-4 w-4 text-[#5e56ad]" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-lg font-semibold leading-tight text-[#2f285c]">
+                    <p className="text-[13px] font-medium leading-tight text-[#2f285c]">
                       {prettySourceName(src)}
                     </p>
-                    <p className="mt-0.5 text-sm text-[#5f5a84]">
+                    <p className="mt-0.5 text-[12px] font-normal text-[#5f5a84]">
                       {meta?.description || "Source de données utilisée dans cette analyse."}
                     </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">
                         API directe
                       </span>
                       <span className="text-[#9a96bf]">{meta?.details || src}</span>
@@ -158,23 +158,23 @@ export default function SourcesTab({ report }) {
       </div>
 
       <div>
-        <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.07em] text-[#5f57b3]">
+        <p className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#5f57b3]">
           <HiCheckBadge className="h-3.5 w-3.5" />
           Qualité par section
         </p>
         <div className="grid gap-2 md:grid-cols-3">
           {Object.entries(sections).map(([sectionName, sectionData]) => (
             <div key={sectionName} className="rounded-xl border border-[#e8e4ff] bg-white p-3 shadow-sm">
-              <p className="mb-2 text-base font-semibold leading-tight text-[#2f285c]">
+              <p className="mb-2 text-[13px] font-medium leading-tight text-[#2f285c]">
                 {sectionName}
               </p>
               <div className="space-y-1.5">
                 {Object.entries(sectionData || {}).map(([k, v]) => (
-                  <div key={k} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="text-[#5f5a84]">{k.replaceAll("_", " ")}</span>
+                  <div key={k} className="flex items-center justify-between gap-2 text-[13px]">
+                    <span className="font-normal text-[#5f5a84]">{k.replaceAll("_", " ")}</span>
                     <span className="inline-flex items-center gap-1.5">
                       <span className={`inline-block h-2 w-2 rounded-full ${statusDot(v?.status)}`} />
-                      <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-xs font-semibold text-[#5b53a9]">
+                      <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[11px] font-medium text-[#5b53a9]">
                         {statusLabel(v?.status)}{v?.count ? ` · ${v.count}` : ""}
                       </span>
                     </span>
@@ -187,21 +187,21 @@ export default function SourcesTab({ report }) {
       </div>
 
       <div>
-        <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.07em] text-[#5f57b3]">
+        <p className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#5f57b3]">
           <HiMap className="h-3.5 w-3.5" />
           Contexte macro — {report?.meta?.geo || "N/A"}
         </p>
         <div className="grid gap-2 md:grid-cols-3">
           {macroRows.map((item) => (
             <div key={item.label} className="rounded-xl border border-[#e8e4ff] bg-white p-3 shadow-sm">
-              <p className="text-lg font-semibold leading-tight text-[#2f285c]">{item.value}</p>
-              <p className="mt-0.5 text-xs text-[#9a96bf]">{item.label}</p>
+              <p className="text-[13px] font-medium leading-tight text-[#2f285c]">{item.value}</p>
+              <p className="mt-0.5 text-[11px] font-normal text-[#9a96bf]">{item.label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#e8e4ff] bg-white px-3 py-2 text-xs text-[#6f6a97]">
+      <div className="rounded-xl border border-[#e8e4ff] bg-white px-3 py-2 text-[11px] font-normal text-[#6f6a97]">
         <div className="mb-1 flex items-center gap-2">
           <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
           Donnée extraite directement via API — vérifiable

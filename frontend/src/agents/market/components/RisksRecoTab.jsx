@@ -59,7 +59,7 @@ export default function RisksRecoTab({ report }) {
   return (
     <div className="space-y-3">
       <div className="space-y-2">
-        <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.07em] text-[#5f57b3]">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#5f57b3]">
           <HiShieldExclamation className="h-3.5 w-3.5" />
           Risques identifiés
         </p>
@@ -74,12 +74,12 @@ export default function RisksRecoTab({ report }) {
                     <Icon className={`h-4 w-4 ${ui.iconColor}`} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={`text-[11px] font-bold uppercase tracking-[0.07em] ${ui.titleColor}`}>{ui.label}</p>
-                    <p className="mt-0.5 text-[15px] font-semibold leading-snug text-[#2f285c]">{risk.cause || "-"}</p>
-                    <p className="mt-1 text-[13px] text-[#6f6a97]">
+                    <p className={`text-[11px] font-medium uppercase tracking-[0.08em] ${ui.titleColor}`}>{ui.label}</p>
+                    <p className="mt-0.5 text-[13px] font-medium leading-[1.6] text-[#2f285c]">{risk.cause || "-"}</p>
+                    <p className="mt-1 text-[12px] font-normal text-[#6f6a97]">
                       Mitigation : {risk.mitigation || risk.impact || "-"}
                     </p>
-                    <span className={`mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${probabilityBadge(risk.probabilite)}`}>
+                    <span className={`mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${probabilityBadge(risk.probabilite)}`}>
                       probabilité: {String(risk.probabilite || "-").replaceAll("_", " ")}
                     </span>
                   </div>
@@ -91,7 +91,7 @@ export default function RisksRecoTab({ report }) {
       </div>
 
       <div className="space-y-2">
-        <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.07em] text-[#5f57b3]">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#5f57b3]">
           <HiLightBulb className="h-3.5 w-3.5" />
           Recommandations
         </p>
@@ -103,12 +103,12 @@ export default function RisksRecoTab({ report }) {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold uppercase ${horizonBadge(reco.horizon)}`}>
+                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium uppercase ${horizonBadge(reco.horizon)}`}>
                     {String(reco.horizon || "-").replaceAll("_", " ")}
                   </span>
                 </div>
-                <p className="text-[15px] font-semibold leading-snug text-[#2f285c]">{reco.action || "-"}</p>
-                <p className="mt-1 text-[13px] text-[#6f6a97]">
+                <p className="text-[13px] font-medium leading-[1.6] text-[#2f285c]">{reco.action || "-"}</p>
+                <p className="mt-1 text-[12px] font-normal text-[#6f6a97]">
                   Impact : {reco.impact_attendu || "-"}
                 </p>
               </div>
