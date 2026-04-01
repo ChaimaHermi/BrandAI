@@ -1,150 +1,164 @@
 import {
   HiArrowTrendingUp,
   HiCalendarDays,
-  HiChartBarSquare,
   HiChevronRight,
-  HiExclamationTriangle,
-  HiFire,
   HiHashtag,
   HiSignal,
 } from "react-icons/hi2";
 
-function KpiCard({ title, item = {}, icon: Icon, tone = "violet" }) {
-  const toneMap = {
-    emerald: {
-      dot: "bg-emerald-500",
-      text: "text-emerald-700",
-      badge: "bg-emerald-50 text-emerald-700",
-      border: "border-emerald-100",
-    },
-    rose: {
-      dot: "bg-rose-500",
-      text: "text-rose-700",
-      badge: "bg-rose-50 text-rose-700",
-      border: "border-rose-100",
-    },
-    amber: {
-      dot: "bg-amber-500",
-      text: "text-amber-700",
-      badge: "bg-amber-50 text-amber-700",
-      border: "border-amber-100",
-    },
-    blue: {
-      dot: "bg-blue-500",
-      text: "text-blue-700",
-      badge: "bg-blue-50 text-blue-700",
-      border: "border-blue-100",
-    },
-    violet: {
-      dot: "bg-violet-500",
-      text: "text-violet-700",
-      badge: "bg-violet-50 text-violet-700",
-      border: "border-violet-100",
-    },
-  };
-  const toneUi = toneMap[tone] || toneMap.violet;
+function indicatorTone(niveau = "") {
+  const v = String(niveau).toLowerCase();
+  if (v.includes("fort") || v.includes("hausse")) return "text-emerald-700 dark:text-emerald-300";
+  if (v.includes("important") || v.includes("critique") || v.includes("tres")) return "text-rose-700 dark:text-rose-300";
+  if (v.includes("mod") || v.includes("partiel") || v.includes("discute")) return "text-amber-700 dark:text-amber-300";
+  return "text-blue-700 dark:text-blue-300";
+}
 
+function IndicatorCard({ title, item = {} }) {
+  const tone = indicatorTone(item?.niveau);
   return (
-    <div className={`rounded-xl border bg-white p-3 shadow-sm ${toneUi.border}`}>
-      <div className="mb-1 flex items-center justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#a09bc6]">{title}</p>
-        {Icon ? <Icon className={`h-4 w-4 ${toneUi.text}`} /> : null}
-      </div>
-      <div className="mb-1 flex items-center gap-2">
-        <span className={`inline-block h-2 w-2 rounded-full ${toneUi.dot}`} />
-        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${toneUi.badge}`}>
-          {item?.niveau || "-"}
-        </span>
-      </div>
-      <p className="text-sm text-[#5f5a84]">{item?.label || "-"}</p>
+    <div className="rounded-2xl border border-slate-300 bg-slate-100 p-4 dark:border-slate-700 dark:bg-slate-800">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-blue-600 dark:text-blue-300">
+        {title}
+      </p>
+      <p className={`mt-2 text-3xl font-semibold leading-none ${tone}`}>
+        {item?.niveau || "-"}
+      </p>
+      <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{item?.label || "-"}</p>
     </div>
   );
+}
+
+function formatInt(value) {
+  if (value == null) return "-";
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value);
+}
+
+function formatPercent(value) {
+  if (value == null) return "-";
+  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(value)}%`;
 }
 
 export default function OverviewTab({ report }) {
   const overview = report?.overview || {};
   const tendances = report?.tendances || {};
+  const macro = report?.marketVoc?.macro || {};
   const risingQueries = tendances?.risingQueries || [];
   const newsSignals = tendances?.newsSignals || [];
 
+  const macroItems = [
+    { label: "Population", value: formatInt(macro.population) },
+    { label: "Internet", value: formatPercent(macro.internet_pct) },
+    { label: "Mobile / 100 hab.", value: formatInt(macro.mobile_per100) },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#e8e4ff] bg-white p-4 text-[#4f4a75] shadow-sm">
-        <div className="border-l-2 border-[#6a60d8] pl-3 text-base leading-none text-[#6a60d8]">"</div>
-        <p className="-mt-2 pl-3 text-sm leading-relaxed text-[#4f4a75]">
+      <div className="rounded-xl border-l-2 border-blue-500 bg-slate-200/80 p-4 dark:border-blue-400 dark:bg-slate-800">
+        <p className="text-[15px] font-semibold uppercase tracking-[0.05em] text-blue-600 dark:text-blue-300">
+          Synthèse stratégique
+        </p>
+        <p className="mt-2 text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">
           {report?.executiveSummary || "Résumé exécutif indisponible."}
         </p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard title="Demande" item={overview.demande} icon={HiFire} tone="emerald" />
-        <KpiCard title="Problème" item={overview.probleme} icon={HiExclamationTriangle} tone="rose" />
-        <KpiCard title="Concurrence" item={overview.concurrence} icon={HiChartBarSquare} tone="amber" />
-        <KpiCard title="Tendance" item={overview.tendance} icon={HiArrowTrendingUp} tone="blue" />
+        <IndicatorCard title="Demande" item={overview.demande} />
+        <IndicatorCard title="Problème" item={overview.probleme} />
+        <IndicatorCard title="Concurrence" item={overview.concurrence} />
+        <IndicatorCard title="Tendance" item={overview.tendance} />
       </div>
 
-      <div className="rounded-xl border border-[#e8e4ff] bg-white p-4 shadow-sm">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.07em] text-[#a09bc6]">Signaux tendance</p>
+      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 dark:text-slate-400">
+          Signaux tendance
+        </p>
 
-        <div className="grid gap-2 border-b border-[#efecff] pb-3 md:grid-cols-3">
-          <div className="rounded-lg bg-[#faf9ff] p-2.5">
-            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-[#8f89bb]">
+        <div className="mt-3 grid gap-2 border-b border-slate-200 pb-3 md:grid-cols-3 dark:border-slate-700">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               <HiArrowTrendingUp className="h-3.5 w-3.5" />
               Direction
             </div>
-            <div className="text-lg font-bold leading-none text-[#3C3489]">{tendances.direction || "-"}</div>
+            <div className="text-lg font-semibold leading-none text-slate-900 dark:text-slate-100">
+              {tendances.direction || "-"}
+            </div>
           </div>
-          <div className="rounded-lg bg-[#faf9ff] p-2.5">
-            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-[#8f89bb]">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               <HiSignal className="h-3.5 w-3.5" />
               Signal
             </div>
-            <div className="text-lg font-bold leading-none text-[#3C3489]">{tendances.signalStrength || "-"}</div>
+            <div className="text-lg font-semibold leading-none text-slate-900 dark:text-slate-100">
+              {tendances.signalStrength || "-"}
+            </div>
           </div>
-          <div className="rounded-lg bg-[#faf9ff] p-2.5">
-            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-[#8f89bb]">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               <HiCalendarDays className="h-3.5 w-3.5" />
               Pic
             </div>
-            <div className="text-lg font-bold leading-none text-[#3C3489]">{tendances.peakPeriod || "-"}</div>
+            <div className="text-lg font-semibold leading-none text-slate-900 dark:text-slate-100">
+              {tendances.peakPeriod || "-"}
+            </div>
           </div>
         </div>
 
-        <div className="mt-3 border-b border-[#efecff] pb-3">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.07em] text-[#a09bc6]">Requêtes montantes</p>
+        <div className="mt-3 border-b border-slate-200 pb-3 dark:border-slate-700">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 dark:text-slate-400">
+            Requêtes montantes
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {risingQueries.length > 0 ? (
               risingQueries.slice(0, 8).map((query, idx) => (
                 <span
                   key={`${query}-${idx}`}
-                  className="rounded-full bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700"
+                  className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300"
                 >
                   {query}
                 </span>
               ))
             ) : (
-              <span className="text-sm text-[#8f89bb]">Aucune requête montante disponible.</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">Aucune requête montante disponible.</span>
             )}
           </div>
         </div>
 
         <div className="mt-3">
-          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.07em] text-[#a09bc6]">
+          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 dark:text-slate-400">
             <HiHashtag className="h-3.5 w-3.5" />
             Signaux news
           </p>
           <div className="space-y-1.5">
             {newsSignals.length > 0 ? (
               newsSignals.slice(0, 6).map((signal, idx) => (
-                <p key={`${signal}-${idx}`} className="flex items-start gap-1.5 text-sm text-[#5f5a84]">
-                  <HiChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#7F77DD]" />
+                <p key={`${signal}-${idx}`} className="flex items-start gap-1.5 text-sm text-slate-700 dark:text-slate-300">
+                  <HiChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-300" />
                   <span>{signal}</span>
                 </p>
               ))
             ) : (
-              <p className="text-sm text-[#8f89bb]">Aucun signal news disponible.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Aucun signal news disponible.</p>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 dark:text-slate-400">
+          Métriques macro
+        </p>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {macroItems.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800"
+            >
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{item.value}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.label}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
