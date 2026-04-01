@@ -30,7 +30,11 @@ export default function ClarifierPage() {
     setRefusalData,
     startAnalysis,
     submitAnswers,
-  } = useClarifierAgent(idea, token, { onPersisted: refetchIdea });
+  } = useClarifierAgent(idea, token, {
+    onPersisted: refetchIdea,
+    // Clarifier ends here. Market pipeline starts only by explicit user action.
+    onClarified: () => {},
+  });
 
   const scheduleHideXai = (delayMs = 50000) => {
     if (xaiHideTimerRef.current) {
@@ -82,6 +86,9 @@ export default function ClarifierPage() {
         solution_description: idea.clarity_solution || "",
         short_pitch: idea.clarity_short_pitch || "",
         score: idea.clarity_score ?? 0,
+        country: idea.clarity_country || "Non précisé",
+        country_code: idea.clarity_country_code || "",
+        language: idea.clarity_language || "fr",
       };
       setClarifiedIdea(restored);
       setClarityScore(idea.clarity_score ?? 0);
@@ -192,7 +199,7 @@ export default function ClarifierPage() {
               color: "#9ca3af",
             }}
           >
-            Analyse et structure votre idée · Étape 1 sur 7
+            Analyse et structure votre idée · Étape 1 sur 6
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -227,8 +234,8 @@ export default function ClarifierPage() {
                   height: "100%",
                   width:
                     currentStep === "clarified"
-                      ? "14%"
-                      : "7%",
+                      ? "17%"
+                      : "8%",
                   background: "linear-gradient(90deg,#7F77DD,#534AB7)",
                   borderRadius: 99,
                   transition: "width 0.5s ease",
@@ -242,7 +249,7 @@ export default function ClarifierPage() {
                 color: "#534AB7",
               }}
             >
-              {currentStep === "clarified" ? "14%" : "7%"}
+              {currentStep === "clarified" ? "17%" : "8%"}
             </span>
           </div>
         </div>

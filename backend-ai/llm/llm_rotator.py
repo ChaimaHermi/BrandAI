@@ -1,72 +1,79 @@
-from llm.llm_factory import create_gemini_clients, create_groq_clients
+# ══════════════════════════════════════════════════════════════
+#  llm/llm_rotator.py
+# ══════════════════════════════════════════════════════════════
+
 import logging
+
+from llm.llm_factory import create_groq_clients
 
 logger = logging.getLogger("brandai.llm_rotator")
 
 class LLMRotator:
 
-    def __init__(self):
-        self.gemini = create_gemini_clients()
-        self.groq   = create_groq_clients()
-        self.provider = "gemini"
-        self.index    = 0
+    def __init__(self, model: str = "openai/gpt-oss-120b", max_tokens: int | None = None):
+        self._provider = "groq"
+        self._model = model
+        self._clients = {"groq": create_groq_clients(model=model, max_tokens=max_tokens)}
+        self._index = 0
 
+        logger.info(
+            f"[rotator] Init - provider=groq | model={self._model} | "
+            f"groq={len(self._clients['groq'])} keys"
+        )
+
+        if not self._clients["groq"]:
+            raise RuntimeError("Aucune clé Groq trouvée")
+
+    # ─────────────────────────────────────────────
+    # 🔥 GROQ ONLY (LLAMA)
+    # ─────────────────────────────────────────────
     @classmethod
-    def groq_only(cls) -> "LLMRotator":
-        """
-        Crée un rotator qui utilise uniquement Groq.
-        Pour les agents qui ne veulent jamais Gemini.
-        """
-        instance = cls.__new__(cls)
-        instance._init_groq_only()
-        return instance
+    def groq_only(cls):
+        return cls(model="openai/gpt-oss-120b")
 
-    def _init_groq_only(self):
-        # Initialiser uniquement avec les clés Groq
-        self.gemini = []
-        self.groq = create_groq_clients()
-        if not self.groq:
-            raise RuntimeError("Aucun client groq disponible.")
-        self.provider = "groq"
-        self.index = 0
+    # ─────────────────────────────────────────────
+    # 🔥 GROQ GPT ONLY (TON CAS EXACT)
+    # ─────────────────────────────────────────────
+    @classmethod
+    def groq_gpt_only(cls):
+        return cls(model="openai/gpt-oss-120b")
 
+    # ─────────────────────────────────────────────
+    # Generic model selector for future agents
+    # ─────────────────────────────────────────────
+    @classmethod
+    def groq_model(cls, model: str, max_tokens: int | None = None):
+        return cls(model=model, max_tokens=max_tokens)
+
+    # ─────────────────────────────────────────────
+    # GET CLIENT
+    # ─────────────────────────────────────────────
     def get_client(self, temperature: float = 0.7):
-        clients = self.gemini if self.provider == "gemini" else self.groq
+        clients = self._clients[self._provider]
+
         if not clients:
-            raise RuntimeError(f"Aucun client {self.provider} disponible.")
-        client = clients[self.index]
-        # Pour Groq, on fige la température à 0.05 pour éviter la duplication
-        if self.provider == "groq":
-            # Groq : temperature forcée à 0.05
-            # pour éviter les répétitions de mots (llama-3.3)
-            # Le paramètre temperature passé est ignoré.
-            client.temperature = 0.05
-        else:
-            client.temperature = temperature
+            raise RuntimeError(f"Aucun client {self._provider}")
+
+        client = clients[self._index]
+
+        client.temperature = temperature
+
         return client
 
+    # ─────────────────────────────────────────────
+    # ROTATION
+    # ─────────────────────────────────────────────
     def rotate(self) -> bool:
-        clients = self.gemini if self.provider == "gemini" else self.groq
-        next_index = self.index + 1
+        clients = self._clients[self._provider]
+        next_idx = self._index + 1
 
-        if next_index < len(clients):
-            logger.warning(
-                f"[rotator] Rotation {self.provider} "
-                f"clé {self.index + 1} → clé {next_index + 1}"
-            )
-            self.index = next_index
+        if next_idx < len(clients):
+            self._index = next_idx
             return True
 
-        # Toutes les clés Gemini épuisées → fallback Groq
-        if self.provider == "gemini" and self.groq:
-            logger.warning("[rotator] Gemini épuisé → fallback Groq")
-            self.provider = "groq"
-            self.index = 0
-            return True
-
-        logger.error("[rotator] Toutes les clés épuisées.")
         return False
 
-    def current_info(self) -> str:
-        clients = self.gemini if self.provider == "gemini" else self.groq
-        return f"{self.provider} clé {self.index + 1}/{len(clients)}"
+    # ─────────────────────────────────────────────
+    def current_info(self):
+        clients = self._clients[self._provider]
+        return f"{self._provider}:{self._model} key {self._index + 1}/{len(clients)}"

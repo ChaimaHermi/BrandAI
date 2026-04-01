@@ -8,7 +8,7 @@ export default function QuestionsBlock({
 }) {
   const hasQuestions = Array.isArray(questions) && questions.length > 0;
 
-  const keys = ["problem", "target", "solution"];
+  const keys = ["problem", "target", "solution", "geography"];
 
   const getAxis = (q, i) => {
     if (typeof q === "string") return keys[i] || null;
@@ -57,20 +57,25 @@ export default function QuestionsBlock({
           const key = axis;
           const text = getText(question);
           if (!text) return null;
+          const isGeo = axis === "geography";
           return (
             <div
               key={i}
               className="overflow-hidden rounded-[var(--border-radius-md)] border border-[#AFA9EC]"
             >
               <div className="bg-[#EEEDFE] px-3 py-2 text-xs font-medium text-[#3C3489]">
-                {i + 1}. {text}
+                {i + 1}. {isGeo ? "🌍 " : ""}{text}
               </div>
               <textarea
                 value={answers[axis] || ""}
                 onChange={(e) =>
                   setAnswers((prev) => ({ ...prev, [axis]: e.target.value }))
                 }
-                placeholder="Votre réponse..."
+                placeholder={
+                  isGeo
+                    ? "Ex: Tunisie, France, Maroc, Algérie..."
+                    : "Votre réponse..."
+                }
                 rows={2}
                 disabled={isLoading}
                 className="box-border w-full resize-y border-0 border-t border-[#AFA9EC] bg-[color:var(--color-background-primary)] px-3 py-[10px] font-[var(--font-sans)] text-[13px] leading-[1.5] text-[color:var(--color-text-primary)] outline-none transition-colors"

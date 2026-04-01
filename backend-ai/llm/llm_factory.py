@@ -1,36 +1,49 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+# ══════════════════════════════════════════════════════════════
+#  llm/llm_factory.py
+#  Factory simple et propre
+#  → Groq uniquement (GPT OSS + LLaMA possible)
+# ══════════════════════════════════════════════════════════════
+
 from langchain_groq import ChatGroq
-from config.settings import GEMINI_KEYS, GROQ_KEYS, LLM_MODEL
+
+from config.settings import GROQ_KEYS
 
 
-def create_gemini_clients():
-
+# ─────────────────────────────────────────────
+# GROQ CLIENTS (DYNAMIQUE)
+# ─────────────────────────────────────────────
+def create_groq_clients(model: str = None, max_tokens: int | None = None) -> list:
+    """
+    Crée des clients Groq.
+    - Par défaut → LLaMA
+    - Sinon → modèle passé (ex: GPT OSS)
+    - max_tokens → limite de sortie (requis pour gros JSON type market_analysis)
+    """
     clients = []
 
-    for key in GEMINI_KEYS:
-        if key:
-            clients.append(
-                ChatGoogleGenerativeAI(
-                    model=LLM_MODEL,
-                    google_api_key=key,
-                )
-            )
-
-    return clients
-
-
-def create_groq_clients():
-
-    clients = []
+    # 🔥 modèle par défaut
+    model_name = model if model else "openai/gpt-oss-120b"
 
     for key in GROQ_KEYS:
-        if key:
-            clients.append(
-                ChatGroq(
-                    api_key=key,
-                    model="llama-3.3-70b-versatile",
-                    temperature=0.05,
-                )
-            )
+        kwargs = {
+            "api_key": key,
+            "model": model_name,
+            "temperature": 0.3,
+        }
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        clients.append(ChatGroq(**kwargs))
 
     return clients
+
+
+# ─────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────
+def get_groq_llm(model: str = None):
+    clients = create_groq_clients(model=model)
+
+    if not clients:
+        raise ValueError("Pas de client Groq disponible")
+
+    return clients[0]

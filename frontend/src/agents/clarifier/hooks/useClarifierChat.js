@@ -19,6 +19,7 @@ export function useClarifierChat(idea, token) {
     problem: "",
     target: "",
     solution: "",
+    geography: "",
   });
 
   const streamTimerRef = useRef(null);
@@ -161,6 +162,7 @@ export function useClarifierChat(idea, token) {
         userAnswers.problem,
         userAnswers.target,
         userAnswers.solution,
+        userAnswers.geography,
       ]
         .filter(Boolean)
         .join(" • ");
@@ -178,6 +180,7 @@ export function useClarifierChat(idea, token) {
             answer_problem: userAnswers.problem || "",
             answer_target: userAnswers.target || "",
             answer_solution: userAnswers.solution || "",
+            answer_geography: userAnswers.geography || "",
           },
           (eventType, data) => {
             if (eventType === "step") {

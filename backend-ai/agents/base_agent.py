@@ -1,70 +1,81 @@
 # ══════════════════════════════════════════════════════════════
-# BrandAI Base Agent
-# Classe mère de tous les agents du pipeline
+#  agents/base_agent.py
+#  Classe mère de tous les agents du pipeline
 #
-# RESPONSABILITÉS :
-# - construire les prompts
-# - appeler le LLM
-# - parser la réponse
-# - gérer les retries
-#
-# NOTE :
-# La configuration LLM (Gemini / Groq / clés API) est gérée
-# dans le module llm_rotator.
+#  CORRECTION vs version précédente :
+#  + reasoning_effort pour gpt-oss-120b (medium par défaut)
+#  + appel direct Groq SDK pour les modèles qui le nécessitent
 # ══════════════════════════════════════════════════════════════
 
 import asyncio
 import json
 import logging
+import os
 import re
 import time
 from abc import ABC, abstractmethod
 
+from groq import AsyncGroq
 from langchain_core.messages import HumanMessage, SystemMessage
-
 from llm.llm_rotator import LLMRotator
 
 
 # ══════════════════════════════════════════════════════════════
 # Pipeline State
-# Objet partagé entre les agents
 # ══════════════════════════════════════════════════════════════
 
 class PipelineState:
 
     def __init__(self, idea_id, name, sector, description, target_audience=""):
 
-        self.idea_id = idea_id
-        self.name = name
-        self.sector = sector
-        self.description = description
+        self.idea_id         = idea_id
+        self.name            = name
+        self.sector          = sector
+        self.description     = description
         self.target_audience = target_audience
 
-        self.clarified_idea = {}
+        self.clarified_idea  = {}
         self.market_analysis = {}
-        self.brand_identity = {}
-        self.content = {}
+        self.brand_identity  = {}
+        self.content         = {}
 
-        self.status = "running"
-        self.errors = []
+        self.status  = "running"
+        self.errors  = []
 
         self.started_at = time.time()
 
     def to_dict(self):
-
         return {
-            "idea_id": self.idea_id,
-            "name": self.name,
-            "sector": self.sector,
-            "description": self.description,
+            "idea_id":         self.idea_id,
+            "name":            self.name,
+            "sector":          self.sector,
+            "description":     self.description,
             "target_audience": self.target_audience,
-            "clarified_idea": self.clarified_idea,
+            "clarified_idea":  self.clarified_idea,
             "market_analysis": self.market_analysis,
-            "brand_identity": self.brand_identity,
-            "content": self.content,
-            "status": self.status,
-            "errors": self.errors,
+            "brand_identity":  self.brand_identity,
+            "content":         self.content,
+            "status":          self.status,
+            "errors":          self.errors,
         }
+
+
+# ══════════════════════════════════════════════════════════════
+# Modèles qui nécessitent un appel direct Groq SDK
+# (pas via LangChain — pour supporter reasoning_effort)
+# ══════════════════════════════════════════════════════════════
+
+GROQ_DIRECT_MODELS = {
+    "openai/gpt-oss-120b",
+}
+
+# reasoning_effort par modèle
+# low    → rapide, analyse simple
+# medium → équilibré — recommandé pour market analysis
+# high   → raisonnement profond, +tokens output
+REASONING_EFFORT_MAP = {
+    "openai/gpt-oss-120b": "medium",
+}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -73,143 +84,330 @@ class PipelineState:
 
 class BaseAgent(ABC):
 
-    def __init__(self, agent_name, temperature=0.7, max_retries=3):
+    def __init__(
+        self,
+        agent_name:     str,
+        temperature:    float = 0.7,
+        max_retries:    int   = 3,
+        llm_model:      str   = "openai/gpt-oss-120b",
+        llm_max_tokens: int | None = None,
+    ):
+        self.agent_name     = agent_name
+        self.temperature    = temperature
+        self.max_retries    = max_retries
+        self.llm_model      = llm_model
+        self.llm_max_tokens = llm_max_tokens or 4096
 
-        self.agent_name = agent_name
-        self.temperature = temperature
-        self.max_retries = max_retries
+        self.logger      = logging.getLogger(f"brandai.{agent_name}")
+        self.llm_rotator = LLMRotator.groq_model(llm_model, max_tokens=llm_max_tokens)
 
-        self.logger = logging.getLogger(f"brandai.{agent_name}")
+        # Clés Groq pour appel direct SDK
+        self._groq_keys = [
+            k for k in [
+                os.getenv("GROQ_API_KEY",   ""),
+                os.getenv("GROQ_API_KEY_2", ""),
+                os.getenv("GROQ_API_KEY_3", ""),
+            ] if k
+        ]
+        self._groq_key_idx = 0
 
-        # rotator gère Gemini + Groq + rotation
-        self.llm_rotator = LLMRotator()
+    def _next_groq_key(self) -> str:
+        """Rotation simple des clés Groq."""
+        if not self._groq_keys:
+            raise RuntimeError("Aucune clé GROQ_API_KEY définie")
+        key = self._groq_keys[self._groq_key_idx % len(self._groq_keys)]
+        self._groq_key_idx += 1
+        return key
 
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
+    # Appel LLM unifié — LangChain OU Groq direct selon modèle
+    # ──────────────────────────────────────────────────────────
 
-    @abstractmethod
-    async def run(self, state: PipelineState):
-        """Méthode principale exécutée par l'agent"""
-        pass
-
-    def _build_system_prompt(self, state: PipelineState) -> str:
+    async def _call_llm(self, system_prompt: str, user_prompt: str) -> str:
         """
-        Construit le system prompt.
-        Override dans les agents qui utilisent run() batch.
-        Les agents avec sous-méthodes dédiées peuvent ignorer.
-        """
-        return ""
+        Appelle le LLM avec retry + rotation automatique.
 
-    def _build_user_prompt(self, state: PipelineState) -> str:
+        - Si modèle dans GROQ_DIRECT_MODELS → appel direct Groq SDK
+          (supporte reasoning_effort, JSON mode, etc.)
+        - Sinon → LangChain via LLMRotator (comportement inchangé)
         """
-        Construit le user prompt.
-        Override dans les agents qui utilisent run() batch.
+        if self.llm_model in GROQ_DIRECT_MODELS:
+            return await self._call_groq_direct(system_prompt, user_prompt)
+        else:
+            return await self._call_langchain(system_prompt, user_prompt)
+
+    # ──────────────────────────────────────────────────────────
+    # Appel direct Groq SDK (gpt-oss-120b avec reasoning_effort)
+    # ──────────────────────────────────────────────────────────
+
+    async def _call_groq_direct(self, system_prompt: str, user_prompt: str) -> str:
         """
-        return ""
+        Appel direct via Groq AsyncClient.
+        Supporte reasoning_effort pour gpt-oss-120b.
+        Rotation des clés en cas de 413/429.
+        """
+        attempt    = 0
+        last_error = None
 
-    # ─────────────────────────────────────────
-    # Appel LLM
-    # ─────────────────────────────────────────
+        # Keep requests under Groq on_demand TPM limit (8000).
+        # Use safety margin to avoid borderline 413 errors.
+        tpm_budget = 7600
+        min_completion_tokens = 256
+        chars_per_token = 4
 
-    async def _call_llm(self, system_prompt, user_prompt):
+        system_prompt = system_prompt or ""
+        user_prompt = user_prompt or ""
+
+        total_chars = len(system_prompt) + len(user_prompt)
+        est_tokens = max(1, total_chars // chars_per_token)
+
+        max_input_tokens = max(1, tpm_budget - min_completion_tokens)
+        if est_tokens > max_input_tokens:
+            allowed_user_chars = max(200, max_input_tokens * chars_per_token - len(system_prompt))
+            user_prompt = user_prompt[:allowed_user_chars]
+            total_chars = len(system_prompt) + len(user_prompt)
+            est_tokens = max(1, total_chars // chars_per_token)
+            self.logger.warning(
+                f"[{self.agent_name}] prompt truncated for TPM safety — input~{est_tokens} tokens"
+            )
+
+        dynamic_max_tokens = min(
+            self.llm_max_tokens,
+            max(min_completion_tokens, tpm_budget - est_tokens),
+        )
+        requested_tokens = est_tokens + dynamic_max_tokens
+        self.logger.info(
+            f"[{self.agent_name}] Groq direct call — input~{est_tokens} | "
+            f"max_out={dynamic_max_tokens} | requested~{requested_tokens} | model={self.llm_model}"
+        )
+
+        while attempt < self.max_retries:
+            try:
+                key    = self._next_groq_key()
+                client = AsyncGroq(api_key=key)
+
+                # Paramètres de base
+                params = {
+                    "model":      self.llm_model,
+                    "messages":   [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user",   "content": user_prompt},
+                    ],
+                    "temperature":  self.temperature,
+                    "max_tokens":   dynamic_max_tokens,
+                }
+
+                # reasoning_effort si supporté par ce modèle
+                effort = REASONING_EFFORT_MAP.get(self.llm_model)
+                if effort:
+                    params["reasoning_effort"] = effort
+
+                self.logger.info(
+                    f"[{self.agent_name}] attempt {attempt+1}/{self.max_retries} — "
+                    f"key ...{key[-6:]} | reasoning={effort}"
+                )
+
+                start    = time.time()
+                response = await client.chat.completions.create(**params)
+                elapsed  = round(time.time() - start, 2)
+
+                content = response.choices[0].message.content or ""
+                out_tokens = response.usage.completion_tokens if response.usage else "?"
+                self.logger.info(
+                    f"[{self.agent_name}] done in {elapsed}s — "
+                    f"~{out_tokens} output tokens"
+                )
+
+                # Some transient Groq responses can return an empty body.
+                # Treat this as retryable to avoid downstream JSON parse crashes.
+                if not str(content).strip():
+                    raise RuntimeError("Empty LLM response content")
+
+                return content
+
+            except Exception as e:
+                last_error = e
+                error_str  = str(e).lower()
+                attempt   += 1
+
+                is_quota = any(kw in error_str for kw in [
+                    "429", "413", "quota", "rate_limit",
+                    "payload too large", "tokens per minute",
+                    "overloaded", "insufficient_quota",
+                ])
+
+                if is_quota:
+                    self.logger.warning(
+                        f"[{self.agent_name}] Quota/rate error (attempt {attempt}) — "
+                        f"rotating key | error: {str(e)[:120]}"
+                    )
+                    # Pas de sleep sur quota — on change juste de clé
+                    continue
+
+                # Erreur non-quota → backoff exponentiel
+                if attempt < self.max_retries:
+                    wait = 2 ** attempt
+                    self.logger.warning(
+                        f"[{self.agent_name}] Error (attempt {attempt}) — "
+                        f"retry in {wait}s | {str(e)[:120]}"
+                    )
+                    await asyncio.sleep(wait)
+
+        raise RuntimeError(
+            f"[{self.agent_name}] Groq direct failed after {attempt} attempts. "
+            f"Last error: {last_error}"
+        )
+
+    # ──────────────────────────────────────────────────────────
+    # Appel LangChain (modèles autres que gpt-oss-120b)
+    # ──────────────────────────────────────────────────────────
+
+    async def _call_langchain(self, system_prompt: str, user_prompt: str) -> str:
+        """Appel LangChain via LLMRotator — comportement original inchangé."""
 
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt),
         ]
 
-        retry = 0
+        attempt    = 0
         last_error = None
 
-        while retry < self.max_retries:
-
+        while attempt < self.max_retries:
             try:
-
                 client = self.llm_rotator.get_client(self.temperature)
 
                 self.logger.info(
-                    f"[{self.agent_name}] LLM call"
+                    f"[{self.agent_name}] LangChain call — "
+                    f"attempt {attempt+1}/{self.max_retries} — "
+                    f"{self.llm_rotator.current_info()}"
                 )
 
-                start = time.time()
-
+                start    = time.time()
                 response = await client.ainvoke(messages)
-
-                elapsed = round(time.time() - start, 2)
+                elapsed  = round(time.time() - start, 2)
 
                 self.logger.info(
-                    f"[{self.agent_name}] response received in {elapsed}s"
+                    f"[{self.agent_name}] LangChain done in {elapsed}s"
                 )
 
                 return response.content
 
             except Exception as e:
-
                 last_error = e
-                error_str = str(e)
+                error_str  = str(e).lower()
+                attempt   += 1
 
-                is_llm_error = (
-                    "429" in error_str
-                    or "quota" in error_str.lower()
-                    or "model_not_found" in error_str
-                )
+                is_quota = any(kw in error_str for kw in [
+                    "429", "quota", "rate_limit", "model_not_found",
+                    "insufficient_quota", "overloaded",
+                ])
 
-                if is_llm_error:
-
+                if is_quota:
                     self.logger.warning(
-                        f"[{self.agent_name}] LLM error → rotating key/provider"
+                        f"[{self.agent_name}] Quota error — rotating"
                     )
-
-                    self.llm_rotator.rotate()
+                    rotated = self.llm_rotator.rotate()
+                    if not rotated:
+                        break
                     continue
 
-                retry += 1
-
-                if retry < self.max_retries:
-
-                    wait = 2 ** retry
+                if attempt < self.max_retries:
+                    wait = 2 ** attempt
+                    self.logger.warning(
+                        f"[{self.agent_name}] Error (attempt {attempt}) — "
+                        f"retry in {wait}s — {e}"
+                    )
                     await asyncio.sleep(wait)
 
         raise RuntimeError(
-            f"[{self.agent_name}] LLM failed after {self.max_retries} attempts: {last_error}"
+            f"[{self.agent_name}] LLM failed after {attempt} attempts. "
+            f"Last error: {last_error}"
         )
 
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
+    # Abstract
+    # ──────────────────────────────────────────────────────────
+
+    @abstractmethod
+    async def run(self, state: PipelineState):
+        pass
+
+    def _build_system_prompt(self, state: PipelineState) -> str:
+        return ""
+
+    def _build_user_prompt(self, state: PipelineState) -> str:
+        return ""
+
+    # ──────────────────────────────────────────────────────────
     # JSON parsing robuste
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
 
-    def _parse_json(self, raw):
+    def _repair_json_text(self, s: str) -> str:
+        for bad, good in (
+            ("\u201c", '"'), ("\u201d", '"'),
+            ("\u00ab", '"'), ("\u00bb", '"'),
+            ("\u2018", "'"), ("\u2019", "'"),
+            ("\u2011", "-"), ("\u2013", "-"), ("\u2014", "-"),
+        ):
+            s = s.replace(bad, good)
+        s = re.sub(r",\s*([}\]])", r"\1", s)
+        return s
 
-        cleaned = re.sub(r"```json", "", raw)
-        cleaned = re.sub(r"```", "", cleaned)
+    def _extract_outer_json_object(self, s: str) -> str | None:
+        start = s.find("{")
+        if start < 0:
+            return None
+        depth = 0
+        for i, c in enumerate(s[start:], start):
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    return s[start : i + 1]
+        return None
 
-        try:
+    def _parse_json(self, raw: str) -> dict:
+        cleaned = re.sub(r"```json\s*", "", raw)
+        cleaned = re.sub(r"```\s*", "", cleaned)
+        cleaned = cleaned.strip()
 
-            return json.loads(cleaned.strip())
+        candidates = [cleaned]
+        blob = self._extract_outer_json_object(cleaned)
+        if blob and blob != cleaned:
+            candidates.append(blob)
 
-        except Exception:
+        last_err = None
+        for cand in candidates:
+            for variant in (cand, self._repair_json_text(cand)):
+                try:
+                    data = json.loads(variant)
+                    if isinstance(data, dict):
+                        return data
+                except json.JSONDecodeError as e:
+                    last_err = e
+                    continue
 
-            self.logger.error(
-                f"[{self.agent_name}] JSON parsing error: {raw[:300]}"
-            )
+        self.logger.error(
+            f"[{self.agent_name}] JSON parse error: {last_err} | "
+            f"raw[:300]={raw[:300]}"
+        )
+        if last_err:
+            raise last_err
+        raise json.JSONDecodeError("empty", raw, 0)
 
-            raise
-
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
     # Logging helpers
-    # ─────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
 
-    def _log_start(self, state):
-
+    def _log_start(self, state: PipelineState):
         self.logger.info(
-            f"[{self.agent_name}] START | idea_id={state.idea_id}"
+            f"[{self.agent_name}] ▶ START | idea_id={state.idea_id}"
         )
 
     def _log_success(self, payload=None):
-
-        self.logger.info(f"[{self.agent_name}] SUCCESS")
+        self.logger.info(f"[{self.agent_name}] ✅ SUCCESS")
 
     def _log_error(self, error):
-
-        self.logger.error(
-            f"[{self.agent_name}] ERROR : {error}"
-        )
+        self.logger.error(f"[{self.agent_name}] ❌ ERROR : {error}")

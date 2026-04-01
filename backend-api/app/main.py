@@ -34,7 +34,8 @@ from app.core.config import settings
 from app.core.database import Base, engine
 import app.models.user  # noqa
 import app.models.idea  # noqa
-from app.api.routes import auth , ideas 
+import app.models.market_analysis  # noqa
+from app.api.routes import auth, ideas, market_analysis
 
 app = FastAPI(
     title="BrandAI API",
@@ -83,6 +84,7 @@ async def startup():
 #   GET  /api/auth/me
 app.include_router(auth.router, prefix="/api")
 app.include_router(ideas.router, prefix="/api")
+app.include_router(market_analysis.router, prefix="/api")
 
 # ── Route de santé ────────────────────────────────────────────
 # GET /health → vérifie que l'API est en ligne
