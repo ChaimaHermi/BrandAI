@@ -78,7 +78,6 @@ class Competitor(BaseModel):
     description:          Optional[str] = None
     source:               Optional[str] = None
     rating:               Optional[float] = None
-    faiblesse_principale: Optional[str] = None
     weaknesses:           List[str] = Field(default_factory=list)
     key_strengths:        List[str] = Field(default_factory=list)
     positioning:          Optional[str] = None

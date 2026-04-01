@@ -17,6 +17,8 @@ _SEM_YT     = asyncio.Semaphore(SEMAPHORES["youtube"])
 _SEM_WB     = asyncio.Semaphore(SEMAPHORES["worldbank"])
 TIMEOUT     = httpx.Timeout(15.0, connect=5.0)
 _CACHE_FILE = os.path.join(tempfile.gettempdir(), "ma_cache")
+# Always fetch fresh data on each run.
+CACHE_ENABLED = False
 
 _WB_INDICATORS = {
     "population":     "SP.POP.TOTL",
@@ -34,6 +36,8 @@ def _key(*args) -> str:
     return hashlib.md5(":".join(str(a) for a in args).encode()).hexdigest()
 
 def _cget(key: str) -> Any | None:
+    if not CACHE_ENABLED:
+        return None
     try:
         with shelve.open(_CACHE_FILE) as db:
             e = db.get(key)
@@ -44,6 +48,8 @@ def _cget(key: str) -> Any | None:
     return None
 
 def _cset(key: str, data: Any, ttl: int) -> None:
+    if not CACHE_ENABLED:
+        return
     try:
         with shelve.open(_CACHE_FILE) as db:
             db[key] = {"data": data, "exp": time.time() + ttl}

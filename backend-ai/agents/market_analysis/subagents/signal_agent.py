@@ -143,7 +143,6 @@ class SignalAgent(BaseAgent):
             return output.dict()
         except Exception as e:
             self._log_error(e)
-            # Fallback complet sans LLM
             fallback_rising = self._clean_rising_queries(
                 self._fallback_rising_queries(
                     {"trends_merged": {}, "autocomplete_merged": {}, "tavily_trends_merged": {}}
@@ -171,45 +170,48 @@ class SignalAgent(BaseAgent):
             context_tokens.update(t for t in re.split(r"\W+", str(term).lower()) if len(t) >= 4)
 
         cleaned = []
-
         for q in queries or []:
             if not q:
                 continue
-
             q = str(q).strip()
-
             if len(q) < 5:
                 continue
-
             if q.isdigit():
                 continue
-
             if "|" in q:
                 continue
-
             lower = q.lower()
-
             if any(term in lower for term in self._RISING_NOISE):
                 continue
-
-            # Reject isolated one-word noisy terms without context signal.
             parts = [p for p in re.split(r"\W+", lower) if p]
             if len(parts) == 1 and parts[0] not in context_tokens and len(parts[0]) < 8:
                 continue
-
             cleaned.append(q)
-
         return cleaned[:5]
 
     def _validate_queries(self, queries, idea, sector):
         q = dict(queries or {})
-        idea = (idea or "").strip()
+        idea   = (idea   or "").strip()
         sector = (sector or "").strip()
-        default_1 = f"{idea} market trend".strip() if idea else f"{sector} market trend".strip()
-        default_2 = f"{sector} growth".strip() if sector else "market growth"
 
-        q["trends_1"] = (q.get("trends_1") or default_1 or "market trend").strip()
-        q["trends_2"] = (q.get("trends_2") or default_2 or "industry growth").strip()
+        # ── FIX : keyword court pour SerpAPI (max 40 chars / 5 mots) ──────────
+        # Google Trends rejette les phrases longues avec accents encodés → 400.
+        # Si le LLM a bien généré trends_1 court → on le garde.
+        # Sinon on construit un fallback depuis sector (court, toujours valide).
+        def _short_keyword(raw: str, fallback: str) -> str:
+            raw = (raw or "").strip()
+            if raw and len(raw) <= 40 and len(raw.split()) <= 5:
+                return raw  # LLM a bien travaillé → on garde
+            # Fallback : 3 premiers mots du fallback, max 40 chars
+            words = (fallback or raw or "market").split()
+            kw = " ".join(words[:3])
+            return kw[:40]
+
+        default_1 = _short_keyword(q.get("trends_1"), sector or idea)
+        default_2 = _short_keyword(q.get("trends_2"), f"{sector} app" if sector else "mobile app")
+
+        q["trends_1"] = default_1
+        q["trends_2"] = default_2
 
         multi = q.get("trends_multi") or []
         if isinstance(multi, str):
@@ -217,14 +219,15 @@ class SignalAgent(BaseAgent):
         if not isinstance(multi, list):
             multi = []
         multi = [str(x).strip() for x in multi if str(x).strip()]
+
         for fallback_q in (default_1, default_2):
             if fallback_q and fallback_q.lower() not in {m.lower() for m in multi}:
                 multi.append(fallback_q)
-        q["trends_multi"] = multi
+        q["trends_multi"] = multi[:4]  # max 4 queries Trends (quota)
 
-        q["tiktok"] = (q.get("tiktok") or q["trends_1"]).strip()
+        q["tiktok"]     = _short_keyword(q.get("tiktok"), q["trends_1"])
         q["regulatory"] = (q.get("regulatory") or f"regulation {sector or idea}").strip()
-        q["country"] = (q.get("country") or "TN").strip().upper()
+        q["country"]    = (q.get("country") or "TN").strip().upper()
         return q
 
     def _merge_trends_sources(self, trends_results: list[dict]) -> dict:
@@ -232,13 +235,11 @@ class SignalAgent(BaseAgent):
         merged_rising = []
         merged_topics = []
         merged_signals = []
-
         for tr in trends_results:
             merged_timeline.extend(tr.get("timeline", []))
             merged_rising.extend(tr.get("rising_queries", []))
             merged_topics.extend(tr.get("rising_topics", []))
             merged_signals.extend(tr.get("top_queries", []))
-
         return {
             "timeline": merged_timeline,
             "rising_queries": self._dedup_keep_order(merged_rising)[:12],
@@ -278,7 +279,6 @@ class SignalAgent(BaseAgent):
     def _validate_output(self, data: dict, raw_data: dict) -> dict:
         direction = (data.get("direction") or "").upper()
         if direction not in {"RISING", "STABLE", "FALLING"}:
-            # Heuristique simple depuis timeline
             timeline = raw_data.get("trends_merged", {}).get("timeline", [])
             if len(timeline) >= 2:
                 first = timeline[0].get("value", 0) or 0
@@ -305,7 +305,6 @@ class SignalAgent(BaseAgent):
         if not data.get("peak_period"):
             data["peak_period"] = raw_data.get("peak_period_detected")
 
-        # Champs minimums
         data.setdefault("hashtags", [])
         data.setdefault("hashtags_disponibles", False)
         data.setdefault("viral_score", "NONE")

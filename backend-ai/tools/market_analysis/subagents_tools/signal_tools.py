@@ -23,6 +23,8 @@ TIMEOUT = httpx.Timeout(15.0, connect=5.0)
 _SERP_BASE = "https://serpapi.com/search"
 _TAVILY_URL = "https://api.tavily.com/search"
 _CACHE_FILE = os.path.join(tempfile.gettempdir(), "ma_cache")
+# Always fetch fresh data on each run.
+CACHE_ENABLED = False
 
 
 def _key(*args) -> str:
@@ -30,6 +32,8 @@ def _key(*args) -> str:
 
 
 def _cget(key: str) -> Any | None:
+    if not CACHE_ENABLED:
+        return None
     try:
         with shelve.open(_CACHE_FILE) as db:
             entry = db.get(key)
@@ -41,6 +45,8 @@ def _cget(key: str) -> Any | None:
 
 
 def _cset(key: str, data: Any, ttl: int) -> None:
+    if not CACHE_ENABLED:
+        return
     try:
         with shelve.open(_CACHE_FILE) as db:
             db[key] = {"data": data, "exp": time.time() + ttl}

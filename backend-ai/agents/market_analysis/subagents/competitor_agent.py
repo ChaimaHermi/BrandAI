@@ -1,6 +1,6 @@
 # ══════════════════════════════════════════════════════════════
 # agents/market_analysis/subagents/competitor_agent.py
-# Robuste : multi-query Tavily + fallback déterministe + enrichissement
+# FIX : weaknesses LLM prioritaires — pas d'écrasement par extraction brute
 # ══════════════════════════════════════════════════════════════
 
 import asyncio
@@ -70,31 +70,31 @@ class CompetitorAgent(BaseAgent):
             ]
             all_results = await asyncio.gather(*tasks)
             serp_search = all_results[0]
-            serp_maps = all_results[1]
+            serp_maps   = all_results[1]
             tavily_batches = all_results[2:]
 
             tavily_merged = {
-                "source": "tavily_merged",
+                "source":  "tavily_merged",
                 "queries": tavily_queries,
                 "results": self._merge_tavily_results(tavily_batches),
             }
             raw_data = {
-                "serp_search": serp_search,
-                "serp_maps": serp_maps,
+                "serp_search":    serp_search,
+                "serp_maps":      serp_maps,
                 "tavily_batches": tavily_batches,
-                "tavily_merged": tavily_merged,
+                "tavily_merged":  tavily_merged,
             }
 
-            llm_data = await self._call_llm_safely(state, raw_data)
+            llm_data   = await self._call_llm_safely(state, raw_data)
             final_data = self._post_process(llm_data, raw_data)
             self._log_success(final_data)
             return final_data
+
         except Exception as e:
             self._log_error(e)
-            # Fallback dur sans LLM
             fallback_raw = {
-                "serp_search": await fetch_serp_competitors(queries.get("competitors", ""), country),
-                "serp_maps": await fetch_serp_maps(queries.get("maps", ""), country),
+                "serp_search":   await fetch_serp_competitors(queries.get("competitors", ""), country),
+                "serp_maps":     await fetch_serp_maps(queries.get("maps", ""), country),
                 "tavily_merged": {"results": []},
             }
             return self._post_process({}, fallback_raw)
@@ -103,24 +103,33 @@ class CompetitorAgent(BaseAgent):
         try:
             prompt = self._load_prompt("competitor_agent.txt", state)
             raw_data_filtered = {
-                "serp_search": simple_filter(raw_data.get("serp_search", {}).get("results", []), LLM_LIMITS["max_items"], LLM_LIMITS["snippet_max_chars"]),
+                "serp_search": simple_filter(
+                    raw_data.get("serp_search", {}).get("results", []),
+                    LLM_LIMITS["max_items"],
+                    LLM_LIMITS["snippet_max_chars"],
+                ),
                 "serp_maps": simple_filter(
                     [
                         {
-                            "title": r.get("name", ""),
+                            "title":   r.get("name", ""),
                             "snippet": f"rating={r.get('rating')} reviews={r.get('reviews')} {r.get('address', '')}",
-                            "url": r.get("website", ""),
+                            "url":     r.get("website", ""),
                         }
                         for r in raw_data.get("serp_maps", {}).get("results", [])
                     ],
                     LLM_LIMITS["max_items"],
                     LLM_LIMITS["snippet_max_chars"],
                 ),
-                "tavily": simple_filter(raw_data.get("tavily_merged", {}).get("results", []), LLM_LIMITS["max_items"], LLM_LIMITS["snippet_max_chars"]),
+                "tavily": simple_filter(
+                    raw_data.get("tavily_merged", {}).get("results", []),
+                    LLM_LIMITS["max_items"],
+                    LLM_LIMITS["snippet_max_chars"],
+                ),
             }
             payload = json.dumps(raw_data_filtered, ensure_ascii=False, default=str)
             if len(payload) > LLM_LIMITS["max_payload_chars"]:
                 payload = payload[:LLM_LIMITS["max_payload_chars"]]
+
             llm_response = await self._call_llm(
                 system_prompt=prompt,
                 user_prompt=payload,
@@ -143,11 +152,11 @@ class CompetitorAgent(BaseAgent):
         return self._dedup_keep_order(queries)[:8]
 
     def _merge_tavily_results(self, batches: list[dict]) -> list[dict]:
-        seen = set()
+        seen   = set()
         merged = []
         for b in batches:
             for r in b.get("results", []):
-                title = (r.get("title") or "").strip()
+                title   = (r.get("title")   or "").strip()
                 snippet = (r.get("snippet") or "").strip()
                 key = (title.lower(), snippet.lower())
                 if key in seen or not (title or snippet):
@@ -157,8 +166,8 @@ class CompetitorAgent(BaseAgent):
         return merged
 
     def _post_process(self, llm_data: dict, raw_data: dict) -> dict:
-        serp_results = raw_data.get("serp_search", {}).get("results", [])
-        maps_results = raw_data.get("serp_maps", {}).get("results", [])
+        serp_results   = raw_data.get("serp_search",   {}).get("results", [])
+        maps_results   = raw_data.get("serp_maps",     {}).get("results", [])
         tavily_results = raw_data.get("tavily_merged", {}).get("results", [])
 
         serp_index = self._build_serp_index(serp_results)
@@ -171,62 +180,126 @@ class CompetitorAgent(BaseAgent):
             if enriched:
                 competitors.append(enriched)
 
-        # Fallback déterministe si LLM insuffisant
         if len(competitors) < 3:
-            competitors = self._merge_with_fallback_competitors(competitors, serp_results, maps_index, tavily_results)
+            competitors = self._merge_with_fallback_competitors(
+                competitors, serp_results, maps_index, tavily_results
+            )
 
         competitors = self._dedup_competitors(competitors)[:5]
         if len(competitors) < 3:
-            competitors.extend(self._build_minimum_competitors(serp_results, maps_index)[: 3 - len(competitors)])
+            competitors.extend(
+                self._build_minimum_competitors(serp_results, maps_index)[: 3 - len(competitors)]
+            )
 
         with_weak = sum(1 for c in competitors if c.get("weaknesses"))
-        opportunite_niveau = "fenetre_ouverte" if with_weak >= 2 else "partielle" if with_weak == 1 else "saturee"
+        opportunite_niveau = (
+            "fenetre_ouverte" if with_weak >= 2
+            else "partielle"  if with_weak == 1
+            else "saturee"
+        )
         opportunite_summary = (
-            "Plusieurs faiblesses concurrentes exploitables ont ete detectees."
+            "Plusieurs faiblesses concurrentes exploitables ont été détectées."
             if with_weak >= 2 else
-            "Quelques signaux de faiblesse existent mais la differenciation reste partielle."
+            "Quelques signaux de faiblesse existent mais la différenciation reste partielle."
             if with_weak == 1 else
-            "Faiblesses publiques limitees; valider par interviews utilisateurs."
+            "Faiblesses publiques limitées ; valider par interviews utilisateurs."
         )
 
         return {
-            "top_competitors": competitors,
+            "top_competitors":    competitors,
             "opportunite_niveau": llm_data.get("opportunite_niveau", opportunite_niveau),
             "opportunite_summary": llm_data.get("opportunite_summary", opportunite_summary),
         }
 
-    def _enrich_competitor(self, c: dict, serp_index: dict, maps_index: dict, tavily_results: list[dict]) -> dict | None:
+    def _enrich_competitor(
+        self,
+        c: dict,
+        serp_index: dict,
+        maps_index: dict,
+        tavily_results: list[dict],
+    ) -> dict | None:
         name = self._clean_name(c.get("nom", ""))
         if not name:
             return None
-        k = name.lower()
+
+        k    = name.lower()
         serp = serp_index.get(k, {})
         maps = maps_index.get(k, {})
 
-        weaknesses = c.get("weaknesses") or self._extract_weaknesses(name, tavily_results)
-        weaknesses = self._clean_weaknesses(weaknesses)[:4]
-        strengths = c.get("key_strengths") or self._extract_strengths(name, tavily_results)
-        strengths = self._dedup_keep_order([s for s in (self._sanitize_issue_text(x) for x in strengths) if s])[:4]
+        # ── FIX : priorité absolue aux weaknesses/strengths du LLM ───────────
+        # Le LLM a reformulé en français — on NE réextrait PAS depuis les
+        # snippets bruts sauf si le LLM n'a rien retourné du tout.
+        llm_weaknesses = c.get("weaknesses") or []
+        llm_strengths  = c.get("key_strengths") or []
+
+        # Validation rapide : garder uniquement les phrases françaises courtes
+        weaknesses = self._validate_reformulated(llm_weaknesses)
+        strengths  = self._validate_reformulated(llm_strengths)
+
+        # Fallback déterministe UNIQUEMENT si le LLM n'a rien produit
+        if not weaknesses:
+            weaknesses = self._clean_weaknesses(
+                self._extract_weaknesses(name, tavily_results)
+            )[:3]
+        if not strengths:
+            strengths = self._dedup_keep_order([
+                s for s in (self._sanitize_issue_text(x) for x in
+                            self._extract_strengths(name, tavily_results))
+                if s
+            ])[:3]
 
         website = c.get("website") or serp.get("website", "")
-        desc = c.get("description") or serp.get("description", "") or c.get("positioning", "")
-        source = c.get("source") or ("serp+tavily" if website else "tavily")
-        rating = maps.get("rating")
+        desc    = c.get("description") or serp.get("description", "") or c.get("positioning", "")
+        source  = c.get("source") or ("serp+tavily" if website else "tavily")
+        rating  = maps.get("rating")
 
         return {
-            "nom": name,
-            "type": c.get("type") or ("digital" if website else "local"),
-            "website": website,
-            "description": desc[:220],
-            "source": source,
-            "rating": rating,
-            "faiblesse_principale": c.get("faiblesse_principale") or (
-                weaknesses[0] if weaknesses else "Non documente dans les sources disponibles"
-            ),
-            "weaknesses": weaknesses,
-            "key_strengths": strengths,
-            "positioning": c.get("positioning") or desc[:180],
+            "nom":                 name,
+            "type":                c.get("type") or ("digital" if website else "local"),
+            "website":             website,
+            "description":         desc[:220],
+            "source":              source,
+            "rating":              rating,
+            "weaknesses":          weaknesses[:3],
+            "key_strengths":       strengths[:3],
+            "positioning":         c.get("positioning") or desc[:180],
         }
+
+    def _validate_reformulated(self, items: list) -> list[str]:
+        """
+        Garde uniquement les phrases qui ressemblent à une reformulation
+        propre (pas un fragment brut anglais copié-collé).
+        - Rejette les phrases > 25 mots (trop long = fragment brut)
+        - Rejette les phrases avec des patterns de snippet brut
+        """
+        out  = []
+        seen = set()
+        _BRUT_SIGNALS = (
+            "please report", "flag inappropriate", "show review",
+            "september", "terms of", "privacy policy", "all rights",
+            "click here", "read more", "sign up", "log in",
+        )
+        for item in (items or []):
+            s = str(item or "").strip()
+            if not s:
+                continue
+            low = s.lower()
+            # Rejeter fragments bruts évidents
+            if any(sig in low for sig in _BRUT_SIGNALS):
+                continue
+            # Rejeter si trop long (fragment brut)
+            words = s.split()
+            if len(words) > 20:
+                continue
+            # Rejeter si trop court
+            if len(words) < 3:
+                continue
+            key = low
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(s)
+        return out
 
     def _build_serp_index(self, serp_results: list[dict]) -> dict:
         out = {}
@@ -235,7 +308,7 @@ class CompetitorAgent(BaseAgent):
             if not name:
                 continue
             out[name.lower()] = {
-                "website": r.get("url", ""),
+                "website":     r.get("url", ""),
                 "description": (r.get("snippet") or "")[:220],
             }
         return out
@@ -264,7 +337,7 @@ class CompetitorAgent(BaseAgent):
             if extract:
                 scored.append((hit_count, extract))
         scored.sort(key=lambda x: x[0], reverse=True)
-        return self._clean_weaknesses([x[1] for x in scored[:4]])
+        return self._clean_weaknesses([x[1] for x in scored[:3]])
 
     def _extract_strengths(self, name: str, snippets: list[dict]) -> list[str]:
         name_tokens = [t for t in re.split(r"\W+", name.lower()) if len(t) > 2]
@@ -279,52 +352,64 @@ class CompetitorAgent(BaseAgent):
             frag = self._sanitize_issue_text(frag)
             if frag and frag not in out:
                 out.append(frag)
-            if len(out) >= 4:
+            if len(out) >= 3:
                 break
         return out
 
-    def _merge_with_fallback_competitors(self, current: list[dict], serp_results: list[dict], maps_index: dict, tavily_results: list[dict]) -> list[dict]:
-        out = list(current)
+    def _merge_with_fallback_competitors(
+        self,
+        current: list[dict],
+        serp_results: list[dict],
+        maps_index: dict,
+        tavily_results: list[dict],
+    ) -> list[dict]:
+        out      = list(current)
         existing = {self._clean_name(c.get("nom", "")).lower() for c in out}
         for r in serp_results:
             name = self._clean_name(r.get("title", ""))
             if not name or name.lower() in existing:
                 continue
+            weaknesses = self._clean_weaknesses(
+                self._extract_weaknesses(name, tavily_results)
+            )[:3]
+            strengths  = self._dedup_keep_order([
+                s for s in (self._sanitize_issue_text(x) for x in
+                            self._extract_strengths(name, tavily_results))
+                if s
+            ])[:3]
             base = {
-                "nom": name,
-                "type": "digital" if r.get("url") else "local",
-                "website": r.get("url", ""),
+                "nom":         name,
+                "type":        "digital" if r.get("url") else "local",
+                "website":     r.get("url", ""),
                 "description": (r.get("snippet") or "")[:220],
-                "source": "serp",
-                "rating": maps_index.get(name.lower(), {}).get("rating"),
-                "weaknesses": self._extract_weaknesses(name, tavily_results)[:4],
-                "key_strengths": self._extract_strengths(name, tavily_results)[:4],
+                "source":      "serp",
+                "rating":      maps_index.get(name.lower(), {}).get("rating"),
+                "weaknesses":  weaknesses,
+                "key_strengths": strengths,
                 "positioning": (r.get("snippet") or "")[:180],
             }
-            base["faiblesse_principale"] = (
-                base["weaknesses"][0] if base["weaknesses"] else "Non documente dans les sources disponibles"
-            )
             out.append(base)
             existing.add(name.lower())
             if len(out) >= 5:
                 break
         return out
 
-    def _build_minimum_competitors(self, serp_results: list[dict], maps_index: dict) -> list[dict]:
+    def _build_minimum_competitors(
+        self, serp_results: list[dict], maps_index: dict
+    ) -> list[dict]:
         out = []
         for r in serp_results[:5]:
             name = self._clean_name(r.get("title", ""))
             if not name:
                 continue
             out.append({
-                "nom": name,
-                "type": "digital" if r.get("url") else "local",
-                "website": r.get("url", ""),
+                "nom":         name,
+                "type":        "digital" if r.get("url") else "local",
+                "website":     r.get("url", ""),
                 "description": (r.get("snippet") or "")[:220],
-                "source": "serp",
-                "rating": maps_index.get(name.lower(), {}).get("rating"),
-                "faiblesse_principale": "Non documente dans les sources disponibles",
-                "weaknesses": [],
+                "source":      "serp",
+                "rating":      maps_index.get(name.lower(), {}).get("rating"),
+                "weaknesses":    [],
                 "key_strengths": [],
                 "positioning": (r.get("snippet") or "")[:180],
             })
@@ -332,10 +417,10 @@ class CompetitorAgent(BaseAgent):
 
     def _dedup_competitors(self, competitors: list[dict]) -> list[dict]:
         seen = set()
-        out = []
+        out  = []
         for c in competitors:
             name = self._clean_name(c.get("nom", ""))
-            k = name.lower()
+            k    = name.lower()
             if not name or k in seen:
                 continue
             c["nom"] = name
@@ -375,12 +460,10 @@ class CompetitorAgent(BaseAgent):
             return ""
         if self._looks_like_boilerplate(low):
             return ""
-        # Remove heavily polluted fragments with too many separators.
         if s.count("|") >= 2 or s.count("...") >= 2 or s.count("#") >= 1:
             return ""
         if re.search(r"https?://|www\.", low):
             return ""
-        # Keep concise readable sentences only.
         tokens = [t for t in re.split(r"\s+", s) if t]
         if len(tokens) < 5:
             return ""
@@ -408,8 +491,10 @@ class CompetitorAgent(BaseAgent):
 
     def _looks_like_boilerplate(self, low: str) -> bool:
         if any(p in low for p in self._BOILERPLATE_PATTERNS):
-            # Accept only if there is a clear negative signal too.
-            return not any(kw in low for kw in self._NEGATIVE_KW) and not any(h in low for h in self._WEAKNESS_HINTS)
+            return (
+                not any(kw in low for kw in self._NEGATIVE_KW)
+                and not any(h in low for h in self._WEAKNESS_HINTS)
+            )
         return False
 
     def _is_repetitive(self, tokens: list[str]) -> bool:
@@ -419,12 +504,11 @@ class CompetitorAgent(BaseAgent):
         norm = [t for t in norm if t]
         if not norm:
             return True
-        uniq_ratio = len(set(norm)) / len(norm)
-        return uniq_ratio < 0.45
+        return len(set(norm)) / len(norm) < 0.45
 
     def _dedup_keep_order(self, items: list[str]) -> list[str]:
         seen = set()
-        out = []
+        out  = []
         for x in items:
             k = x.lower().strip()
             if not k or k in seen:
@@ -442,22 +526,21 @@ class CompetitorAgent(BaseAgent):
             return content
         except (FileNotFoundError, ValueError):
             return f"""Tu es un expert en intelligence concurrentielle pour : {state.sector}.
-Tu recois serp_search, serp_maps, tavily_batches, tavily_merged.
-Priorite: extraire nom, website, description, faiblesses et forces reelles.
-Retourne UNIQUEMENT un JSON valide:
+Tu reçois serp_search, serp_maps, tavily.
+Reformule TOUJOURS en français clair — jamais de copier-coller de snippet brut.
+Retourne UNIQUEMENT un JSON valide :
 {{
   "top_competitors": [{{
     "nom": "",
     "type": "digital|local|regional|international",
     "website": "",
-    "description": "",
+    "description": "1 phrase courte en français",
     "source": "serp|tavily|serp+tavily",
     "rating": null,
-    "faiblesse_principale": "snippet negatif ou 'Non documente dans les sources disponibles'",
-    "weaknesses": [],
-    "key_strengths": [],
-    "positioning": ""
+    "weaknesses": ["phrase reformulée 1", "phrase reformulée 2"],
+    "key_strengths": ["force reformulée 1", "force reformulée 2"],
+    "positioning": "1 phrase de positionnement"
   }}],
   "opportunite_niveau": "fenetre_ouverte|partielle|saturee",
-  "opportunite_summary": ""
+  "opportunite_summary": "2 phrases en français"
 }}"""

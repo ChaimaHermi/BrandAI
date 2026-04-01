@@ -149,12 +149,6 @@ export default function CompetitorsTab({ report }) {
                 </div>
               </div>
 
-              {/* Primary weakness highlight */}
-              {c.faiblesse_principale ? (
-                <div className="mt-2 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700">
-                  <span className="font-semibold">Faiblesse principale:</span> {c.faiblesse_principale}
-                </div>
-              ) : null}
             </div>
           );
         })}

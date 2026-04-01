@@ -1,10 +1,8 @@
 # ══════════════════════════════════════════════════════════════
-# agents/market_analysis/market_analysis_agent.py  [v4]
-# Changement unique vs v3 :
-#   → executive_summary extrait depuis synthesis et exposé au niveau racine
+# agents/market_analysis/market_analysis_agent.py  [FIXED]
 # ══════════════════════════════════════════════════════════════
 
-import asyncio, json, logging, time
+import json, logging, time
 from datetime import datetime
 from pathlib import Path
 
@@ -12,7 +10,7 @@ from agents.base_agent import BaseAgent, PipelineState
 from agents.market_analysis.subagents.signal_agent import SignalAgent
 from agents.market_analysis.subagents.market_voc_agent import MarketVocAgent
 from agents.market_analysis.subagents.competitor_agent import CompetitorAgent
-from config.market_analysis_config import LLM_CONFIG
+from config.market_analysis_config import LLM_CONFIG, LLM_LIMITS
 from schemas.market_analysis_schemas import MarketReport
 
 logger = logging.getLogger("brandai.market_analysis_agent")
@@ -44,41 +42,57 @@ class MarketAnalysisAgent(BaseAgent):
         try:
             idea = state.clarified_idea or {}
 
+            # ── Helper troncature ──────────────────────────────
+            def _trunc(val, n=120):
+                """Tronque un string à n chars, retourne '' si None."""
+                return str(val or "")[:n]
+
             # ── LLM 1 : génère toutes les queries ─────────────
+            # FIX : chaque champ tronqué pour éviter 413 Groq
             logger.info("[market_analysis_agent] LLM 1 — génération queries")
             queries_raw = await self._call_llm(
                 system_prompt=self._queries_system_prompt(),
                 user_prompt=json.dumps({
-                    "short_pitch":          idea.get("short_pitch",          state.name),
-                    "solution_description": idea.get("solution_description", state.description),
-                    "target_users":         idea.get("target_users",         state.target_audience),
-                    "problem":              idea.get("problem",              state.description),
-                    "secteur":              idea.get("sector",               state.sector),
-                    "country_code":         idea.get("country_code",         "TN"),
-                    "language":             idea.get("language",             "fr"),
+                    "short_pitch":          _trunc(idea.get("short_pitch")          or state.name,            80),
+                    "solution_description": _trunc(idea.get("solution_description") or state.description,    120),
+                    "target_users":         _trunc(idea.get("target_users")         or state.target_audience, 80),
+                    "problem":              _trunc(idea.get("problem")              or state.description,     80),
+                    "secteur":              _trunc(idea.get("sector")               or state.sector,          40),
+                    "country_code":         idea.get("country_code", "TN"),
+                    "language":             idea.get("language",     "fr"),
                 }, ensure_ascii=False),
             )
-            queries = self._parse_json(queries_raw)
-
-            # ── 3 sous-agents en parallèle ────────────────────
-            logger.info("[market_analysis_agent] Lancement des 3 sous-agents")
-            tendances, market_voc, competitor = await asyncio.gather(
-                self.signal_agent.run(state, queries["signal"]),
-                self.market_voc_agent.run(state, queries["market_voc"]),
-                self.competitor_agent.run(state, queries["competitor"]),
+            queries = self._safe_parse_json(
+                raw=queries_raw,
+                fallback=self._fallback_queries(state),
+                stage="queries_generation",
             )
+
+            # ── 3 sous-agents en séquentiel (quota-safe) ──────
+            logger.info("[market_analysis_agent] Exécution sous-agents (séquentiel)")
+            tendances  = await self.signal_agent.run(state, queries["signal"])
+            market_voc = await self.market_voc_agent.run(state, queries["market_voc"])
+            competitor = await self.competitor_agent.run(state, queries["competitor"])
 
             # ── LLM 2 : synthèse finale ───────────────────────
             logger.info("[market_analysis_agent] LLM 2 — synthèse finale")
+            synthesis_payload = json.dumps({
+                "tendances":  tendances,
+                "market_voc": market_voc,
+                "competitor": competitor,
+            }, ensure_ascii=False)
+            if len(synthesis_payload) > LLM_LIMITS["max_payload_chars"]:
+                synthesis_payload = synthesis_payload[: LLM_LIMITS["max_payload_chars"]]
+
             synthesis_raw = await self._call_llm(
                 system_prompt=self._synthesis_system_prompt(state),
-                user_prompt=json.dumps({
-                    "tendances":  tendances,
-                    "market_voc": market_voc,
-                    "competitor": competitor,
-                }, ensure_ascii=False),
+                user_prompt=synthesis_payload,
             )
-            synthesis = self._parse_json(synthesis_raw)
+            synthesis = self._safe_parse_json(
+                raw=synthesis_raw,
+                fallback={},
+                stage="final_synthesis",
+            )
             synthesis = self._normalize_synthesis_payload(synthesis)
 
             # ── Data quality ───────────────────────────────────
@@ -86,9 +100,7 @@ class MarketAnalysisAgent(BaseAgent):
 
             # ── Rapport final ──────────────────────────────────
             final_output = {
-                # Résumé exécutif au niveau racine — accessible directement
                 "executive_summary": synthesis.get("executive_summary", ""),
-
                 "overview":        synthesis.get("overview", {}),
                 "tendances":       tendances,
                 "market_voc":      market_voc,
@@ -149,8 +161,8 @@ RÈGLE pour market_voc.news : 2-3 mots anglais, secteur SANS pays.
 Retourne UNIQUEMENT un JSON valide :
 {
   "signal": {
-    "trends_1":   "mot-clé exact utilisateurs locaux",
-    "trends_2":   "variante anglais",
+    "trends_1":   "mot-clé court max 5 mots",
+    "trends_2":   "variante anglais court",
     "tiktok":     "query courte TikTok",
     "regulatory": "réglementation secteur pays en clair",
     "country":    "code ISO2"
@@ -164,7 +176,7 @@ Retourne UNIQUEMENT un JSON valide :
     "language": "fr|en|ar"
   },
   "competitor": {
-    "competitors": "solution concrète + problème + pays — jamais juste le secteur",
+    "competitors": "solution concrète + problème + pays",
     "maps":        "service principal ville principale",
     "tavily":      "Concurrent1 Concurrent2 problèmes avis négatifs bugs pays",
     "country":     "code ISO2"
@@ -173,8 +185,6 @@ Retourne UNIQUEMENT un JSON valide :
 
     # ──────────────────────────────────────────────────────────
     # PROMPT LLM 2 — synthèse finale
-    # Lit depuis prompts/market_analysis/synthesis_agent.txt
-    # Le fichier .txt est la source de vérité — fallback inline minimal
     # ──────────────────────────────────────────────────────────
 
     def _synthesis_system_prompt(self, state: PipelineState) -> str:
@@ -224,31 +234,23 @@ Règles : ton neutre, jamais de GO/NO-GO, 3 risques, 3 recommandations une par h
     # DATA QUALITY
     # ──────────────────────────────────────────────────────────
 
-    def _build_data_quality(
-        self,
-        tendances: dict,
-        market_voc: dict,
-        competitor: dict,
-    ) -> dict:
+    def _build_data_quality(self, tendances, market_voc, competitor) -> dict:
 
         def _has(val) -> bool:
             if val is None: return False
             if isinstance(val, (list, dict, str)): return bool(val)
             return True
 
-        # ── SignalAgent ───────────────────────────────────────
         direction_ok  = tendances.get("direction") in ("RISING", "STABLE", "FALLING")
         trends_ok     = _has(tendances.get("rising_queries"))
         sector_ctx_ok = _has(tendances.get("sector_context"))
         reg_ok        = _has(tendances.get("regulatory_barriers"))
 
-        # ── MarketVocAgent ────────────────────────────────────
         voc_ok     = _has(market_voc.get("top_voc"))
         macro_ok   = _has(market_voc.get("macro", {}).get("population"))
         persona_ok = _has(market_voc.get("personas"))
         news_ok    = _has(market_voc.get("news_signals"))
 
-        # ── CompetitorAgent ───────────────────────────────────
         comp_ok   = _has(competitor.get("top_competitors"))
         n_comp    = len(competitor.get("top_competitors", []))
         with_weak = sum(
@@ -260,7 +262,6 @@ Règles : ton neutre, jamais de GO/NO-GO, 3 risques, 3 recommandations une par h
             if _has(c.get("key_strengths"))
         )
 
-        # ── Score global ──────────────────────────────────────
         checks = [
             direction_ok, trends_ok, sector_ctx_ok, reg_ok,
             voc_ok, macro_ok, persona_ok, comp_ok, news_ok,
@@ -346,7 +347,6 @@ Règles : ton neutre, jamais de GO/NO-GO, 3 risques, 3 recommandations une par h
         if not isinstance(synthesis, dict):
             return {}
 
-        # Normalize overview fields to {"niveau","label"} objects.
         ov = synthesis.get("overview")
         if isinstance(ov, dict):
             for key in ("demande", "probleme", "concurrence", "tendance"):
@@ -362,7 +362,6 @@ Règles : ton neutre, jamais de GO/NO-GO, 3 risques, 3 recommandations une par h
                     ov[key] = {"niveau": "modere", "label": ""}
             synthesis["overview"] = ov
 
-        # Normalize SWOT entries to object form.
         swot = synthesis.get("swot")
         if isinstance(swot, dict):
             for bucket in ("forces", "faiblesses", "opportunites", "menaces"):
@@ -379,7 +378,6 @@ Règles : ton neutre, jamais de GO/NO-GO, 3 risques, 3 recommandations une par h
                 swot[bucket] = norm_items
             synthesis["swot"] = swot
 
-        # Normalize recommendations to object form.
         recs = synthesis.get("recommandations")
         if isinstance(recs, list):
             norm_recs = []
@@ -402,3 +400,41 @@ Règles : ton neutre, jamais de GO/NO-GO, 3 risques, 3 recommandations une par h
             synthesis["recommandations"] = norm_recs
 
         return synthesis
+
+    def _safe_parse_json(self, raw: str, fallback: dict, stage: str) -> dict:
+        try:
+            return self._parse_json(raw or "")
+        except Exception as e:
+            logger.warning(
+                "[market_analysis_agent] fallback JSON used at stage=%s | reason=%s",
+                stage,
+                str(e)[:180],
+            )
+            return fallback
+
+    def _fallback_queries(self, state: PipelineState) -> dict:
+        secteur = (state.sector or "secteur").strip()
+        country = "TN"
+        return {
+            "signal": {
+                "trends_1": f"{secteur} Tunisie",
+                "trends_2": f"{secteur} app",
+                "tiktok": f"{secteur} avis",
+                "regulatory": f"reglementation {secteur} Tunisie",
+                "country": country,
+            },
+            "market_voc": {
+                "tavily": f"problemes {secteur} Tunisie",
+                "reddit": f"{secteur} complaints site:reddit.com",
+                "youtube": f"{secteur} Tunisie avis",
+                "news": f"{secteur} market",
+                "country": country,
+                "language": "fr",
+            },
+            "competitor": {
+                "competitors": f"solutions {secteur} Tunisie",
+                "maps": f"{secteur} tunis",
+                "tavily": f"concurrents {secteur} avis negatifs Tunisie",
+                "country": country,
+            },
+        }

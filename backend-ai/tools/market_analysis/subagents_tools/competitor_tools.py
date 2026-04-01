@@ -1,6 +1,6 @@
 # ══════════════════════════════════════════════════════════════
 # tools/market_analysis/subagents_tools/competitor_tools.py
-# APIs : SerpAPI Search + SerpAPI Maps + Tavily (advanced + multi-query)
+# FIX : snippets tronqués à 150 chars max → LLM reformule au lieu de copier
 # ══════════════════════════════════════════════════════════════
 
 import asyncio
@@ -19,11 +19,18 @@ from config.market_analysis_config import CACHE_TTL, DELAYS, LIMITS, SEMAPHORES
 
 logger = logging.getLogger("brandai.competitor_tools")
 _SEM_SERP = asyncio.Semaphore(SEMAPHORES["serpapi"])
-_SEM_TAV = asyncio.Semaphore(SEMAPHORES["tavily"])
-TIMEOUT = httpx.Timeout(15.0, connect=5.0)
-_SERP_BASE = "https://serpapi.com/search"
+_SEM_TAV  = asyncio.Semaphore(SEMAPHORES["tavily"])
+TIMEOUT   = httpx.Timeout(15.0, connect=5.0)
+_SERP_BASE  = "https://serpapi.com/search"
 _TAVILY_URL = "https://api.tavily.com/search"
 _CACHE_FILE = os.path.join(tempfile.gettempdir(), "ma_cache")
+# Always fetch fresh data on each run.
+CACHE_ENABLED = False
+
+# ── Longueur max des snippets envoyés au LLM ─────────────────
+# 1000 chars = fragments trop longs → LLM copie-colle
+# 150 chars  = contexte suffisant → LLM reformule en français
+_SNIPPET_MAX = 150
 
 
 def _key(*args) -> str:
@@ -31,6 +38,8 @@ def _key(*args) -> str:
 
 
 def _cget(key: str) -> Any | None:
+    if not CACHE_ENABLED:
+        return None
     try:
         with shelve.open(_CACHE_FILE) as db:
             entry = db.get(key)
@@ -42,6 +51,8 @@ def _cget(key: str) -> Any | None:
 
 
 def _cset(key: str, data: Any, ttl: int) -> None:
+    if not CACHE_ENABLED:
+        return
     try:
         with shelve.open(_CACHE_FILE) as db:
             db[key] = {"data": data, "exp": time.time() + ttl}
@@ -97,12 +108,10 @@ def _domain_from_url(url: str) -> str:
 
 def _dedup_dicts(items: list[dict], keys: tuple[str, ...]) -> list[dict]:
     seen = set()
-    out = []
+    out  = []
     for it in items:
         sig = tuple((it.get(k) or "").strip().lower() for k in keys)
-        if not any(sig):
-            continue
-        if sig in seen:
+        if not any(sig) or sig in seen:
             continue
         seen.add(sig)
         out.append(it)
@@ -122,33 +131,31 @@ async def fetch_serp_competitors(query: str, country_code: str = "TN") -> dict:
         _SERP_BASE,
         {
             "engine": "google",
-            "q": query,
+            "q":      query,
             "api_key": api_key,
-            "gl": country_code.lower(),
-            "hl": "en",
-            "num": LIMITS["serp_competitors_results"],
+            "gl":     country_code.lower(),
+            "hl":     "en",
+            "num":    LIMITS["serp_competitors_results"],
         },
         _SEM_SERP,
         DELAYS["serpapi"],
     )
-    organic = _sl(data.get("organic_results", []), LIMITS["serp_competitors_results"])
+    organic  = _sl(data.get("organic_results", []), LIMITS["serp_competitors_results"])
     enriched = []
     for i, r in enumerate(organic, start=1):
         url = r.get("link", "") or ""
-        enriched.append(
-            {
-                "position": r.get("position") or i,
-                "title": _clean_text(r.get("title", ""), 180),
-                "url": url,
-                "domain": _domain_from_url(url),
-                "snippet": _clean_text(r.get("snippet", ""), 500),
-                "source": "serpapi_search",
-            }
-        )
+        enriched.append({
+            "position": r.get("position") or i,
+            "title":    _clean_text(r.get("title",   ""), 180),
+            "url":      url,
+            "domain":   _domain_from_url(url),
+            "snippet":  _clean_text(r.get("snippet", ""), _SNIPPET_MAX),  # ✅ 150 chars
+            "source":   "serpapi_search",
+        })
     enriched = _dedup_dicts(enriched, ("url", "title"))
     result = {
-        "source": "serpapi_search",
-        "query": query,
+        "source":  "serpapi_search",
+        "query":   query,
         "country": country_code.upper(),
         "results": enriched,
     }
@@ -170,35 +177,33 @@ async def fetch_serp_maps(query: str, country_code: str = "TN") -> dict:
         _SERP_BASE,
         {
             "engine": "google_maps",
-            "q": query,
+            "q":      query,
             "api_key": api_key,
-            "gl": country_code.lower(),
-            "hl": "en",
-            "type": "search",
+            "gl":     country_code.lower(),
+            "hl":     "en",
+            "type":   "search",
         },
         _SEM_SERP,
         DELAYS["serpapi"],
     )
-    places = _sl(data.get("local_results", []), LIMITS["serp_maps_results"])
+    places     = _sl(data.get("local_results", []), LIMITS["serp_maps_results"])
     normalized = []
     for p in places:
         website = p.get("website", "") or ""
-        normalized.append(
-            {
-                "name": _clean_text(p.get("title", ""), 140),
-                "rating": p.get("rating"),
-                "reviews": p.get("reviews"),
-                "address": _clean_text(p.get("address", ""), 220),
-                "type": _clean_text(p.get("type", ""), 100),
-                "website": website,
-                "domain": _domain_from_url(website),
-                "source": "serpapi_maps",
-            }
-        )
+        normalized.append({
+            "name":    _clean_text(p.get("title",   ""), 140),
+            "rating":  p.get("rating"),
+            "reviews": p.get("reviews"),
+            "address": _clean_text(p.get("address", ""), 220),
+            "type":    _clean_text(p.get("type",    ""), 100),
+            "website": website,
+            "domain":  _domain_from_url(website),
+            "source":  "serpapi_maps",
+        })
     normalized = _dedup_dicts(normalized, ("name", "address"))
     result = {
-        "source": "serpapi_maps",
-        "query": query,
+        "source":  "serpapi_maps",
+        "query":   query,
         "country": country_code.upper(),
         "results": normalized,
     }
@@ -219,28 +224,33 @@ async def fetch_tavily_competitor_insights(query: str) -> dict:
     data = await _post(
         _TAVILY_URL,
         {
-            "api_key": api_key,
-            "query": query,
+            "api_key":      api_key,
+            "query":        query,
             "search_depth": "advanced",
-            "max_results": LIMITS["tavily_insights_results"],
-            "include_answer": False,
+            "max_results":  LIMITS["tavily_insights_results"],
+            "include_answer":      False,
             "include_raw_content": False,
         },
         _SEM_TAV,
     )
-    rows = _sl(data.get("results", []), LIMITS["tavily_insights_results"])
+    rows       = _sl(data.get("results", []), LIMITS["tavily_insights_results"])
     normalized = []
     for r in rows:
-        url = r.get("url", "") or ""
-        normalized.append(
-            {
-                "title": _clean_text(r.get("title", ""), 220),
-                "url": url,
-                "domain": _domain_from_url(url),
-                "source": _clean_text(r.get("source", ""), 120) or _domain_from_url(url),
-                "snippet": _clean_text(r.get("content", ""), 1000),
-            }
-        )
+        url     = r.get("url", "") or ""
+        content = r.get("content", "") or ""
+
+        # ── FIX PRINCIPAL : snippet = première phrase claire ──────────────
+        # On prend les 150 premiers chars du contenu APRÈS nettoyage.
+        # Cela force le LLM à reformuler plutôt que copier un long fragment.
+        snippet = _clean_text(content, _SNIPPET_MAX)
+
+        normalized.append({
+            "title":   _clean_text(r.get("title", ""), 120),
+            "url":     url,
+            "domain":  _domain_from_url(url),
+            "source":  _clean_text(r.get("source", ""), 80) or _domain_from_url(url),
+            "snippet": snippet,
+        })
     normalized = _dedup_dicts(normalized, ("url", "title", "snippet"))
     result = {"source": "tavily_competitor", "query": query, "results": normalized}
     _cset(k, result, CACHE_TTL["tavily"])
@@ -258,13 +268,13 @@ async def fetch_tavily_multi(queries: list[str]) -> dict:
         return {"source": "tavily_multi", "queries": [], "results": []}
 
     batches = await asyncio.gather(*[fetch_tavily_competitor_insights(q) for q in clean_queries])
-    merged = []
+    merged  = []
     for b in batches:
         merged.extend(b.get("results", []))
     merged = _dedup_dicts(merged, ("url", "title", "snippet"))
 
     result = {
-        "source": "tavily_multi",
+        "source":  "tavily_multi",
         "queries": clean_queries,
         "results": merged,
         "batches": [{"query": b.get("query", ""), "count": len(b.get("results", []))} for b in batches],

@@ -149,12 +149,36 @@ class BaseAgent(ABC):
         attempt    = 0
         last_error = None
 
-        # Log estimation tokens avant envoi
-        total_chars  = len(system_prompt) + len(user_prompt)
-        est_tokens   = total_chars // 4
+        # Keep requests under Groq on_demand TPM limit (8000).
+        # Use safety margin to avoid borderline 413 errors.
+        tpm_budget = 7600
+        min_completion_tokens = 256
+        chars_per_token = 4
+
+        system_prompt = system_prompt or ""
+        user_prompt = user_prompt or ""
+
+        total_chars = len(system_prompt) + len(user_prompt)
+        est_tokens = max(1, total_chars // chars_per_token)
+
+        max_input_tokens = max(1, tpm_budget - min_completion_tokens)
+        if est_tokens > max_input_tokens:
+            allowed_user_chars = max(200, max_input_tokens * chars_per_token - len(system_prompt))
+            user_prompt = user_prompt[:allowed_user_chars]
+            total_chars = len(system_prompt) + len(user_prompt)
+            est_tokens = max(1, total_chars // chars_per_token)
+            self.logger.warning(
+                f"[{self.agent_name}] prompt truncated for TPM safety — input~{est_tokens} tokens"
+            )
+
+        dynamic_max_tokens = min(
+            self.llm_max_tokens,
+            max(min_completion_tokens, tpm_budget - est_tokens),
+        )
+        requested_tokens = est_tokens + dynamic_max_tokens
         self.logger.info(
-            f"[{self.agent_name}] Groq direct call — "
-            f"~{est_tokens} tokens input | model={self.llm_model}"
+            f"[{self.agent_name}] Groq direct call — input~{est_tokens} | "
+            f"max_out={dynamic_max_tokens} | requested~{requested_tokens} | model={self.llm_model}"
         )
 
         while attempt < self.max_retries:
@@ -170,7 +194,7 @@ class BaseAgent(ABC):
                         {"role": "user",   "content": user_prompt},
                     ],
                     "temperature":  self.temperature,
-                    "max_tokens":   self.llm_max_tokens,
+                    "max_tokens":   dynamic_max_tokens,
                 }
 
                 # reasoning_effort si supporté par ce modèle
@@ -193,6 +217,11 @@ class BaseAgent(ABC):
                     f"[{self.agent_name}] done in {elapsed}s — "
                     f"~{out_tokens} output tokens"
                 )
+
+                # Some transient Groq responses can return an empty body.
+                # Treat this as retryable to avoid downstream JSON parse crashes.
+                if not str(content).strip():
+                    raise RuntimeError("Empty LLM response content")
 
                 return content
 
