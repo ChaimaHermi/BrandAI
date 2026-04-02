@@ -22,22 +22,34 @@ class NameAgent(BaseAgent):
         self._log_start(state)
 
         try:
-            # Ensure container exists early
+            # Ensure container
             if not hasattr(state, "brand_identity") or state.brand_identity is None:
                 state.brand_identity = {}
 
-            # Validate clarified inputs expected by this agent
-            idea = state.clarified_idea or {}
-            required_fields = ["sector", "target_users", "problem", "solution_description", "country"]
+            # 🔒 STRICT: clarified_idea required
+            if not state.clarified_idea:
+                raise ValueError("clarified_idea is required")
+
+            idea = state.clarified_idea
+
+            required_fields = [
+                "idea_name",
+                "sector",
+                "target_users",
+                "problem",
+                "solution_description",
+                "country",
+            ]
+
             missing = [k for k in required_fields if not str(idea.get(k) or "").strip()]
+
             if missing:
                 state.brand_identity["name_options"] = []
                 state.brand_identity["name_error"] = (
-                    "Données clarifiées incomplètes pour générer les noms: "
-                    + ", ".join(missing)
+                    "Données clarifiées incomplètes: " + ", ".join(missing)
                 )
                 state.status = "name_failed"
-                self._log_error(f"missing_clarified_fields: {', '.join(missing)}")
+                self._log_error(f"missing_fields: {', '.join(missing)}")
                 return state
 
             # 1. Build prompts
@@ -47,28 +59,26 @@ class NameAgent(BaseAgent):
             # 2. Call LLM
             raw = await self._call_llm(system_prompt, user_prompt)
 
-            # 3. Parse JSON (robuste)
+            # 3. Parse JSON
             try:
                 data = self._parse_json(raw)
                 options = data.get("name_options", [])
             except Exception:
                 options = []
 
-            # If generation failed, return empty + message (no fake fallback names)
             if not options:
                 state.brand_identity["name_options"] = []
                 state.brand_identity["name_error"] = (
-                    "Impossible de générer des noms pour le moment. "
-                    "Réessayez dans quelques instants."
+                    "Impossible de générer des noms pour le moment."
                 )
                 state.status = "name_failed"
-                self._log_error("empty_or_invalid_llm_json")
+                self._log_error("invalid_llm_output")
                 return state
 
-            # 4. Validate with Brandfetch
+            # 4. Validate
             validated = await validate_name_list(options)
 
-            # 5. Save in state
+            # 5. Save
             state.brand_identity["name_options"] = validated
             state.brand_identity.pop("name_error", None)
 
@@ -101,6 +111,3 @@ Rules:
 - no long explanations
 - return ONLY valid JSON
 """
-
-    # ─────────────────────────────────────────
-    # No fake fallback names: surface an error message instead.

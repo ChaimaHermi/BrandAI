@@ -1,75 +1,106 @@
 def build_name_user_prompt(state) -> str:
 
     idea = state.clarified_idea or {}
-    sector = idea.get("sector") or idea.get("secteur") or state.sector
-    target_users = idea.get("target_users") or state.target_audience
-    problem = idea.get("problem") or ""
-    solution_description = idea.get("solution_description") or idea.get("solution") or ""
-    country = idea.get("country") or ""
-    country_code = idea.get("country_code") or ""
-    language = idea.get("language") or "fr"
+
+    idea_name = idea.get("idea_name", "")
+    sector = idea.get("sector", "")
+    target_users = idea.get("target_users", "")
+    problem = idea.get("problem", "")
+    solution_description = idea.get("solution_description", "")
+    country = idea.get("country", "")
+    country_code = idea.get("country_code", "")
+    language = idea.get("language", "fr")
 
     return f"""
 CONTEXT:
-Idea: {state.name}
+Idea: {idea_name}
 Sector: {sector}
-Description: {state.description}
 Target users: {target_users}
 Problem: {problem}
 Solution description: {solution_description}
 Country: {country} ({country_code})
 Language: {language}
 
-Clarified idea:
-{idea}
-
 TASK:
 Generate up to 10 brand names for this startup.
 
+CORE OBJECTIVE:
+Create high-quality startup names that are:
+- distinctive
+- memorable
+- meaningful
+- brandable and scalable internationally
+
 CONSTRAINTS:
 - 1–3 words maximum
-- easy to pronounce
-- relevant to the idea
-- names MUST relate to the provided sector, problem, target users, solution, and country
-- prioritize meaningful and semi-descriptive names
-- avoid completely abstract or fantasy-like names (e.g. Velorum, Nexarion)
-- avoid overly generic names (e.g. Cash, Budget, Fin)
-- create hybrid or combined words when possible (e.g. BudgFlow, SpendWise)
-- allow slightly longer names if they improve meaning and uniqueness
-- use only standard latin characters (NO accents)
+- easy to pronounce globally
+- relevant to idea, users, and problem
+- avoid abstract/fantasy names (Velorum, Nexarion)
+- avoid generic names (Cash, Budget, App, Solution)
+- avoid repeating same prefix (Fit, Coach, etc.)
+- avoid adding country code like TN in most names
+- use only latin characters (NO accents)
 
-NAMING STYLE:
-- modern, startup-ready, and memorable
-- should clearly hint at the product purpose
-- should be usable as a domain name
-- balance creativity AND meaning
+NAMING QUALITY RULES (CRITICAL):
+- each name MUST follow a DIFFERENT pattern
+- avoid similar structures (FitX, FitY, FitZ)
+- mix naming styles:
+    * descriptive (HomeCoach)
+    * emotional (RisePulse)
+    * benefit-driven (DailyBoost)
+    * hybrid (TrainFlow)
+    * action-oriented (MoveUp)
+- at least 50% of names must NOT contain "fit" or "coach"
 
-LANGUAGE:
-- descriptions MUST be in French
-- descriptions must be natural and correct sentences
-- no fragments
-- no comma-separated phrases
+BRANDABILITY RULES:
+- names must sound like real startups (not keywords)
+- avoid overly common single words (Daily, Home, Move alone)
+- prefer slightly distinctive or combined words
+- must be easy to remember after one read
+- must be usable as product/app name
+
+
+SEMANTIC ALIGNMENT:
+Each name MUST clearly reflect at least one of:
+- motivation
+- coaching
+- progress tracking
+- habit building
+- home training
 
 FOR EACH NAME:
 - include a short explanation (max 10 words)
-- clearly explain WHY the name fits the idea
+- explanation must clearly justify the name
 
-OUTPUT FORMAT (STRICT JSON ONLY):
+FINAL SELECTION (VERY IMPORTANT):
+- you MUST select exactly 3 best names
+- mark them with: "top_choice": true
+- all other names must have: "top_choice": false
+- there must be EXACTLY 3 top_choice = true
+
+SELECTION CRITERIA:
+- memorability
+- uniqueness
+- brand potential
+- clarity of meaning
+
+OUTPUT FORMAT (STRICT JSON):
 
 {{
   "name_options": [
     {{
       "name": "",
-      "description": ""
+      "description": "",
+      "top_choice": false
     }}
   ]
 }}
 
 IMPORTANT:
-- return ONLY valid JSON
-- do not return empty response
-- do not add explanations outside JSON
-- if unsure, still return valid JSON
-- use clarified fields as primary source of truth
-- do not ignore: sector, target_users, problem, solution_description, country
+- ONLY valid JSON
+- no text outside JSON
+- NEVER omit "top_choice"
+- "top_choice" MUST be boolean (true/false)
+- MUST return at least 5 names
+- MUST return exactly 3 top_choice=true
 """

@@ -10,24 +10,22 @@ async def test_name_agent():
     # INPUT MINIMAL (ONLY clarified_idea)
     # ─────────────────────────────────────────
     state = PipelineState(
-        idea_id=1,
-        name="Coach sport à domicile",
-        sector="health",
-        description="Application de coaching fitness personnalisé à domicile",
-        target_audience="jeunes adultes débutants en fitness",
+        idea_id=1
     )
+
     state.clarified_idea = {
+        "idea_name": "Coach sport a domicile",
         "sector": "health",
-        "target_users": "jeunes adultes débutants en fitness",
+        "target_users": "jeunes adultes debutants en fitness",
 
         "problem": (
             "Les utilisateurs manquent de motivation et ne savent pas "
-            "comment structurer leurs séances de sport à domicile"
+            "comment structurer leurs seances de sport a domicile"
         ),
 
         "solution_description": (
-            "Une application mobile qui propose des programmes de fitness personnalisés, "
-            "avec des séances guidées en vidéo, un suivi des progrès et des rappels quotidiens "
+            "Une application mobile qui propose des programmes de fitness personnalises, "
+            "avec des seances guidees en video, un suivi des progres et des rappels quotidiens "
             "pour maintenir la motivation"
         ),
 
@@ -35,6 +33,7 @@ async def test_name_agent():
         "country_code": "TN",
         "language": "fr",
     }
+
     # ─────────────────────────────────────────
     # RUN AGENT
     # ─────────────────────────────────────────
@@ -49,7 +48,6 @@ async def test_name_agent():
 
     brand = result_state.brand_identity or {}
 
-    # gestion erreur propre
     if brand.get("name_error"):
         print(json.dumps({
             "name_error": brand["name_error"],
@@ -57,7 +55,6 @@ async def test_name_agent():
         }, indent=2, ensure_ascii=False))
         return
 
-    # affichage normal
     print(json.dumps(brand, indent=2, ensure_ascii=False))
 
 
