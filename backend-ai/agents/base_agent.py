@@ -132,9 +132,17 @@ class BaseAgent(ABC):
         - Sinon → LangChain via LLMRotator (comportement inchangé)
         """
         if self.llm_model in GROQ_DIRECT_MODELS:
-            return await self._call_groq_direct(system_prompt, user_prompt)
-        else:
-            return await self._call_langchain(system_prompt, user_prompt)
+            try:
+                return await self._call_groq_direct(system_prompt, user_prompt)
+            except Exception as e:
+                # Some Groq direct responses are transiently empty or fail in ways that
+                # the LangChain client path can recover from. Fallback once.
+                self.logger.warning(
+                    f"[{self.agent_name}] Groq direct failed — fallback to LangChain | {str(e)[:160]}"
+                )
+                return await self._call_langchain(system_prompt, user_prompt)
+
+        return await self._call_langchain(system_prompt, user_prompt)
 
     # ──────────────────────────────────────────────────────────
     # Appel direct Groq SDK (gpt-oss-120b avec reasoning_effort)

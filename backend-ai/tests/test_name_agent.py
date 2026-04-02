@@ -10,19 +10,18 @@ async def test_name_agent():
     # INPUT (simule idea clarifier)
     # ─────────────────────────────────────────
     state = PipelineState(
-        idea_id=1,
-        name="App gestion budget étudiant",
-        sector="fintech",
-        description="Application mobile pour aider les étudiants à gérer leurs dépenses",
-        target_audience="étudiants en Tunisie",
+        idea_id=3,
+        name="App fitness à domicile",
+        sector="health",
+        description="Application mobile pour faire du sport chez soi avec coaching personnalisé",
+        target_audience="jeunes adultes",
     )
 
-    # simuler clarified idea (important)
     state.clarified_idea = {
-        "problem": "Les étudiants ont du mal à gérer leur budget",
-        "solution": "Application simple pour suivre dépenses et revenus",
-        "target_users": "Étudiants universitaires",
-        "value_proposition": "Gestion financière simple et rapide",
+        "problem": "Manque de motivation pour faire du sport",
+        "solution": "Coaching fitness personnalisé à domicile",
+        "target_users": "Débutants et amateurs",
+        "value_proposition": "Fitness simple sans salle de sport",
     }
 
     # ─────────────────────────────────────────
@@ -36,7 +35,11 @@ async def test_name_agent():
     # OUTPUT
     # ─────────────────────────────────────────
     print("\n===== NAME AGENT RESULT =====\n")
-    print(json.dumps(result_state.brand_identity, indent=2, ensure_ascii=False))
+    brand = result_state.brand_identity or {}
+    if brand.get("name_error"):
+        print(json.dumps({"name_error": brand["name_error"], "name_options": []}, indent=2, ensure_ascii=False))
+    else:
+        print(json.dumps(brand, indent=2, ensure_ascii=False))
 
 
 # ─────────────────────────────────────────
