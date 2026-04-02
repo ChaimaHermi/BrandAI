@@ -22,6 +22,24 @@ class NameAgent(BaseAgent):
         self._log_start(state)
 
         try:
+            # Ensure container exists early
+            if not hasattr(state, "brand_identity") or state.brand_identity is None:
+                state.brand_identity = {}
+
+            # Validate clarified inputs expected by this agent
+            idea = state.clarified_idea or {}
+            required_fields = ["sector", "target_users", "problem", "solution_description", "country"]
+            missing = [k for k in required_fields if not str(idea.get(k) or "").strip()]
+            if missing:
+                state.brand_identity["name_options"] = []
+                state.brand_identity["name_error"] = (
+                    "Données clarifiées incomplètes pour générer les noms: "
+                    + ", ".join(missing)
+                )
+                state.status = "name_failed"
+                self._log_error(f"missing_clarified_fields: {', '.join(missing)}")
+                return state
+
             # 1. Build prompts
             system_prompt = self._build_system_prompt()
             user_prompt = build_name_user_prompt(state)
@@ -35,10 +53,6 @@ class NameAgent(BaseAgent):
                 options = data.get("name_options", [])
             except Exception:
                 options = []
-
-            # Ensure container exists
-            if not hasattr(state, "brand_identity") or state.brand_identity is None:
-                state.brand_identity = {}
 
             # If generation failed, return empty + message (no fake fallback names)
             if not options:

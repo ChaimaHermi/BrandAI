@@ -1,13 +1,24 @@
 def build_name_user_prompt(state) -> str:
 
     idea = state.clarified_idea or {}
+    sector = idea.get("sector") or idea.get("secteur") or state.sector
+    target_users = idea.get("target_users") or state.target_audience
+    problem = idea.get("problem") or ""
+    solution_description = idea.get("solution_description") or idea.get("solution") or ""
+    country = idea.get("country") or ""
+    country_code = idea.get("country_code") or ""
+    language = idea.get("language") or "fr"
 
     return f"""
 CONTEXT:
 Idea: {state.name}
-Sector: {state.sector}
+Sector: {sector}
 Description: {state.description}
-Target: {state.target_audience}
+Target users: {target_users}
+Problem: {problem}
+Solution description: {solution_description}
+Country: {country} ({country_code})
+Language: {language}
 
 Clarified idea:
 {idea}
@@ -19,7 +30,7 @@ CONSTRAINTS:
 - 1–3 words maximum
 - easy to pronounce
 - relevant to the idea
-- names MUST relate to finance, budget, money, or student life
+- names MUST relate to the provided sector, problem, target users, solution, and country
 - prioritize meaningful and semi-descriptive names
 - avoid completely abstract or fantasy-like names (e.g. Velorum, Nexarion)
 - avoid overly generic names (e.g. Cash, Budget, Fin)
@@ -59,4 +70,6 @@ IMPORTANT:
 - do not return empty response
 - do not add explanations outside JSON
 - if unsure, still return valid JSON
+- use clarified fields as primary source of truth
+- do not ignore: sector, target_users, problem, solution_description, country
 """

@@ -7,23 +7,34 @@ from agents.branding.name_agent import NameAgent
 
 async def test_name_agent():
     # ─────────────────────────────────────────
-    # INPUT (simule idea clarifier)
+    # INPUT MINIMAL (ONLY clarified_idea)
     # ─────────────────────────────────────────
     state = PipelineState(
-        idea_id=3,
-        name="App fitness à domicile",
+        idea_id=1,
+        name="Coach sport à domicile",
         sector="health",
-        description="Application mobile pour faire du sport chez soi avec coaching personnalisé",
-        target_audience="jeunes adultes",
+        description="Application de coaching fitness personnalisé à domicile",
+        target_audience="jeunes adultes débutants en fitness",
     )
-
     state.clarified_idea = {
-        "problem": "Manque de motivation pour faire du sport",
-        "solution": "Coaching fitness personnalisé à domicile",
-        "target_users": "Débutants et amateurs",
-        "value_proposition": "Fitness simple sans salle de sport",
-    }
+        "sector": "health",
+        "target_users": "jeunes adultes débutants en fitness",
 
+        "problem": (
+            "Les utilisateurs manquent de motivation et ne savent pas "
+            "comment structurer leurs séances de sport à domicile"
+        ),
+
+        "solution_description": (
+            "Une application mobile qui propose des programmes de fitness personnalisés, "
+            "avec des séances guidées en vidéo, un suivi des progrès et des rappels quotidiens "
+            "pour maintenir la motivation"
+        ),
+
+        "country": "Tunisie",
+        "country_code": "TN",
+        "language": "fr",
+    }
     # ─────────────────────────────────────────
     # RUN AGENT
     # ─────────────────────────────────────────
@@ -35,11 +46,19 @@ async def test_name_agent():
     # OUTPUT
     # ─────────────────────────────────────────
     print("\n===== NAME AGENT RESULT =====\n")
+
     brand = result_state.brand_identity or {}
+
+    # gestion erreur propre
     if brand.get("name_error"):
-        print(json.dumps({"name_error": brand["name_error"], "name_options": []}, indent=2, ensure_ascii=False))
-    else:
-        print(json.dumps(brand, indent=2, ensure_ascii=False))
+        print(json.dumps({
+            "name_error": brand["name_error"],
+            "name_options": []
+        }, indent=2, ensure_ascii=False))
+        return
+
+    # affichage normal
+    print(json.dumps(brand, indent=2, ensure_ascii=False))
 
 
 # ─────────────────────────────────────────
