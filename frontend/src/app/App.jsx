@@ -15,6 +15,7 @@ import PipelineLayout from "@/app/layout/PipelineLayout";
 import ClarifierPage from "@/agents/clarifier/pages/ClarifierPage";
 import MarketPage from "@/agents/market/pages/MarketPage";
 import MarketingPage from "@/agents/marketing/pages/MarketingPage";
+import BrandPage from "@/agents/brand/pages/BrandPage";
 
 function PlaceholderPage({ name }) {
   return (
@@ -125,10 +126,7 @@ export default function App() {
               path="marketing"
               element={<MarketingPage />}
             />
-            <Route
-              path="brand"
-              element={<PlaceholderPage name="Brand Identity" />}
-            />
+            <Route path="brand" element={<BrandPage />} />
             <Route
               path="content"
               element={<PlaceholderPage name="Content Creator" />}

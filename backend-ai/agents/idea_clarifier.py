@@ -357,7 +357,7 @@ class IdeaClarifierAgent(BaseAgent):
                 score = max(0, min(100, score))
             except (TypeError, ValueError):
                 score = 50
-            return {
+            clarified = {
                 "type": "clarified",
                 "message": (raw_result.get("message") or "").strip(),
                 "sector": (raw_result.get("sector") or state.sector or "").strip(),
@@ -370,9 +370,37 @@ class IdeaClarifierAgent(BaseAgent):
                 "country_code": (raw_result.get("country_code") or "").strip().upper(),
                 "language": (raw_result.get("language") or "fr").strip(),
             }
+            return self._ensure_geography_if_needed(clarified)
 
         # Type inattendu → erreur remontée à la route
         raise RuntimeError(f"[clarifier] type LLM inattendu : {result_type!r}")
+
+    def _ensure_geography_if_needed(self, clarified: dict) -> dict:
+        """If geography is missing, convert clarified result into a geography question."""
+        country = str(clarified.get("country") or "").strip().lower()
+        country_code = str(clarified.get("country_code") or "").strip().upper()
+
+        # Keep behavior simple: if LLM could not provide country, ask user explicitly.
+        if country and country not in {"non précisé", "non precise", "nonprecise"}:
+            return clarified
+        if country_code:
+            return clarified
+
+        return {
+            "type": "questions",
+            "message": (
+                "Pour finaliser votre idée, j'ai besoin de la localisation de lancement."
+            ),
+            "missing_axes": ["geography"],
+            "questions": [
+                {
+                    "axis": "geography",
+                    "text": "Dans quel pays ou région souhaitez-vous lancer votre solution ?",
+                }
+            ],
+            "sector": clarified.get("sector", ""),
+            "detected_sector": clarified.get("sector", ""),
+        }
 
     # ─────────────────────────────────────────────────────────
     # Méthode 1 — Appel initial (description seule)

@@ -88,6 +88,9 @@ class IdeaOut(BaseModel):
     clarity_solution: Optional[str] = None
     clarity_short_pitch: Optional[str] = None
     clarity_agent_message: Optional[str] = None
+    clarity_country: Optional[str] = None
+    clarity_country_code: Optional[str] = None
+    clarity_language: Optional[str] = None
     clarity_questions: Optional[Any] = None
     clarity_answers: Optional[Any] = None
     clarity_refused_reason: Optional[str] = None
