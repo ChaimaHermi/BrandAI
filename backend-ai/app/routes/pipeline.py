@@ -9,6 +9,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.branding_payload import split_brand_identity_payload
 from workflows.pipeline_graph import build_graph
 
 
@@ -73,9 +74,13 @@ async def _persist_brand_identity_row(
 ) -> dict:
     base = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
     url = f"{base}/brand-identity/{idea_id}"
+    meta, names, slogans, logo = split_brand_identity_payload(brand_identity)
     payload = {
         "status": "done",
-        "result_json": brand_identity,
+        "result_json": meta,
+        "result_names": names,
+        "result_slogans": slogans,
+        "result_logo": logo,
         "started_at": started_at.isoformat(),
         "completed_at": completed_at.isoformat(),
     }

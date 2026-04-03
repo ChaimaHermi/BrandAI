@@ -21,3 +21,9 @@ NAME_AGENT_VERBOSE_REACT = True
 # Short-term memory for already existing names (Brandfetch = exists)
 NAME_SHORT_TERM_MEMORY_DIR = "data/memory/short_term"
 NAME_EXISTS_MEMORY_MAX = 20
+
+# SloganAgent : nombre de slogans à proposer
+SLOGAN_TARGET_COUNT = 5
+
+# PaletteAgent : nombre de palettes de couleurs complètes à proposer
+PALETTE_TARGET_COUNT = 3
