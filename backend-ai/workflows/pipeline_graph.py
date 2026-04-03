@@ -5,6 +5,7 @@ import logging
 from langgraph.graph import END, START, StateGraph
 
 from agents.base_agent import PipelineState
+from agents.branding.branding_orchestrator import BrandingOrchestratorAgent
 from agents.idea_clarifier import IdeaClarifierAgent
 from agents.market_analysis.market_analysis_agent import MarketAnalysisAgent
 from agents.marketing_agent import MarketingAgent
@@ -38,6 +39,7 @@ class GraphState(TypedDict):
 
     clarified_idea: dict[str, Any]
     market_analysis: dict[str, Any]
+    brand_identity: dict[str, Any]
     marketing_plan: dict[str, Any]
 
     status: str
@@ -50,6 +52,7 @@ class GraphState(TypedDict):
 
 clarifier = IdeaClarifierAgent()
 market = MarketAnalysisAgent()
+branding = BrandingOrchestratorAgent()
 marketing = MarketingAgent()
 
 
@@ -67,6 +70,7 @@ def _to_pipeline_state(state: GraphState) -> PipelineState:
     )
     ps.clarified_idea = state.get("clarified_idea", {}) or {}
     ps.market_analysis = state.get("market_analysis", {}) or {}
+    ps.brand_identity = state.get("brand_identity", {}) or {}
     ps.marketing_plan = state.get("marketing_plan", {}) or {}
     ps.status = state.get("status", "running")
     ps.errors = state.get("errors", []) or []
@@ -98,6 +102,7 @@ async def run_clarifier(state: GraphState) -> dict[str, Any]:
                 "target_users": result.get("target_users") or ps.target_audience,
                 "problem": result.get("problem") or ps.description,
                 "sector": result.get("sector") or ps.sector,
+                "country": result.get("country") or "Non précisé",
                 "country_code": result.get("country_code") or "TN",
                 "language": result.get("language") or "fr",
                 "score": result.get("score", 0),
@@ -146,7 +151,31 @@ async def run_market_analysis(state: GraphState) -> dict[str, Any]:
 
 
 # ─────────────────────────────────────────
-# NODE 3 — MARKETING
+# NODE 3 — BRANDING
+# ─────────────────────────────────────────
+
+async def run_branding(state: GraphState) -> dict[str, Any]:
+    log_state("INPUT → BRANDING", state)
+
+    if not state.get("clarified_idea"):
+        return {"status": "error", "errors": ["missing clarified idea for branding"]}
+
+    ps = _to_pipeline_state(state)
+
+    try:
+        ps = await branding.run(ps)
+        output = {
+            "status": "branding_done" if ps.status == "branding_done" else ps.status,
+            "brand_identity": ps.brand_identity,
+        }
+        log_state("OUTPUT → BRANDING", output)
+        return output
+    except Exception as e:
+        return {"status": "error", "errors": [str(e)]}
+
+
+# ─────────────────────────────────────────
+# NODE 4 — MARKETING
 # ─────────────────────────────────────────
 
 async def run_marketing(state: GraphState) -> dict[str, Any]:
@@ -186,7 +215,11 @@ def _route_after_clarifier(state: GraphState):
 
 
 def _route_after_market(state: GraphState):
-    return "marketing" if state.get("status") == "market_done" else END
+    return "branding" if state.get("status") == "market_done" else END
+
+
+def _route_after_branding(state: GraphState):
+    return "marketing" if state.get("status") == "branding_done" else END
 
 
 # ─────────────────────────────────────────
@@ -198,6 +231,7 @@ def build_graph():
 
     graph.add_node("idea_clarifier", run_clarifier)
     graph.add_node("market_analysis", run_market_analysis)
+    graph.add_node("branding", run_branding)
     graph.add_node("marketing", run_marketing)
 
     # ENTRY
@@ -214,6 +248,12 @@ def build_graph():
 
     # AFTER MARKET
     graph.add_conditional_edges("market_analysis", _route_after_market, {
+        "branding": "branding",
+        END: END,
+    })
+
+    # AFTER BRANDING
+    graph.add_conditional_edges("branding", _route_after_branding, {
         "marketing": "marketing",
         END: END,
     })

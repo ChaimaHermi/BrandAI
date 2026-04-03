@@ -14,6 +14,7 @@ export default function PipelineLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [hasMarketResult, setHasMarketResult] = useState(false);
   const [hasMarketingResult, setHasMarketingResult] = useState(false);
+  const [hasBrandIdentityResult, setHasBrandIdentityResult] = useState(false);
 
   const activeAgent =
     AGENTS.find((a) => location.pathname.includes("/" + a.id)) || AGENTS[0];
@@ -23,6 +24,10 @@ export default function PipelineLayout() {
   const clarifierDone = idea?.clarity_status === "clarified";
   const marketDone = hasMarketResult || ["market_done", "done"].includes(idea?.status);
   const marketingDone = hasMarketingResult || idea?.status === "done";
+  const brandIdentityDone =
+    hasBrandIdentityResult ||
+    (Array.isArray(idea?.pipeline_progress?.brand_identity?.name_options) &&
+      idea.pipeline_progress.brand_identity.name_options.length > 0);
   const pipelineCompleted = marketDone || marketingDone;
 
   const completedImplemented = [
@@ -44,6 +49,10 @@ export default function PipelineLayout() {
       if (marketingDone) return "done";
       return activeAgent.id === "marketing" ? "active" : "pending";
     }
+    if (agentId === "brand") {
+      if (brandIdentityDone) return "done";
+      return activeAgent.id === "brand" ? "active" : "pending";
+    }
     if (pipelineCompleted) return "pending";
     const idx = AGENTS.findIndex((a) => a.id === agentId);
     if (idx < activeIndex) return "done";
@@ -53,7 +62,8 @@ export default function PipelineLayout() {
 
   const refetchIdea = useCallback(() => {
     if (!id || !token) return;
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL =
+      import.meta.env.VITE_API_URL || "http://localhost:8000/api";
     const authHeaders = { Authorization: "Bearer " + token };
 
     fetch(API_URL + "/ideas/" + id, { headers: authHeaders })
@@ -61,18 +71,21 @@ export default function PipelineLayout() {
         const data = r.ok ? await r.json() : null;
         if (data) setIdea(data);
 
-        const [marketRes, marketingRes] = await Promise.all([
+        const [marketRes, marketingRes, brandRes] = await Promise.all([
           fetch(API_URL + "/market-analysis/" + id + "/latest", { headers: authHeaders }),
           fetch(API_URL + "/marketing-plans/" + id + "/latest", { headers: authHeaders }),
+          fetch(API_URL + "/brand-identity/" + id + "/latest", { headers: authHeaders }),
         ]);
 
         setHasMarketResult(marketRes.ok);
         setHasMarketingResult(marketingRes.ok);
+        setHasBrandIdentityResult(brandRes.ok);
       })
       .catch((e) => {
         console.error(e);
         setHasMarketResult(false);
         setHasMarketingResult(false);
+        setHasBrandIdentityResult(false);
       });
   }, [id, token]);
 
@@ -391,6 +404,7 @@ export default function PipelineLayout() {
                         target_users: idea?.clarity_target_users || idea?.target_audience || "",
                         problem: idea?.clarity_problem || idea?.description || "",
                         sector: idea?.clarity_sector || idea?.sector || "",
+                        country: idea?.clarity_country || "",
                         country_code: idea?.clarity_country_code || "TN",
                         language: idea?.clarity_language || "fr",
                       },

@@ -32,6 +32,7 @@ class PipelineStreamRequest(BaseModel):
     solution_description: Optional[str] = None
     target_users: Optional[str] = None
     problem: Optional[str] = None
+    country: Optional[str] = None
     country_code: Optional[str] = "TN"
     language: Optional[str] = "fr"
 
@@ -52,6 +53,29 @@ async def _persist_market_result(
         "status": "done",
         "result_json": result_json,
         "data_quality_json": result_json.get("data_quality"),
+        "started_at": started_at.isoformat(),
+        "completed_at": completed_at.isoformat(),
+    }
+    headers = {"Authorization": f"Bearer {access_token}"}
+    async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0)) as client:
+        resp = await client.post(url, json=payload, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
+
+
+async def _persist_brand_identity_row(
+    *,
+    idea_id: int,
+    brand_identity: dict,
+    started_at: datetime,
+    completed_at: datetime,
+    access_token: str,
+) -> dict:
+    base = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
+    url = f"{base}/brand-identity/{idea_id}"
+    payload = {
+        "status": "done",
+        "result_json": brand_identity,
         "started_at": started_at.isoformat(),
         "completed_at": completed_at.isoformat(),
     }
@@ -96,6 +120,7 @@ async def _stream_pipeline(body: PipelineStreamRequest):
                 "target_users": body.target_users or body.target_audience or "",
                 "problem": body.problem or body.description,
                 "sector": body.sector or "",
+                "country": (body.country or "").strip() or "Non précisé",
                 "country_code": body.country_code or "TN",
                 "language": body.language or "fr",
             }
@@ -119,6 +144,7 @@ async def _stream_pipeline(body: PipelineStreamRequest):
             "target_audience": body.target_audience or "",
             "clarified_idea": clarified_idea,
             "market_analysis": {},
+            "brand_identity": {},
             "marketing_plan": {},
             "status": "running",
             "errors": [],
@@ -138,6 +164,7 @@ async def _stream_pipeline(body: PipelineStreamRequest):
         status = graph_result.get("status", "error")
         errors = graph_result.get("errors", []) or []
         market_analysis = graph_result.get("market_analysis") or {}
+        brand_identity = graph_result.get("brand_identity") or {}
         marketing_plan = graph_result.get("marketing_plan") or {}
 
         if not market_analysis:
@@ -164,6 +191,20 @@ async def _stream_pipeline(body: PipelineStreamRequest):
             access_token=body.access_token,
         )
 
+        if brand_identity:
+            yield sse_event("step", {
+                "status": "loading",
+                "stage": "persist_brand_identity",
+                "message": "Sauvegarde de l'identité de marque...",
+            })
+            await _persist_brand_identity_row(
+                idea_id=body.idea_id,
+                brand_identity=brand_identity,
+                started_at=started_at,
+                completed_at=completed_at,
+                access_token=body.access_token,
+            )
+
         persisted_marketing = None
         if marketing_plan:
             yield sse_event("step", {
@@ -179,6 +220,7 @@ async def _stream_pipeline(body: PipelineStreamRequest):
 
         yield sse_event("result", {
             "market_analysis": market_analysis,
+            "brand_identity": brand_identity,
             "marketing_plan": marketing_plan,
         })
         elapsed_ms = int((time.time() - t0) * 1000)

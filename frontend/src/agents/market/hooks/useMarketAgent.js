@@ -36,6 +36,8 @@ export function useMarketAgent({ idea, token }) {
       const resolvedProblem =
         clarifiedIdea?.problem || idea.clarity_problem || idea.description || "";
       const resolvedSector = clarifiedIdea?.sector || idea.clarity_sector || idea.sector || "";
+      const resolvedCountry =
+        clarifiedIdea?.country || idea.clarity_country || "";
       const resolvedCountryCode =
         clarifiedIdea?.country_code || idea.clarity_country_code || "TN";
       const resolvedLanguage = clarifiedIdea?.language || idea.clarity_language || "fr";
@@ -50,6 +52,7 @@ export function useMarketAgent({ idea, token }) {
         solution_description: resolvedSolutionDescription,
         target_users: resolvedTargetUsers,
         problem: resolvedProblem,
+        country: resolvedCountry,
         country_code: resolvedCountryCode,
         language: resolvedLanguage,
         access_token: token,

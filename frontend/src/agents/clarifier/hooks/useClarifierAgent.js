@@ -1,9 +1,27 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSSEStream } from "@/agents/shared/hooks/useSSEStream";
 import { saveClarifierResult } from "../api/clarifier.api";
+import { apiGetIdea } from "@/services/ideaApi";
 
 const AI_URL =
   import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
+
+/** Données affichées dans ClarifiedBlock, construites depuis l'idée en base. */
+function mapIdeaToClarifiedBlock(idea) {
+  return {
+    type: "clarified",
+    message: idea.clarity_agent_message || "",
+    sector: idea.clarity_sector || "",
+    target_users: idea.clarity_target_users || "",
+    problem: idea.clarity_problem || "",
+    solution_description: idea.clarity_solution || "",
+    short_pitch: idea.clarity_short_pitch || "",
+    score: idea.clarity_score ?? 0,
+    country: idea.clarity_country || "Non précisé",
+    country_code: idea.clarity_country_code || "",
+    language: idea.clarity_language || "fr",
+  };
+}
 
 export function useClarifierAgent(idea, token, options = {}) {
   const [currentStep, setCurrentStep] = useState("idle"); // idle | analyzing | questions | answering | clarified | refused
@@ -24,7 +42,12 @@ export function useClarifierAgent(idea, token, options = {}) {
   const [refusalData, setRefusalData] = useState(null);
 
   const startedRef = useRef(false);
+  const optionsRef = useRef(options);
   const { readSSEStream } = useSSEStream();
+
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   // Assurer la synchro de la ref quand `setXaiSteps` est modifié depuis l'extérieur.
   useEffect(() => {
@@ -65,6 +88,50 @@ export function useClarifierAgent(idea, token, options = {}) {
     });
   }, []);
 
+  const syncClarifierToServer = useCallback(
+    async (payload, kind, sseExtras = {}) => {
+      const saved = await saveClarifierResult(idea.id, payload, token);
+      if (!saved?.success) {
+        addXaiStep("error", "Échec de la sauvegarde du résultat.");
+        return false;
+      }
+      try {
+        const fresh = await apiGetIdea(idea.id, token);
+        if (kind === "clarified") {
+          setClarifiedIdea(mapIdeaToClarifiedBlock(fresh));
+          setClarityScore(fresh.clarity_score ?? 0);
+          setIsReady(true);
+          setCurrentStep("clarified");
+          optionsRef.current.onClarified?.(fresh);
+        } else if (kind === "questions") {
+          if (sseExtras.detected_sector) {
+            setDetectedSector(sseExtras.detected_sector);
+          }
+          setQuestions(fresh.clarity_questions || []);
+          setAgentMessage(fresh.clarity_agent_message || "");
+          setCurrentStep("questions");
+        } else if (kind === "refused") {
+          setRefusalData({
+            type: "refused",
+            reason_category: fresh.clarity_refused_reason ?? undefined,
+            message: fresh.clarity_refused_message ?? undefined,
+            refusal_message: fresh.clarity_refused_message ?? undefined,
+          });
+          setCurrentStep("refused");
+        }
+        optionsRef.current.onPersisted?.();
+        return true;
+      } catch (err) {
+        addXaiStep(
+          "error",
+          err?.message || "Impossible de recharger l'idée après sauvegarde.",
+        );
+        return false;
+      }
+    },
+    [idea?.id, token, addXaiStep],
+  );
+
   const startAnalysis = useCallback(async () => {
     if (!idea?.description || startedRef.current) return;
     startedRef.current = true;
@@ -96,8 +163,7 @@ export function useClarifierAgent(idea, token, options = {}) {
 
           if (eventType === "result") {
             if (data.type === "refused") {
-              saveClarifierResult(
-                idea.id,
+              void syncClarifierToServer(
                 {
                   clarity_status: "refused",
                   clarity_score: 0,
@@ -105,29 +171,24 @@ export function useClarifierAgent(idea, token, options = {}) {
                   clarity_refused_message:
                     data.message || data.refusal_message || "",
                 },
-                token,
-              ).then(() => options.onPersisted?.());
+                "refused",
+              );
               return;
             }
             if (data.type === "questions") {
-              // Sauvegarder le secteur détecté pour le 2ème appel
-              if (data.detected_sector) {
-                setDetectedSector(data.detected_sector);
-              }
-              saveClarifierResult(
-                idea.id,
+              void syncClarifierToServer(
                 {
                   clarity_status: "questions",
                   clarity_questions: data.questions || [],
                   clarity_agent_message: data.message || "",
                 },
-                token,
-              ).then(() => options.onPersisted?.());
+                "questions",
+                { detected_sector: data.detected_sector },
+              );
               return;
             }
             if (data.type === "clarified") {
-              saveClarifierResult(
-                idea.id,
+              void syncClarifierToServer(
                 {
                   clarity_status: "clarified",
                   clarity_score: data.score || 0,
@@ -137,12 +198,14 @@ export function useClarifierAgent(idea, token, options = {}) {
                   clarity_solution: data.solution_description || "",
                   clarity_short_pitch: data.short_pitch || "",
                   clarity_agent_message: data.message || "",
+                  clarity_country: data.country ?? "",
+                  clarity_country_code: (data.country_code ?? "").toUpperCase(),
+                  clarity_language: data.language ?? "",
                   clarity_questions: [],
                   clarity_answers: {},
                 },
-                token,
-              ).then(() => options.onPersisted?.());
-              options.onClarified?.(data);
+                "clarified",
+              );
             }
           }
 
@@ -161,7 +224,15 @@ export function useClarifierAgent(idea, token, options = {}) {
       );
       setCurrentStep("questions");
     }
-  }, [idea, token, addXaiStep, readSSEStream, currentStep, resolveLoadingSteps]);
+  }, [
+    idea,
+    token,
+    addXaiStep,
+    readSSEStream,
+    currentStep,
+    resolveLoadingSteps,
+    syncClarifierToServer,
+  ]);
 
   const submitAnswers = useCallback(async () => {
     if (!idea || currentStep !== "questions") return;
@@ -225,8 +296,7 @@ export function useClarifierAgent(idea, token, options = {}) {
 
           if (eventType === "result") {
             if (data.type === "refused") {
-              saveClarifierResult(
-                idea.id,
+              void syncClarifierToServer(
                 {
                   clarity_status: "refused",
                   clarity_score: 0,
@@ -234,13 +304,12 @@ export function useClarifierAgent(idea, token, options = {}) {
                   clarity_refused_message:
                     data.message || data.refusal_message || "",
                 },
-                token,
-              ).then(() => options.onPersisted?.());
+                "refused",
+              );
               return;
             }
             if (data.type === "clarified") {
-              saveClarifierResult(
-                idea.id,
+              void syncClarifierToServer(
                 {
                   clarity_status: "clarified",
                   clarity_score: data.score || 0,
@@ -250,6 +319,9 @@ export function useClarifierAgent(idea, token, options = {}) {
                   clarity_solution: data.solution_description || "",
                   clarity_short_pitch: data.short_pitch || "",
                   clarity_agent_message: data.message || "",
+                  clarity_country: data.country ?? "",
+                  clarity_country_code: (data.country_code ?? "").toUpperCase(),
+                  clarity_language: data.language ?? "",
                   clarity_questions: questions || [],
                   clarity_answers: {
                     problem: answers.problem || "",
@@ -258,9 +330,8 @@ export function useClarifierAgent(idea, token, options = {}) {
                     geography: answers.geography || "",
                   },
                 },
-                token,
-              ).then(() => options.onPersisted?.());
-              options.onClarified?.(data);
+                "clarified",
+              );
             }
           }
 
@@ -284,6 +355,7 @@ export function useClarifierAgent(idea, token, options = {}) {
     addXaiStep,
     readSSEStream,
     resolveLoadingSteps,
+    syncClarifierToServer,
   ]);
 
   return {
