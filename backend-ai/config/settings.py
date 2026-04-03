@@ -5,7 +5,7 @@ from pathlib import Path
 # ─────────────────────────────────────────────
 # LOAD .ENV FROM ROOT PROJECT
 # ─────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parents[2]  # remonte à "Brand AI"
+BASE_DIR = Path(__file__).resolve().parents[2]
 ENV_PATH = BASE_DIR / ".env"
 
 load_dotenv(ENV_PATH)
@@ -42,6 +42,28 @@ GROQ_KEYS = clean([
 # ─────────────────────────────────────────────
 if not (OPENROUTER_KEYS or GEMINI_KEYS or GROQ_KEYS):
     raise ValueError("Aucune API key trouvée dans .env")
+
+# ─────────────────────────────────────────────
+# AZURE OPENAI
+# ─────────────────────────────────────────────
+AZURE_OPENAI_ENDPOINT   = os.getenv("AZURE_OPENAI_ENDPOINT", "")
+AZURE_OPENAI_KEY        = os.getenv("AZURE_OPENAI_KEY", "")
+AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2025-01-01-preview")
+
+# ─────────────────────────────────────────────
+# LANGSMITH
+# ─────────────────────────────────────────────
+LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
+
+if LANGCHAIN_API_KEY:
+    os.environ["LANGCHAIN_TRACING_V2"]  = "true"
+    os.environ["LANGCHAIN_ENDPOINT"]    = "https://api.smith.langchain.com"
+    os.environ["LANGCHAIN_API_KEY"]     = LANGCHAIN_API_KEY
+    os.environ["LANGCHAIN_PROJECT"]     = "brand-ai"
+    print("[settings] LangSmith -> enabled")
+else:
+    print("[settings] LangSmith -> disabled (no key)")
 
 # ─────────────────────────────────────────────
 # DEBUG
