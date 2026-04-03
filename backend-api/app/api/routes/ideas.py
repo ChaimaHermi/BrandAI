@@ -12,7 +12,7 @@
 #    Modifier l'idée après pipeline = résultats incohérents
 # ─────────────────────────────────────────
 
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -43,11 +43,19 @@ class ClarifierSaveRequest(BaseModel):
     clarity_solution: Optional[str] = None
     clarity_short_pitch: Optional[str] = None
     clarity_agent_message: Optional[str] = None
+    clarity_country: Optional[str] = None
+    clarity_country_code: Optional[str] = None
+    clarity_language: Optional[str] = None
     clarity_questions: Optional[list] = None
     clarity_answers: Optional[dict] = None
     clarity_refused_reason: Optional[str] = None
     clarity_refused_message: Optional[str] = None
     pipeline_progress: Optional[Any] = None
+
+
+class PipelineProgressMergeRequest(BaseModel):
+    """Fusionne des clés dans `ideas.pipeline_progress` (ex. brand_identity)."""
+    brand_identity: Optional[Dict[str, Any]] = None
 
 
 @router.post(
@@ -161,6 +169,38 @@ def save_clarifier_result(
     for field, value in fields.items():
         if hasattr(idea, field):
             setattr(idea, field, value)
+
+    db.commit()
+    db.refresh(idea)
+    return {"success": True, "idea_id": idea_id}
+
+
+@router.patch(
+    "/{idea_id}/pipeline-progress",
+    status_code=200,
+    summary="Fusionner pipeline_progress (brand_identity, etc.)",
+)
+def merge_pipeline_progress(
+    idea_id: int,
+    body: PipelineProgressMergeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Met à jour le JSON pipeline_progress sans écraser les autres clés existantes.
+    """
+    idea = (
+        db.query(Idea)
+        .filter(Idea.id == idea_id, Idea.user_id == current_user.id)
+        .first()
+    )
+    if not idea:
+        raise HTTPException(status_code=404, detail="Idée introuvable")
+
+    progress = dict(idea.pipeline_progress or {})
+    if body.brand_identity is not None:
+        progress["brand_identity"] = body.brand_identity
+    idea.pipeline_progress = progress
 
     db.commit()
     db.refresh(idea)
