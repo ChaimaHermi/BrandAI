@@ -14,6 +14,7 @@ import httpx
 from fastapi import HTTPException
 
 from agents.base_agent import PipelineState
+from agents.branding.logo_agent import LogoAgent
 from agents.branding.name_agent import NameAgent
 from agents.branding.palette_agent import PaletteAgent
 from agents.branding.slogan_agent import SloganAgent
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class BrandingService:
-    """Délègue vers les agents naming / slogan / palette ; charge le contexte depuis l’API."""
+    """Délègue vers les agents naming / slogan / palette / logo ; charge le contexte depuis l’API."""
 
     @staticmethod
     async def fetch_idea_row(idea_id: int, access_token: str) -> dict:
@@ -106,6 +107,51 @@ class BrandingService:
         if row and row.get("chosen_slogan"):
             return str(row["chosen_slogan"]).strip()
         return ""
+
+    @staticmethod
+    def _palette_row_to_color_hint(row: dict | None) -> str:
+        """Extrait quelques codes hex depuis le résultat palette (backend-api) pour le brief logo."""
+        if not row:
+            return ""
+        swatches: list = []
+        gen = row.get("generated")
+        if isinstance(gen, dict):
+            cp = gen.get("color_palette")
+            if isinstance(cp, dict):
+                swatches = cp.get("swatches") or cp.get("colors") or []
+            if not swatches:
+                opts = gen.get("palette_options")
+                if isinstance(opts, list) and opts and isinstance(opts[0], dict):
+                    swatches = opts[0].get("swatches") or opts[0].get("colors") or []
+            chosen = gen.get("chosen")
+            if isinstance(chosen, dict) and not swatches:
+                swatches = chosen.get("swatches") or chosen.get("colors") or []
+        if not swatches:
+            ch = row.get("chosen")
+            if isinstance(ch, dict):
+                swatches = ch.get("swatches") or ch.get("colors") or []
+        hexes: list[str] = []
+        for s in swatches or []:
+            if isinstance(s, dict):
+                h = s.get("hex") or s.get("color")
+                if h:
+                    hexes.append(str(h).strip())
+        if not hexes:
+            return ""
+        return "Brand colors (hex): " + ", ".join(hexes[:8])
+
+    @classmethod
+    async def resolve_palette_hint_for_logo(
+        cls,
+        idea_id: int,
+        access_token: str,
+        explicit: str | None,
+    ) -> str:
+        hint = (explicit or "").strip()
+        if hint:
+            return hint
+        row = await cls.fetch_branding_step(idea_id, access_token, "palette")
+        return cls._palette_row_to_color_hint(row)
 
     @classmethod
     def _base_state(cls, idea_id: int, row: dict, clarified: dict[str, Any]) -> PipelineState:
@@ -318,6 +364,93 @@ class BrandingService:
                 out["persisted"] = True
             except Exception as e:
                 logger.exception("Échec persistance brand_identity après palette")
+                out["errors"] = list(out["errors"]) + [f"persist: {e}"]
+
+        return out
+
+    @classmethod
+    async def generate_logo(
+        cls,
+        *,
+        idea_id: int,
+        brand_name: str | None,
+        slogan_hint: str | None,
+        palette_color_hint: str | None,
+        access_token: str,
+        persist: bool,
+        persist_image_base64: bool = False,
+    ) -> dict[str, Any]:
+        """LLM → prompt image → OpenRouter FLUX (ou none). Retourne image_base64 si généré."""
+        resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
+        resolved_slogan = await cls.resolve_slogan_hint(idea_id, access_token, slogan_hint)
+        palette_hint = await cls.resolve_palette_hint_for_logo(
+            idea_id, access_token, palette_color_hint
+        )
+        row = await cls.fetch_idea_row(idea_id, access_token.strip())
+        clarified = cls.idea_api_to_clarified(row)
+        st = cls._base_state(idea_id, row, clarified)
+        st.clarified_idea = clarified
+        st.brand_name_chosen = resolved_name
+        st.palette_slogan_hint = resolved_slogan
+        st.logo_palette_hint = palette_hint
+
+        agent = LogoAgent()
+        st = await agent.run(st)
+        bi = st.brand_identity or {}
+        concepts = bi.get("logo_concepts") or []
+
+        out: dict[str, Any] = {
+            "idea_id": idea_id,
+            "status": st.status,
+            "logo_concepts": concepts if isinstance(concepts, list) else [],
+            "branding_status": bi.get("branding_status"),
+            "logo_error": bi.get("logo_error"),
+            "logo_image_error": bi.get("logo_image_error"),
+            "errors": list(st.errors or []),
+            "persisted": False,
+            "resolved_brand_name": resolved_name,
+            "resolved_slogan_hint": resolved_slogan,
+            "resolved_palette_hint": palette_hint,
+        }
+
+        if persist and st.status == "logo_generated" and access_token:
+            try:
+                prev = await fetch_branding_merged_generated(idea_id, access_token)
+                merged: dict[str, Any] = dict(prev) if prev else {}
+                to_save: list = []
+                for c in concepts or []:
+                    if isinstance(c, dict):
+                        if persist_image_base64:
+                            to_save.append(dict(c))
+                        else:
+                            to_save.append({k: v for k, v in c.items() if k != "image_base64"})
+                    else:
+                        to_save.append(c)
+                merged["logo_concepts"] = to_save
+                merged["chosen_brand_name"] = merged.get("chosen_brand_name") or resolved_name
+                ae = dict(merged.get("agent_errors") or {})
+                if bi.get("agent_errors"):
+                    ae.update(bi["agent_errors"])
+                merged["agent_errors"] = ae
+                if merged.get("name_options") or merged.get("slogan_options") or merged.get(
+                    "palette_options"
+                ):
+                    merged["branding_status"] = "partial"
+                else:
+                    merged["branding_status"] = "logo_generated"
+
+                started_at = datetime.now(timezone.utc)
+                completed_at = datetime.now(timezone.utc)
+                await _persist_brand_identity_row(
+                    idea_id=idea_id,
+                    brand_identity=merged,
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    access_token=access_token,
+                )
+                out["persisted"] = True
+            except Exception as e:
+                logger.exception("Échec persistance brand_identity après logo")
                 out["errors"] = list(out["errors"]) + [f"persist: {e}"]
 
         return out

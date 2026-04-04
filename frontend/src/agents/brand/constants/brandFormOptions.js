@@ -74,20 +74,6 @@ export const BRAND_PALETTES = [
   },
 ];
 
-export const LOGO_STYLE_OPTIONS = [
-  "Minimal",
-  "Moderne",
-  "Dynamique",
-  "Premium",
-];
-
-export const LOGO_TYPE_OPTIONS = [
-  "Wordmark",
-  "Lettermark",
-  "Icône + Texte",
-  "Abstrait",
-];
-
 /** Formulaire Slogan — mêmes familles que la maquette fonctionnelle. */
 export const SLOGAN_POSITIONNEMENT_OPTIONS = [
   "Accessible",

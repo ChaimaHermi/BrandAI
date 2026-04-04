@@ -54,6 +54,7 @@ class PipelineState:
         self.slogan_preferences: dict = {}
         self.palette_preferences: dict = {}
         self.palette_slogan_hint = ""
+        self.logo_palette_hint: str = ""
 
     def to_dict(self):
         return {

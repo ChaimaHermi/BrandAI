@@ -4,6 +4,7 @@ import {
   buildLegacyRecordFromBundle,
   fetchBrandingBundle,
   generateBrandNames,
+  generateLogo,
   generatePalettes,
   generateSlogans,
   patchBrandKit,
@@ -104,8 +105,9 @@ export default function BrandPage() {
   const [generatedPaletteOptions, setGeneratedPaletteOptions] = useState([]);
   const [isGeneratingPalettes, setIsGeneratingPalettes] = useState(false);
   const [paletteGenMessage, setPaletteGenMessage] = useState("");
-  const [logoStyle, setLogoStyle] = useState("");
-  const [logoType, setLogoType] = useState("");
+  const [generatedLogoConcepts, setGeneratedLogoConcepts] = useState([]);
+  const [isGeneratingLogo, setIsGeneratingLogo] = useState(false);
+  const [logoGenMessage, setLogoGenMessage] = useState("");
 
   useEffect(() => {
     refetchIdea?.();
@@ -122,6 +124,8 @@ export default function BrandPage() {
     setGeneratedPaletteOptions([]);
     setSelectedPaletteId(null);
     setPaletteGenMessage("");
+    setGeneratedLogoConcepts([]);
+    setLogoGenMessage("");
     setAnimKey((k) => k + 1);
   }, [idea?.id]);
 
@@ -201,6 +205,23 @@ export default function BrandPage() {
       .filter(Boolean);
   }, [generatedSlogans, persistedSloganOpts]);
 
+  const persistedLogoConcepts = Array.isArray(brand?.logo_concepts)
+    ? brand.logo_concepts
+    : [];
+
+  const logoConceptsDisplayed = useMemo(() => {
+    if (generatedLogoConcepts.length > 0) return generatedLogoConcepts;
+    return persistedLogoConcepts;
+  }, [generatedLogoConcepts, persistedLogoConcepts]);
+
+  const logoPreviewUrl = useMemo(() => {
+    const c0 = logoConceptsDisplayed[0];
+    if (c0?.image_base64 && c0?.image_mime) {
+      return `data:${c0.image_mime};base64,${c0.image_base64}`;
+    }
+    return null;
+  }, [logoConceptsDisplayed]);
+
   useEffect(() => {
     if (!idea?.id || !record?.result_json || record.idea_id !== idea.id) {
       return;
@@ -221,6 +242,15 @@ export default function BrandPage() {
     const opts = record.result_json.palette_options;
     if (!Array.isArray(opts) || opts.length === 0) return;
     setGeneratedPaletteOptions((prev) => (prev.length > 0 ? prev : opts));
+  }, [idea?.id, record?.idea_id, record?.result_json]);
+
+  useEffect(() => {
+    if (!idea?.id || !record?.result_json || record.idea_id !== idea.id) {
+      return;
+    }
+    const lc = record.result_json.logo_concepts;
+    if (!Array.isArray(lc) || lc.length === 0) return;
+    setGeneratedLogoConcepts((prev) => (prev.length > 0 ? prev : lc));
   }, [idea?.id, record?.idea_id, record?.result_json]);
 
   const displayBrandName = useMemo(
@@ -409,6 +439,56 @@ export default function BrandPage() {
     }
   }, [idea?.id, token, displayBrandName, effectiveSlogan, refetchBrandRecord]);
 
+  const handleGenerateLogo = useCallback(async () => {
+    if (!idea?.id || !token) return { ok: false };
+    if (!displayBrandName) {
+      setLogoGenMessage("Choisissez d’abord un nom de marque.");
+      return { ok: false };
+    }
+    setIsGeneratingLogo(true);
+    setLogoGenMessage("");
+    try {
+      const result = await generateLogo(idea.id, token, {
+        brand_name: displayBrandName,
+        slogan_hint: effectiveSlogan || null,
+        palette_color_hint: null,
+        persist: true,
+        persist_image_base64: false,
+      });
+      if (result.status !== "logo_generated") {
+        const err =
+          result.logo_error ||
+          result.logo_image_error ||
+          (Array.isArray(result.errors) && result.errors.length
+            ? result.errors.join(" ")
+            : null) ||
+          "La génération du logo n’a pas abouti.";
+        setLogoGenMessage(err);
+        return { ok: false };
+      }
+      const concepts = result.logo_concepts || [];
+      setGeneratedLogoConcepts(concepts);
+      if (result.logo_image_error) {
+        setLogoGenMessage(
+          `Le prompt image a été enregistré, mais la génération d’image a échoué : ${result.logo_image_error}`,
+        );
+      } else {
+        setLogoGenMessage(
+          concepts.length
+            ? "Logo généré. Vous pouvez passer à l’aperçu final."
+            : "Réponse reçue sans image.",
+        );
+      }
+      await refetchBrandRecord();
+      return { ok: true };
+    } catch (e) {
+      setLogoGenMessage(e?.message || "Erreur réseau ou serveur IA.");
+      return { ok: false };
+    } finally {
+      setIsGeneratingLogo(false);
+    }
+  }, [idea?.id, token, displayBrandName, effectiveSlogan, refetchBrandRecord]);
+
   const persistFinalChoices = useCallback(async () => {
     if (!idea?.id || !token) return;
     const chosenAt = new Date().toISOString();
@@ -440,9 +520,7 @@ export default function BrandPage() {
       status: "validated",
     });
     await patchLogoResult(idea.id, token, {
-      style: logoStyle || null,
-      logo_type: logoType || null,
-      chosen: { style: logoStyle, logo_type: logoType },
+      generated: { logo_concepts: logoConceptsDisplayed },
       chosen_at: chosenAt,
       status: "validated",
     });
@@ -463,8 +541,7 @@ export default function BrandPage() {
     displayBrandName,
     paletteListDisplayed,
     selectedPaletteId,
-    logoStyle,
-    logoType,
+    logoConceptsDisplayed,
     refetchBrandRecord,
   ]);
 
@@ -512,8 +589,8 @@ export default function BrandPage() {
     setGeneratedPaletteOptions([]);
     setSelectedPaletteId(null);
     setPaletteGenMessage("");
-    setLogoStyle("");
-    setLogoType("");
+    setGeneratedLogoConcepts([]);
+    setLogoGenMessage("");
     setStyleTon(initialStyleTon());
     setConstraints(initialConstraints());
     setLastMockMessage("");
@@ -586,10 +663,11 @@ export default function BrandPage() {
 
         {step === 4 && (
           <LogoStep
-            logoStyle={logoStyle}
-            logoType={logoType}
-            onLogoStyle={setLogoStyle}
-            onLogoType={setLogoType}
+            canGenerate={canGenerate && Boolean(displayBrandName)}
+            isGeneratingLogo={isGeneratingLogo}
+            onGenerateLogo={handleGenerateLogo}
+            logoGenMessage={logoGenMessage}
+            logoPreviewUrl={logoPreviewUrl}
           />
         )}
 
@@ -599,8 +677,7 @@ export default function BrandPage() {
             sloganText={effectiveSlogan}
             paletteOptions={paletteListDisplayed}
             selectedPaletteId={selectedPaletteId}
-            logoStyle={logoStyle}
-            logoType={logoType}
+            logoPreviewUrl={logoPreviewUrl}
           />
         )}
       </div>
@@ -624,7 +701,7 @@ export default function BrandPage() {
             Identité de marque
           </h1>
           <p className="mx-auto max-w-lg text-[13px] text-[#6b7280]">
-            Parcours en 6 étapes : projet, naming, slogan, palette, direction logo, puis aperçu final de votre kit.
+            Parcours en 6 étapes : projet, naming, slogan, palette, logo généré, puis aperçu final de votre kit.
             {effectiveSlogan || chosenBrandName || names[0] ? (
               <span className="mt-2 block text-[12px] text-[#9ca3af]">
                 Aperçu :{" "}

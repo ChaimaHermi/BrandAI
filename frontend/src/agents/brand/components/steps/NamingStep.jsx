@@ -25,6 +25,13 @@ export default function NamingStep({
 }) {
   const pipelineBadge = record?.status;
 
+  const allNotExists =
+    names.length > 0 &&
+    names.every((n) => n?.availability === "not_exists");
+  const someOtherAvailability = names.some(
+    (n) => n?.availability != null && n.availability !== "not_exists",
+  );
+
   return (
     <div className="bi-fade-up">
       <SectionHeader
@@ -108,6 +115,27 @@ export default function NamingStep({
               )}
             </div>
 
+            {names.length > 0 && allNotExists && (
+              <div className="mb-4 overflow-hidden rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50/90 via-white to-indigo-50/60 px-4 py-3.5 shadow-sm">
+                <p className="text-[13px] font-semibold leading-snug text-emerald-900">
+                  ✨ Des pistes uniques sur le marché
+                </p>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-[#374151]">
+                  Ces noms ne correspondent pas à des marques déjà référencées dans notre
+                  analyse de marché — vous partez sur des bases plus distinctives pour votre
+                  identité.
+                </p>
+              </div>
+            )}
+
+            {names.length > 0 && someOtherAvailability && !allNotExists && (
+              <div className="mb-4 rounded-xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-[12px] leading-relaxed text-amber-950">
+                <span className="font-semibold">À croiser : </span>
+                certaines propositions peuvent être proches d’une marque existante — les
+                cartes concernées sont indiquées ci-dessous.
+              </div>
+            )}
+
             <div className="grid gap-3 sm:grid-cols-2">
               {names.map((opt, i) => {
                 const n = opt?.name ?? "—";
@@ -137,11 +165,14 @@ export default function NamingStep({
                         </span>
                       )}
                     </div>
-                    {opt?.availability != null && (
-                      <div className="mt-1 text-[11px] font-medium text-[#6366f1]">
-                        Brandfetch · {String(opt.availability)}
-                      </div>
-                    )}
+                    {opt?.availability != null &&
+                      opt.availability !== "not_exists" && (
+                        <div className="mt-1 text-[11px] font-medium text-amber-800">
+                          {opt.availability === "exists"
+                            ? "Proximité possible avec une marque référencée — à vérifier"
+                            : `Statut marché : ${String(opt.availability)}`}
+                        </div>
+                      )}
                     {(opt?.rationale || opt?.description) && (
                       <p className="mt-2 text-[12px] leading-relaxed text-[#4b5563]">
                         {opt.rationale || opt.description}

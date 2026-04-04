@@ -1,62 +1,54 @@
 import SectionHeader from "../SectionHeader";
-import {
-  LOGO_STYLE_OPTIONS,
-  LOGO_TYPE_OPTIONS,
-} from "../../constants/brandFormOptions";
 
-export default function LogoStep({ logoStyle, logoType, onLogoStyle, onLogoType }) {
+export default function LogoStep({
+  canGenerate,
+  isGeneratingLogo,
+  onGenerateLogo,
+  logoGenMessage,
+  logoPreviewUrl,
+}) {
   return (
     <div className="bi-fade-up">
       <SectionHeader
         step={5}
-        title="Direction logo"
-        sub="Style et format pour guider la création ou la génération du logo."
+        title="Logo"
+        sub="Générez une proposition de logo à partir de votre nom, slogan et palette (IA + image)."
       />
 
-      <p className="bi-lbl">Style</p>
-      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        {LOGO_STYLE_OPTIONS.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => onLogoStyle(s)}
-            className={`bi-name-card bi-card py-3.5 text-center ${
-              logoStyle === s
-                ? "border-[#6366f1] bg-[#eef2ff]"
-                : "border-[#e5e7eb]"
-            }`}
-          >
-            <span
-              className={`text-[13px] font-semibold ${
-                logoStyle === s ? "text-[#4f46e5]" : "text-[#374151]"
-              }`}
-            >
-              {s}
-            </span>
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-col items-center gap-6 py-2">
+        <button
+          type="button"
+          className="bi-btn-primary min-w-[220px] px-8 py-3 text-[15px] font-semibold"
+          onClick={() => onGenerateLogo?.()}
+          disabled={!canGenerate || isGeneratingLogo}
+        >
+          {isGeneratingLogo ? "Génération en cours…" : "Générer le logo"}
+        </button>
 
-      <p className="bi-lbl">Format</p>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        {LOGO_TYPE_OPTIONS.map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => onLogoType(t)}
-            className={`bi-name-card bi-card py-3.5 text-center ${
-              logoType === t ? "border-[#6366f1] bg-[#eef2ff]" : "border-[#e5e7eb]"
+        {logoGenMessage ? (
+          <p
+            className={`max-w-md text-center text-[13px] ${
+              logoGenMessage.includes("échou") || logoGenMessage.includes("Erreur")
+                ? "text-red-600"
+                : "text-[#6b7280]"
             }`}
           >
-            <span
-              className={`text-[13px] font-semibold ${
-                logoType === t ? "text-[#4f46e5]" : "text-[#374151]"
-              }`}
-            >
-              {t}
-            </span>
-          </button>
-        ))}
+            {logoGenMessage}
+          </p>
+        ) : null}
+
+        {logoPreviewUrl ? (
+          <div className="w-full max-w-sm rounded-2xl border border-[#e5e7eb] bg-[#fafafa] p-4 shadow-sm">
+            <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9ca3af]">
+              Aperçu
+            </p>
+            <img
+              src={logoPreviewUrl}
+              alt="Logo généré"
+              className="mx-auto max-h-56 w-auto rounded-lg object-contain"
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );
