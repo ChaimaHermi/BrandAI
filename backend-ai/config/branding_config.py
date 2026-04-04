@@ -19,7 +19,10 @@ NAME_AGENT_RECURSION_LIMIT = 55
 NAME_AGENT_VERBOSE_REACT = True
 
 # Short-term memory for already existing names (Brandfetch = exists)
+# Dossier mémoire courte (JSON legacy + base SQLite).
 NAME_SHORT_TERM_MEMORY_DIR = "data/memory/short_term"
+# Stockage SQLite (même contenu JSON qu’avant : {"idea_id", "exists_names"}).
+NAME_SHORT_TERM_SQLITE_PATH = "data/memory/short_term/naming_short_term.db"
 NAME_EXISTS_MEMORY_MAX = 20
 
 # SloganAgent : nombre de slogans à proposer

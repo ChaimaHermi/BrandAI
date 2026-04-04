@@ -18,6 +18,9 @@ from app.core.database import Base
 import app.models.user  # noqa
 import app.models.idea  # noqa
 import app.models.market_analysis  # noqa
+import app.models.marketing_plan  # noqa
+import app.models.brand_identity  # noqa
+import app.models.branding_results  # noqa
 
 config = context.config
 

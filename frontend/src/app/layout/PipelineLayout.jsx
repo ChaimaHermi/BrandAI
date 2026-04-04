@@ -74,7 +74,7 @@ export default function PipelineLayout() {
         const [marketRes, marketingRes, brandRes] = await Promise.all([
           fetch(API_URL + "/market-analysis/" + id + "/latest", { headers: authHeaders }),
           fetch(API_URL + "/marketing-plans/" + id + "/latest", { headers: authHeaders }),
-          fetch(API_URL + "/brand-identity/" + id + "/latest", { headers: authHeaders }),
+          fetch(API_URL + "/branding/ideas/" + id + "/naming", { headers: authHeaders }),
         ]);
 
         setHasMarketResult(marketRes.ok);

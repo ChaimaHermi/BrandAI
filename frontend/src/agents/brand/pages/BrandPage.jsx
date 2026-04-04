@@ -1,22 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
+  buildLegacyRecordFromBundle,
+  fetchBrandingBundle,
   generateBrandNames,
   generatePalettes,
   generateSlogans,
-  getLatestBrandIdentity,
+  patchBrandKit,
+  patchLogoResult,
+  patchNamingResult,
+  patchPaletteResult,
+  patchSloganResult,
 } from "../api/brandIdentity.api";
 import AboutProjectCard from "../components/AboutProjectCard";
 import SectionHeader from "../components/SectionHeader";
 import BrandStepper from "../components/BrandStepper";
+import FinalBrandPreview from "../components/FinalBrandPreview";
 import NamingStep from "../components/steps/NamingStep";
 import SloganStep from "../components/steps/SloganStep";
 import PaletteStep from "../components/steps/PaletteStep";
 import LogoStep from "../components/steps/LogoStep";
 import "../styles/brandStudio.css";
 
-/** Labels stepper — alignés produit : projet → naming → slogan → couleurs → logo */
-const STEPS = ["Projet", "Naming", "Slogan", "Couleurs", "Logo"];
+/** Labels stepper — projet → naming → slogan → couleurs → logo → aperçu final */
+const STEPS = ["Projet", "Naming", "Slogan", "Couleurs", "Logo", "Aperçu"];
 
 const initialStyleTon = () => ({
   brandValues: [],
@@ -78,6 +85,7 @@ export default function BrandPage() {
   const { idea, token, refetchIdea } = useOutletContext();
   const [record, setRecord] = useState(null);
   const [loadError, setLoadError] = useState("");
+  const [savingFinal, setSavingFinal] = useState(false);
   const [styleTon, setStyleTon] = useState(initialStyleTon);
   const [constraints, setConstraints] = useState(initialConstraints);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -124,8 +132,14 @@ export default function BrandPage() {
     }
     setLoadError("");
     try {
-      const data = await getLatestBrandIdentity(idea.id, token);
-      setRecord(data);
+      const b = await fetchBrandingBundle(idea.id, token);
+      setRecord(buildLegacyRecordFromBundle(idea.id, b));
+      if (b?.naming?.chosen_name) {
+        setChosenBrandName(b.naming.chosen_name);
+      }
+      if (b?.slogan?.chosen_slogan) {
+        setSelectedSlogan(b.slogan.chosen_slogan);
+      }
     } catch (e) {
       setLoadError(e?.message || "Chargement impossible");
     }
@@ -140,8 +154,15 @@ export default function BrandPage() {
       }
       setLoadError("");
       try {
-        const data = await getLatestBrandIdentity(idea.id, token);
-        if (!cancelled) setRecord(data);
+        const b = await fetchBrandingBundle(idea.id, token);
+        if (cancelled) return;
+        setRecord(buildLegacyRecordFromBundle(idea.id, b));
+        if (b?.naming?.chosen_name) {
+          setChosenBrandName(b.naming.chosen_name);
+        }
+        if (b?.slogan?.chosen_slogan) {
+          setSelectedSlogan(b.slogan.chosen_slogan);
+        }
       } catch (e) {
         if (!cancelled) setLoadError(e?.message || "Chargement impossible");
       }
@@ -149,7 +170,7 @@ export default function BrandPage() {
     return () => {
       cancelled = true;
     };
-  }, [idea?.id, token]); // refetch initial; après génération → refetchBrandRecord()
+  }, [idea?.id, token]);
 
   const brand = useMemo(() => record?.result_json || null, [record]);
   const names = Array.isArray(brand?.name_options) ? brand.name_options : [];
@@ -181,11 +202,7 @@ export default function BrandPage() {
   }, [generatedSlogans, persistedSloganOpts]);
 
   useEffect(() => {
-    if (
-      !idea?.id ||
-      !record?.result_json ||
-      record.idea_id !== idea.id
-    ) {
+    if (!idea?.id || !record?.result_json || record.idea_id !== idea.id) {
       return;
     }
     const opts = record.result_json.slogan_options;
@@ -198,11 +215,7 @@ export default function BrandPage() {
   }, [idea?.id, record?.idea_id, record?.result_json]);
 
   useEffect(() => {
-    if (
-      !idea?.id ||
-      !record?.result_json ||
-      record.idea_id !== idea.id
-    ) {
+    if (!idea?.id || !record?.result_json || record.idea_id !== idea.id) {
       return;
     }
     const opts = record.result_json.palette_options;
@@ -396,16 +409,88 @@ export default function BrandPage() {
     }
   }, [idea?.id, token, displayBrandName, effectiveSlogan, refetchBrandRecord]);
 
+  const persistFinalChoices = useCallback(async () => {
+    if (!idea?.id || !token) return;
+    const chosenAt = new Date().toISOString();
+    const palettes = paletteListDisplayed;
+    let pIdx = 0;
+    if (selectedPaletteId && String(selectedPaletteId).startsWith("p-")) {
+      pIdx = parseInt(String(selectedPaletteId).slice(2), 10);
+    }
+    const chosenPalette = palettes[pIdx] ?? null;
+    const namePick =
+      chosenBrandName ||
+      (names[0] && (typeof names[0].name === "string" ? names[0].name : null)) ||
+      null;
+
+    await patchNamingResult(idea.id, token, {
+      chosen_name: namePick,
+      chosen_at: chosenAt,
+      status: "validated",
+    });
+    await patchSloganResult(idea.id, token, {
+      chosen_slogan: effectiveSlogan || null,
+      based_on_name: displayBrandName,
+      chosen_at: chosenAt,
+      status: "validated",
+    });
+    await patchPaletteResult(idea.id, token, {
+      chosen: chosenPalette,
+      chosen_at: chosenAt,
+      status: "validated",
+    });
+    await patchLogoResult(idea.id, token, {
+      style: logoStyle || null,
+      logo_type: logoType || null,
+      chosen: { style: logoStyle, logo_type: logoType },
+      chosen_at: chosenAt,
+      status: "validated",
+    });
+    const b = await fetchBrandingBundle(idea.id, token);
+    await patchBrandKit(idea.id, token, {
+      naming_id: b.naming?.id ?? null,
+      slogan_id: b.slogan?.id ?? null,
+      palette_id: b.palette?.id ?? null,
+      logo_id: b.logo?.id ?? null,
+    });
+    await refetchBrandRecord();
+  }, [
+    idea?.id,
+    token,
+    chosenBrandName,
+    names,
+    effectiveSlogan,
+    displayBrandName,
+    paletteListDisplayed,
+    selectedPaletteId,
+    logoStyle,
+    logoType,
+    refetchBrandRecord,
+  ]);
+
   const canAdvance = useMemo(() => {
     if (step === 0) return Boolean(idea?.id);
     if (step === 1) return Boolean(chosenBrandName && idea?.id);
     if (step === 2) return true;
     if (step === 3) return Boolean(selectedPaletteId && hasPaletteResults);
-    return true;
+    if (step === 4) return true;
+    return false;
   }, [step, idea?.id, chosenBrandName, selectedPaletteId, hasPaletteResults]);
 
-  function advance() {
-    if (!canAdvance) return;
+  async function advance() {
+    if (!canAdvance || savingFinal) return;
+    if (step === 4) {
+      try {
+        setSavingFinal(true);
+        setLoadError("");
+        await persistFinalChoices();
+      } catch (e) {
+        setLoadError(e?.message || "Impossible d'enregistrer votre kit.");
+        setSavingFinal(false);
+        return;
+      }
+      setSavingFinal(false);
+    }
     setAnimKey((k) => k + 1);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
@@ -507,6 +592,17 @@ export default function BrandPage() {
             onLogoType={setLogoType}
           />
         )}
+
+        {step === 5 && (
+          <FinalBrandPreview
+            brandName={displayBrandName}
+            sloganText={effectiveSlogan}
+            paletteOptions={paletteListDisplayed}
+            selectedPaletteId={selectedPaletteId}
+            logoStyle={logoStyle}
+            logoType={logoType}
+          />
+        )}
       </div>
     );
   }
@@ -528,7 +624,7 @@ export default function BrandPage() {
             Identité de marque
           </h1>
           <p className="mx-auto max-w-lg text-[13px] text-[#6b7280]">
-            Parcours en 5 étapes : contexte projet, naming (formulaire + génération + résultats), slogan, palette, direction logo.
+            Parcours en 6 étapes : projet, naming, slogan, palette, direction logo, puis aperçu final de votre kit.
             {effectiveSlogan || chosenBrandName || names[0] ? (
               <span className="mt-2 block text-[12px] text-[#9ca3af]">
                 Aperçu :{" "}
@@ -588,10 +684,10 @@ export default function BrandPage() {
             <button
               type="button"
               className="bi-btn-primary"
-              onClick={advance}
-              disabled={!canAdvance}
+              onClick={() => advance()}
+              disabled={!canAdvance || savingFinal}
             >
-              Continuer →
+              {step === 4 ? "Enregistrer et voir l'aperçu →" : "Continuer →"}
             </button>
           ) : (
             <button

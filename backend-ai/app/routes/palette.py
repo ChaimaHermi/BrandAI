@@ -1,25 +1,15 @@
 """
-Génération de palettes de couleurs : idée clarifiée + nom de marque + préférences.
-Fusionne avec le dernier brand_identity si présent.
+Génération de palettes : idée + nom (body ou base) + indice slogan (body ou base).
 """
 
 from __future__ import annotations
 
-import logging
-import os
-from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
-import httpx
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from agents.base_agent import PipelineState
-from agents.branding.palette_agent import PaletteAgent
-from app.routes.naming import _fetch_idea_row, _idea_api_to_clarified
-from app.routes.pipeline import _persist_brand_identity_row
-
-logger = logging.getLogger(__name__)
+from app.services.branding_service import BrandingService
 
 router = APIRouter(tags=["Palette"])
 
@@ -34,9 +24,15 @@ class PalettePreferencesIn(BaseModel):
 
 class PaletteGenerateRequest(BaseModel):
     idea_id: int
-    brand_name: str = Field(..., min_length=1)
+    brand_name: Optional[str] = Field(
+        None,
+        description="Si omis, utilise chosen_name naming (backend-api).",
+    )
     preferences: PalettePreferencesIn = Field(default_factory=PalettePreferencesIn)
-    slogan_hint: str = ""
+    slogan_hint: Optional[str] = Field(
+        None,
+        description="Si omis, utilise chosen_slogan (backend-api) si présent.",
+    )
     access_token: str
     persist: bool = True
 
@@ -50,6 +46,8 @@ class PaletteGenerateResponse(BaseModel):
     palette_error: str | None = None
     errors: list[str] = Field(default_factory=list)
     persisted: bool = False
+    resolved_brand_name: str | None = None
+    resolved_slogan_hint: str | None = None
 
 
 def _prefs_dict(p: PalettePreferencesIn) -> dict[str, Any]:
@@ -62,91 +60,14 @@ def _prefs_dict(p: PalettePreferencesIn) -> dict[str, Any]:
     }
 
 
-async def _fetch_latest_brand_result_json(
-    idea_id: int,
-    access_token: str,
-) -> dict[str, Any] | None:
-    base = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
-    url = f"{base}/brand-identity/{idea_id}/latest"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
-        resp = await client.get(url, headers=headers)
-        if resp.status_code == 404:
-            return None
-        if not resp.is_success:
-            logger.warning("brand-identity latest %s: %s", resp.status_code, resp.text[:200])
-            return None
-        row = resp.json()
-        rj = row.get("result_json")
-        return rj if isinstance(rj, dict) else None
-
-
 @router.post("/palette/generate", response_model=PaletteGenerateResponse)
 async def palette_generate(body: PaletteGenerateRequest) -> PaletteGenerateResponse:
-    row = await _fetch_idea_row(body.idea_id, body.access_token.strip())
-    clarified = _idea_api_to_clarified(row)
-
-    st = PipelineState(
+    data = await BrandingService.generate_palette(
         idea_id=body.idea_id,
-        name=clarified.get("idea_name") or row.get("name") or "",
-        sector=clarified.get("sector") or "",
-        description=(row.get("description") or "").strip(),
-        target_audience=clarified.get("target_users") or "",
+        brand_name=body.brand_name,
+        palette_preferences=_prefs_dict(body.preferences),
+        slogan_hint=body.slogan_hint,
+        access_token=body.access_token,
+        persist=body.persist,
     )
-    st.clarified_idea = clarified
-    st.brand_name_chosen = body.brand_name.strip()
-    st.palette_preferences = _prefs_dict(body.preferences)
-    st.palette_slogan_hint = (body.slogan_hint or "").strip()
-
-    agent = PaletteAgent()
-    st = await agent.run(st)
-    bi = st.brand_identity or {}
-    palettes = bi.get("palette_options") or []
-    color_palette = bi.get("color_palette") if isinstance(bi.get("color_palette"), dict) else {}
-
-    out = PaletteGenerateResponse(
-        idea_id=body.idea_id,
-        status=st.status,
-        palette_options=palettes if isinstance(palettes, list) else [],
-        color_palette=color_palette,
-        branding_status=bi.get("branding_status"),
-        palette_error=bi.get("palette_error"),
-        errors=list(st.errors or []),
-    )
-
-    if (
-        body.persist
-        and out.palette_options
-        and st.status == "palette_generated"
-        and body.access_token
-    ):
-        try:
-            prev = await _fetch_latest_brand_result_json(body.idea_id, body.access_token)
-            merged: dict[str, Any] = dict(prev) if prev else {}
-            merged["palette_options"] = out.palette_options
-            merged["color_palette"] = out.color_palette
-            merged["chosen_brand_name"] = merged.get("chosen_brand_name") or body.brand_name.strip()
-            ae = dict(merged.get("agent_errors") or {})
-            if bi.get("agent_errors"):
-                ae.update(bi["agent_errors"])
-            merged["agent_errors"] = ae
-            if merged.get("name_options") or merged.get("slogan_options"):
-                merged["branding_status"] = "partial"
-            else:
-                merged["branding_status"] = "palette_generated"
-
-            started_at = datetime.now(timezone.utc)
-            completed_at = datetime.now(timezone.utc)
-            await _persist_brand_identity_row(
-                idea_id=body.idea_id,
-                brand_identity=merged,
-                started_at=started_at,
-                completed_at=completed_at,
-                access_token=body.access_token,
-            )
-            out.persisted = True
-        except Exception as e:
-            logger.exception("Échec persistance brand_identity après palette")
-            out.errors = list(out.errors) + [f"persist: {e}"]
-
-    return out
+    return PaletteGenerateResponse(**data)

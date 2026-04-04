@@ -2,13 +2,15 @@ import os
 import re
 import json
 import asyncio
-from pathlib import Path
 import httpx
 from langchain.tools import tool
 from langsmith import traceable
 
-from config.branding_config import NAME_EXISTS_MEMORY_MAX, NAME_SHORT_TERM_MEMORY_DIR
 from prompts.branding.name_prompt import build_name_user_prompt
+from tools.branding.naming_short_term_store import (
+    append_exists_memory as _append_exists_memory,
+    load_exists_memory as _load_exists_memory,
+)
 
 BRANDFETCH_API_KEY = os.getenv("BRANDFETCH_API_KEY")
 
@@ -18,65 +20,6 @@ BRANDFETCH_API_KEY = os.getenv("BRANDFETCH_API_KEY")
 # ─────────────────────────────────────────
 def _normalize_name(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", (name or "").strip().lower())
-
-
-def _resolve_memory_file(idea_id: int | str | None) -> Path | None:
-    if idea_id in (None, ""):
-        return None
-    root = Path(__file__).resolve().parents[2]  # backend-ai/
-    memory_dir = root / NAME_SHORT_TERM_MEMORY_DIR
-    memory_dir.mkdir(parents=True, exist_ok=True)
-    return memory_dir / f"idea_{idea_id}_exists_names.json"
-
-
-def _load_exists_memory(idea_id: int | str | None) -> list[str]:
-    path = _resolve_memory_file(idea_id)
-    if path is None or not path.exists():
-        return []
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        names = data.get("exists_names", []) if isinstance(data, dict) else []
-        if not isinstance(names, list):
-            return []
-        out: list[str] = []
-        seen: set[str] = set()
-        for n in names:
-            norm = _normalize_name(str(n))
-            if not norm or norm in seen:
-                continue
-            seen.add(norm)
-            out.append(norm)
-        return out[-NAME_EXISTS_MEMORY_MAX:]
-    except Exception:
-        return []
-
-
-def _save_exists_memory(idea_id: int | str | None, exists_names: list[str]) -> None:
-    path = _resolve_memory_file(idea_id)
-    if path is None:
-        return
-    deduped: list[str] = []
-    seen: set[str] = set()
-    for n in exists_names:
-        norm = _normalize_name(n)
-        if not norm or norm in seen:
-            continue
-        seen.add(norm)
-        deduped.append(norm)
-    deduped = deduped[-NAME_EXISTS_MEMORY_MAX:]
-    payload = {
-        "idea_id": idea_id,
-        "exists_names": deduped,
-    }
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def _append_exists_memory(idea_id: int | str | None, names: list[str]) -> None:
-    if not names:
-        return
-    current = _load_exists_memory(idea_id)
-    merged = current + [str(n) for n in names]
-    _save_exists_memory(idea_id, merged)
 
 
 # ─────────────────────────────────────────

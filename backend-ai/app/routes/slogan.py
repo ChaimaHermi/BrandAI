@@ -1,25 +1,15 @@
 """
-Génération de slogans : contexte projet (API idée) + nom choisi + préférences one-shot.
-Fusionne avec le dernier brand_identity si présent (ex. name_options du naming).
+Génération de slogans : contexte projet + nom (body ou chosen_name en base) + préférences.
 """
 
 from __future__ import annotations
 
-import logging
-import os
-from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
-import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from agents.base_agent import PipelineState
-from agents.branding.slogan_agent import SloganAgent
-from app.routes.naming import _fetch_idea_row, _idea_api_to_clarified
-from app.routes.pipeline import _persist_brand_identity_row
-
-logger = logging.getLogger(__name__)
+from app.services.branding_service import BrandingService
 
 router = APIRouter(tags=["Slogan"])
 
@@ -38,7 +28,10 @@ class SloganPreferencesIn(BaseModel):
 
 class SloganGenerateRequest(BaseModel):
     idea_id: int
-    brand_name: str = Field(..., min_length=1)
+    brand_name: Optional[str] = Field(
+        None,
+        description="Si omis, utilise chosen_name de l’étape naming (backend-api).",
+    )
     preferences: SloganPreferencesIn = Field(default_factory=SloganPreferencesIn)
     access_token: str
     persist: bool = True
@@ -52,6 +45,7 @@ class SloganGenerateResponse(BaseModel):
     slogan_error: str | None = None
     errors: list[str] = Field(default_factory=list)
     persisted: bool = False
+    resolved_brand_name: str | None = None
 
 
 def _prefs_dict(p: SloganPreferencesIn) -> dict[str, Any]:
@@ -68,87 +62,13 @@ def _prefs_dict(p: SloganPreferencesIn) -> dict[str, Any]:
     }
 
 
-async def _fetch_latest_brand_result_json(
-    idea_id: int,
-    access_token: str,
-) -> dict[str, Any] | None:
-    base = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
-    url = f"{base}/brand-identity/{idea_id}/latest"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
-        resp = await client.get(url, headers=headers)
-        if resp.status_code == 404:
-            return None
-        if not resp.is_success:
-            logger.warning("brand-identity latest %s: %s", resp.status_code, resp.text[:200])
-            return None
-        row = resp.json()
-        rj = row.get("result_json")
-        return rj if isinstance(rj, dict) else None
-
-
 @router.post("/slogan/generate", response_model=SloganGenerateResponse)
 async def slogan_generate(body: SloganGenerateRequest) -> SloganGenerateResponse:
-    row = await _fetch_idea_row(body.idea_id, body.access_token.strip())
-    clarified = _idea_api_to_clarified(row)
-
-    st = PipelineState(
+    data = await BrandingService.generate_slogan(
         idea_id=body.idea_id,
-        name=clarified.get("idea_name") or row.get("name") or "",
-        sector=clarified.get("sector") or "",
-        description=(row.get("description") or "").strip(),
-        target_audience=clarified.get("target_users") or "",
+        brand_name=body.brand_name,
+        slogan_preferences=_prefs_dict(body.preferences),
+        access_token=body.access_token,
+        persist=body.persist,
     )
-    st.clarified_idea = clarified
-    st.brand_name_chosen = body.brand_name.strip()
-    st.slogan_preferences = _prefs_dict(body.preferences)
-
-    agent = SloganAgent()
-    st = await agent.run(st)
-    bi = st.brand_identity or {}
-    slogans = bi.get("slogan_options") or []
-
-    out = SloganGenerateResponse(
-        idea_id=body.idea_id,
-        status=st.status,
-        slogan_options=slogans if isinstance(slogans, list) else [],
-        branding_status=bi.get("branding_status"),
-        slogan_error=bi.get("slogan_error"),
-        errors=list(st.errors or []),
-    )
-
-    if (
-        body.persist
-        and out.slogan_options
-        and st.status == "slogan_generated"
-        and body.access_token
-    ):
-        try:
-            prev = await _fetch_latest_brand_result_json(body.idea_id, body.access_token)
-            merged: dict[str, Any] = dict(prev) if prev else {}
-            merged["slogan_options"] = out.slogan_options
-            merged["chosen_brand_name"] = body.brand_name.strip()
-            if merged.get("name_options"):
-                merged["branding_status"] = "partial"
-            else:
-                merged["branding_status"] = "slogan_generated"
-            ae = dict(merged.get("agent_errors") or {})
-            if bi.get("agent_errors"):
-                ae.update(bi["agent_errors"])
-            merged["agent_errors"] = ae
-
-            started_at = datetime.now(timezone.utc)
-            completed_at = datetime.now(timezone.utc)
-            await _persist_brand_identity_row(
-                idea_id=body.idea_id,
-                brand_identity=merged,
-                started_at=started_at,
-                completed_at=completed_at,
-                access_token=body.access_token,
-            )
-            out.persisted = True
-        except Exception as e:
-            logger.exception("Échec persistance brand_identity après slogan")
-            out.errors = list(out.errors) + [f"persist: {e}"]
-
-    return out
+    return SloganGenerateResponse(**data)
