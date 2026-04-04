@@ -49,6 +49,12 @@ class PipelineState:
 
         self.started_at = time.time()
 
+        # Branding (optionnel, renseigné par les routes / orchestrateur)
+        self.brand_name_chosen = ""
+        self.slogan_preferences: dict = {}
+        self.palette_preferences: dict = {}
+        self.palette_slogan_hint = ""
+
     def to_dict(self):
         return {
             "idea_id": self.idea_id,

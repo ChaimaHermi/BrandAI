@@ -74,7 +74,9 @@ export default function SourcesTab({ report }) {
   const macro = report?.marketVoc?.macro || {};
   const formatInt = (value) =>
     value != null
-      ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value)
+      ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(
+          value,
+        )
       : "-";
   const formatPercent = (value) =>
     value != null
@@ -86,7 +88,9 @@ export default function SourcesTab({ report }) {
       : "-";
   const formatNumber = (value) =>
     value != null
-      ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(value)
+      ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(
+          value,
+        )
       : "-";
   const macroRows = [
     { label: "Population", value: formatInt(macro.population) },
@@ -103,20 +107,29 @@ export default function SourcesTab({ report }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="border-r border-[#ebe8ff] pr-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#a09bc6]">Score qualité</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#a09bc6]">
+                Score qualité
+              </p>
               <p className="mt-1 text-[15px] font-medium leading-none text-[#4f45c8]">
                 {dq?.score_global ?? "-"}
               </p>
             </div>
             <p className="max-w-[560px] text-[13px] font-normal leading-[1.6] text-[#5f5a84]">
-              Toutes les sections clés couvertes par données API vérifiables. Personas et
-              faiblesses concurrentes inférées par LLM depuis données brutes.
+              Toutes les sections clés couvertes par données API vérifiables.
+              Personas et faiblesses concurrentes inférées par LLM depuis
+              données brutes.
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5 text-[11px] font-medium">
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">API vérifiable</span>
-            <span className="rounded-full bg-violet-50 px-2 py-0.5 text-violet-700">Inféré LLM</span>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">Désactivé</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
+              API vérifiable
+            </span>
+            <span className="rounded-full bg-violet-50 px-2 py-0.5 text-violet-700">
+              Inféré LLM
+            </span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
+              Désactivé
+            </span>
           </div>
         </div>
       </div>
@@ -131,7 +144,10 @@ export default function SourcesTab({ report }) {
             const meta = SOURCE_META[src] || null;
             const Icon = meta?.icon || HiGlobeAlt;
             return (
-              <div key={src} className="rounded-xl border border-[#e8e4ff] bg-white p-3 shadow-sm">
+              <div
+                key={src}
+                className="rounded-xl border border-[#e8e4ff] bg-white p-3 shadow-sm"
+              >
                 <div className="flex gap-3">
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f2f0ff]">
                     <Icon className="h-4 w-4 text-[#5e56ad]" />
@@ -141,13 +157,16 @@ export default function SourcesTab({ report }) {
                       {prettySourceName(src)}
                     </p>
                     <p className="mt-0.5 text-[12px] font-normal text-[#5f5a84]">
-                      {meta?.description || "Source de données utilisée dans cette analyse."}
+                      {meta?.description ||
+                        "Source de données utilisée dans cette analyse."}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                       <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">
                         API directe
                       </span>
-                      <span className="text-[#9a96bf]">{meta?.details || src}</span>
+                      <span className="text-[#9a96bf]">
+                        {meta?.details || src}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -164,18 +183,29 @@ export default function SourcesTab({ report }) {
         </p>
         <div className="grid gap-2 md:grid-cols-3">
           {Object.entries(sections).map(([sectionName, sectionData]) => (
-            <div key={sectionName} className="rounded-xl border border-[#e8e4ff] bg-white p-3 shadow-sm">
+            <div
+              key={sectionName}
+              className="rounded-xl border border-[#e8e4ff] bg-white p-3 shadow-sm"
+            >
               <p className="mb-2 text-[13px] font-medium leading-tight text-[#2f285c]">
                 {sectionName}
               </p>
               <div className="space-y-1.5">
                 {Object.entries(sectionData || {}).map(([k, v]) => (
-                  <div key={k} className="flex items-center justify-between gap-2 text-[13px]">
-                    <span className="font-normal text-[#5f5a84]">{k.replaceAll("_", " ")}</span>
+                  <div
+                    key={k}
+                    className="flex items-center justify-between gap-2 text-[13px]"
+                  >
+                    <span className="font-normal text-[#5f5a84]">
+                      {k.replaceAll("_", " ")}
+                    </span>
                     <span className="inline-flex items-center gap-1.5">
-                      <span className={`inline-block h-2 w-2 rounded-full ${statusDot(v?.status)}`} />
+                      <span
+                        className={`inline-block h-2 w-2 rounded-full ${statusDot(v?.status)}`}
+                      />
                       <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[11px] font-medium text-[#5b53a9]">
-                        {statusLabel(v?.status)}{v?.count ? ` · ${v.count}` : ""}
+                        {statusLabel(v?.status)}
+                        {v?.count ? ` · ${v.count}` : ""}
                       </span>
                     </span>
                   </div>
@@ -193,9 +223,16 @@ export default function SourcesTab({ report }) {
         </p>
         <div className="grid gap-2 md:grid-cols-3">
           {macroRows.map((item) => (
-            <div key={item.label} className="rounded-xl border border-[#e8e4ff] bg-white p-3 shadow-sm">
-              <p className="text-[13px] font-medium leading-tight text-[#2f285c]">{item.value}</p>
-              <p className="mt-0.5 text-[11px] font-normal text-[#9a96bf]">{item.label}</p>
+            <div
+              key={item.label}
+              className="rounded-xl border border-[#e8e4ff] bg-white p-3 shadow-sm"
+            >
+              <p className="text-[13px] font-medium leading-tight text-[#2f285c]">
+                {item.value}
+              </p>
+              <p className="mt-0.5 text-[11px] font-normal text-[#9a96bf]">
+                {item.label}
+              </p>
             </div>
           ))}
         </div>
@@ -209,12 +246,16 @@ export default function SourcesTab({ report }) {
           Inférée par LLM depuis données brutes
         </div>
         <div>
-          <span className="inline-block h-2 w-2 rounded-full bg-slate-400" /> Source désactivée dans cette version
+          <span className="inline-block h-2 w-2 rounded-full bg-slate-400" />{" "}
+          Source désactivée dans cette version
         </div>
       </div>
       <div className="hidden">
         {sources.map((src) => (
-          <div key={src} className="rounded-lg border border-[#e8e4ff] bg-white px-3 py-2 text-sm text-[#5f5a84]">
+          <div
+            key={src}
+            className="rounded-lg border border-[#e8e4ff] bg-white px-3 py-2 text-sm text-[#5f5a84]"
+          >
             {src}
           </div>
         ))}
@@ -222,4 +263,3 @@ export default function SourcesTab({ report }) {
     </div>
   );
 }
-

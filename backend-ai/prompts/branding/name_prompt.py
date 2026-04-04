@@ -3,6 +3,41 @@ from langchain_core.prompts import PromptTemplate
 from config.branding_config import NAME_TARGET_COUNT
 
 
+def _fmt_list(items) -> str:
+    if not items:
+        return "—"
+    if isinstance(items, str) and items.strip():
+        return items.strip()
+    if isinstance(items, (list, tuple)):
+        cleaned = [str(x).strip() for x in items if str(x).strip()]
+        return ", ".join(cleaned) if cleaned else "—"
+    return "—"
+
+
+def _fmt_str(s) -> str:
+    t = (s or "").strip()
+    return t if t else "—"
+
+
+def attach_naming_preferences(idea: dict, prefs: dict | None) -> dict:
+    """
+    Fusionne les préférences utilisateur (one-shot, non persistées) dans le dict
+    lu par build_name_user_prompt. Ne modifie pas le dict original.
+    """
+    out = dict(idea or {})
+    if not prefs:
+        return out
+    out["user_brand_values"] = list(prefs.get("brand_values") or [])
+    out["user_personality"] = list(prefs.get("personality") or [])
+    out["user_feelings"] = list(prefs.get("user_feelings") or [])
+    out["naming_language"] = (prefs.get("name_language") or "").strip() or "—"
+    out["naming_length"] = (prefs.get("name_length") or "").strip() or "—"
+    out["naming_include"] = (prefs.get("include_keywords") or "").strip() or "—"
+    out["naming_exclude"] = (prefs.get("exclude_keywords") or "").strip() or "—"
+    out["user_remarks"] = (prefs.get("user_remarks") or "").strip()
+    return out
+
+
 # ─────────────────────────────────────────
 # REACT AGENT PROMPT
 # ─────────────────────────────────────────
@@ -56,6 +91,38 @@ def build_name_user_prompt(idea: dict, excluded_names: list = None) -> str:
     country_code = idea.get("country_code", "")
     language = idea.get("language", "fr")
 
+    uv = _fmt_list(idea.get("user_brand_values"))
+    up = _fmt_list(idea.get("user_personality"))
+    uf = _fmt_list(idea.get("user_feelings"))
+    nl = _fmt_str(idea.get("naming_language"))
+    nlen = _fmt_str(idea.get("naming_length"))
+    ninc = _fmt_str(idea.get("naming_include"))
+    nexc = _fmt_str(idea.get("naming_exclude"))
+    remarks_raw = (idea.get("user_remarks") or "").strip()
+
+    founder_remarks_block = ""
+    if remarks_raw:
+        founder_remarks_block = f"""
+FOUNDER REMARKS (régénération / feedback — prioriser avec USER PREFERENCES pour cette salve) :
+{remarks_raw}
+
+Traduis ces remarques en contraintes concrètes (ton, sonorité, sémantique, longueur, ce qu’il faut éviter ou favoriser par rapport aux propositions précédentes).
+"""
+
+    user_prefs_block = f"""
+USER PREFERENCES (founder input — apply to every proposed name, together with CONTEXT above):
+- Brand values to convey: {uv}
+- Brand personality: {up}
+- How users should feel: {uf}
+- Naming language preference: {nl}
+- Name length preference: {nlen}
+- Favor / include (themes or words, if any): {ninc}
+- Avoid / exclude (words or themes): {nexc}
+
+If a line is "—", ignore that axis. Otherwise treat it as binding alongside the rules below, except where it conflicts with hard technical rules (latin characters, no accents, valid JSON only).
+If USER PREFERENCES conflict with generic examples elsewhere in this prompt, prioritize CONTEXT + USER PREFERENCES for meaning and tone.
+"""
+
     blacklist_section = ""
     if excluded_names:
         blacklist_section = f"""
@@ -73,10 +140,13 @@ Solution description: {solution_description}
 Country: {country} ({country_code})
 Language: {language}
 
+{user_prefs_block}
+{founder_remarks_block}
 {blacklist_section}
 
 TASK:
 Generate 6 UNIQUE and ORIGINAL brand names for this startup.
+Each name must fit both the STARTUP CONTEXT and the USER PREFERENCES when they are specified (non "—").
 
 CRITICAL CONSTRAINTS:
 - Names MUST be uncommon and not widely used
@@ -104,6 +174,7 @@ Each name MUST reflect at least one of:
 - progress tracking
 - habit building
 - home training
+- themes or tone implied by USER PREFERENCES (values, personality, desired user feeling)
 
 ORIGINALITY RULE (VERY IMPORTANT):
 - If a name sounds common, generic, or already exists → DO NOT include it
@@ -150,6 +221,7 @@ Rules:
 - Always validate immediately after each generation.
 - Do not call generate_names twice without a validate_names in between.
 - If many names are "exists", generate again with an updated exclusion list.
+- The generate_names tool embeds founder USER PREFERENCES and any FOUNDER REMARKS for this run; all proposed names must respect startup context, preferences, and remarks.
 """
 
 
@@ -163,7 +235,28 @@ def build_name_react_user_message(idea_context: dict, *, target: int = NAME_TARG
     country = idea_context.get("country", "")
     country_code = idea_context.get("country_code", "")
     language = idea_context.get("language", "fr")
-    return f"""Startup context (the generate_names tool already embeds this in its prompt; keep exclusions accurate):
+
+    uv = _fmt_list(idea_context.get("user_brand_values"))
+    up = _fmt_list(idea_context.get("user_personality"))
+    uf = _fmt_list(idea_context.get("user_feelings"))
+    nl = _fmt_str(idea_context.get("naming_language"))
+    nlen = _fmt_str(idea_context.get("naming_length"))
+    ninc = _fmt_str(idea_context.get("naming_include"))
+    nexc = _fmt_str(idea_context.get("naming_exclude"))
+
+    prefs_line = (
+        f"values={uv}; personality={up}; feelings={uf}; "
+        f"naming_lang={nl}; length={nlen}; include={ninc}; exclude={nexc}"
+    )
+
+    remarks_raw = (idea_context.get("user_remarks") or "").strip()
+    remarks_section = ""
+    if remarks_raw:
+        remarks_section = f"""
+Founder remarks for this run (must clearly steer generate_names output): {remarks_raw}
+"""
+
+    return f"""Startup context (the generate_names tool embeds this in its prompt; keep exclusions accurate):
 - idea_name: {idea_name}
 - sector: {sector}
 - target_users: {target_users}
@@ -172,5 +265,7 @@ def build_name_react_user_message(idea_context: dict, *, target: int = NAME_TARG
 - country: {country} ({country_code})
 - language: {language}
 
+User naming preferences (must be reflected in every generation round): {prefs_line}
+{remarks_section}
 Objective: at least {target} distinct names with availability not_exists from validate_names.
 First step: call generate_names with excluded_names_str="" then validate_names(names_json=<exact JSON string from generate_names>)."""

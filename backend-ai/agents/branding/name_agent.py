@@ -14,6 +14,7 @@ from config.branding_config import (
 from llm.llm_factory import create_azure_openai_client
 from prompts.branding.name_prompt import (
     NAME_REACT_SYSTEM_PROMPT,
+    attach_naming_preferences,
     build_name_react_user_message,
 )
 from tools.branding.name_tools import (
@@ -307,6 +308,7 @@ class NameAgent(BaseAgent):
                 state.brand_identity["name_error"] = (
                     "Données clarifiées incomplètes: " + ", ".join(missing)
                 )
+                state.brand_identity["branding_status"] = "name_failed"
                 state.status = "name_failed"
                 self._log_error(f"missing_fields: {', '.join(missing)}")
                 return state
@@ -321,6 +323,9 @@ class NameAgent(BaseAgent):
                 "country_code": idea.get("country_code") or "",
                 "language": idea.get("language") or "fr",
             }
+            prefs = getattr(state, "naming_preferences", None)
+            if prefs:
+                idea_context = attach_naming_preferences(idea_context, prefs)
 
             def _is_tpd_error(err: Exception) -> bool:
                 s = str(err).lower()
@@ -397,6 +402,7 @@ class NameAgent(BaseAgent):
                     f"Impossible de trouver {NAME_TARGET_COUNT} noms disponibles "
                     "après toutes les tentatives."
                 )
+                state.brand_identity["branding_status"] = "name_failed"
                 state.status = "name_failed"
                 return state
 
@@ -405,6 +411,7 @@ class NameAgent(BaseAgent):
 
             state.brand_identity["name_options"] = name_options
             state.brand_identity.pop("name_error", None)
+            state.brand_identity["branding_status"] = "name_generated"
             state.status = "name_generated"
 
             self._log_success()
@@ -414,4 +421,8 @@ class NameAgent(BaseAgent):
             self._log_error(e)
             state.errors.append(f"name_agent: {str(e)}")
             state.status = "error"
+            if state.brand_identity is not None:
+                state.brand_identity.setdefault("agent_errors", {})
+                state.brand_identity["agent_errors"]["name"] = str(e)
+                state.brand_identity["branding_status"] = "failed"
             return state

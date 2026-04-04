@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import clarifier, market_analysis, pipeline
+from app.routes import clarifier, market_analysis, naming, palette, pipeline, slogan
 
 
 app = FastAPI(title="BrandAI — IA Service", version="1.0.0")
@@ -21,6 +21,9 @@ app.add_middleware(
 app.include_router(clarifier.router, prefix="/api/ai")
 app.include_router(market_analysis.router, prefix="/api/ai")
 app.include_router(pipeline.router, prefix="/api/ai")
+app.include_router(naming.router, prefix="/api/ai")
+app.include_router(slogan.router, prefix="/api/ai")
+app.include_router(palette.router, prefix="/api/ai")
 
 
 @app.get("/health")

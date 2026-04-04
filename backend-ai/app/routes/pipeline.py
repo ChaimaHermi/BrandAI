@@ -9,6 +9,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.branding_payload import split_brand_identity_payload
 from workflows.pipeline_graph import build_graph
 
 
@@ -37,6 +38,29 @@ class PipelineStreamRequest(BaseModel):
     language: Optional[str] = "fr"
 
     access_token: Optional[str] = None
+
+
+async def fetch_branding_merged_generated(
+    idea_id: int,
+    access_token: str,
+) -> dict:
+    """Fusionne les champs `generated` des 4 tables branding (backend-api)."""
+    base = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
+    headers = {"Authorization": f"Bearer {access_token}"}
+    merged: dict = {}
+    async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
+        for path in ("naming", "slogan", "palette", "logo"):
+            r = await client.get(
+                f"{base}/branding/ideas/{idea_id}/{path}",
+                headers=headers,
+            )
+            if r.status_code != 200:
+                continue
+            row = r.json()
+            g = row.get("generated")
+            if isinstance(g, dict):
+                merged.update(g)
+    return merged
 
 
 async def _persist_market_result(
@@ -71,19 +95,69 @@ async def _persist_brand_identity_row(
     completed_at: datetime,
     access_token: str,
 ) -> dict:
+    """Compat : tables fines branding (naming / slogan / palette / logo)."""
+    await _persist_branding_results_tables(
+        idea_id=idea_id,
+        brand_identity=brand_identity,
+        access_token=access_token,
+    )
+    return {"ok": True, "idea_id": idea_id}
+
+
+async def _persist_branding_results_tables(
+    *,
+    idea_id: int,
+    brand_identity: dict,
+    access_token: str,
+) -> None:
+    """PATCH backend-api /branding/ideas/{id}/… — aligné sur split_brand_identity_payload."""
+    meta, names, slogans, logo = split_brand_identity_payload(brand_identity)
     base = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
-    url = f"{base}/brand-identity/{idea_id}"
-    payload = {
-        "status": "done",
-        "result_json": brand_identity,
-        "started_at": started_at.isoformat(),
-        "completed_at": completed_at.isoformat(),
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
     }
-    headers = {"Authorization": f"Bearer {access_token}"}
-    async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0)) as client:
-        resp = await client.post(url, json=payload, headers=headers)
-        resp.raise_for_status()
-        return resp.json()
+    naming_generated: dict = {**(meta or {}), **(names or {})}
+    slogan_generated: dict = dict(slogans or {})
+    palette_generated: dict = {}
+    logo_generated: dict = {}
+    if logo:
+        for k in ("palette_options", "color_palette", "palette_error"):
+            if k in logo:
+                palette_generated[k] = logo[k]
+        if "logo_concepts" in logo:
+            logo_generated["logo_concepts"] = logo["logo_concepts"]
+
+    timeout = httpx.Timeout(45.0, connect=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        if naming_generated:
+            r = await client.patch(
+                f"{base}/branding/ideas/{idea_id}/naming",
+                json={"status": "completed", "generated": naming_generated},
+                headers=headers,
+            )
+            r.raise_for_status()
+        if slogan_generated:
+            r = await client.patch(
+                f"{base}/branding/ideas/{idea_id}/slogan",
+                json={"status": "completed", "generated": slogan_generated},
+                headers=headers,
+            )
+            r.raise_for_status()
+        if palette_generated:
+            r = await client.patch(
+                f"{base}/branding/ideas/{idea_id}/palette",
+                json={"status": "completed", "generated": palette_generated},
+                headers=headers,
+            )
+            r.raise_for_status()
+        if logo_generated:
+            r = await client.patch(
+                f"{base}/branding/ideas/{idea_id}/logo",
+                json={"status": "completed", "generated": logo_generated},
+                headers=headers,
+            )
+            r.raise_for_status()
 
 
 async def _persist_marketing_result(
@@ -164,7 +238,6 @@ async def _stream_pipeline(body: PipelineStreamRequest):
         status = graph_result.get("status", "error")
         errors = graph_result.get("errors", []) or []
         market_analysis = graph_result.get("market_analysis") or {}
-        brand_identity = graph_result.get("brand_identity") or {}
         marketing_plan = graph_result.get("marketing_plan") or {}
 
         if not market_analysis:
@@ -191,20 +264,6 @@ async def _stream_pipeline(body: PipelineStreamRequest):
             access_token=body.access_token,
         )
 
-        if brand_identity:
-            yield sse_event("step", {
-                "status": "loading",
-                "stage": "persist_brand_identity",
-                "message": "Sauvegarde de l'identité de marque...",
-            })
-            await _persist_brand_identity_row(
-                idea_id=body.idea_id,
-                brand_identity=brand_identity,
-                started_at=started_at,
-                completed_at=completed_at,
-                access_token=body.access_token,
-            )
-
         persisted_marketing = None
         if marketing_plan:
             yield sse_event("step", {
@@ -220,7 +279,6 @@ async def _stream_pipeline(body: PipelineStreamRequest):
 
         yield sse_event("result", {
             "market_analysis": market_analysis,
-            "brand_identity": brand_identity,
             "marketing_plan": marketing_plan,
         })
         elapsed_ms = int((time.time() - t0) * 1000)
