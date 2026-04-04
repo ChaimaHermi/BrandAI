@@ -218,3 +218,50 @@ export async function generatePalettes(ideaId, token, { brand_name, preferences 
   }
   return data;
 }
+
+/**
+ * Génération logo (backend-ai) : contexte idée + nom / slogan / palette → prompt LLM + image FLUX.
+ */
+export async function generateLogo(
+  ideaId,
+  token,
+  {
+    brand_name = null,
+    slogan_hint = null,
+    palette_color_hint = null,
+    persist = true,
+    persist_image_base64 = false,
+  } = {},
+) {
+  if (!ideaId || !token) {
+    throw new Error("ideaId et token requis");
+  }
+  const res = await fetch(`${AI_URL}/logo/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      idea_id: ideaId,
+      brand_name,
+      slogan_hint,
+      palette_color_hint,
+      access_token: token,
+      persist,
+      persist_image_base64,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const d = data?.detail;
+    let msg =
+      typeof d === "string"
+        ? d
+        : Array.isArray(d)
+          ? d.map((x) => x?.msg || JSON.stringify(x)).join("; ")
+          : typeof data?.message === "string"
+            ? data.message
+            : null;
+    if (!msg) msg = `Génération logo échouée (${res.status})`;
+    throw new Error(msg);
+  }
+  return data;
+}

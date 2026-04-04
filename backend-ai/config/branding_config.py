@@ -30,3 +30,15 @@ SLOGAN_TARGET_COUNT = 5
 
 # PaletteAgent : nombre de palettes de couleurs complètes à proposer
 PALETTE_TARGET_COUNT = 3
+
+# LogoAgent : LLM pour rédiger le prompt image (Azure recommandé, ex. gpt-4.1 via déploiement dédié)
+LOGO_LLM_CONFIG = {
+    "provider": "azure",
+    "temperature": 0.4,
+    "max_tokens": 900,
+}
+# openrouter_flux (FLUX via OpenRouter, défaut) | pollinations | none
+LOGO_IMAGE_PROVIDER = "openrouter_flux"
+LOGO_IMAGE_SIZE = 512
+# Modèle image OpenRouter (ex. black-forest-labs/flux.2-pro). Surcharge : env LOGO_OPENROUTER_MODEL
+LOGO_OPENROUTER_MODEL = "black-forest-labs/flux.2-pro"

@@ -20,6 +20,7 @@ def clean(keys):
 # KEYS
 # ─────────────────────────────────────────────
 OPENROUTER_KEYS = clean([
+    os.getenv("OPENROUTER_API_KEY"),
     os.getenv("OPENROUTER_API_KEY_1"),
     os.getenv("OPENROUTER_API_KEY_2"),
     os.getenv("OPENROUTER_API_KEY_3"),
@@ -49,6 +50,8 @@ if not (OPENROUTER_KEYS or GEMINI_KEYS or GROQ_KEYS):
 AZURE_OPENAI_ENDPOINT   = os.getenv("AZURE_OPENAI_ENDPOINT", "")
 AZURE_OPENAI_KEY        = os.getenv("AZURE_OPENAI_KEY", "")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+# Déploiement optionnel pour l’agent logo (ex. gpt-4.1). Si vide → même que AZURE_OPENAI_DEPLOYMENT.
+AZURE_OPENAI_LOGO_DEPLOYMENT = (os.getenv("AZURE_OPENAI_LOGO_DEPLOYMENT") or "").strip()
 AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2025-01-01-preview")
 
 # ─────────────────────────────────────────────

@@ -50,16 +50,19 @@ def create_groq_clients(model: str = None, max_tokens: int | None = None) -> lis
 def create_azure_openai_client(
     temperature: float = 0.3,
     max_tokens: int = 1200,
+    *,
+    azure_deployment: str | None = None,
 ) -> AzureChatOpenAI:
     if not AZURE_OPENAI_KEY or not AZURE_OPENAI_ENDPOINT:
         raise RuntimeError(
             "Azure OpenAI non configuré. "
             "Vérifier AZURE_OPENAI_KEY et AZURE_OPENAI_ENDPOINT dans .env"
         )
+    deployment = ((azure_deployment or "").strip() or AZURE_OPENAI_DEPLOYMENT)
     return AzureChatOpenAI(
         azure_endpoint=AZURE_OPENAI_ENDPOINT,
         api_key=AZURE_OPENAI_KEY,
-        azure_deployment=AZURE_OPENAI_DEPLOYMENT,
+        azure_deployment=deployment,
         api_version=AZURE_OPENAI_API_VERSION,
         temperature=temperature,
         max_tokens=max_tokens,

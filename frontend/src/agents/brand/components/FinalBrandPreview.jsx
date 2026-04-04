@@ -7,15 +7,14 @@ function swatchHexes(palette) {
 }
 
 /**
- * Aperçu final du kit : nom, slogan, palette choisie, direction logo.
+ * Aperçu final du kit : nom, slogan, palette choisie, logo généré.
  */
 export default function FinalBrandPreview({
   brandName,
   sloganText,
   paletteOptions,
   selectedPaletteId,
-  logoStyle,
-  logoType,
+  logoPreviewUrl,
 }) {
   let palette = null;
   if (selectedPaletteId && String(selectedPaletteId).startsWith("p-")) {
@@ -78,18 +77,17 @@ export default function FinalBrandPreview({
 
         <div className="border-t border-[#f3f4f6] pt-4">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">
-            Direction logo
+            Logo
           </p>
-          <dl className="grid gap-2 text-sm text-[#374151]">
-            <div className="flex justify-between gap-4">
-              <dt className="text-[#6b7280]">Style</dt>
-              <dd className="font-medium">{logoStyle || "—"}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-[#6b7280]">Type</dt>
-              <dd className="font-medium">{logoType || "—"}</dd>
-            </div>
-          </dl>
+          {logoPreviewUrl ? (
+            <img
+              src={logoPreviewUrl}
+              alt="Logo"
+              className="mx-auto max-h-48 w-auto rounded-lg border border-[#e5e7eb] object-contain"
+            />
+          ) : (
+            <p className="text-sm text-[#6b7280]">Aucun logo généré pour l’instant.</p>
+          )}
         </div>
       </div>
 
