@@ -201,7 +201,7 @@ async def _stream_pipeline(body: PipelineStreamRequest):
             yield sse_event("step", {
                 "status": "success",
                 "stage": "clarifier",
-                "message": "Clarifier déjà validé — passage direct à Market Analysis",
+                "message": "Clarifier déjà validé — passage au marketing",
             })
         else:
             yield sse_event("step", {
@@ -231,8 +231,8 @@ async def _stream_pipeline(body: PipelineStreamRequest):
         })
         yield sse_event("step", {
             "status": "loading",
-            "stage": "run_market_analysis",
-            "message": "Analyse de marché en cours...",
+            "stage": "run_marketing",
+            "message": "Plan marketing en cours...",
         })
         graph_result = await pipeline_graph.ainvoke(graph_input)
         status = graph_result.get("status", "error")
@@ -240,29 +240,37 @@ async def _stream_pipeline(body: PipelineStreamRequest):
         market_analysis = graph_result.get("market_analysis") or {}
         marketing_plan = graph_result.get("marketing_plan") or {}
 
-        if not market_analysis:
-            # Clarifier may have stopped with questions/refused.
-            if status in {"questions", "refused"}:
+        # Arrêt au clarifier (questions / besoin d’input) sans marketing
+        if not marketing_plan:
+            if status in {"need_input", "questions", "refused"}:
                 yield sse_event("result", {
                     "type": status,
                     "errors": errors,
                 })
                 yield sse_event("done", {"success": True, "stopped_at": "clarifier", "status": status})
                 return
-            raise RuntimeError("Pipeline terminé sans résultat market_analysis")
+            raise RuntimeError(
+                f"Pipeline sans marketing_plan (status={status}, errors={errors})"
+            )
 
         if not body.access_token:
             raise RuntimeError("access_token requis pour persister le résultat")
 
-        yield sse_event("step", {"status": "loading", "stage": "persist_result", "message": "Sauvegarde du résultat..."})
         completed_at = datetime.now(timezone.utc)
-        persisted = await _persist_market_result(
-            idea_id=body.idea_id,
-            result_json=market_analysis,
-            started_at=started_at,
-            completed_at=completed_at,
-            access_token=body.access_token,
-        )
+        persisted = None
+        if market_analysis:
+            yield sse_event("step", {
+                "status": "loading",
+                "stage": "persist_market",
+                "message": "Sauvegarde analyse marché...",
+            })
+            persisted = await _persist_market_result(
+                idea_id=body.idea_id,
+                result_json=market_analysis,
+                started_at=started_at,
+                completed_at=completed_at,
+                access_token=body.access_token,
+            )
 
         persisted_marketing = None
         if marketing_plan:
@@ -286,7 +294,7 @@ async def _stream_pipeline(body: PipelineStreamRequest):
             "success": True,
             "idea_id": body.idea_id,
             "status": status,
-            "persisted_id": persisted.get("id"),
+            "persisted_id": persisted.get("id") if persisted else None,
             "persisted_marketing_id": (
                 persisted_marketing.get("id") if persisted_marketing else None
             ),

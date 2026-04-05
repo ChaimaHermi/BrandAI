@@ -16,9 +16,10 @@ class MarketingAgent(BaseAgent):
         idea = state.clarified_idea or {}
         market = state.market_analysis or {}
 
-        if not idea or not market:
-            logger.error("[marketing_agent] missing inputs")
-            return {"error": "missing inputs"}
+        if not idea:
+            logger.error("[marketing_agent] missing clarified idea")
+            return {"error": "missing idea"}
+        # market_analysis peut rester vide (analyse marché hors pipeline LangGraph)
 
         prompt = self._build_prompt(idea, market)
 
@@ -52,7 +53,7 @@ You are a senior marketing strategist.
 
 Your task is to generate a structured marketing plan based on:
 1. Business idea
-2. Market analysis
+2. Market analysis (optionnel — peut être vide ; déduis depuis l’idée si besoin)
 
 IMPORTANT:
 - Use inference when data is incomplete
@@ -65,7 +66,7 @@ INPUT:
 IDEA:
 {idea}
 
-MARKET ANALYSIS:
+MARKET ANALYSIS (vide = pas encore fourni) :
 {market}
 
 OUTPUT FORMAT (STRICT JSON):

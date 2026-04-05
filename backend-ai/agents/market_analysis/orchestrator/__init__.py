@@ -1,4 +1,3 @@
-from agents.market_analysis.market_analysis_agent import MarketAnalysisAgent
 from agents.market_analysis.orchestrator.keyword_extractor import (
     KeywordBundle,
     KeywordExtractorAgent,
@@ -6,7 +5,6 @@ from agents.market_analysis.orchestrator.keyword_extractor import (
 )
 
 __all__ = [
-    "MarketAnalysisAgent",
     "KeywordBundle",
     "KeywordExtractorAgent",
     "extract_keywords",
