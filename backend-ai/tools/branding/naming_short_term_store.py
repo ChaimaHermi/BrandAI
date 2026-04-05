@@ -101,7 +101,7 @@ def load_exists_memory(idea_id: int | str | None) -> list[str]:
                 legacy = _load_payload_from_legacy_json(iid)
                 if legacy is None:
                     return []
-                payload = json.dumps(legacy, ensure_ascii=False)
+                payload = json.dumps(legacy, ensure_ascii=False, indent=2)
                 conn.execute(
                     """
                     INSERT INTO naming_exists_memory (idea_id, payload) VALUES (?, ?)
@@ -133,7 +133,7 @@ def save_exists_memory(idea_id: int | str | None, exists_names: list[str]) -> No
         return
 
     deduped = _normalize_list(exists_names)
-    payload = json.dumps({"idea_id": iid, "exists_names": deduped}, ensure_ascii=False)
+    payload = json.dumps({"idea_id": iid, "exists_names": deduped}, ensure_ascii=False, indent=2)
 
     with _lock:
         conn = sqlite3.connect(str(_db_path()), check_same_thread=False)
