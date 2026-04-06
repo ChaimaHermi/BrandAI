@@ -221,6 +221,31 @@ First, understand:
 - what real competitors or alternatives might exist
 
 Then generate queries aligned with that understanding.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DATA QUALITY REQUIREMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Keywords must resemble real-world search queries used to retrieve actionable market data.
+
+They should prioritize:
+
+- concrete and commonly searched phrases
+- measurable signals (market size, demand, growth, user behavior)
+- terminology used by analysts, researchers, and real users
+
+Keywords must be directly usable in search engines, APIs, or data sources.
+
+They should closely match phrases that would realistically return results,
+not abstract or artificial wording.
+
+Prefer explicit, complete, and natural search queries
+over shortened or conceptual expressions.
+
+Avoid:
+
+- vague, abstract, or conceptual wording
+- product feature descriptions without market context
+- terms that do not lead to quantifiable or actionable insights
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT (STRICT JSON)
