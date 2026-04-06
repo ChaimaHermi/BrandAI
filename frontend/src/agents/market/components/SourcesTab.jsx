@@ -1,53 +1,10 @@
 import {
   HiCheckBadge,
   HiChartBarSquare,
-  HiChatBubbleLeftRight,
   HiGlobeAlt,
-  HiMagnifyingGlass,
   HiMap,
-  HiNewspaper,
-  HiPresentationChartLine,
   HiServerStack,
 } from "react-icons/hi2";
-
-const SOURCE_META = {
-  google_trends: {
-    title: "Google Trends",
-    description: "Direction tendance, requêtes montantes, score viral",
-    details: "signal: MEDIUM · pic: juin 2025",
-    icon: HiPresentationChartLine,
-  },
-  reddit_via_tavily: {
-    title: "Reddit via Tavily",
-    description: "Verbatims utilisateurs, pain points et frustrations",
-    details: "VOC · 3 citations clés",
-    icon: HiChatBubbleLeftRight,
-  },
-  tavily: {
-    title: "Tavily Search",
-    description: "Faiblesses concurrents, comparatifs produits",
-    details: "4 concurrents analysés",
-    icon: HiMagnifyingGlass,
-  },
-  serpapi_search: {
-    title: "SerpAPI",
-    description: "Résultats organiques, positionnement et URLs concurrents",
-    details: "Search + Maps",
-    icon: HiGlobeAlt,
-  },
-  worldbank: {
-    title: "World Bank API",
-    description: "Données macro officielles: PIB, population, internet",
-    details: "Géo: US · 6 indicateurs",
-    icon: HiChartBarSquare,
-  },
-  gnews: {
-    title: "GNews + YouTube",
-    description: "Signaux d'actualité récents et contenus vidéo sectoriels",
-    details: "2 signaux news",
-    icon: HiNewspaper,
-  },
-};
 
 function statusDot(status) {
   if (status === "api") return "bg-emerald-500";
@@ -64,7 +21,7 @@ function statusLabel(status) {
 }
 
 function prettySourceName(src) {
-  return SOURCE_META[src]?.title || src.replaceAll("_", " ");
+  return String(src || "").replaceAll("_", " ");
 }
 
 export default function SourcesTab({ report }) {
@@ -115,9 +72,7 @@ export default function SourcesTab({ report }) {
               </p>
             </div>
             <p className="max-w-[560px] text-[13px] font-normal leading-[1.6] text-[#5f5a84]">
-              Toutes les sections clés couvertes par données API vérifiables.
-              Personas et faiblesses concurrentes inférées par LLM depuis
-              données brutes.
+              Qualité et traçabilité basées sur les métadonnées retournées par le backend.
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5 text-[11px] font-medium">
@@ -141,8 +96,7 @@ export default function SourcesTab({ report }) {
         </p>
         <div className="grid gap-2 md:grid-cols-2">
           {sources.map((src) => {
-            const meta = SOURCE_META[src] || null;
-            const Icon = meta?.icon || HiGlobeAlt;
+            const Icon = src === "worldbank" ? HiChartBarSquare : HiGlobeAlt;
             return (
               <div
                 key={src}
@@ -157,15 +111,14 @@ export default function SourcesTab({ report }) {
                       {prettySourceName(src)}
                     </p>
                     <p className="mt-0.5 text-[12px] font-normal text-[#5f5a84]">
-                      {meta?.description ||
-                        "Source de données utilisée dans cette analyse."}
+                      Source de données utilisée dans cette analyse.
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                       <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">
                         API directe
                       </span>
                       <span className="text-[#9a96bf]">
-                        {meta?.details || src}
+                        {src}
                       </span>
                     </div>
                   </div>

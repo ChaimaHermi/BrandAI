@@ -1,59 +1,113 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { HiOutlineArrowLeft } from "react-icons/hi2";
 import { Navbar } from "@/components/layout/Navbar";
 import { Badge } from "@/shared/ui/Badge";
 import { AgentTimeline } from "@/components/agents/AgentTimeline";
 import { ResultDisplay } from "@/components/agents/ResultDisplay";
-import { AGENTS, PROJECTS, TECHMENTOR_RESULTS } from "@/shared/utils/mockData";
-
-function getProject(id) {
-  return PROJECTS.find((p) => p.id === id) || {
-    id,
-    name: "Projet",
-    status: "running",
-    agentsDone: 2,
-    totalAgents: 6,
-  };
-}
-
-function getAgentStatuses(projectId) {
-  if (projectId === "techmentor") {
-    return {
-      clarifier: "done",
-      market: "done",
-      brand: "running",
-      content: "waiting",
-      website: "waiting",
-      optimizer: "waiting",
-    };
-  }
-  if (projectId === "ecoshop" || projectId === "foodieapp") {
-    return {
-      clarifier: "done",
-      market: "done",
-      brand: "done",
-      content: "done",
-      website: "done",
-      optimizer: "done",
-    };
-  }
-  return {
-    clarifier: "waiting",
-    market: "waiting",
-    brand: "waiting",
-    content: "waiting",
-    website: "waiting",
-    optimizer: "waiting",
-  };
-}
+import { AGENTS } from "@/agents";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { apiGetIdea, getErrorMessage } from "@/services/ideaApi";
+import { getLatestMarketAnalysis } from "@/agents/market/api/market.api";
+import { getLatestMarketingPlan } from "@/agents/Marketing/api/marketing.api";
+import { fetchBrandingBundle } from "@/agents/brand/api/brandIdentity.api";
 
 export default function ResultsPage() {
   const { id } = useParams();
-  const [activeAgent, setActiveAgent] = useState("brand");
-  const project = useMemo(() => getProject(id), [id]);
-  const statuses = useMemo(() => getAgentStatuses(id), [id]);
-  const results = id === "techmentor" ? TECHMENTOR_RESULTS : {};
+  const { token } = useAuth();
+  const [activeAgent, setActiveAgent] = useState("market");
+  const [idea, setIdea] = useState(null);
+  const [marketLatest, setMarketLatest] = useState(null);
+  const [marketingLatest, setMarketingLatest] = useState(null);
+  const [brandingBundle, setBrandingBundle] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!id || !token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [ideaData, marketData, marketingData, brandingData] = await Promise.all([
+          apiGetIdea(id, token),
+          getLatestMarketAnalysis(id, token),
+          getLatestMarketingPlan(id, token),
+          fetchBrandingBundle(id, token),
+        ]);
+        if (cancelled) return;
+        setIdea(ideaData || null);
+        setMarketLatest(marketData || null);
+        setMarketingLatest(marketingData || null);
+        setBrandingBundle(brandingData || null);
+        setError("");
+      } catch (e) {
+        if (cancelled) return;
+        setError(getErrorMessage(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, token]);
+
+  const statuses = useMemo(() => {
+    const base = Object.fromEntries(AGENTS.map((a) => [a.id, "waiting"]));
+    const ideaDone = Boolean(idea?.clarified_idea) || ["clarifier_done", "market_done", "done"].includes(idea?.status);
+    if (ideaDone) base.clarifier = "done";
+    if (marketLatest) base.market = "done";
+    if (marketingLatest) base.marketing = "done";
+    const hasBrand = Boolean(
+      brandingBundle?.naming || brandingBundle?.slogan || brandingBundle?.palette || brandingBundle?.logo,
+    );
+    if (hasBrand) base.brand = "done";
+    return base;
+  }, [idea, marketLatest, marketingLatest, brandingBundle]);
+
+  const project = useMemo(
+    () => ({
+      id,
+      name: idea?.name || "Projet",
+      status: idea?.status === "done" ? "completed" : "running",
+    }),
+    [id, idea],
+  );
+
+  const marketData = useMemo(() => {
+    const payload = marketLatest?.result_json || marketLatest || {};
+    const marketVoc = payload.market_voc || {};
+    const competitors = payload.competitor || {};
+    const demande = payload.overview?.demande || {};
+    return {
+      market_size: demande.taille || payload.market_size || "-",
+      competitors: Array.isArray(competitors.top_competitors)
+        ? competitors.top_competitors.length
+        : payload.competitors || 0,
+      growth: demande.cagr || payload.growth || "-",
+      opportunity: competitors.opportunite_summary || payload.opportunity || "",
+      top_competitors: competitors.top_competitors || payload.top_competitors || [],
+      demand_summary: marketVoc.demand_summary || "",
+    };
+  }, [marketLatest]);
+
+  const results = useMemo(
+    () => ({
+      clarifier: {
+        initial: idea?.description || "",
+        enhanced:
+          idea?.clarified_idea?.solution_description ||
+          idea?.clarified_idea?.short_pitch ||
+          "",
+        summary: idea?.clarified_idea?.problem || "",
+      },
+      market: marketData,
+      marketing: marketingLatest?.result_json || marketingLatest || {},
+      brand: brandingBundle || {},
+      content: {},
+      website: {},
+      optimizer: {},
+    }),
+    [idea, marketData, marketingLatest, brandingBundle],
+  );
+
   const currentData = results[activeAgent];
   const currentStatus = statuses[activeAgent] || "waiting";
   const runningIndex = AGENTS.findIndex((a) => statuses[a.id] === "running");
@@ -85,6 +139,7 @@ export default function ResultsPage() {
               </Badge>
             </div>
             <p className="mt-1 text-sm text-[#6B7280]">{pipelineLabel}</p>
+            {error ? <p className="mt-1 text-sm text-red-600">{error}</p> : null}
           </div>
 
           <div className="border-b border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 lg:hidden">
