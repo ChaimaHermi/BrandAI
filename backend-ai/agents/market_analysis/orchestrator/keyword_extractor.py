@@ -26,150 +26,250 @@ logger = logging.getLogger("brandai.keyword_extractor")
 # ═══════════════════════════════════════════════════════════════
 # PROMPTS
 # ═══════════════════════════════════════════════════════════════
-
 _SYSTEM = """\
-You are a market research expert specialized in keyword extraction for APIs.
+You are a senior market intelligence analyst specialized in competitor discovery.
 
-Your task: analyze the startup idea and generate SPECIFIC, CONTEXTUAL, and SEARCH-OPTIMIZED keywords.
+Your task: generate HIGHLY RELEVANT, CONTEXTUAL, and GEO-AWARE search queries to find competitors.
 
-LANGUAGE RULE:
-- The input idea will ALWAYS be in French
-- First, internally translate it to English
-- Generate ALL keywords in English only
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CORE OBJECTIVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CRITICAL RULES:
-- Keywords must be specific to the idea, sector, and country
-- Use realistic search patterns (what users actually type)
-- Avoid overly generic OR overly complex queries
+Generate search queries that help discover:
+
+- platforms
+- applications
+- services
+- products
+
+related to the given startup idea.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SOLUTION TYPE ADAPTATION (CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Before generating queries, identify the nature of the solution:
+
+- digital product → apps, platforms, software, tools
+- physical product → products, brands, manufacturers, suppliers
+- service → services, providers, companies, agencies
+- hybrid → combine appropriately
+
+Queries MUST match the actual type of solution.
+
+DO NOT force "apps" or "platforms" if not relevant.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Queries MUST be adapted to the idea dynamically
+- Queries MUST reflect real user search behavior
+- Queries MUST be specific (not generic)
 - Return ONLY valid JSON
 
-QUERY FORMAT RULE:
-- All keywords must be 2–5 words maximum
-- Do NOT generate full sentences
-- Prefer noun-based expressions (avoid verbs when possible)
-- Avoid unnecessary words
-- Avoid hardcoded years
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMAT RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-SEARCH LOGIC RULE:
-- Prefer structure: [concept] + [metric]
+- 2–5 words per query
+- No full sentences
+- No unnecessary words
 
-BALANCE RULE:
-- Include a mix of:
-  - user intent keywords
-  - market/analysis keywords
-  - local keywords (country)
-  - global keywords
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRICT PROHIBITIONS (CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-DEDUPLICATION RULE:
-- Avoid redundant or very similar keywords
-- Each keyword must be distinct and useful
+DO NOT generate queries related to:
 
-KEYWORD RULES:
-  primary_keywords    : core product + user intent
-  market_keywords     : market size, revenue, growth
-  pricing_keywords    : pricing, cost, fees
-  adoption_keywords   : usage, statistics, demand
-  competitor_queries  : competitor data extraction queries
-  voc_keywords        : short pain points (2–4 words)
-  trend_keywords      : trends and industry evolution
-  sector_tags         : industry labels
+- strategy
+- marketing
+- monetization
+- pricing models
+- trends
+- statistics
+- "how to" queries
 
-COMPETITOR RULES:
-- Generate queries to EXTRACT INFORMATION about competitors (not comparison)
-- Focus on retrieving:
-  - features
-  - pricing
-  - user reviews
-  - strengths and weaknesses
-  - platform descriptions
+These are NOT competitor discovery queries.
 
-- Include BOTH:
-  1. Global competitors (international platforms)
-  2. Local or country-specific competitors
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPETITOR DISCOVERY RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-- At least one query must include the country
-- Use the country input to localize queries
-- Do NOT generate comparison queries (no "vs")
+All queries MUST aim to:
+
+- find existing solutions
+- identify similar products or services
+- discover competitors
+
+Queries should naturally match how users search for alternatives.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUALITY SIGNAL (CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Queries should naturally lead to discovering:
+
+- popular solutions
+- widely used products or services
+- well-known brands or companies
+
+Use natural user search patterns such as:
+- best
+- top
+- popular
+- alternatives
+- similar
+
+DO NOT explicitly use "top competitors"
+
+Queries must implicitly target high-quality, real-world solutions.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GEO STRUCTURE (MANDATORY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Generate EXACTLY 10 queries:
+
+1–4 → LOCAL (specific to the target country)
+5–10 → GLOBAL (no geographic reference)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LOCAL RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Local queries MUST:
+
+- explicitly include the target country
+- reflect real usage patterns
+- explore different angles:
+  → product type
+  → user intent
+  → ecosystem / startups
+  → usage context
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GLOBAL RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Global queries MUST:
+
+- NOT include any country, region, or continent
+- be fully geography-neutral
+- focus on discovering similar solutions worldwide
+
+If a global query contains a location → it is INVALID
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DIVERSITY RULE (MANDATORY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Each query MUST:
+
+- be unique
+- use different wording
+- represent a different search intent
+
+Avoid paraphrasing.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SELF VALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Before returning:
+
+- Ensure EXACTLY 10 queries
+- Ensure correct order (4 local + 6 global)
+- Ensure no geography in global queries
+- Ensure no forbidden query types
+- Ensure all queries are discovery-oriented
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The system must adapt to ANY startup idea without relying on predefined examples.
 """
-
 
 _USER = """\
 Startup idea to analyze:
-  - Name/Pitch      : {short_pitch}
-  - Description     : {solution_description}
-  - Problem solved  : {problem}
-  - Target users    : {target_users}
-  - Sector          : {sector}
-  - Country         : {country}
-  - Country/Market  : {country_code}
 
-Based on this SPECIFIC idea, generate contextual search keywords.
+- Name/Pitch      : {short_pitch}
+- Description     : {solution_description}
+- Problem solved  : {problem}
+- Target users    : {target_users}
+- Sector          : {sector}
+- Country         : {country}
+- Country/Market  : {country_code}
 
-Return this EXACT JSON structure:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TASK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Generate HIGH-QUALITY, CONTEXTUAL search keywords.
+
+Focus on identifying REAL existing solutions similar to this idea.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTEXT UNDERSTANDING (IMPORTANT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+First, understand:
+
+- what type of solution this is (product, service, platform, etc.)
+- how users would search for similar existing solutions
+- what real competitors or alternatives might exist
+
+Then generate queries aligned with that understanding.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT (STRICT JSON)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {{
-  "primary_keywords": [
-    "<specific keyword 1>",
-    "<specific keyword 2>",
-    "<specific keyword 3>",
-    "<specific keyword 4>",
-    "<specific keyword 5>"
-  ],
+  "primary_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
-  "market_keywords": [
-    "<market size keyword>",
-    "<industry revenue keyword>",
-    "<growth keyword>",
-    "<CAGR keyword>",
-    "<market value keyword>"
-  ],
+  "market_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
-  "pricing_keywords": [
-    "<pricing keyword>",
-    "<cost keyword>",
-    "<fee keyword>",
-    "<pricing model keyword>"
-  ],
+  "pricing_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
-  "adoption_keywords": [
-    "<user statistics keyword>",
-    "<adoption rate keyword>",
-    "<usage keyword>",
-    "<demand keyword>"
-  ],
+  "adoption_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
   "competitor_queries": [
-    "<competitor features>",
-    "<competitor pricing>",
-    "<competitor reviews>",
-    "<solution category country>"
+    "<local query 1>",
+    "<local query 2>",
+    "<local query 3>",
+    "<local query 4>",
+    "<global query 1>",
+    "<global query 2>",
+    "<global query 3>",
+    "<global query 4>",
+    "<global query 5>",
+    "<global query 6>"
   ],
 
-  "voc_keywords": [
-    "<pain point>",
-    "<complaint>",
-    "<problem>",
-    "<frustration>",
-    "<issue>"
-  ],
+  "voc_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
-  "trend_keywords": [
-    "<trend keyword>",
-    "<growth keyword>",
-    "<adoption trend>",
-    "<industry evolution>"
-  ],
+  "trend_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
-  "sector_tags": [
-    "<industry tag 1>",
-    "<industry tag 2>",
-    "<industry tag 3>"
-  ]
+  "sector_tags": ["<tag>", "<tag>", "<tag>"]
 }}
 
-Return ONLY the JSON. No explanation.
-"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+- EXACTLY 10 competitor_queries required
+- order MUST be:
+  → 4 local
+  → 6 global
+
+- queries MUST be adapted to the idea dynamically
+- queries MUST be diverse and non-repetitive
+- queries MUST reflect real user search behavior
+- output must be valid JSON only
+- no explanation
+"""
 # ═══════════════════════════════════════════════════════════════
 # KEYWORD BUNDLE — conteneur distribué aux sous-agents
 # ═══════════════════════════════════════════════════════════════
@@ -403,24 +503,40 @@ class KeywordExtractor(BaseAgent):
         def _clean(raw, n: int) -> list[str]:
             if not isinstance(raw, list):
                 return []
+
             result = []
-            for x in raw[:n]:
+            seen = set()
+
+            for x in raw:
                 if not isinstance(x, str):
                     continue
+
                 x = re.sub(r"\s+", " ", x).strip()
-                if x:
-                    result.append(x)
+
+                if not x:
+                    continue
+
+                key = x.lower()
+                if key in seen:
+                    continue
+
+                seen.add(key)
+                result.append(x)
+
+                if len(result) >= n:
+                    break
+
             return result
 
         return KeywordBundle(
-            primary_keywords   = _clean(data.get("primary_keywords"),   5),
-            market_keywords    = _clean(data.get("market_keywords"),    5),
-            pricing_keywords   = _clean(data.get("pricing_keywords"),   4),
-            adoption_keywords  = _clean(data.get("adoption_keywords"),  4),
-            competitor_queries = _clean(data.get("competitor_queries"), 4),
-            voc_keywords       = _clean(data.get("voc_keywords"),       5),
-            trend_keywords     = _clean(data.get("trend_keywords"),     4),
-            sector_tags        = _clean(data.get("sector_tags"),        3),
+            primary_keywords   = _clean(data.get("primary_keywords"),   6),
+            market_keywords    = _clean(data.get("market_keywords"),    6),
+            pricing_keywords   = _clean(data.get("pricing_keywords"),   5),
+            adoption_keywords  = _clean(data.get("adoption_keywords"),  5),
+            competitor_queries = _clean(data.get("competitor_queries"), 10),
+            voc_keywords       = _clean(data.get("voc_keywords"),       6),
+            trend_keywords     = _clean(data.get("trend_keywords"),     5),
+            sector_tags        = _clean(data.get("sector_tags"),        4),
         )
 
     def _log_bundle(self, b: KeywordBundle) -> None:

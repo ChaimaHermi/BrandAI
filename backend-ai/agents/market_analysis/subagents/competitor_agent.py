@@ -7,9 +7,9 @@ from tools.market_analysis.tavily_tool import tavily_search
 from utils.text_cleaner import clean_text
 
 
-_TAVILY_PER_QUERY = 4
+_TAVILY_PER_QUERY = 5
 _SERP_PER_QUERY = 2
-_TOTAL_RESULTS_MAX = 8
+_TOTAL_RESULTS_MAX = 20
 _CONTENT_MAX = 300
 _CONTEXT_MAX = 5000
 

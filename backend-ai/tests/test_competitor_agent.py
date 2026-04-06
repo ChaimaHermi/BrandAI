@@ -30,11 +30,17 @@ IDEA = {
 # QUERIES (IMPORTANT)
 # ─────────────────────────────────────────
 
-COMPETITOR_QUERIES = [
-    "best second hand clothing apps",
-    "Vinted vs Depop",
-    "top resale fashion platforms",
-    "second hand marketplace competitors"
+COMPETITOR_QUERIES =[
+  "best secondhand clothing app Tunisia",
+  "popular used fashion marketplace Tunisia",
+  "affordable thrift clothing platform Tunisia",
+  "local preowned clothes marketplace Tunisia",
+  "top resale clothing platforms",
+  "best secondhand fashion apps",
+  "popular peer‑to‑peer clothing marketplaces",
+  "alternatives to thredUP",
+  "similar apps selling used clothes",
+  "global online thrift stores"
 ]
 
 # ─────────────────────────────────────────

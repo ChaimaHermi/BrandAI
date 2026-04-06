@@ -39,21 +39,8 @@ OUTPUT CLEANING RULE (CRITICAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 - The output MUST always be clean, readable, and ready for production use
-- NEVER return encoded characters, escaped unicode, or corrupted text
-- NEVER include sequences like: \\uXXXX, HTML entities, or raw encoding artifacts
-
-- Normalize all text:
-  - Replace special unicode punctuation with standard ASCII characters
-  - Replace non-breaking spaces with normal spaces
-  - Remove invisible or control characters
-  - Ensure proper spacing and formatting
-
-- The output must look like text written by a human, not scraped or encoded data
-
-- This rule applies to ALL fields:
-  description, pricing, features, strengths, weaknesses, etc.
-
-- If the text is noisy, messy, or encoded → CLEAN it before returning
+- NEVER return encoded characters or corrupted text
+- Normalize all text and ensure readability
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 COMPETITOR TYPES
@@ -65,6 +52,33 @@ You MUST classify each competitor:
 - "indirect" → solution alternative
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GEOGRAPHIC SCOPE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You MUST classify each competitor:
+
+- "local"  → operates mainly in ONE country
+- "global" → operates in MULTIPLE countries or internationally
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCOPE DETECTION RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use ONLY the provided text.
+
+Classify as "local" if:
+- activity limited to one country
+- references to a specific country only
+- local or national positioning
+
+Classify as "global" if:
+- operates in multiple countries
+- mentions international presence
+- cross-border or multi-region activity
+
+If unsure → default to "global"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OBJECTIVE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -72,7 +86,8 @@ For EACH competitor, extract:
 
 - name
 - website
-- type (direct or indirect)
+- type (direct | indirect)
+- scope (local | global)
 - description
 - positioning
 - target_users
@@ -82,6 +97,21 @@ For EACH competitor, extract:
 - strengths
 - weaknesses
 - differentiation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRICT RELEVANCE FILTER (CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Include ONLY competitors that:
+
+- provide a similar type of solution
+- operate as digital products (platforms, apps, services)
+
+Exclude:
+
+- physical stores
+- unrelated industries
+- weak or unclear matches
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT (STRICT)
@@ -95,8 +125,9 @@ Return ONLY JSON:
       "name": "",
       "website": "",
       "type": "direct | indirect",
-      "description": "",
+      "scope": "local | global",
 
+      "description": "",
       "positioning": "",
       "target_users": "",
 
@@ -117,21 +148,18 @@ Return ONLY JSON:
 FINAL CHECK (MANDATORY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Before returning the JSON:
-
-- Ensure NO duplicate competitors exist
-- Ensure ALL text is in French (except names)
-- Ensure ALL text is clean, normalized, and readable
-- Ensure NO encoding artifacts remain
-- Ensure JSON is valid and complete
+- Ensure NO duplicates
+- Ensure ALL text is in French
+- Ensure scope is ALWAYS present
+- Ensure scope is ONLY "local" or "global"
+- Ensure JSON is valid and clean
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 IMPORTANT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 - Extract the MAXIMUM number of UNIQUE competitors
-- Prefer completeness over duplication
-- Include both global and local competitors if present
-- Output MUST be clean, readable, and structured
-- No explanation, no markdown, only JSON
+- Include both local and global competitors if available
+- Do NOT hallucinate missing companies
+- Output ONLY JSON
 """
