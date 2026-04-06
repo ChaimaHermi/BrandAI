@@ -9,6 +9,7 @@ from agents.base_agent import PipelineState
 from agents.market_analysis.orchestrator.keyword_extractor import KeywordExtractor
 from agents.market_analysis.subagents.competitor_agent import CompetitorAgent
 from agents.market_analysis.subagents.market_sizing_agent import MarketSizingAgent
+from agents.market_analysis.subagents.strategy_analysis_agent import StrategyAnalysisAgent
 from agents.market_analysis.subagents.trends_risks_agent import TrendsRisksAgent
 from agents.market_analysis.subagents.voc_agent import VOCAgent
 
@@ -32,7 +33,7 @@ def _to_pipeline(state: MarketGraphState) -> PipelineState:
 def _debug_ma(agent_name: str, ma: dict) -> None:
     print("\n====================")
     print(f"AFTER {agent_name}")
-    snap = {k: ma.get(k) for k in ("keywords", "market", "competitor", "voc", "trends")}
+    snap = {k: ma.get(k) for k in ("keywords", "market", "competitor", "voc", "trends", "strategy")}
     print(json.dumps(snap, indent=2, ensure_ascii=False))
 
 
@@ -70,6 +71,7 @@ def _final_market_analysis(ma: dict) -> dict:
         "competitor": ma.get("competitor") or {},
         "voc": ma.get("voc") or {},
         "trends": ma.get("trends") or {},
+        "strategy": ma.get("strategy") or {},
     }
 
 
@@ -83,6 +85,7 @@ async def node_keyword_extractor(state: MarketGraphState) -> dict:
     ma["competitor"] = {}
     ma["voc"] = {}
     ma["trends"] = {}
+    ma["strategy"] = {}
     ma["market_keywords"] = list(bundle.market_keywords or [])
     ma["competitor_queries"] = list(bundle.competitor_queries or [])
     ma["voc_queries"] = list(bundle.voc_keywords or [])
@@ -131,6 +134,16 @@ async def node_trends_risks(state: MarketGraphState) -> dict:
     return {"market_analysis": ma}
 
 
+async def node_strategy_analysis(state: MarketGraphState) -> dict:
+    ps = _to_pipeline(state)
+    agent = StrategyAnalysisAgent()
+    result = await agent.run(ps)
+    ma = dict(state.get("market_analysis") or {})
+    _store_agent_data(ma, "strategy", result)
+    _debug_ma("strategy_analysis", ma)
+    return {"market_analysis": ma}
+
+
 async def node_save_results(state: MarketGraphState) -> dict:
     ma = dict(state.get("market_analysis") or {})
     idea_id = state.get("idea_id")
@@ -159,12 +172,14 @@ def build_market_graph():
     g.add_node("competitor", node_competitor)
     g.add_node("voc", node_voc)
     g.add_node("trends_risks", node_trends_risks)
+    g.add_node("strategy_analysis_agent", node_strategy_analysis)
     g.add_node("save_results", node_save_results)
     g.add_edge(START, "keyword_extractor")
     g.add_edge("keyword_extractor", "market_sizing")
     g.add_edge("market_sizing", "competitor")
     g.add_edge("competitor", "voc")
     g.add_edge("voc", "trends_risks")
-    g.add_edge("trends_risks", "save_results")
+    g.add_edge("trends_risks", "strategy_analysis_agent")
+    g.add_edge("strategy_analysis_agent", "save_results")
     g.add_edge("save_results", END)
     return g.compile()

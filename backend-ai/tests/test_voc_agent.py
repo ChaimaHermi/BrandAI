@@ -35,12 +35,12 @@ IDEA = {
 # VOC QUERIES (IMPORTANT)
 # ─────────────────────────────────────────
 VOC_QUERIES = [
-    "reddit selling clothes online problems",
-    "vinted complaints reddit",
-    "depop problems users",
-    "why clothes not selling online reddit",
-    "youtube vinted review problems",
-    "second hand clothing marketplace issues"
+     "slow seller response times",
+    "poor item quality descriptions",
+    "payment security concerns",
+    "high shipping fees",
+    "limited size options",
+    "fake product listings"
 ]
 
 

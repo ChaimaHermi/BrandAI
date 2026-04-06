@@ -225,6 +225,10 @@ Then generate queries aligned with that understanding.
 DATA QUALITY REQUIREMENT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DATA QUALITY REQUIREMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Keywords must resemble real-world search queries used to retrieve actionable market data.
 
 They should prioritize:
@@ -240,6 +244,73 @@ not abstract or artificial wording.
 
 Prefer explicit, complete, and natural search queries
 over shortened or conceptual expressions.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TRENDS & RISKS COVERAGE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Keywords must enable discovery of:
+
+- market trends and growth signals
+- industry challenges and barriers
+- risks and threats affecting the market
+- regulatory or legal constraints
+
+Keywords must explicitly cover BOTH:
+
+- positive signals (growth, trends, demand)
+- negative signals (risks, challenges, problems, barriers)
+
+Ensure that:
+
+- at least one keyword clearly targets risks or negative outcomes
+- multiple keywords reflect trends and growth dynamics
+- keywords remain natural, search-oriented, and realistic
+
+Avoid generating keywords focused only on positive or descriptive aspects.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VOC-SPECIFIC REQUIREMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VOC keywords must focus on:
+
+- user problems
+- frustrations
+- complaints
+- reviews
+- real user experiences
+
+They should reflect how users express issues in forums, reviews, or discussions.
+
+Avoid:
+
+- generic or marketing-style terms
+- product features without user context
+- abstract or descriptive wording without real user signal
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VOC-SPECIFIC REQUIREMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VOC keywords must focus on:
+
+- user problems
+- frustrations
+- complaints
+- reviews
+- real user experiences
+
+They should reflect how users express issues in forums, reviews, or discussions.
+
+Avoid:
+
+- generic, descriptive, or marketing-style terms
+- product features without user context
+- abstract concepts that do not lead to real user feedback
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GENERAL AVOIDANCE RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Avoid:
 
