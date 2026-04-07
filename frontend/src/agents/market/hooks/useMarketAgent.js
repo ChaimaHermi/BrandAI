@@ -26,37 +26,46 @@ export function useMarketAgent({ idea, token }) {
       setIsLoading(true);
       setError("");
       setXaiSteps([]);
-
-      const resolvedShortPitch =
-        clarifiedIdea?.short_pitch || idea.clarity_short_pitch || idea.name || "";
-      const resolvedSolutionDescription =
-        clarifiedIdea?.solution_description || idea.clarity_solution || idea.description || "";
-      const resolvedTargetUsers =
-        clarifiedIdea?.target_users || idea.clarity_target_users || idea.target_audience || "";
-      const resolvedProblem =
-        clarifiedIdea?.problem || idea.clarity_problem || idea.description || "";
-      const resolvedSector = clarifiedIdea?.sector || idea.clarity_sector || idea.sector || "";
-      const resolvedCountry =
-        clarifiedIdea?.country || idea.clarity_country || "";
-      const resolvedCountryCode =
-        clarifiedIdea?.country_code || idea.clarity_country_code || "TN";
-      const resolvedLanguage = clarifiedIdea?.language || idea.clarity_language || "fr";
-
-      const payload = {
-        idea_id: idea.id,
-        name: resolvedShortPitch || idea.name || "",
-        sector: resolvedSector,
-        description: resolvedSolutionDescription || idea.description || "",
-        target_audience: resolvedTargetUsers || idea.target_audience || "",
-        short_pitch: resolvedShortPitch,
-        solution_description: resolvedSolutionDescription,
-        target_users: resolvedTargetUsers,
-        problem: resolvedProblem,
-        country: resolvedCountry,
-        country_code: resolvedCountryCode,
-        language: resolvedLanguage,
-        access_token: token,
-      };
+      const payload =
+        mode === "market_only"
+          ? {
+              idea_id: idea.id,
+              name:
+                clarifiedIdea?.short_pitch || idea.clarity_short_pitch || idea.name || "",
+              sector: clarifiedIdea?.sector || idea.clarity_sector || idea.sector || "",
+              description:
+                clarifiedIdea?.solution_description ||
+                idea.clarity_solution ||
+                idea.description ||
+                "",
+              target_audience:
+                clarifiedIdea?.target_users ||
+                idea.clarity_target_users ||
+                idea.target_audience ||
+                "",
+              short_pitch:
+                clarifiedIdea?.short_pitch || idea.clarity_short_pitch || idea.name || "",
+              solution_description:
+                clarifiedIdea?.solution_description ||
+                idea.clarity_solution ||
+                idea.description ||
+                "",
+              target_users:
+                clarifiedIdea?.target_users ||
+                idea.clarity_target_users ||
+                idea.target_audience ||
+                "",
+              problem:
+                clarifiedIdea?.problem || idea.clarity_problem || idea.description || "",
+              country_code:
+                clarifiedIdea?.country_code || idea.clarity_country_code || "TN",
+              language: clarifiedIdea?.language || idea.clarity_language || "fr",
+              access_token: token,
+            }
+          : {
+              idea_id: idea.id,
+              access_token: token,
+            };
 
       try {
         const streamUrl =
@@ -87,6 +96,11 @@ export function useMarketAgent({ idea, token }) {
                 await loadLatest();
                 onDone?.();
               }
+            } else {
+              setError(
+                data?.message ||
+                  "Lancement refusé: idée non clarifiée ou score insuffisant.",
+              );
             }
             setIsLoading(false);
           }

@@ -65,21 +65,47 @@ export default function PipelineLayout() {
     const API_URL =
       import.meta.env.VITE_API_URL || "http://localhost:8000/api";
     const authHeaders = { Authorization: "Bearer " + token };
+    const shouldCheckBranding = location.pathname.includes("/brand");
+    const shouldCheckMarketLatest =
+      location.pathname.includes("/market") ||
+      location.pathname.includes("/marketing") ||
+      location.pathname.includes("/results");
 
     fetch(API_URL + "/ideas/" + id, { headers: authHeaders })
       .then(async (r) => {
         const data = r.ok ? await r.json() : null;
         if (data) setIdea(data);
 
-        const [marketRes, marketingRes, brandRes] = await Promise.all([
-          fetch(API_URL + "/market-analysis/" + id + "/latest", { headers: authHeaders }),
-          fetch(API_URL + "/marketing-plans/" + id + "/latest", { headers: authHeaders }),
-          fetch(API_URL + "/branding/ideas/" + id + "/naming", { headers: authHeaders }),
-        ]);
+        // Avoid noisy 404s before pipeline has actually produced persisted rows.
+        const pipelineMayHaveResults = ["market_done", "done", "running"].includes(
+          data?.status,
+        );
+        if (shouldCheckMarketLatest && pipelineMayHaveResults) {
+          const [marketRes, marketingRes] = await Promise.all([
+            fetch(API_URL + "/market-analysis/" + id + "/latest", {
+              headers: authHeaders,
+            }),
+            fetch(API_URL + "/marketing-plans/" + id + "/latest", {
+              headers: authHeaders,
+            }),
+          ]);
+          setHasMarketResult(marketRes.ok);
+          setHasMarketingResult(marketingRes.ok);
+        } else {
+          setHasMarketResult(false);
+          setHasMarketingResult(false);
+        }
 
-        setHasMarketResult(marketRes.ok);
-        setHasMarketingResult(marketingRes.ok);
-        setHasBrandIdentityResult(brandRes.ok);
+        // Branding records are created later in the flow; avoid noisy 404 checks
+        // outside the Brand page.
+        if (shouldCheckBranding) {
+          const brandRes = await fetch(API_URL + "/branding/ideas/" + id + "/naming", {
+            headers: authHeaders,
+          });
+          setHasBrandIdentityResult(brandRes.ok);
+        } else {
+          setHasBrandIdentityResult(false);
+        }
       })
       .catch((e) => {
         console.error(e);
@@ -87,7 +113,7 @@ export default function PipelineLayout() {
         setHasMarketingResult(false);
         setHasBrandIdentityResult(false);
       });
-  }, [id, token]);
+  }, [id, token, location.pathname]);
 
   useEffect(() => {
     refetchIdea();

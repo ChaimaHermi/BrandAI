@@ -1,10 +1,15 @@
 import { useCallback } from "react";
 
 export function useSSEStream() {
-  const readSSEStream = useCallback(async (url, body, onEvent) => {
+  const readSSEStream = useCallback(async (url, body, onEvent, options = {}) => {
+    const requestHeaders = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
+
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: requestHeaders,
       body: JSON.stringify(body),
     });
 
@@ -26,16 +31,18 @@ export function useSSEStream() {
       if (!trimmed) return;
 
       let eventType = "message";
-      let rawData = "";
+      const dataLines = [];
 
       for (const line of trimmed.split("\n")) {
         if (line.startsWith("event:")) {
           eventType = line.slice(6).trim();
         } else if (line.startsWith("data:")) {
-          rawData = line.slice(5).trim();
+          // SSE supports multi-line data payload: concatenate all data lines.
+          dataLines.push(line.slice(5).trimStart());
         }
       }
 
+      const rawData = dataLines.join("\n").trim();
       if (!rawData) return;
 
       // Vérifier que le JSON est complet

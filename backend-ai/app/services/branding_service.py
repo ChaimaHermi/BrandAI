@@ -18,7 +18,10 @@ from agents.branding.logo_agent import LogoAgent
 from agents.branding.name_agent import NameAgent
 from agents.branding.palette_agent import PaletteAgent
 from agents.branding.slogan_agent import SloganAgent
-from app.routes.pipeline import _persist_brand_identity_row, fetch_branding_merged_generated
+from app.services.pipeline_persistence_service import (
+    fetch_branding_merged_generated,
+    persist_brand_identity_row,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +208,7 @@ class BrandingService:
             try:
                 started_at = datetime.now(timezone.utc)
                 completed_at = datetime.now(timezone.utc)
-                await _persist_brand_identity_row(
+                await persist_brand_identity_row(
                     idea_id=idea_id,
                     brand_identity=bi,
                     started_at=started_at,
@@ -275,7 +278,7 @@ class BrandingService:
 
                 started_at = datetime.now(timezone.utc)
                 completed_at = datetime.now(timezone.utc)
-                await _persist_brand_identity_row(
+                await persist_brand_identity_row(
                     idea_id=idea_id,
                     brand_identity=merged,
                     started_at=started_at,
@@ -354,7 +357,7 @@ class BrandingService:
 
                 started_at = datetime.now(timezone.utc)
                 completed_at = datetime.now(timezone.utc)
-                await _persist_brand_identity_row(
+                await persist_brand_identity_row(
                     idea_id=idea_id,
                     brand_identity=merged,
                     started_at=started_at,
@@ -441,7 +444,7 @@ class BrandingService:
 
                 started_at = datetime.now(timezone.utc)
                 completed_at = datetime.now(timezone.utc)
-                await _persist_brand_identity_row(
+                await persist_brand_identity_row(
                     idea_id=idea_id,
                     brand_identity=merged,
                     started_at=started_at,

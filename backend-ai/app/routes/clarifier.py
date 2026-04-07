@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from typing import List, Optional
 
@@ -11,6 +12,7 @@ from agents.idea_clarifier import IdeaClarifierAgent
 
 
 router = APIRouter(tags=["Idea Clarifier"])
+logger = logging.getLogger("brandai.clarifier.route")
 
 
 def sse_event(event: str, data: dict) -> str:
@@ -45,6 +47,14 @@ class ClarifierAnswerRequest(BaseModel):
 
 async def _stream_clarifier_start(body: ClarifierStartRequest):
     start_time = time.time()
+    logger.info(
+        "[clarifier/stream-start] request idea_id=%s name_len=%s desc_len=%s sector=%s target_len=%s",
+        body.idea_id,
+        len((body.name or "").strip()),
+        len((body.description or "").strip()),
+        (body.sector or "").strip(),
+        len((body.target_audience or "").strip()),
+    )
 
     state = PipelineState(
         idea_id=body.idea_id,
@@ -60,9 +70,15 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
             "status":  "loading",
             "message": "Analyse de votre idée...",
         })
+        logger.info("[clarifier/stream-start] idea_id=%s agent.run_start begin", body.idea_id)
 
         # 1 seul appel — sécurité + axes + réponse
         result = await agent.run_start(state)
+        logger.info(
+            "[clarifier/stream-start] idea_id=%s agent.run_start done type=%s",
+            body.idea_id,
+            result.get("type"),
+        )
 
         elapsed_ms = int((time.time() - start_time) * 1000)
         result_type = result.get("type")
@@ -96,8 +112,14 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
 
         yield sse_event("result", result)
         yield sse_event("done", {"success": True})
+        logger.info(
+            "[clarifier/stream-start] idea_id=%s stream done success elapsed_ms=%s",
+            body.idea_id,
+            elapsed_ms,
+        )
 
     except Exception as e:
+        logger.exception("[clarifier/stream-start] idea_id=%s stream error: %s", body.idea_id, e)
         yield sse_event("step", {
             "status":  "error",
             "message": f"Erreur : {str(e)}",
@@ -121,6 +143,15 @@ async def clarifier_start_stream(body: ClarifierStartRequest):
 
 async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
     start_time = time.time()
+    logger.info(
+        "[clarifier/stream-answer] request idea_id=%s desc_len=%s answers_len={problem:%s,target:%s,solution:%s,geo:%s}",
+        body.idea_id,
+        len((body.description or "").strip()),
+        len((body.answer_problem or "").strip()),
+        len((body.answer_target or "").strip()),
+        len((body.answer_solution or "").strip()),
+        len((body.answer_geography or "").strip()),
+    )
 
     state = PipelineState(
         idea_id=body.idea_id,
@@ -136,6 +167,7 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
             "status":  "loading",
             "message": "Analyse de vos réponses...",
         })
+        logger.info("[clarifier/stream-answer] idea_id=%s agent.run_answer begin", body.idea_id)
 
         answers = {
             "problem":  (body.answer_problem  or "").strip(),
@@ -146,6 +178,11 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
 
         # 1 seul appel — sécurité sur réponses + structuration
         result = await agent.run_answer(state, answers)
+        logger.info(
+            "[clarifier/stream-answer] idea_id=%s agent.run_answer done type=%s",
+            body.idea_id,
+            result.get("type"),
+        )
 
         elapsed_ms = int((time.time() - start_time) * 1000)
         result_type = result.get("type")
@@ -176,8 +213,14 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
 
         yield sse_event("result", result)
         yield sse_event("done", {"success": True})
+        logger.info(
+            "[clarifier/stream-answer] idea_id=%s stream done success elapsed_ms=%s",
+            body.idea_id,
+            elapsed_ms,
+        )
 
     except Exception as e:
+        logger.exception("[clarifier/stream-answer] idea_id=%s stream error: %s", body.idea_id, e)
         yield sse_event("step", {
             "status":  "error",
             "message": f"Erreur : {str(e)}",

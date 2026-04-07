@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useOutletContext } from "react-router-dom";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
+import { CLARITY_SCORE_MIN_PIPELINE } from "../constants";
 import XaiBlock from "../components/XaiBlock";
 import QuestionsBlock from "../components/QuestionsBlock";
 import ClarifiedBlock from "../components/ClarifiedBlock";
@@ -8,6 +10,7 @@ import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
   const { idea, token, refetchIdea } = useOutletContext();
+  const navigate = useNavigate();
   const xaiHideTimerRef = useRef(null);
   const {
     currentStep,
@@ -133,6 +136,22 @@ export default function ClarifierPage() {
 
   const isLoading =
     currentStep === "analyzing" || currentStep === "answering";
+
+  const canLaunchPipeline =
+    currentStep === "clarified" &&
+    !!clarifiedIdea &&
+    (clarityScore ?? 0) >= CLARITY_SCORE_MIN_PIPELINE;
+
+  const handleLaunchPipeline = () => {
+    if (!idea?.id || !canLaunchPipeline) return;
+    navigate(`/ideas/${idea.id}/market`, {
+      state: {
+        autoStartMarket: true,
+        sourceIdeaId: idea.id,
+        clarifiedIdea,
+      },
+    });
+  };
 
   return (
     <div
@@ -357,7 +376,33 @@ export default function ClarifierPage() {
       )}
 
       {currentStep === "clarified" && (
-        <ClarifiedBlock data={clarifiedIdea} score={clarityScore} />
+        <>
+          <ClarifiedBlock data={clarifiedIdea} score={clarityScore} />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              type="button"
+              onClick={handleLaunchPipeline}
+              disabled={!canLaunchPipeline || !token}
+              style={{
+                border: "1px solid #7F77DD",
+                background: !canLaunchPipeline || !token ? "#e5e7eb" : "#7F77DD",
+                color: !canLaunchPipeline || !token ? "#6b7280" : "#ffffff",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: !canLaunchPipeline || !token ? "not-allowed" : "pointer",
+              }}
+            >
+              Lancer pipeline
+            </button>
+          </div>
+        </>
       )}
 
       {currentStep === "refused" && <RefusedBlock data={refusalData} />}
