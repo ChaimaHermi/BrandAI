@@ -6,6 +6,7 @@ import { mapMarketReport } from "../utils/mapMarketReport";
 export function useMarketAgent({ idea, token }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [report, setReport] = useState(null);
+  const [rawReport, setRawReport] = useState(null);
   const [xaiSteps, setXaiSteps] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -15,9 +16,11 @@ export function useMarketAgent({ idea, token }) {
   const loadLatest = useCallback(async () => {
     if (!idea?.id || !token) return null;
     const latest = await getLatestMarketAnalysis(idea.id, token);
-    const mapped = mapMarketReport(latest?.result_json || latest);
+    const raw = latest?.result_json || latest;
+    const mapped = mapMarketReport(raw);
+    setRawReport(raw || null);
     setReport(mapped);
-    return mapped;
+    return { raw: raw || null, mapped };
   }, [idea?.id, token]);
 
   const startMarketAnalysis = useCallback(
@@ -119,6 +122,7 @@ export function useMarketAgent({ idea, token }) {
     activeTab,
     setActiveTab,
     report,
+    rawReport,
     hasData,
     xaiSteps,
     isLoading,

@@ -57,6 +57,6 @@ FORMAT JSON STRICT:
     "long_term": []
   },
   "assumptions": [],
-  "confidence_level": "low | medium | high"
+
 }
 """
