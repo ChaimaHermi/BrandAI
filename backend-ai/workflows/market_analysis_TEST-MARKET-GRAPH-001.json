@@ -13,318 +13,378 @@
   "market_analysis": {
     "keywords": {
       "primary_keywords": [
-        "secondhand clothing marketplace",
-        "online thrift store",
-        "used fashion platform",
-        "pre-owned apparel marketplace",
-        "vintage clothing e-commerce"
+        "online secondhand clothing marketplace",
+        "used fashion e-commerce",
+        "pre-owned apparel platform",
+        "vintage clothing marketplace",
+        "sustainable fashion resale"
       ],
       "market_keywords": [
-        "clothing resale market size",
-        "secondhand fashion market growth",
-        "used apparel market Tunisia",
-        "global thrift market revenue",
-        "pre-owned clothing market trends"
+        "secondhand clothing market size",
+        "online resale fashion market",
+        "pre-owned apparel market growth",
+        "used clothing e-commerce trends",
+        "sustainable fashion market Tunisia"
       ],
       "pricing_keywords": [
-        "average resale price secondhand clothing",
-        "price comparison used fashion apps",
-        "selling price guidelines thrift clothing",
-        "commission fees resale platforms",
-        "pricing strategy secondhand apparel"
+        "secondhand clothing price range",
+        "used apparel commission fees",
+        "resale fashion seller fees",
+        "thrift store markup percentages",
+        "pre-owned clothing transaction costs"
       ],
       "adoption_keywords": [
-        "user adoption secondhand fashion",
-        "growth of thrift shopping",
-        "consumer acceptance used clothing",
-        "mobile app usage resale clothing",
-        "demographic trends thrift market"
+        "secondhand fashion user adoption",
+        "used clothing platform growth rate",
+        "online thrift store user base",
+        "resale apparel market penetration",
+        "pre-owned clothing app downloads"
       ],
       "competitor_queries": [
-        "best resale clothing Tunisia",
-        "popular thrift marketplace Tunisia",
-        "online secondhand fashion Tunisia",
-        "used clothing apps Tunisia",
-        "best resale clothing platforms",
-        "popular secondhand fashion marketplaces",
-        "online thrift store alternatives",
-        "used clothing marketplace apps",
-        "top peer-to-peer fashion resale",
-        "similar pre-owned apparel platforms"
+        "best secondhand clothing Tunisia",
+        "popular resale fashion platform Tunisia",
+        "alternatives to Vinted Tunisia",
+        "used clothing marketplace Tunisia",
+        "top secondhand clothing platforms",
+        "popular resale fashion apps",
+        "alternatives to Depop",
+        "similar marketplace used apparel",
+        "best online thrift stores",
+        "popular pre-owned fashion websites"
       ],
       "voc_keywords": [
-        "slow shipping secondhand clothing",
-        "fake brand issues resale apps",
-        "poor item quality thrift marketplace",
-        "high seller fees clothing resale",
-        "limited size options used apparel",
-        "difficult return process secondhand"
+        "issues with clothing size accuracy",
+        "slow shipping secondhand apparel",
+        "payment problems resale platforms",
+        "trust concerns used clothing sellers",
+        "poor customer service thrift apps",
+        "difficulty returning used garments"
       ],
       "trend_keywords": [
-        "secondhand fashion market growth 2024",
-        "increase in sustainable clothing demand",
-        "rise of peer-to-peer apparel resale",
-        "regulatory challenges online resale Tunisia",
-        "decline in new clothing sales"
+        "growth of sustainable fashion",
+        "rise in online thrift shopping",
+        "increasing demand pre-owned clothing",
+        "regulatory challenges secondhand sales",
+        "environmental impact resale market"
       ],
       "sector_tags": [
         "e-commerce",
         "fashion resale",
-        "circular economy"
+        "sustainable marketplace"
       ]
     },
     "market": {
       "market_size": {
-        "value": 227,
-        "unit": "billion USD",
-        "source": "U.S. apparel and footwear resale market - statistics & facts (global secondhand apparel market estimated at $227 billion in 2024)"
+        "value": 190,
+        "unit": "USD billion",
+        "source": "Second‑Hand Fashion Market Size & Share Report, 2034 – \"The global second‑hand fashion market size was estimated at USD 190 billion in 2024.\""
       },
       "market_revenue": {
-        "value": 190,
-        "unit": "billion USD",
-        "source": "Second‑Hand Fashion Market Size & Share Report, 2034 (global second‑hand fashion market estimated at $190 billion in 2024)"
+        "value": 227,
+        "unit": "USD billion",
+        "source": "Online Resale Is Booming – \"global secondhand fashion sales reached $227 billion in 2024.\""
       },
       "CAGR": {
-        "value": 10,
+        "value": 10.7,
         "unit": "%",
-        "source": "ThredUp’s annual Resale 2025 report (projected CAGR of 10 % for 2024‑2029)"
+        "source": "Second‑Hand Fashion Market Size & Share Report, 2034 – \"at a CAGR of 10.7%\"."
       },
       "growth_rate": {
-        "value": 15,
+        "value": 14,
         "unit": "%",
-        "source": "ThredUp’s annual Resale 2025 report (second‑hand market grew by 15 % in 2024)"
+        "source": "ThredUp's 13th annual Resale Report – \"The U.S. secondhand apparel market grew 14% in 2024.\""
       },
       "number_of_users": {
-        "value": null,
-        "unit": "users",
-        "source": ""
+        "value": 80,
+        "unit": "users (million)",
+        "source": "The Best Places to Sell Clothes Online | Vogue – \"Poshmark ... over 80 million users.\""
       },
       "adoption_rate": {
-        "value": 10,
+        "value": null,
         "unit": "%",
-        "source": "Boston Consulting Group & Vestiaire Collective study (resale market penetration expected to reach 10 % by 2030)"
+        "source": ""
       }
     },
     "competitor": {
       "competitors": [
         {
           "name": "Dabchy",
-          "website": "https://dabchy.com",
+          "website": null,
           "type": "direct",
           "scope": "local",
-          "description": "Plateforme en ligne tunisienne permettant d'acheter et de vendre des vêtements et accessoires de mode d'occasion.",
-          "positioning": "Premier magasin en ligne de mode d'occasion en Tunisie, créant une communauté de consommateurs conscients.",
-          "target_users": "Consommateurs tunisiens recherchant des vêtements de seconde main et vendeurs individuels souhaitant revendre leurs articles.",
+          "description": "Marketplace tunisien de mode d'occasion qui connecte vendeurs et acheteurs de vêtements de seconde main.",
+          "positioning": null,
+          "target_users": null,
           "pricing": null,
           "business_model": null,
-          "key_features": [
-            "Marketplace dédié à la mode d'occasion",
-            "Inscription et création de profil vendeur",
-            "Recherche par catégorie et prix",
-            "Communauté engagée autour de la durabilité"
-          ],
-          "strengths": [
-            "Premier service spécialisé en Tunisie",
-            "Communauté engagée et consciente de l'impact environnemental"
-          ],
-          "weaknesses": [
-            "Couverture géographique limitée à la Tunisie",
-            "Visibilité et notoriété encore en développement"
-          ],
-          "differentiation": "Seul site tunisien dédié exclusivement à la mode d'occasion, offrant une expérience communautaire autour du recyclage vestimentaire."
+          "key_features": [],
+          "strengths": [],
+          "weaknesses": [],
+          "differentiation": null
         },
         {
-          "name": "Dokena",
-          "website": "https://dokena.com",
+          "name": "AGARUW",
+          "website": null,
           "type": "direct",
           "scope": "local",
-          "description": "Marketplace en ligne tunisien regroupant plus de 1 000 produits, incluant des annonces de seconde main et des marques locales vérifiées.",
-          "positioning": "Plateforme tout‑en‑un pour les marques tunisiennes et les articles d'occasion, avec livraison rapide et retours faciles.",
-          "target_users": "Acheteurs et vendeurs tunisiens cherchant des produits neufs ou d'occasion, notamment dans le secteur de la mode.",
+          "description": "Première plateforme tunisienne de mode durable, visant à soutenir les créateurs locaux et à promouvoir une mode éco‑responsable.",
+          "positioning": null,
+          "target_users": null,
           "pricing": null,
           "business_model": null,
-          "key_features": [
-            "Plus de 1 000 produits disponibles",
-            "Vérification des vendeurs locaux",
-            "Livraison rapide",
-            "Retours faciles"
-          ],
-          "strengths": [
-            "Large catalogue et visibilité des marques locales",
-            "Service logistique intégré"
-          ],
-          "weaknesses": [
-            "Pas spécialisé uniquement dans la mode d'occasion",
-            "Concurrence avec d'autres marketplaces généralistes"
-          ],
-          "differentiation": "Combine la vente de produits neufs de marques locales avec des annonces de seconde main, offrant ainsi une offre diversifiée sur le même site."
+          "key_features": [],
+          "strengths": [],
+          "weaknesses": [],
+          "differentiation": null
+        },
+        {
+          "name": "Vinted",
+          "website": null,
+          "type": "direct",
+          "scope": "global",
+          "description": "Plateforme internationale de revente de vêtements et accessoires d'occasion entre particuliers.",
+          "positioning": null,
+          "target_users": null,
+          "pricing": null,
+          "business_model": null,
+          "key_features": [],
+          "strengths": [],
+          "weaknesses": [],
+          "differentiation": null
+        },
+        {
+          "name": "Vestiaire Collective",
+          "website": null,
+          "type": "direct",
+          "scope": "global",
+          "description": "Marketplace en ligne spécialisé dans la revente de vêtements et accessoires de luxe d'occasion.",
+          "positioning": null,
+          "target_users": null,
+          "pricing": null,
+          "business_model": null,
+          "key_features": [],
+          "strengths": [],
+          "weaknesses": [],
+          "differentiation": null
+        },
+        {
+          "name": "NOLD",
+          "website": null,
+          "type": "direct",
+          "scope": "global",
+          "description": "Marketplace britannique de mode pré‑aimée qui permet de vendre et d'acheter des articles via un scan produit, sans commission.",
+          "positioning": null,
+          "target_users": null,
+          "pricing": null,
+          "business_model": null,
+          "key_features": [],
+          "strengths": [],
+          "weaknesses": [],
+          "differentiation": null
+        },
+        {
+          "name": "Flyp",
+          "website": null,
+          "type": "direct",
+          "scope": "global",
+          "description": "Plateforme de revente de vêtements d'occasion mentionnée parmi les alternatives à Vinted.",
+          "positioning": null,
+          "target_users": null,
+          "pricing": null,
+          "business_model": null,
+          "key_features": [],
+          "strengths": [],
+          "weaknesses": [],
+          "differentiation": null
+        },
+        {
+          "name": "The RealReal",
+          "website": null,
+          "type": "direct",
+          "scope": "global",
+          "description": "Marketplace américain spécialisé dans la revente de produits de luxe authentifiés.",
+          "positioning": null,
+          "target_users": null,
+          "pricing": null,
+          "business_model": null,
+          "key_features": [],
+          "strengths": [],
+          "weaknesses": [],
+          "differentiation": null
+        },
+        {
+          "name": "Aimeos",
+          "website": null,
+          "type": "indirect",
+          "scope": "global",
+          "description": "Framework open‑source permettant de créer des boutiques en ligne, y compris des places de marché de seconde main.",
+          "positioning": null,
+          "target_users": null,
+          "pricing": null,
+          "business_model": null,
+          "key_features": [],
+          "strengths": [],
+          "weaknesses": [],
+          "differentiation": null
         }
       ]
     },
     "voc": {
       "pain_points": [
-        "Unclear pallet manifests make it hard to know what items are included.",
-        "High freight and shipping fees can erase profit margins for bulk buyers.",
-        "Risk of receiving counterfeit items on online marketplaces.",
-        "The process of browsing, checking, and double‑checking used clothing is time‑consuming.",
-        "Inconsistent delivery reliability and long transit times frustrate customers."
+        "Inconsistent sizing across brands leads to low shopper confidence and higher cart abandonment.",
+        "Customers experience higher return rates because garments from the same brand can fit differently.",
+        "Lack of universal sizing standards makes it difficult for shoppers to select the right size online.",
+        "Thrift shoppers dislike the time‑consuming process of digging through physical stores.",
+        "Sellers on resale platforms face trust issues due to confusing fees and delayed payouts."
       ],
       "frustrations": [
-        "Encountering fake products despite platform policies.",
-        "Lack of clear condition labeling on second‑hand inventory.",
-        "Difficulty confirming whether a seller is an authorized distributor.",
-        "The slow, cumbersome process required before pressing the buy button.",
-        "Unexpected shipping costs that reduce overall profitability."
+        "Brands often do not follow their own sizing charts, resulting in unpredictable fit.",
+        "Shoppers feel frustrated when two identical shirts from the same store fit differently.",
+        "Users are annoyed by unexpected payout delays or hidden fees on resale marketplaces.",
+        "The effort required to manually browse thrift stores is seen as a hassle.",
+        "Inconsistent size guidance reduces repeat purchase rates."
       ],
       "desired_features": [
-        "Detailed manifest information for pallets to know exact contents.",
-        "Transparent condition grading and labeling for used items.",
-        "Built‑in authenticity verification tools or easy in‑app reporting of counterfeits.",
-        "Faster, more reliable delivery through regional warehouses.",
-        "A consolidated search feature that shows authorized distributors for brands."
+        "A universal or standardized sizing system that works across all clothing brands.",
+        "Accurate size recommendation tools that boost shopper confidence.",
+        "Easy‑to‑use online browsing interfaces for secondhand clothing (e.g., searchable apps).",
+        "Transparent fee structures and real‑time payout notifications for sellers.",
+        "Consistent adherence to published sizing charts by brands."
       ],
       "user_quotes": [
-        "\"Shop slow and enjoy the process.\"",
-        "\"Buying used clothes online is a marathon, not a sprint.\"",
-        "\"I had found a Gucci blouse along with a bunch of other luxury designer pieces in one single trip.\"",
-        "\"If you think you’ve received a counterfeit item, please report the item in‑app under your Purchases tab.\"",
-        "\"A quick Google search will typically reveal whether the marketplace seller is an authorized distributor of the product.\""
+        "\"hates digging through thrift stores\" – expressing frustration with physical thrift shopping.",
+        "\"It’s super easy to browse and the app g...\" – praising a user‑friendly secondhand app.",
+        "\"Some brands do not diligently follow their own sizing charts/syst...\" – highlighting inconsistency in brand sizing."
       ],
       "market_insights": [
-        "Consumers are increasingly wary of counterfeit goods and seek stronger authenticity safeguards on large marketplaces.",
-        "Shipping and freight costs are a decisive factor for bulk resellers, often dictating profitability.",
-        "Social and functional risks influence shoppers to switch toward thrift and second‑hand stores.",
-        "Placing inventory closer to customers (regional warehouses) is viewed as a way to improve delivery speed and flexibility.",
-        "The buying journey for used clothing is perceived as lengthy, indicating demand for tools that streamline browsing and verification."
+        "Sizing inconsistency is a systemic issue across the fashion e‑commerce sector, affecting confidence, returns, and repeat purchases.",
+        "The secondhand clothing market supports millions of people globally, from buyers to repairers and resellers.",
+        "Payment reliability is a critical factor for seller retention on fashion recommerce platforms.",
+        "Brands tailor sizing charts to specific demographics, which contributes to the lack of a universal standard.",
+        "Improving size accuracy can directly reduce cart abandonment and increase repeat purchase rates."
       ],
-      "insights_fr": []
+      "insights_fr": [
+        "L'absence de normes de taille universelles crée de la confusion et augmente les retours.",
+        "Les vendeurs de plateformes de revente sont sensibles aux frais cachés et aux retards de paiement."
+      ]
     },
     "trends": {
       "market_trends": [
-        "The U.S. second‑hand fashion market is projected to grow at a CAGR of 11.4% from 2025‑2034, reaching roughly $80 bn by 2034.",
-        "Globally, the second‑hand apparel segment grew 15% in 2024 and is expected to maintain a ~10% CAGR through 2029, now representing 9% of total apparel spend.",
-        "The overall second‑hand apparel market is forecast to expand from $228 bn in 2024 to $777.7 bn by 2035, indicating a strong macro‑level shift toward resale.",
-        "Europe’s sustainable clothing market held a 23.1% share in 2024 and is set to grow at an 8.7% CAGR through 2034, driven by consumer demand for eco‑friendly products.",
-        "Circular business models (resale, rental, repair, recycling) are gaining traction worldwide, reshaping the traditional apparel value chain."
+        "Sustainable fashion market expanding, with the apparel segment holding ~47% share and driving growth.",
+        "Circular fashion model gaining traction, accelerating secondhand and recommerce markets.",
+        "Online resale platforms experiencing rapid mainstream adoption as key distribution channels.",
+        "Consumer demand for long‑lasting, ethically produced clothing reshaping product development.",
+        "Forecasts show sustained YoY growth for sustainable fashion through 2033."
       ],
       "consumer_trends": [
-        "Millennials and Gen Z are increasingly environmentally conscious, treating resale as a primary shopping channel rather than a niche option.",
-        "Digital‑native shoppers expect brands to provide full product‑lifecycle services, including easy resale or trade‑in programs.",
-        "Peer‑to‑peer resale platforms are democratizing access, allowing anyone with internet connectivity to buy or sell pre‑owned fashion.",
-        "Consumers are showing heightened awareness of ethical labor practices, influencing purchase decisions toward sustainable and long‑lasting garments.",
-        "There is a growing preference for well‑made, durable clothing that can be repaired or recycled, reducing the desire for fast‑fashion turnover."
+        "Increasing environmental awareness pushes consumers toward eco‑friendly brands.",
+        "Younger demographics view pre‑owned garments as both sustainable and style‑forward.",
+        "Affordability concerns drive shoppers to thrift and resale channels.",
+        "Preference for ethical labor practices influences purchase decisions.",
+        "Demand for durable, high‑quality items to reduce waste and extend product life."
       ],
       "technology_trends": [
-        "Rapid expansion of online resale marketplaces such as ThredUp and Poshmark, which leverage mobile apps and AI‑driven pricing algorithms.",
-        "Integration of digital product‑lifecycle platforms that enable brands to track, authenticate, and facilitate resale of their own items.",
-        "Growth of peer‑to‑peer (P2P) resale infrastructure that bypasses traditional retail distribution, lowering transaction costs and increasing market reach.",
-        "Emergence of blockchain‑based provenance tools to verify authenticity and ownership history of second‑hand luxury goods.",
-        "Use of data analytics to predict resale demand trends and optimize inventory allocation across multiple resale channels."
+        "Development of recycled polyester, plant‑based fibers, lab‑grown leather, and regenerative wool.",
+        "Sophisticated managed marketplaces offering value‑added services for resale.",
+        "Digital tools (apps, AI) improving matching of buyers with second‑hand inventory.",
+        "Innovations in biodegradable packaging for fashion products.",
+        "Data analytics optimizing circular supply chains and material sourcing."
       ],
       "regulatory_trends": [
-        "European policymakers are tightening sustainability reporting requirements for apparel companies, encouraging circular practices.",
-        "Potential introduction of extended producer responsibility (EPR) schemes for textiles, mandating take‑back and recycling obligations.",
-        "U.S. state‑level legislation is beginning to address textile waste, which could incentivize resale and recycling initiatives.",
-        "Increasing scrutiny of labor standards in the fashion supply chain may drive stricter labeling and compliance rules.",
-        "Regulations around online marketplace consumer protection (e.g., authenticity guarantees) are expected to become more rigorous."
+        "Increasing policies targeting carbon‑emission reductions in apparel production.",
+        "Emerging standards for organic and recycled material certification.",
+        "Potential regulations encouraging textile waste minimisation and recycling.",
+        "Government incentives for companies adopting circular business models.",
+        "Growing scrutiny on labor practices prompting stricter compliance requirements."
       ],
       "emerging_opportunities": [
-        "Brands can launch in‑house resale platforms or partner with existing P2P marketplaces to capture secondary‑market revenue.",
-        "Investors have a clear runway for funding technology that supports circularity—such as AI pricing, authentication, and logistics solutions.",
-        "Expansion of resale services into emerging markets where internet penetration is rising but formal second‑hand infrastructure is limited.",
-        "Development of subscription‑based rental models for high‑turnover categories (e.g., fast‑fashion, maternity wear) to complement resale.",
-        "Creation of certified sustainable collections targeting European consumers who prioritize ethical and eco‑friendly apparel."
+        "Supply of novel sustainable materials to fashion brands seeking differentiation.",
+        "Expansion of online thrift and recommerce platforms with premium, value‑added services.",
+        "Branding around ethical labor and transparency to capture conscious consumers.",
+        "Development of biodegradable packaging solutions for fashion retailers.",
+        "Partnerships between traditional brands and tech firms to create circular product lines."
       ],
       "market_risks": [
-        "Oversaturation of second‑hand inventory could compress resale margins and erode profitability for platform operators.",
-        "Consumer doubts about product authenticity and condition may hinder wider adoption, especially for luxury segments.",
-        "Regulatory uncertainty around textile recycling standards could increase compliance costs for resale and recycling firms.",
-        "Reliance on digital platforms introduces cybersecurity and data‑privacy risks that could damage brand trust.",
-        "Increased logistics and shipping volumes associated with resale may offset some environmental benefits if not managed efficiently."
+        "High cost and limited scalability of new sustainable materials may pressure margins.",
+        "Consumer skepticism about the authenticity of sustainability claims (greenwashing).",
+        "Intensifying competition among resale platforms could compress profitability.",
+        "Regulatory compliance costs for carbon, waste, and labor standards.",
+        "Supply‑chain disruptions for recycled inputs and bio‑based raw materials."
       ],
-      "insights_fr": [
-        "Le marché de la mode d'occasion connaît une croissance exponentielle, porté par les Millennials et la Génération Z soucieux de l'environnement.",
-        "Les plateformes P2P comme ThredUp et Poshmark démocratisent la revente, transformant le modèle de distribution traditionnel.",
-        "Les réglementations européennes et américaines tendent à imposer davantage de responsabilités aux producteurs, favorisant les modèles circulaires.",
-        "Les marques ont une opportunité stratégique d'intégrer la revente ou la location dans leur offre pour fidéliser les clients et créer de nouvelles sources de revenus.",
-        "Les principaux risques restent la surabondance d'inventaire, les doutes sur l'authenticité et les coûts liés à la conformité réglementaire et à la cybersécurité."
-      ]
+      "insights_fr": "Le marché de la mode durable connaît une croissance soutenue, portée par une prise de conscience environnementale et une préférence pour les vêtements éthiques et durables. Les matériaux innovants comme le polyester recyclé ou le cuir cultivé en laboratoire offrent de nouvelles opportunités, tandis que le commerce de seconde main se développe rapidement grâce aux plateformes numériques. Les jeunes consommateurs privilégient les articles pré‑possédés pour leur impact réduit et leur originalité, créant un virage vers l’économie circulaire. Cependant, les coûts élevés des nouvelles matières, le risque de greenwashing et la pression réglementaire sur les émissions et les déchets représentent des défis majeurs à surveiller."
     },
     "strategy": {
       "pestel": {
         "political": [
-          "Limited regulatory framework for second‑hand apparel in Tunisia creates both flexibility and uncertainty for marketplace operators."
+          "Soutien gouvernemental croissant aux projets d’économie circulaire et à la réduction des déchets textiles.",
+          "Réglementations tunisiennes et européennes sur le commerce électronique, notamment les exigences de conformité fiscale et de protection du consommateur."
         ],
         "economic": [
-          "Global second‑hand fashion market valued at $227 bn (2024) with $190 bn revenue, indicating a mature, high‑value segment.",
-          "CAGR of 10% (2024‑2029) and 15% growth in 2024 signal strong economic momentum.",
-          "Adoption projected to reach 10% of total apparel spend by 2030, suggesting expanding consumer spend on resale."
+          "Marché mondial de la mode d’occasion évalué à 190 Mds USD (2024) avec un CAGR de 10,7 %, signe d’une forte dynamique de croissance.",
+          "Sensibilité des consommateurs aux prix : la revente permet d’acheter des marques à moindre coût, stimulant la demande dans les économies à revenu moyen."
         ],
         "social": [
-          "Growing consumer consciousness about sustainability and waste reduction drives demand for resale platforms.",
-          "Heightened sensitivity to counterfeit goods; shoppers demand authenticity safeguards.",
-          "Community‑oriented positioning (e.g., Dabchy) resonates with socially aware buyers."
+          "Prise de conscience environnementale accrue ; les consommateurs recherchent des alternatives durables à la fast‑fashion.",
+          "Frustration généralisée liée à l’incohérence des tailles, source de méfiance et d’abandon de panier."
         ],
         "technological": [
-          "Need for transparent condition grading, detailed pallet manifests, and in‑app authenticity verification tools.",
-          "Opportunity to leverage regional warehousing and faster logistics through digital inventory management."
+          "Maturité des algorithmes d’apprentissage automatique pour la reconnaissance d’images et la prédiction de la taille.",
+          "Disponibilité de solutions cloud et d’APIs facilitant l’intégration d’un moteur de recommandation de taille dans les places‑marché existantes."
         ],
         "environmental": [
-          "Resale reduces textile waste and carbon footprint, aligning with environmental goals of both consumers and regulators."
+          "Réduction de l’empreinte carbone grâce à la prolongation du cycle de vie des vêtements.",
+          "Pression des ONG et des labels éco‑responsables pour une mode plus circulaire."
         ],
         "legal": [
-          "Counterfeit risk creates legal exposure; platforms must enforce IP compliance and provide reporting mechanisms.",
-          "Clear labeling and verification can mitigate liability and build trust."
+          "Obligations de conformité au RGPD pour la collecte de données personnelles et aux législations locales sur la protection du consommateur.",
+          "Réglementations anti‑contrefaçon qui peuvent compliquer la vérification d’authenticité des articles de seconde main."
         ]
       },
       "swot": {
         "strengths": [
-          "Dabchy is the first dedicated second‑hand fashion marketplace in Tunisia, offering a focused community.",
-          "Dokena combines a large product catalogue with verified local sellers and integrated logistics."
+          "Solution technologique (IA de recommandation de taille) répondant à un problème clairement identifié par les utilisateurs.",
+          "Positionnement local (Tunisie) permettant une connaissance fine du marché et des partenaires logistiques.",
+          "Capacité à réduire les retours et à augmenter la confiance des acheteurs, facteur différenciateur face aux marketplaces classiques."
         ],
         "weaknesses": [
-          "Geographic coverage limited to Tunisia, restricting scale.",
-          "Brand awareness and visibility still developing.",
-          "Dokena’s mixed new/used offering dilutes specialization in resale."
+          "Nécessité d’une base de données volumineuse et diversifiée pour entraîner les modèles de taille.",
+          "Ressources limitées pour le développement, le marketing et le support client lors du lancement.",
+          "Dépendance initiale à l’intégration avec des plateformes tierces (Dabchy, AGARUW, etc.)."
         ],
         "opportunities": [
-          "Capitalize on 10%+ market penetration forecast and 10% CAGR to expand regionally.",
-          "Introduce tech‑enabled authenticity verification and detailed manifests to address VOC pain points.",
-          "Deploy regional warehouses to lower freight costs and improve delivery speed.",
-          "Leverage sustainability narrative to attract environmentally conscious consumers."
+          "Croissance du marché mondial de la mode d’occasion (+10,7 % CAGR) et forte adoption locale (80 M d’utilisateurs actifs sur les plateformes similaires).",
+          "Tendance sociétale vers la durabilité et la réduction du gaspillage textile.",
+          "Possibilité de monétiser via un modèle SaaS/API ou des commissions sur les transactions où le service de taille est utilisé."
         ],
         "threats": [
-          "Global resale platforms (e.g., ThredUp, Vestiaire Collective) may enter the Tunisian market.",
-          "Persistent counterfeit concerns could erode buyer confidence.",
-          "High freight and shipping fees threaten profitability for bulk buyers."
+          "Concurrence de plateformes globales (Vinted, Vestiaire Collective) qui pourraient développer leurs propres outils de taille.",
+          "Risque de normalisation industrielle des tailles qui rendrait le service moins différenciant.",
+          "Barrières d’adoption liées à la confiance des utilisateurs dans les recommandations algorithmiques."
         ]
       },
       "demand_analysis": {
-        "demand_level": "high",
-        "growth_potential": "high",
+        "demand_level": "Élevé",
+        "growth_potential": "Fort, soutenu par un CAGR de 10,7 % et une croissance de 14 % du marché US en 2024.",
         "drivers": [
-          "Sustainability awareness and desire to reduce fashion waste.",
-          "Cost savings compared with buying new apparel.",
-          "Increasing digital adoption for shopping second‑hand items.",
-          "Rapid market growth (15% YoY) and strong projected adoption."
+          "Préoccupation environnementale et désir de consommation responsable.",
+          "Recherche d’économies grâce à l’achat d’occasion.",
+          "Frustration récurrente liée à l’incohérence des tailles, source de perte de confiance."
         ],
         "barriers": [
-          "Unclear inventory manifests and condition labeling.",
-          "Risk of counterfeit products.",
-          "Elevated freight and shipping costs for bulk transactions.",
-          "Limited logistics infrastructure and delivery reliability."
+          "Acquisition et nettoyage d’une base de données de tailles fiable.",
+          "Nécessité d’éduquer les vendeurs et les acheteurs sur la valeur ajoutée du service.",
+          "Effet de réseau : la pertinence de l’outil augmente avec le nombre d’utilisateurs actifs."
         ],
         "customer_insights": [
-          "Buyers want transparent, detailed information on item condition and pallet contents.",
-          "Authenticity verification and easy reporting of fakes are top priorities.",
-          "Faster, reliable delivery via regional hubs is a decisive factor.",
-          "Community and sustainability messaging increase engagement."
+          "Les acheteurs veulent une garantie d’ajustement avant d’acheter en ligne.",
+          "Les vendeurs recherchent des solutions qui réduisent les retours et clarifient les frais de transaction.",
+          "Le temps passé à fouiller les boutiques physiques est perçu comme un obstacle majeur."
         ]
       },
       "strategic_insight": {
-        "opportunity": "Build a differentiated regional resale platform that combines transparent manifests, AI‑driven authenticity checks, and localized warehousing to lower shipping costs and boost delivery speed.",
-        "risk": "Incumbent global resale players could leverage scale and brand trust, while counterfeit incidents could damage reputation.",
-        "recommendation": "Invest in proprietary verification technology and partner with local logistics providers to establish regional fulfillment centers; launch targeted marketing emphasizing sustainability, community, and safety to capture early‑majority adopters and defend against global entrants."
+        "opportunity": "Devenir le « couche de taille » incontournable pour les marketplaces de mode d’occasion en Tunisie et, à terme, à l’international, en transformant un point de friction majeur en avantage concurrentiel.",
+        "risk": "Difficulté à atteindre une masse critique de données de taille et à convaincre les plateformes existantes d’intégrer l’API, ce qui pourrait limiter la valeur du service.",
+        "recommendation": "Lancer un projet pilote avec les acteurs locaux (Dabchy, AGARUW) pour enrichir la base de données, valider le modèle d’IA et démontrer les gains de conversion. Monétiser via un abonnement SaaS ou une commission sur chaque transaction assistée, puis étendre progressivement aux marketplaces globales."
       }
     }
   }
