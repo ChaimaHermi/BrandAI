@@ -163,7 +163,7 @@ class NameAgent(BaseAgent):
                         name = getattr(tc, "name", "?")
                         args = getattr(tc, "args", {})
                     try:
-                        arg_s = json.dumps(args, ensure_ascii=False) if isinstance(args, dict) else str(args)
+                        arg_s = json.dumps(args, ensure_ascii=False, indent=2) if isinstance(args, dict) else str(args)
                     except Exception:
                         arg_s = str(args)
                     cls._print(f"  -> {name}({cls._truncate(arg_s, 400)})")

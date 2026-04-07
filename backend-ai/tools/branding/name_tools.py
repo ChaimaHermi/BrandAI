@@ -122,7 +122,7 @@ def make_validate_names_tool(*, idea_id: int | str | None = None):
                 "matched_name": check.get("matched_name"),
             })
         _append_exists_memory(idea_id, exists_names)
-        return json.dumps(results, ensure_ascii=False)
+        return json.dumps(results, ensure_ascii=False, indent=2)
 
     @tool
     async def validate_names(
@@ -143,7 +143,7 @@ def make_validate_names_tool(*, idea_id: int | str | None = None):
                 data = json.loads(names_json or "{}")
                 options = data.get("name_options", [])
         except Exception:
-            return json.dumps({"error": "invalid JSON input"})
+            return json.dumps({"error": "invalid JSON input"}, ensure_ascii=False, indent=2)
 
         return await _validate(options)
 

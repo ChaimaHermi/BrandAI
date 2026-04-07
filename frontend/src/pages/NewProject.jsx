@@ -4,7 +4,8 @@ import { HiOutlineRocketLaunch, HiOutlineMagnifyingGlass, HiOutlinePaintBrush, H
 import { Navbar } from "../components/layout/Navbar";
 import { Card } from "@/shared/ui/Card";
 import { Button } from "@/shared/ui/Button";
-import { SECTORS } from "@/shared/utils/mockData";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { apiCreateIdea, getErrorMessage } from "@/services/ideaApi";
 
 const GENERATED_ITEMS = [
   { icon: HiOutlineMagnifyingGlass, label: "Analyse marché" },
@@ -23,14 +24,32 @@ export function NewProject() {
   const [sector, setSector] = useState("");
   const [idea, setIdea] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { token } = useAuth();
   const navigate = useNavigate();
   const canSubmit = name.trim() && sector && idea.trim();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canSubmit || loading) return;
     setLoading(true);
-    setTimeout(() => navigate("/projects/techmentor", { replace: true }), 1500);
+    setError("");
+    try {
+      if (!token) throw new Error("Session expirée. Reconnectez-vous.");
+      const created = await apiCreateIdea(
+        {
+          name: name.trim(),
+          sector: sector.trim(),
+          description: idea.trim(),
+        },
+        token,
+      );
+      navigate(`/ideas/${created.id}/clarifier`, { replace: true });
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,12 +71,14 @@ export function NewProject() {
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="project-sector" className="mb-1.5 block text-sm font-medium text-[#111827]">Secteur</label>
-                <select id="project-sector" value={sector} onChange={(e) => setSector(e.target.value)} className={inputFocusClass}>
-                  <option value="">Sélectionner un secteur</option>
-                  {SECTORS.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
+                <input
+                  id="project-sector"
+                  type="text"
+                  value={sector}
+                  onChange={(e) => setSector(e.target.value)}
+                  placeholder="Tech / SaaS, E-commerce, Santé..."
+                  className={inputFocusClass}
+                />
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="project-idea" className="mb-1.5 block text-sm font-medium text-[#111827]">Idée du projet</label>
@@ -90,6 +111,9 @@ export function NewProject() {
                 {loading ? <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <HiOutlineRocketLaunch className="h-5 w-5" />}
                 {loading ? "Lancement en cours..." : "Lancer le pipeline IA"}
               </Button>
+              {error ? (
+                <p className="text-sm text-red-600">{error}</p>
+              ) : null}
             </form>
           </Card>
         </div>

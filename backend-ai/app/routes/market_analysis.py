@@ -17,7 +17,9 @@ router = APIRouter(tags=["Market Analysis"])
 
 
 def sse_event(event: str, data: dict) -> str:
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+    payload = json.dumps(data, ensure_ascii=False, indent=2)
+    data_lines = "\n".join(f"data: {line}" for line in payload.splitlines())
+    return f"event: {event}\n{data_lines}\n\n"
 
 
 class MarketAnalysisStreamRequest(BaseModel):
