@@ -5,8 +5,8 @@ import logging
 from langgraph.graph import END, START, StateGraph
 
 from agents.base_agent import PipelineState
-from agents.idea_clarifier import IdeaClarifierAgent
-from agents.marketing_agent import MarketingAgent
+from agents.clarifier.idea_clarifier_agent import IdeaClarifierAgent
+from agents.marketing.marketing_agent import MarketingAgent
 from pipeline.market_graph import build_market_graph
 
 logging.basicConfig(level=logging.INFO)

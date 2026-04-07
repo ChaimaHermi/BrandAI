@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agents.base_agent import PipelineState
-from agents.idea_clarifier import IdeaClarifierAgent
+from agents.clarifier.idea_clarifier_agent import IdeaClarifierAgent
 
 
 router = APIRouter(tags=["Idea Clarifier"])

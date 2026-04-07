@@ -7,7 +7,9 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.services.pipeline_persistence_service import persist_market_result
+from app.services.persistence.market_marketing_persistence_service import (
+    persist_market_result,
+)
 from pipeline.market_graph import build_market_graph
 
 

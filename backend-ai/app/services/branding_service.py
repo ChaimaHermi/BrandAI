@@ -18,7 +18,7 @@ from agents.branding.logo_agent import LogoAgent
 from agents.branding.name_agent import NameAgent
 from agents.branding.palette_agent import PaletteAgent
 from agents.branding.slogan_agent import SloganAgent
-from app.services.pipeline_persistence_service import (
+from app.services.persistence.branding_persistence_service import (
     fetch_branding_merged_generated,
     persist_brand_identity_row,
 )

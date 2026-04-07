@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.services.pipeline_persistence_service import (
+from app.services.persistence.market_marketing_persistence_service import (
     persist_market_result,
     persist_marketing_result,
 )
