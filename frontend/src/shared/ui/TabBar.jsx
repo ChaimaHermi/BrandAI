@@ -1,9 +1,7 @@
-import React from "react";
-
 /**
  * TabBar
  * Standardized tab navigation bar used across all agent modules.
- * Replaces the three separate tab implementations in Market, Marketing, and Brand.
+ * Active tab uses brand gradient (same visual weight as the sidebar CTA).
  *
  * Props:
  *   tabs      — Array of { id: string, label: string }
@@ -19,10 +17,10 @@ export function TabBar({ tabs, activeId, onChange, className = "" }) {
           key={tab.id}
           type="button"
           onClick={() => onChange(tab.id)}
-          className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold transition-all duration-150 ${
+          className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-150 ${
             activeId === tab.id
-              ? "border-[#AFA9EC] bg-[#f0eeff] text-[#3C3489]"
-              : "border-[#e8e4ff] bg-white text-gray-500 hover:border-[#AFA9EC] hover:text-[#534AB7]"
+              ? "border-brand bg-gradient-to-br from-brand to-brand-dark text-white shadow-btn"
+              : "border-brand-border bg-white text-ink-muted hover:border-brand-muted hover:text-brand-dark"
           }`}
         >
           {tab.label}

@@ -107,21 +107,26 @@ export default function PipelineSidebar({
             <div
               key={agent.id}
               onClick={() => onNavigateAgent(agent.id)}
-              className={`flex cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 py-[9px] transition-all duration-150 ${
-                isDone
-                  ? "border"
-                  : isActive
-                    ? "border border-brand-muted bg-gradient-to-br from-brand-light to-brand-50"
-                    : "border border-transparent bg-transparent"
+              title={!sidebarOpen ? agent.label : undefined}
+              className={`flex cursor-pointer items-center rounded-[10px] transition-all duration-150 ${
+                sidebarOpen
+                  ? `gap-2.5 px-2.5 py-[9px] ${
+                      isDone
+                        ? "border"
+                        : isActive
+                          ? "border border-brand-muted bg-gradient-to-br from-brand-light to-brand-50"
+                          : "border border-transparent bg-transparent"
+                    }`
+                  : "justify-center py-1.5"
               } ${isPending ? "opacity-45" : "opacity-100"}`}
               /* dynamic done bg/border from AGENTS registry — not static Tailwind */
-              style={isDone ? { background: agent.doneBg, borderColor: agent.doneBorder } : undefined}
+              style={sidebarOpen && isDone ? { background: agent.doneBg, borderColor: agent.doneBorder } : undefined}
             >
               {/* Icon bubble */}
               <div
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-150 ${
-                  isPending ? "border border-gray-200 bg-gray-50" : "border-0"
-                }`}
+                className={`flex shrink-0 items-center justify-center rounded-full transition-all duration-150 ${
+                  sidebarOpen ? "h-7 w-7" : "h-8 w-8"
+                } ${isPending ? "border border-gray-200 bg-gray-50" : "border-0"}`}
                 style={
                   isDone
                     ? { background: "#1D9E75" }
@@ -130,10 +135,13 @@ export default function PipelineSidebar({
                       : { background: "#f5f5f5" }
                 }
               >
-                {isDone ? (
-                  <CheckIcon />
+                {agent.icon ? (
+                  <agent.icon
+                    size={sidebarOpen ? (isDone || isActive ? 14 : 13) : 15}
+                    className={isDone || isActive ? "text-white" : "text-ink-subtle"}
+                  />
                 ) : (
-                  <span className={`text-[9px] font-bold ${isActive ? "text-white" : "text-ink-subtle"}`}>
+                  <span className={`text-[9px] font-bold ${isDone || isActive ? "text-white" : "text-ink-subtle"}`}>
                     {agent.short}
                   </span>
                 )}

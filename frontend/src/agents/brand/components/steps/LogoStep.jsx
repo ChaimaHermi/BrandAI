@@ -30,7 +30,7 @@ export default function LogoStep({
             className={`max-w-md text-center text-[13px] ${
               logoGenMessage.includes("échou") || logoGenMessage.includes("Erreur")
                 ? "text-red-600"
-                : "text-[#6b7280]"
+                : "text-ink-muted"
             }`}
           >
             {logoGenMessage}
@@ -38,8 +38,8 @@ export default function LogoStep({
         ) : null}
 
         {logoPreviewUrl ? (
-          <div className="w-full max-w-sm rounded-2xl border border-[#e5e7eb] bg-[#fafafa] p-4 shadow-sm">
-            <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9ca3af]">
+          <div className="w-full max-w-sm rounded-2xl border border-brand-border bg-brand-light/30 p-4 shadow-card">
+            <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-subtle">
               Aperçu
             </p>
             <img

@@ -1,13 +1,16 @@
+import { FiUser, FiUsers, FiCompass } from "react-icons/fi";
 import { AgentSection } from "@/agents/shared/components/AgentSection";
 
 function BulletList({ items }) {
-  if (!Array.isArray(items) || items.length === 0) {
-    return <p className="text-[13px] text-gray-400">-</p>;
-  }
+  if (!Array.isArray(items) || items.length === 0)
+    return <p className="text-sm text-ink-subtle">-</p>;
   return (
-    <ul className="space-y-1">
+    <ul className="space-y-1.5">
       {items.map((item, i) => (
-        <li key={i} className="text-[13px] text-[#1a1040]">• {item}</li>
+        <li key={i} className="flex items-start gap-2 text-sm text-ink">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-muted" />
+          {item}
+        </li>
       ))}
     </ul>
   );
@@ -18,13 +21,24 @@ export function TargetsSection({ plan }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <AgentSection label="Persona principal">
-        <p className="text-[13px] text-[#1a1040]">{t.primary_persona || "-"}</p>
+        <div className="flex items-start gap-2">
+          <FiUser size={14} className="mt-0.5 shrink-0 text-brand" />
+          <p className="text-sm leading-relaxed text-ink">{t.primary_persona || "-"}</p>
+        </div>
       </AgentSection>
+
       <AgentSection label="Focus segment">
-        <p className="text-[13px] text-[#1a1040]">{t.market_segment_focus || "-"}</p>
+        <div className="flex items-start gap-2">
+          <FiCompass size={14} className="mt-0.5 shrink-0 text-amber-500" />
+          <p className="text-sm leading-relaxed text-ink">{t.market_segment_focus || "-"}</p>
+        </div>
       </AgentSection>
+
       <AgentSection label="Personas secondaires" colSpan={2}>
-        <BulletList items={t.secondary_personas} />
+        <div className="flex items-start gap-2">
+          <FiUsers size={14} className="mt-0.5 shrink-0 text-ink-muted" />
+          <BulletList items={t.secondary_personas} />
+        </div>
       </AgentSection>
     </div>
   );

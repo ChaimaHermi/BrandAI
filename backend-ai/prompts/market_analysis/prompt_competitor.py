@@ -101,8 +101,7 @@ For EACH competitor, extract ONLY reliable and commonly available data:
 Strengths/weaknesses extraction policy (CRITICAL):
 - strengths and weaknesses MUST be arrays (never null)
 - Use ONLY explicit evidence from the provided sources
-- Never invent facts or infer beyond the provided text
-- If evidence is insufficient, return an empty array []
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STRICT RELEVANCE FILTER (CRITICAL)

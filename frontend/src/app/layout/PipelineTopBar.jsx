@@ -46,18 +46,12 @@ export default function PipelineTopBar({
     <div className="flex h-[52px] shrink-0 items-center gap-3 border-b border-brand-border bg-white px-5 shadow-topbar">
 
       {/* Logo */}
-      <div className="mr-1 flex shrink-0 items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-dark shadow-pill">
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden>
-            <path
-              d="M7 1.5l1.2 3 3 .4-2.2 2.1.5 3L7 8.5l-2.5 1.5.5-3L2.8 5l3-.4L7 1.5z"
-              stroke="white"
-              strokeWidth="1.1"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-        <span className="text-sm font-extrabold text-ink">BrandAI</span>
+      <div className="mr-1 flex shrink-0 items-center">
+        <img
+          src="/logo%20brand%20ai.png"
+          alt="BrandAI"
+          className="h-8 w-auto object-contain"
+        />
       </div>
 
       {/* Breadcrumb */}

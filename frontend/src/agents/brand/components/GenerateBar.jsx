@@ -2,7 +2,8 @@ import { useState } from "react";
 import RegenerateDialog from "./RegenerateDialog";
 
 /**
- * Première génération : clic direct. Régénération : popup ; chargement dans la zone texte ; fermeture seulement si succès.
+ * Première génération : clic direct.
+ * Régénération : popup — fermeture seulement si succès.
  * `onGenerate` peut retourner `{ ok: true }` ou `{ ok: false }`.
  */
 export default function GenerateBar({
@@ -12,11 +13,10 @@ export default function GenerateBar({
   lastMockMessage,
   hasExistingResults = false,
 }) {
-  const [regenOpen, setRegenOpen] = useState(false);
+  const [regenOpen, setRegenOpen]       = useState(false);
   const [draftRemarks, setDraftRemarks] = useState("");
 
-  const barShowsGeneration =
-    isGenerating && !hasExistingResults;
+  const barShowsGeneration = isGenerating && !hasExistingResults;
 
   const label = barShowsGeneration
     ? "Génération…"
@@ -52,7 +52,8 @@ export default function GenerateBar({
 
   return (
     <>
-      <div className="bi-card bi-fade-up bi-d2 border-[#c7d2fe] bg-gradient-to-br from-[#eef2ff] to-white">
+      {/* Generate card */}
+      <div className="bi-card bi-fade-up bi-d2 border-brand-border bg-gradient-to-br from-brand-light to-white">
         <div className="flex justify-end">
           <button
             type="button"
@@ -64,7 +65,7 @@ export default function GenerateBar({
           </button>
         </div>
         {lastMockMessage && (
-          <p className="mt-3 rounded-lg bg-[#eef2ff] px-3 py-2 text-[11px] font-medium text-[#4338ca]">
+          <p className="mt-3 rounded-lg bg-brand-light px-3 py-2 text-xs font-medium text-brand-darker">
             {lastMockMessage}
           </p>
         )}

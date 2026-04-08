@@ -15,27 +15,21 @@ const SECTION_TABS = [
 
 /**
  * MarketingHeader
- * Shows the agent identity header + project meta badges + tab navigation.
- *
- * Props:
- *   idea        — idea object (for sector/country/confidence)
- *   plan        — mapped marketing plan (for confidenceLevel)
- *   activeTab   — currently active section id
- *   onTabChange — (id) => void
+ * Agent identity header + project meta badges + tab navigation.
  */
 export function MarketingHeader({ idea, plan, activeTab, onTabChange }) {
   const badge = (
     <div className="flex flex-wrap items-center gap-2">
       {(idea?.clarity_sector || idea?.sector) && (
-        <span className="rounded-full bg-[#f0eeff] px-2.5 py-1 text-[11px] font-semibold text-[#534AB7]">
+        <span className="rounded-full bg-brand-light px-2.5 py-1 text-xs font-semibold text-brand-dark">
           {idea.clarity_sector || idea.sector}
         </span>
       )}
-      <span className="rounded-full bg-[#f0fdf4] px-2.5 py-1 text-[11px] font-semibold text-[#1D9E75]">
+      <span className="rounded-full bg-success-light px-2.5 py-1 text-xs font-semibold text-success">
         {idea?.clarity_country_code || "TN"}
       </span>
       {plan?.confidenceLevel && plan.confidenceLevel !== "-" && (
-        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
           Confiance {plan.confidenceLevel}
         </span>
       )}
@@ -43,12 +37,12 @@ export function MarketingHeader({ idea, plan, activeTab, onTabChange }) {
   );
 
   return (
-    <div className="rounded-[14px] border border-[#e8e4ff] bg-white px-5 pb-4 pt-4 shadow-[0_2px_8px_rgba(124,58,237,0.05)]">
+    <div className="rounded-2xl border border-brand-border bg-white px-5 pb-4 pt-4 shadow-card">
       <AgentPageHeader
         agent={marketingAgent}
         subtitle="Plan marketing · Étape 3 sur 6"
         badge={badge}
-        className="border-0 shadow-none p-0 mb-3"
+        className="mb-3 border-0 p-0 shadow-none"
       />
       <TabBar tabs={SECTION_TABS} activeId={activeTab} onChange={onTabChange} />
     </div>

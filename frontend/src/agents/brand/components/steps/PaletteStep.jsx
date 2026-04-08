@@ -66,15 +66,15 @@ export default function PaletteStep({
       />
 
       {brandNameLabel ? (
-        <p className="mb-4 text-center text-[12px] text-[#6b7280]">
+        <p className="mb-4 text-center text-[12px] text-ink-muted">
           Marque :{" "}
-          <strong className="font-semibold text-[#6366f1]">{brandNameLabel}</strong>
+          <strong className="font-semibold text-brand">{brandNameLabel}</strong>
         </p>
       ) : null}
 
       {hasPaletteResults && (
         <div className="mb-4">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6366f1]">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand">
             Résultats — palettes
           </p>
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -90,8 +90,8 @@ export default function PaletteStep({
                   onClick={() => onSelectPalette(id)}
                   className={`bi-name-card overflow-hidden rounded-xl border text-left transition-colors ${
                     selected
-                      ? "border-[#6366f1] ring-2 ring-[#c7d2fe]"
-                      : "border-[#e5e7eb]"
+                      ? "border-brand ring-2 ring-brand/20"
+                      : "border-brand-border"
                   }`}
                 >
                   <div className="flex h-[72px]">
@@ -104,24 +104,24 @@ export default function PaletteStep({
                         />
                       ))
                     ) : (
-                      <div className="flex-1 bg-[#f3f4f6]" />
+                      <div className="flex-1 bg-brand-light" />
                     )}
                   </div>
                   <div className="bg-white px-4 py-3.5">
                     <div className="mb-1 flex items-center justify-between">
-                      <span className="text-[13px] font-semibold text-[#111827]">
+                      <span className="text-[13px] font-semibold text-ink">
                         {title}
                       </span>
-                      {selected && <span className="text-[#6366f1]">✦</span>}
+                      {selected && <span className="text-brand">✦</span>}
                     </div>
-                    <span className="bi-badge bg-[#eef2ff] text-[#4338ca]">
+                    <span className="bi-badge bg-brand-light text-brand-dark">
                       {hexes.length} couleur{hexes.length > 1 ? "s" : ""}
                     </span>
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
                       {hexes.map((c, ci) => (
                         <div
                           key={ci}
-                          className="h-[18px] w-[18px] rounded-full border border-[#e5e7eb]"
+                          className="h-[18px] w-[18px] rounded-full border border-brand-border"
                           style={{ background: c }}
                           title={c}
                         />
@@ -151,13 +151,13 @@ export default function PaletteStep({
       </button>
 
       {canGenerate && !hasPaletteResults && !isGeneratingPalettes && (
-        <p className="mt-2 text-center text-[11px] text-[#9ca3af]">
+        <p className="mt-2 text-center text-[11px] text-ink-subtle">
           Trois palettes complètes (swatches avec codes hex) sont produites par l’IA.
         </p>
       )}
 
       {paletteGenMessage && (
-        <p className="mt-3 rounded-lg bg-[#eef2ff] px-3 py-2 text-center text-[11px] font-medium text-[#4338ca]">
+        <p className="mt-3 rounded-lg bg-brand-light px-3 py-2 text-center text-[11px] font-medium text-brand-dark">
           {paletteGenMessage}
         </p>
       )}

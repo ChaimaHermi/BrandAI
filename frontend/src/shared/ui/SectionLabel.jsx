@@ -1,10 +1,7 @@
-import React from "react";
-
 /**
  * SectionLabel
- * The canonical "uppercase tracking" label used above data fields.
- * Replaces the 30+ inline copies of:
- *   <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400">
+ * Canonical section label used above data fields inside cards.
+ * Visually prominent: brand color + left accent bar.
  *
  * Props:
  *   children  — label text
@@ -13,7 +10,7 @@ import React from "react";
 export function SectionLabel({ children, className = "" }) {
   return (
     <p
-      className={`mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 ${className}`}
+      className={`mb-3 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand ${className}`}
     >
       {children}
     </p>

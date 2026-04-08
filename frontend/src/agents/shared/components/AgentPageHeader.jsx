@@ -13,6 +13,7 @@ export function AgentPageHeader({ agent, subtitle, badge, action, className = ""
   const gradient = agent?.gradient || "linear-gradient(135deg,#7C3AED,#534AB7)";
   const short    = agent?.short    || "AI";
   const label    = agent?.label    || "Agent";
+  const Icon     = agent?.icon     || null;
 
   return (
     <div
@@ -23,7 +24,11 @@ export function AgentPageHeader({ agent, subtitle, badge, action, className = ""
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-pill"
         style={{ background: gradient }}
       >
-        <span className="text-[11px] font-bold text-white">{short}</span>
+        {Icon ? (
+          <Icon size={17} className="text-white" />
+        ) : (
+          <span className="text-[11px] font-bold text-white">{short}</span>
+        )}
       </div>
 
       {/* Agent label + subtitle */}

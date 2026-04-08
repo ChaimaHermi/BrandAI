@@ -1,80 +1,65 @@
-function isNonEmptyArray(value) {
-  return Array.isArray(value) && value.length > 0;
+import { FiSearch } from "react-icons/fi";
+
+function isNonEmptyArray(v) {
+  return Array.isArray(v) && v.length > 0;
 }
 
-function MarketEmptyState() {
+function EmptySlot() {
   return (
-    <span className="mt-2 inline-block rounded-lg border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-xs italic text-gray-400">
+    <span className="inline-block rounded-lg border border-dashed border-brand-border bg-brand-light px-3 py-2 text-xs italic text-ink-subtle">
       Data non disponible
     </span>
   );
 }
 
-export default function MarketKeywords({ keywords }) {
-  const groups = [
-    {
-      key: "primary_keywords",
-      title: "Mots-clés primaires",
-      items: keywords?.primary_keywords,
-      pillClass: "bg-violet-100 text-violet-700",
-    },
-    {
-      key: "market_keywords",
-      title: "Mots-clés marché",
-      items: keywords?.market_keywords,
-      pillClass: "bg-blue-100 text-blue-700",
-    },
-    {
-      key: "competitor_queries",
-      title: "Requêtes compétiteurs",
-      items: keywords?.competitor_queries,
-      pillClass: "bg-rose-100 text-rose-700",
-    },
-    {
-      key: "voc_keywords",
-      title: "Mots-clés VOC",
-      items: keywords?.voc_keywords,
-      pillClass: "bg-orange-100 text-orange-700",
-    },
-    {
-      key: "trend_keywords",
-      title: "Mots-clés tendances",
-      items: keywords?.trend_keywords,
-      pillClass: "bg-gray-100 text-gray-600",
-    },
-  ];
+const GROUPS = [
+  { key: "primary_keywords",  title: "Mots-clés primaires",    pillClass: "bg-brand-light text-brand-dark border border-brand-border" },
+  { key: "market_keywords",   title: "Mots-clés marché",       pillClass: "bg-blue-50 text-blue-700 border border-blue-100" },
+  { key: "competitor_queries",title: "Requêtes compétiteurs",  pillClass: "bg-rose-50 text-rose-700 border border-rose-100" },
+  { key: "voc_keywords",      title: "Mots-clés VOC",          pillClass: "bg-orange-50 text-orange-700 border border-orange-100" },
+  { key: "trend_keywords",    title: "Mots-clés tendances",    pillClass: "bg-gray-50 text-ink-muted border border-brand-border" },
+];
 
+export default function MarketKeywords({ keywords }) {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-4">
-        {groups.map((group) => (
+    <div className="grid grid-cols-3 gap-4">
+      {GROUPS.map((group) => {
+        const items = keywords?.[group.key];
+        const count = isNonEmptyArray(items) ? items.length : 0;
+        return (
           <div
             key={group.key}
-            className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+            className="rounded-2xl border border-brand-border bg-white p-5 shadow-card"
           >
-            <div className="mb-3 flex items-center text-sm font-bold text-gray-800">
-              {group.title}
-              <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                {group.items?.length ?? 0}
+            {/* Header */}
+            <div className="mb-3 flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light">
+                <FiSearch size={13} className="text-brand" />
+              </span>
+              <p className="text-sm font-bold text-ink">{group.title}</p>
+              <span className="ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-xs text-ink-subtle">
+                {count}
               </span>
             </div>
-            {isNonEmptyArray(group.items) ? (
-              <div>
-                {group.items?.map((item, idx) => (
+
+            {/* Pills */}
+            {isNonEmptyArray(items) ? (
+              <div className="flex flex-wrap gap-1.5">
+                {items.map((item, idx) => (
                   <span
                     key={`${group.key}-${idx}`}
-                    className={`m-1 inline-block rounded-full px-3 py-1 text-xs font-medium ${group.pillClass}`}
+                    className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${group.pillClass}`}
                   >
                     {item}
                   </span>
                 ))}
               </div>
             ) : (
-              <MarketEmptyState />
+              <EmptySlot />
             )}
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }

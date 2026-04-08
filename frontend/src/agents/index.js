@@ -1,8 +1,14 @@
+import {
+  FiMessageCircle, FiBarChart2, FiTarget,
+  FiFeather, FiEdit3, FiGlobe, FiZap,
+} from "react-icons/fi";
+
 export const AGENTS = [
   {
     id: "clarifier",
     label: "Idea Clarifier",
     short: "IC",
+    icon: FiMessageCircle,
     color: "#7F77DD",
     gradient: "linear-gradient(135deg,#7F77DD,#534AB7)",
     doneBg: "#f0fdf4",
@@ -13,6 +19,7 @@ export const AGENTS = [
     id: "market",
     label: "Market Analysis",
     short: "MA",
+    icon: FiBarChart2,
     color: "#378ADD",
     gradient: "linear-gradient(135deg,#378ADD,#185FA5)",
     doneBg: "#EBF5FF",
@@ -23,6 +30,7 @@ export const AGENTS = [
     id: "marketing",
     label: "Marketing Plan",
     short: "MP",
+    icon: FiTarget,
     color: "#16A34A",
     gradient: "linear-gradient(135deg,#16A34A,#166534)",
     doneBg: "#ECFDF3",
@@ -33,6 +41,7 @@ export const AGENTS = [
     id: "brand",
     label: "Brand Identity",
     short: "BI",
+    icon: FiFeather,
     color: "#D4537E",
     gradient: "linear-gradient(135deg,#D4537E,#72243E)",
     doneBg: "#FBEAF0",
@@ -43,6 +52,7 @@ export const AGENTS = [
     id: "content",
     label: "Content Creator",
     short: "CC",
+    icon: FiEdit3,
     color: "#D85A30",
     gradient: "linear-gradient(135deg,#D85A30,#712B13)",
     doneBg: "#FAECE7",
@@ -53,6 +63,7 @@ export const AGENTS = [
     id: "website",
     label: "Website Builder",
     short: "WB",
+    icon: FiGlobe,
     color: "#185FA5",
     gradient: "linear-gradient(135deg,#185FA5,#042C53)",
     doneBg: "#EBF5FF",
@@ -63,6 +74,7 @@ export const AGENTS = [
     id: "optimizer",
     label: "Optimizer",
     short: "OP",
+    icon: FiZap,
     color: "#854F0B",
     gradient: "linear-gradient(135deg,#854F0B,#412402)",
     doneBg: "#FAEEDA",
@@ -72,4 +84,3 @@ export const AGENTS = [
 ];
 
 export const getAgent = (id) => AGENTS.find((a) => a.id === id);
-
