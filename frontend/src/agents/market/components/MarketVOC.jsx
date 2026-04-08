@@ -9,6 +9,7 @@ export default function MarketVOC({ voc }) {
   const userQuotes = voc?.user_quotes ?? [];
   const marketInsights = voc?.market_insights ?? [];
   const insightsFr = voc?.insights_fr ?? [];
+  const sources = voc?.sources ?? [];
 
   const hasSummary =
     countItems(painPoints) > 0 ||
@@ -23,6 +24,7 @@ export default function MarketVOC({ voc }) {
     countItems(userQuotes) > 0 ||
     countItems(marketInsights) > 0 ||
     countItems(insightsFr) > 0;
+  const hasSources = countItems(sources) > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -174,6 +176,36 @@ export default function MarketVOC({ voc }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {hasSources && (
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-800">
+            Sources VOC
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+              {countItems(sources)}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            {sources.map((s, idx) => {
+              const source = typeof s?.source === "string" ? s.source : "web";
+              const url = typeof s?.url === "string" ? s.url : "";
+              if (!url) return null;
+              return (
+                <a
+                  key={`${source}-${url}-${idx}`}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <span className="font-medium uppercase tracking-wide text-gray-500">{source}</span>
+                  <span className="ml-4 truncate text-violet-700">{url}</span>
+                </a>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

@@ -58,6 +58,7 @@ SOURCES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Use ONLY: "reddit", "youtube", or "web"
+When possible, keep explicit source traceability (source + url).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 LANGUAGE
@@ -76,7 +77,13 @@ OUTPUT FORMAT (STRICT JSON)
   "desired_features": [],
   "user_quotes": [],
   "market_insights": [],
-  "insights_fr": []
+  "insights_fr": [],
+  "sources": [
+    {
+      "source": "reddit|youtube|web",
+      "url": "https://..."
+    }
+  ]
 }
 
 Return ONLY JSON.

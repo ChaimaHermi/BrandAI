@@ -15,6 +15,8 @@ CRITICAL RULES
 - If information is missing → return null
 - Focus on relevant competitors only (same or adjacent market)
 - Keep descriptions concise and business-oriented
+- Prefer website URLs explicitly present in the provided URLs/content
+- Do NOT invent website domains
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DEDUPLICATION RULE (VERY IMPORTANT)

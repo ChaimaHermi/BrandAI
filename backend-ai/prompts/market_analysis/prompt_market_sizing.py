@@ -11,6 +11,8 @@ CRITICAL RULES:
 - DO NOT estimate
 - DO NOT calculate TAM, SAM, SOM
 - If data is missing → return null
+- Prefer source URLs explicitly present in the input
+- Do NOT invent source URLs
 
 Extract:
 
@@ -29,6 +31,9 @@ Return ONLY JSON:
   "CAGR": {"value": null, "unit": "%", "source": ""},
   "growth_rate": {"value": null, "unit": "%", "source": ""},
   "number_of_users": {"value": null, "unit": "users", "source": ""},
-  "adoption_rate": {"value": null, "unit": "%", "source": ""}
+  "adoption_rate": {"value": null, "unit": "%", "source": ""},
+  "sources": [
+    {"url": "https://...", "domain": "example.com"}
+  ]
 }
 """

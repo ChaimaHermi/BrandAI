@@ -32,6 +32,7 @@ class VOCAgent(BaseAgent):
 
             block = f"""
 SOURCE: {source}
+URL: {url}
 TITLE: {title}
 CONTENT: {content}
 """
@@ -41,6 +42,39 @@ CONTENT: {content}
 
         # 🔥 LIMIT CONTEXT (CRITICAL)
         return context[:4000]
+
+    def _normalize_sources(self, all_results, llm_sources):
+        out = []
+        seen = set()
+
+        def _push(source, url):
+            src = (source or "web").strip().lower()
+            if src not in {"reddit", "youtube", "web"}:
+                src = "web"
+            u = (url or "").strip()
+            if not u or u in seen:
+                return
+            seen.add(u)
+            out.append({"source": src, "url": u})
+
+        # Trust LLM extraction first if present
+        if isinstance(llm_sources, list):
+            for item in llm_sources:
+                if not isinstance(item, dict):
+                    continue
+                _push(item.get("source"), item.get("url"))
+
+        # Fallback/merge with retrieved search results
+        for r in all_results:
+            url = (r or {}).get("url", "")
+            source = "web"
+            if "reddit" in url.lower():
+                source = "reddit"
+            elif "youtube" in url.lower():
+                source = "youtube"
+            _push(source, url)
+
+        return out[:8]
 
     # ─────────────────────────
     # RUN
@@ -110,6 +144,11 @@ CONTENT: {content}
                 "error": "Invalid JSON from LLM",
                 "data": {}
             }
+
+        data["sources"] = self._normalize_sources(
+            all_results=all_results,
+            llm_sources=data.get("sources", [])
+        )
 
         return {
             "agent": "voc",
