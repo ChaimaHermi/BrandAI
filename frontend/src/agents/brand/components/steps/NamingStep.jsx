@@ -1,3 +1,4 @@
+import { FiCheck } from "react-icons/fi";
 import StyleAndToneSection from "../StyleAndToneSection";
 import ConstraintsSection from "../ConstraintsSection";
 import GenerateBar from "../GenerateBar";
@@ -102,13 +103,13 @@ export default function NamingStep({
           <div className="bi-card">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-[#22c55e]" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#22c55e]">
+                <div className="h-2 w-2 rounded-full bg-success" />
+                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-success">
                   Résultats — noms
                 </span>
               </div>
               {pipelineBadge && (
-                <span className="bi-badge bg-[#f3f4f6] text-[#374151]">
+                <span className="bi-badge bg-brand-light text-brand-dark">
                   {pipelineBadge}
                   {status ? ` · ${status}` : ""}
                 </span>
@@ -116,11 +117,11 @@ export default function NamingStep({
             </div>
 
             {names.length > 0 && allNotExists && (
-              <div className="mb-4 overflow-hidden rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50/90 via-white to-indigo-50/60 px-4 py-3.5 shadow-sm">
-                <p className="text-[13px] font-semibold leading-snug text-emerald-900">
-                  ✨ Des pistes uniques sur le marché
+              <div className="mb-4 overflow-hidden rounded-xl border border-success-border bg-gradient-to-r from-success-light via-white to-brand-light px-4 py-3.5">
+                <p className="text-sm font-semibold leading-snug text-success-dark">
+                  Des pistes uniques sur le marché
                 </p>
-                <p className="mt-1.5 text-[12px] leading-relaxed text-[#374151]">
+                <p className="mt-1.5 text-xs leading-relaxed text-ink-body">
                   Ces noms ne correspondent pas à des marques déjà référencées dans notre
                   analyse de marché — vous partez sur des bases plus distinctives pour votre
                   identité.
@@ -129,7 +130,7 @@ export default function NamingStep({
             )}
 
             {names.length > 0 && someOtherAvailability && !allNotExists && (
-              <div className="mb-4 rounded-xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-[12px] leading-relaxed text-amber-950">
+              <div className="mb-4 rounded-xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-xs leading-relaxed text-amber-950">
                 <span className="font-semibold">À croiser : </span>
                 certaines propositions peuvent être proches d’une marque existante — les
                 cartes concernées sont indiquées ci-dessous.
@@ -145,36 +146,34 @@ export default function NamingStep({
                     key={`${n}-${i}`}
                     type="button"
                     onClick={() => onChooseBrandName(n)}
-                    className={`bi-name-card text-left rounded-xl border p-4 transition-colors ${
+                    className={`bi-name-card text-left rounded-xl border p-4 transition-all ${
                       selected
-                        ? "border-[#6366f1] bg-[#eef2ff] ring-2 ring-[#c7d2fe]"
-                        : "border-[#e5e7eb] bg-[#f9fafb]"
+                        ? "border-brand bg-brand-light ring-2 ring-brand/20"
+                        : "border-brand-border bg-brand-50 hover:border-brand-muted"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span
-                        className={`text-[16px] font-bold ${
-                          selected ? "text-[#4f46e5]" : "text-[#111827]"
+                        className={`text-base font-bold ${
+                          selected ? "text-brand-darker" : "text-ink"
                         }`}
                       >
                         {n}
                       </span>
                       {selected && (
-                        <span className="text-[#6366f1]" aria-hidden>
-                          ✦
-                        </span>
+                        <FiCheck size={16} className="mt-0.5 shrink-0 text-brand" aria-hidden />
                       )}
                     </div>
                     {opt?.availability != null &&
                       opt.availability !== "not_exists" && (
-                        <div className="mt-1 text-[11px] font-medium text-amber-800">
+                        <div className="mt-1 text-xs font-medium text-amber-800">
                           {opt.availability === "exists"
                             ? "Proximité possible avec une marque référencée — à vérifier"
                             : `Statut marché : ${String(opt.availability)}`}
                         </div>
                       )}
                     {(opt?.rationale || opt?.description) && (
-                      <p className="mt-2 text-[12px] leading-relaxed text-[#4b5563]">
+                      <p className="mt-2 text-xs leading-relaxed text-ink-muted">
                         {opt.rationale || opt.description}
                       </p>
                     )}

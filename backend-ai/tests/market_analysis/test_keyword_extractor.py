@@ -112,15 +112,16 @@ async def test_keyword_extractor():
     check("bundle non vide",                          not bundle.is_empty())
     check("primary_keywords rempli",                  len(bundle.primary_keywords) > 0)
     check("primary_keywords max 6",                   len(bundle.primary_keywords) <= 6)
+    check("market_keywords rempli",                      len(bundle.market_keywords) > 0)
+    check("market_keywords max 6",                       len(bundle.market_keywords) <= 6)
     check("competitor_queries rempli",                 len(bundle.competitor_queries) > 0)
     check("competitor_queries max 10",                  len(bundle.competitor_queries) <= 10)
     check("voc_keywords rempli",                      len(bundle.voc_keywords) > 0)
     check("voc_keywords max 6",                       len(bundle.voc_keywords) <= 6)
     check("trend_keywords rempli",                    len(bundle.trend_keywords) > 0)
     check("trend_keywords max 5",                     len(bundle.trend_keywords) <= 5)
-    check("sector_tags rempli",                       len(bundle.sector_tags) > 0)
-    check("sector_tags max 4",                        len(bundle.sector_tags) <= 4)
     check("for_market_sizing a primary_keywords",     "primary_keywords" in bundle.for_market_sizing())
+    check("for_market_sizing a market_keywords",      "market_keywords"  in bundle.for_market_sizing())
     check("for_market_sizing a trend_keywords",       "trend_keywords"   in bundle.for_market_sizing())
     check("for_competitor est une liste",             isinstance(bundle.for_competitor(), list))
     check("for_voc a voc_keywords",                  "voc_keywords"     in bundle.for_voc())
@@ -129,10 +130,10 @@ async def test_keyword_extractor():
         isinstance(k, str)
         for lst in [
             bundle.primary_keywords,
+            bundle.market_keywords,
             bundle.competitor_queries,
             bundle.voc_keywords,
             bundle.trend_keywords,
-            bundle.sector_tags,
         ]
         for k in lst
     ))
@@ -140,6 +141,7 @@ async def test_keyword_extractor():
         k.strip()
         for lst in [
             bundle.primary_keywords,
+            bundle.market_keywords,
             bundle.competitor_queries,
             bundle.voc_keywords,
             bundle.trend_keywords,

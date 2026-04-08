@@ -84,7 +84,7 @@ If unsure → default to "global"
 OBJECTIVE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-For EACH competitor, extract:
+For EACH competitor, extract ONLY reliable and commonly available data:
 
 - name
 - website
@@ -93,12 +93,15 @@ For EACH competitor, extract:
 - description
 - positioning
 - target_users
-- pricing
-- business_model
 - key_features
 - strengths
 - weaknesses
 - differentiation
+
+Strengths/weaknesses extraction policy (CRITICAL):
+- strengths and weaknesses MUST be arrays (never null)
+- Use ONLY explicit evidence from the provided sources
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STRICT RELEVANCE FILTER (CRITICAL)
@@ -133,9 +136,6 @@ Return ONLY JSON:
       "positioning": "",
       "target_users": "",
 
-      "pricing": "",
-      "business_model": "",
-
       "key_features": [],
 
       "strengths": [],
@@ -154,6 +154,7 @@ FINAL CHECK (MANDATORY)
 - Ensure ALL text is in French
 - Ensure scope is ALWAYS present
 - Ensure scope is ONLY "local" or "global"
+- Ensure strengths/weaknesses are arrays (not null)
 - Ensure JSON is valid and clean
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━

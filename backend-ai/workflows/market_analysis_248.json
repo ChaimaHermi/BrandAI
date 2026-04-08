@@ -1,0 +1,198 @@
+{
+  "idea_id": 248,
+  "clarified_idea": {
+    "short_pitch": "Match instantané entre étudiants et stages en France",
+    "solution_description": "Une plateforme en ligne qui, grâce à un algorithme automatisé, met en relation les profils étudiants avec les offres de stage disponibles en France, en appliquant des filtres pertinents et en simplifiant le processus de candidature.",
+    "target_users": "Étudiants recherchant un stage en France et entreprises proposant des offres de stage",
+    "problem": "Les étudiants ont du mal à trouver des stages correspondant à leurs compétences et attentes, tandis que les entreprises peinent à identifier les candidats pertinents.",
+    "sector": "Éducation",
+    "country": "France",
+    "country_code": "FR",
+    "language": "fr"
+  },
+  "market_analysis": {
+    "keywords": {
+      "primary_keywords": [
+        "stage étudiant plateforme",
+        "matching stage algorithm",
+        "internship placement service",
+        "student internship marketplace",
+        "automated stage matching"
+      ],
+      "market_keywords": [
+        "number of internship platforms worldwide",
+        "statistics of student internships France",
+        "how many students use online internship services",
+        "internship market size Europe 2024",
+        "percentage of internships secured through platforms"
+      ],
+      "competitor_queries": [
+        "meilleures plateformes stage France",
+        "alternatives à iQuesta stage",
+        "sites de recherche stage France",
+        "comparatif plateformes stage France",
+        "best internship matching platforms",
+        "top student internship apps",
+        "popular internship search websites",
+        "similar services to InternMatch",
+        "alternatives to internship portals",
+        "leading campus recruitment platforms"
+      ],
+      "voc_keywords": [
+        "difficulté à trouver stage",
+        "stage pas correspondant compétences",
+        "processus candidature stage trop long",
+        "manque de réponses offres stage",
+        "plateforme stage peu fiable",
+        "avis négatifs sur matching stage"
+      ],
+      "trend_keywords": [
+        "growth of digital internship platforms",
+        "rise in AI-powered internship matching",
+        "regulatory changes internship hiring France",
+        "risk of data privacy in internship platforms",
+        "trend of remote internships increase"
+      ]
+    },
+    "market": {
+      "market_size": {
+        "value": null,
+        "unit": "",
+        "year": "",
+        "description": "",
+        "source": ""
+      },
+      "market_revenue": {
+        "value": null,
+        "unit": "",
+        "year": "",
+        "description": "",
+        "source": ""
+      },
+      "CAGR": {
+        "value": null,
+        "unit": "%",
+        "year": "",
+        "description": "",
+        "source": ""
+      },
+      "growth_rate": {
+        "value": null,
+        "unit": "%",
+        "year": "",
+        "description": "",
+        "source": ""
+      },
+      "number_of_users": {
+        "value": null,
+        "unit": "users",
+        "year": "",
+        "description": "",
+        "source": ""
+      },
+      "adoption_rate": {
+        "value": null,
+        "unit": "%",
+        "year": "",
+        "description": "",
+        "source": ""
+      },
+      "market_signals": [],
+      "sources": []
+    },
+    "competitor": {
+      "competitors": []
+    },
+    "voc": {
+      "pain_points": [],
+      "frustrations": [],
+      "desired_features": [],
+      "market_insights": [],
+      "user_quotes": [],
+      "sources": []
+    },
+    "trends": {
+      "market_trends": [],
+      "consumer_trends": [],
+      "technology_trends": [],
+      "regulatory_trends": [],
+      "emerging_opportunities": [],
+      "market_risks": []
+    },
+    "strategy": {
+      "pestel": {
+        "political": [
+          "Politiques publiques favorisant l’insertion professionnelle des jeunes (ex. dispositifs d’aide à l’alternance, subventions aux stages).",
+          "Encouragement de la mobilité étudiante au sein de l’Union européenne, créant un cadre favorable aux stages transfrontaliers."
+        ],
+        "economic": [
+          "Taux de chômage des jeunes en France restant élevé, incitant les étudiants à rechercher rapidement des stages.",
+          "Pression sur les budgets des PME qui cherchent à réduire les coûts de recrutement."
+        ],
+        "social": [
+          "Attente des étudiants pour des processus de recherche d’emploi rapides, digitaux et personnalisés.",
+          "Valorisation croissante de l’expérience professionnelle dès le cursus universitaire."
+        ],
+        "technological": [
+          "Maturité des algorithmes de matching (machine learning, IA) et des infrastructures cloud permettant un traitement en temps réel.",
+          "Exigences renforcées en matière de cybersécurité et de protection des données (RGPD)."
+        ],
+        "environmental": [
+          "Tendance à réduire les déplacements grâce à la digitalisation du recrutement, contribuant aux objectifs de durabilité.",
+          "Intérêt croissant des entreprises pour des pratiques de recrutement éco‑responsables."
+        ],
+        "legal": [
+          "Réglementation française stricte sur les stages (durée maximale, gratification obligatoire, convention de stage).",
+          "Obligations de conformité au RGPD pour la collecte et le traitement des données personnelles des étudiants et des entreprises."
+        ]
+      },
+      "swot": {
+        "strengths": [
+          "Algorithme automatisé de mise en relation, permettant un filtrage précis des compétences et des attentes.",
+          "Plateforme dédiée exclusivement au marché français, facilitant la conformité légale et la connaissance du contexte local.",
+          "Simplification du processus de candidature pour les étudiants et réduction du temps de présélection pour les recruteurs."
+        ],
+        "weaknesses": [
+          "Absence de réseau d’utilisateurs établi, ce qui rend le démarrage difficile (effet de réseau).",
+          "Dépendance à la qualité et à la quantité des données de profils et d’offres pour garantir la pertinence du matching.",
+          "Ressources limitées pour assurer le suivi juridique et la conformité RGPD dès le lancement."
+        ],
+        "opportunities": [
+          "Croissance continue du nombre d’étudiants en France (plus de 2 M d’étudiants en fin de cycle chaque année).",
+          "Pression des établissements d’enseignement à offrir des services d’accompagnement à l’insertion professionnelle.",
+          "Possibilité de partenariats avec universités, écoles et pôles de compétitivité pour alimenter la plateforme en offres et en profils.",
+          "Évolution des attentes des entreprises vers des recrutements plus agiles et data‑driven."
+        ],
+        "threats": [
+          "Concurrence des job boards généralistes (Indeed, LinkedIn) qui intègrent déjà des filtres de stage.",
+          "Risque de non‑conformité aux exigences légales (convention de stage, RGPD) pouvant entraîner des sanctions.",
+          "Réticence des entreprises à confier leurs offres à une plateforme tierce sans preuve de qualité des candidats."
+        ]
+      },
+      "demand_analysis": {
+        "demand_level": "Modéré à élevé – le besoin de stages est institutionnel (obligation de stage dans de nombreux cursus) et les étudiants recherchent des solutions plus rapides que les canaux traditionnels.",
+        "growth_potential": "Positif – la digitalisation du recrutement et l’augmentation du nombre d’étudiants chaque année créent un bassin en expansion.",
+        "drivers": [
+          "Obligation académique de réaliser un stage pour valider le diplôme.",
+          "Pression des employeurs à réduire le temps et le coût de présélection.",
+          "Adoption massive des outils numériques par la génération Z."
+        ],
+        "barriers": [
+          "Effet de réseau : besoin d’un volume critique d’offres et de profils pour que le matching soit pertinent.",
+          "Conformité juridique et protection des données, qui peuvent ralentir le déploiement.",
+          "Confiance initiale des entreprises et des établissements d’enseignement."
+        ],
+        "customer_insights": [
+          "Les étudiants expriment une frustration liée à la perte de temps à parcourir des annonces non ciblées.",
+          "Les recruteurs souhaitent recevoir des candidatures déjà pré‑qualifiées afin de limiter le nombre de CV à trier.",
+          "Les établissements d’enseignement recherchent des partenaires capables de faciliter l’accès aux stages pour leurs étudiants."
+        ]
+      },
+      "strategic_insight": {
+        "opportunity": "Devenir le référent français de mise en relation instantanée entre étudiants et stages grâce à un algorithme de matching spécialisé, en s’appuyant sur des partenariats universitaires pour accélérer l’acquisition d’utilisateurs.",
+        "risk": "Incapacité à atteindre le volume critique d’offres et de profils, combinée à des exigences de conformité juridique qui pourraient retarder le lancement ou entraîner des coûts supplémentaires.",
+        "recommendation": "Lancer un MVP ciblé sur 2‑3 grandes écoles ou universités, en garantissant la conformité RGPD et la conformité aux règles de stage. Utiliser les données collectées pour affiner l’algorithme, puis étendre progressivement le réseau d’entreprises partenaires. Parallèlement, mettre en place un dispositif de suivi juridique et de certification pour rassurer les recruteurs."
+      }
+    }
+  }
+}

@@ -1,23 +1,23 @@
 /**
- * Pills à choix unique — aligné palette indigo.
+ * Pills à choix unique — design system brand tokens.
  */
 export default function PillSingleGroup({
   label,
   options,
   value,
   onChange,
-  idKey = "id",
+  idKey    = "id",
   labelKey = "label",
 }) {
   return (
     <div className={label ? "mb-4 last:mb-0" : "mb-0"}>
-      {label ? (
-        <p className="mb-2 text-[12px] font-semibold text-[#111827]">{label}</p>
-      ) : null}
+      {label && (
+        <p className="mb-2 text-xs font-semibold text-ink">{label}</p>
+      )}
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => {
-          const id = typeof opt === "string" ? opt : opt[idKey];
-          const lbl = typeof opt === "string" ? opt : opt[labelKey];
+          const id     = typeof opt === "string" ? opt : opt[idKey];
+          const lbl    = typeof opt === "string" ? opt : opt[labelKey];
           const active = value === id;
           return (
             <button
@@ -25,10 +25,10 @@ export default function PillSingleGroup({
               type="button"
               aria-pressed={active}
               onClick={() => onChange(id)}
-              className={`bi-opt-pill rounded-full border px-3 py-1.5 text-[12px] ${
+              className={`bi-opt-pill rounded-full border px-3 py-1.5 text-xs ${
                 active
-                  ? "border-[#6366f1] bg-[#eef2ff] font-semibold text-[#4f46e5]"
-                  : "border-[#e5e7eb] bg-white font-medium text-[#6b7280] hover:border-[#a5b4fc]"
+                  ? "border-brand bg-brand-light font-semibold text-brand-darker shadow-[0_1px_4px_rgba(124,58,237,0.15)]"
+                  : "border-brand-border bg-white font-medium text-ink-muted hover:border-brand-muted hover:bg-brand-light hover:text-brand-dark"
               }`}
             >
               {lbl}

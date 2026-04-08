@@ -1,3 +1,4 @@
+import { FiMessageSquare, FiDroplet, FiImage } from "react-icons/fi";
 import SectionHeader from "./SectionHeader";
 
 function swatchHexes(palette) {
@@ -7,7 +8,7 @@ function swatchHexes(palette) {
 }
 
 /**
- * Aperçu final du kit : nom, slogan, palette choisie, logo généré.
+ * Aperçu final du kit de marque — design system brand tokens.
  */
 export default function FinalBrandPreview({
   brandName,
@@ -23,9 +24,8 @@ export default function FinalBrandPreview({
       palette = paletteOptions[idx];
     }
   }
-  const hexes = palette ? swatchHexes(palette) : [];
-  const paletteTitle =
-    (palette?.palette_name || "Palette choisie").trim() || "Palette choisie";
+  const hexes       = palette ? swatchHexes(palette) : [];
+  const paletteTitle = (palette?.palette_name || "Palette choisie").trim() || "Palette choisie";
 
   return (
     <div className="bi-fade-up">
@@ -35,63 +35,84 @@ export default function FinalBrandPreview({
         sub="Récapitulatif de votre identité de marque — les choix que vous avez validés."
       />
 
-      <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-        <div>
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">
+      <div className="mx-auto max-w-lg space-y-4 overflow-hidden rounded-2xl border border-brand-border bg-white shadow-card-md">
+        {/* Header gradient band */}
+        <div className="bg-gradient-to-br from-brand to-brand-dark px-6 py-5 text-white">
+          <p className="text-2xs font-semibold uppercase tracking-widest text-white/60">
             Nom de marque
           </p>
-          <p className="text-xl font-bold text-[#111827]">{brandName || "—"}</p>
+          <p className="mt-1 text-2xl font-bold">{brandName || "—"}</p>
         </div>
 
-        <div className="border-t border-[#f3f4f6] pt-4">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">
-            Slogan
-          </p>
-          <p className="text-[15px] italic leading-relaxed text-[#374151]">
-            {sloganText ? `« ${sloganText} »` : "—"}
-          </p>
-        </div>
-
-        <div className="border-t border-[#f3f4f6] pt-4">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">
-            Palette
-          </p>
-          {hexes.length > 0 ? (
+        <div className="space-y-4 px-6 pb-6">
+          {/* Slogan */}
+          <div className="flex items-start gap-3 rounded-xl border border-brand-border bg-brand-light p-4">
+            <FiMessageSquare size={16} className="mt-0.5 shrink-0 text-brand" />
             <div>
-              <p className="mb-2 text-sm font-medium text-[#111827]">{paletteTitle}</p>
-              <div className="flex h-14 overflow-hidden rounded-lg border border-[#e5e7eb]">
-                {hexes.map((c, i) => (
-                  <div
-                    key={i}
-                    className="min-w-0 flex-1"
-                    style={{ backgroundColor: c }}
-                    title={c}
-                  />
-                ))}
-              </div>
+              <p className="text-2xs font-semibold uppercase tracking-widest text-brand-muted">
+                Slogan
+              </p>
+              <p className="mt-1 text-sm italic leading-relaxed text-ink">
+                {sloganText ? `« ${sloganText} »` : "—"}
+              </p>
             </div>
-          ) : (
-            <p className="text-sm text-[#6b7280]">—</p>
-          )}
-        </div>
+          </div>
 
-        <div className="border-t border-[#f3f4f6] pt-4">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">
-            Logo
-          </p>
-          {logoPreviewUrl ? (
-            <img
-              src={logoPreviewUrl}
-              alt="Logo"
-              className="mx-auto max-h-48 w-auto rounded-lg border border-[#e5e7eb] object-contain"
-            />
-          ) : (
-            <p className="text-sm text-[#6b7280]">Aucun logo généré pour l’instant.</p>
-          )}
+          {/* Palette */}
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <FiDroplet size={13} className="text-ink-muted" />
+              <p className="text-2xs font-semibold uppercase tracking-widest text-ink-subtle">
+                Palette — {paletteTitle}
+              </p>
+            </div>
+            {hexes.length > 0 ? (
+              <div className="overflow-hidden rounded-xl border border-brand-border">
+                <div className="flex h-14">
+                  {hexes.map((c, i) => (
+                    <div
+                      key={i}
+                      className="min-w-0 flex-1"
+                      style={{ backgroundColor: c }}
+                      title={c}
+                    />
+                  ))}
+                </div>
+                <div className="flex bg-white px-2 py-2">
+                  {hexes.map((c, i) => (
+                    <div key={i} className="flex-1 text-center">
+                      <span className="text-2xs font-mono text-ink-subtle">{c}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-ink-muted">—</p>
+            )}
+          </div>
+
+          {/* Logo */}
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <FiImage size={13} className="text-ink-muted" />
+              <p className="text-2xs font-semibold uppercase tracking-widest text-ink-subtle">Logo</p>
+            </div>
+            {logoPreviewUrl ? (
+              <img
+                src={logoPreviewUrl}
+                alt="Logo"
+                className="mx-auto max-h-48 w-auto rounded-xl border border-brand-border object-contain"
+              />
+            ) : (
+              <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-brand-border bg-brand-light">
+                <p className="text-xs text-brand-muted">Aucun logo généré pour l&apos;instant</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <p className="mt-6 text-center text-[12px] text-[#9ca3af]">
+      <p className="mt-6 text-center text-xs text-ink-subtle">
         Vous pouvez revenir aux étapes précédentes ou recommencer le parcours.
       </p>
     </div>

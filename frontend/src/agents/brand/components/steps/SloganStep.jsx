@@ -26,16 +26,13 @@ export default function SloganStep({
   onGenerateSlogans,
   sloganGenMessage,
   selectedSlogan,
-  customSlogan,
   onSelectSlogan,
-  onCustomSlogan,
   hasSloganResults = false,
 }) {
   const [regenOpen, setRegenOpen] = useState(false);
   const [draftRemarks, setDraftRemarks] = useState("");
 
-  const usingCustom = Boolean(customSlogan?.trim());
-  const activeSlogan = usingCustom ? customSlogan.trim() : selectedSlogan;
+  const activeSlogan = selectedSlogan?.trim() || "";
 
   const canGenerate =
     Boolean(sloganForm.positionnement) &&
@@ -90,32 +87,32 @@ export default function SloganStep({
       />
 
       {/* Nom choisi — bandeau comme maquette */}
-      <div className="mb-3.5 flex items-center gap-2.5 rounded-[10px] border-[1.5px] border-[#c7d2fe] bg-[#eef2ff] px-3.5 py-2.5">
-        <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-[#6366f1] text-[13px] font-bold text-white">
+      <div className="mb-3.5 flex items-center gap-2.5 rounded-[10px] border-[1.5px] border-brand/30 bg-brand-light px-3.5 py-2.5">
+        <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-brand text-[13px] font-bold text-white">
           {initial}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="mb-px text-[10px] font-semibold uppercase tracking-[0.06em] text-[#818cf8]">
+          <p className="mb-px text-[10px] font-semibold uppercase tracking-[0.06em] text-brand-muted">
             Nom choisi
           </p>
-          <p className="truncate text-[13px] font-bold text-[#4f46e5]">
+          <p className="truncate text-[13px] font-bold text-brand-darker">
             {brandName || "—"}
           </p>
         </div>
-        <span className="bi-badge shrink-0 border border-[#c7d2fe] bg-white text-[#6366f1]">
+        <span className="bi-badge shrink-0 border border-brand/30 bg-white text-brand">
           Naming ✓
         </span>
       </div>
 
       {/* Aperçu nom + slogan sélectionné */}
       {brandName && activeSlogan && (
-        <div className="bi-card bi-fade-up mb-4 flex flex-wrap items-center gap-3 bg-[#f9fafb]">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9ca3af]">
+        <div className="bi-card bi-fade-up mb-4 flex flex-wrap items-center gap-3 bg-brand-light/40">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-subtle">
             Aperçu
           </span>
-          <span className="text-[15px] font-bold text-[#6366f1]">{brandName}</span>
-          <span className="text-[#d1d5db]">→</span>
-          <span className="text-[13px] italic text-[#374151]">
+          <span className="text-[15px] font-bold text-brand">{brandName}</span>
+          <span className="text-ink-subtle">→</span>
+          <span className="text-[13px] italic text-ink-body">
             &ldquo;{activeSlogan}&rdquo;
           </span>
         </div>
@@ -249,8 +246,8 @@ export default function SloganStep({
       {generatedSlogans.length > 0 && (
         <div className="bi-card mt-1">
           <div className="mb-4 flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-[#22c55e]" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#22c55e]">
+            <div className="h-2 w-2 rounded-full bg-success" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-success">
               Résultats — slogans
             </span>
           </div>
@@ -259,27 +256,20 @@ export default function SloganStep({
               <button
                 key={s}
                 type="button"
-                onClick={() => {
-                  onSelectSlogan(s);
-                  onCustomSlogan("");
-                }}
+                onClick={() => onSelectSlogan(s)}
                 className={`bi-name-card bi-card flex items-center justify-between gap-3 text-left ${
-                  !usingCustom && selectedSlogan === s
-                    ? "border-[#6366f1] bg-[#eef2ff]"
-                    : ""
+                  selectedSlogan === s ? "border-brand bg-brand-light" : ""
                 }`}
               >
                 <span
                   className={`text-[14px] font-medium italic ${
-                    !usingCustom && selectedSlogan === s
-                      ? "text-[#4f46e5]"
-                      : "text-[#374151]"
+                    selectedSlogan === s ? "text-brand-darker" : "text-ink-body"
                   }`}
                 >
                   &ldquo;{s}&rdquo;
                 </span>
-                {!usingCustom && selectedSlogan === s && (
-                  <span className="text-[#6366f1]">✦</span>
+                {selectedSlogan === s && (
+                  <span className="text-brand">✦</span>
                 )}
               </button>
             ))}
@@ -303,32 +293,17 @@ export default function SloganStep({
       </button>
 
       {canClickPrimary && !hasSloganResults && (
-        <p className="mt-2 text-center text-[11px] text-[#9ca3af]">
+        <p className="mt-2 text-center text-[11px] text-ink-subtle">
           Cinq propositions sont générées à partir du contexte projet et de vos
           choix.
         </p>
       )}
 
       {sloganGenMessage && (
-        <p className="mt-3 rounded-lg bg-[#eef2ff] px-3 py-2 text-center text-[11px] font-medium text-[#4338ca]">
+        <p className="mt-3 rounded-lg bg-brand-light px-3 py-2 text-center text-[11px] font-medium text-brand-dark">
           {sloganGenMessage}
         </p>
       )}
-
-      <div className="bi-card bi-fade-up mt-4 border border-dashed border-[#d1d5db]">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6366f1]">
-          Ou votre slogan personnalisé
-        </p>
-        <input
-          className="bi-inp"
-          value={customSlogan}
-          onChange={(e) => {
-            onCustomSlogan(e.target.value);
-            if (e.target.value.trim()) onSelectSlogan("");
-          }}
-          placeholder="Saisissez votre propre phrase…"
-        />
-      </div>
 
       <RegenerateDialog
         open={regenOpen}

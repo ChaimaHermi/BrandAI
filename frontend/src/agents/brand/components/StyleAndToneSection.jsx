@@ -21,10 +21,8 @@ export default function StyleAndToneSection({
     <>
       {!embedded && (
         <div className="mb-4">
-          <h2 className="text-[15px] font-bold text-[#111827]">Style &amp; ton</h2>
-          <p className="text-[12px] text-[#6b7280]">
-            Définissez la personnalité de votre marque
-          </p>
+          <h2 className="text-sm font-bold text-ink">Style &amp; ton</h2>
+          <p className="text-xs text-ink-muted">Définissez la personnalité de votre marque</p>
         </div>
       )}
       <PillMultiGroup
@@ -53,7 +51,7 @@ export default function StyleAndToneSection({
   }
 
   return (
-    <section className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+    <section className="rounded-xl border border-brand-border bg-white p-5 shadow-card">
       {inner}
     </section>
   );

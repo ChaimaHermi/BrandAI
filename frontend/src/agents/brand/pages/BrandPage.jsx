@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiLayers } from "react-icons/fi";
 import { usePipeline } from "@/context/PipelineContext";
+import { AGENTS } from "@/agents";
+import { AgentPageHeader } from "@/agents/shared/components/AgentPageHeader";
 import {
   buildLegacyRecordFromBundle,
   fetchBrandingBundle,
@@ -25,6 +28,7 @@ import "../styles/brandStudio.css";
 
 /** Labels stepper — projet → naming → slogan → couleurs → logo → aperçu final */
 const STEPS = ["Projet", "Naming", "Slogan", "Couleurs", "Logo", "Aperçu"];
+const brandAgent = AGENTS.find((a) => a.id === "brand");
 
 const initialStyleTon = () => ({
   brandValues: [],
@@ -100,7 +104,6 @@ export default function BrandPage() {
   const [isGeneratingSlogans, setIsGeneratingSlogans] = useState(false);
   const [sloganGenMessage, setSloganGenMessage] = useState("");
   const [selectedSlogan, setSelectedSlogan] = useState("");
-  const [customSlogan, setCustomSlogan] = useState("");
   const [selectedPaletteId, setSelectedPaletteId] = useState(null);
   const [generatedPaletteOptions, setGeneratedPaletteOptions] = useState([]);
   const [isGeneratingPalettes, setIsGeneratingPalettes] = useState(false);
@@ -120,7 +123,6 @@ export default function BrandPage() {
     setGeneratedSlogans([]);
     setSloganGenMessage("");
     setSelectedSlogan("");
-    setCustomSlogan("");
     setGeneratedPaletteOptions([]);
     setSelectedPaletteId(null);
     setPaletteGenMessage("");
@@ -262,12 +264,6 @@ export default function BrandPage() {
     [chosenBrandName, names, idea?.name],
   );
 
-  const effectiveSlogan = useMemo(() => {
-    const c = customSlogan.trim();
-    if (c) return c;
-    return selectedSlogan;
-  }, [customSlogan, selectedSlogan]);
-
   useEffect(() => {
     if (paletteListDisplayed.length === 0) return;
     setSelectedPaletteId((prev) => (prev == null ? "p-0" : prev));
@@ -400,7 +396,7 @@ export default function BrandPage() {
       const result = await generatePalettes(idea.id, token, {
         brand_name: displayBrandName,
         preferences: { user_remarks: userRemarks },
-        slogan_hint: effectiveSlogan || "",
+        slogan_hint: selectedSlogan || "",
       });
       const rawOpts = result.palette_options || [];
       setGeneratedPaletteOptions(Array.isArray(rawOpts) ? rawOpts : []);
@@ -437,7 +433,7 @@ export default function BrandPage() {
     } finally {
       setIsGeneratingPalettes(false);
     }
-  }, [idea?.id, token, displayBrandName, effectiveSlogan, refetchBrandRecord]);
+  }, [idea?.id, token, displayBrandName, selectedSlogan, refetchBrandRecord]);
 
   const handleGenerateLogo = useCallback(async () => {
     if (!idea?.id || !token) return { ok: false };
@@ -450,7 +446,7 @@ export default function BrandPage() {
     try {
       const result = await generateLogo(idea.id, token, {
         brand_name: displayBrandName,
-        slogan_hint: effectiveSlogan || null,
+        slogan_hint: selectedSlogan || null,
         palette_color_hint: null,
         persist: true,
         persist_image_base64: false,
@@ -487,7 +483,7 @@ export default function BrandPage() {
     } finally {
       setIsGeneratingLogo(false);
     }
-  }, [idea?.id, token, displayBrandName, effectiveSlogan, refetchBrandRecord]);
+  }, [idea?.id, token, displayBrandName, selectedSlogan, refetchBrandRecord]);
 
   const persistFinalChoices = useCallback(async () => {
     if (!idea?.id || !token) return;
@@ -509,7 +505,7 @@ export default function BrandPage() {
       status: "validated",
     });
     await patchSloganResult(idea.id, token, {
-      chosen_slogan: effectiveSlogan || null,
+      chosen_slogan: selectedSlogan || null,
       based_on_name: displayBrandName,
       chosen_at: chosenAt,
       status: "validated",
@@ -537,7 +533,7 @@ export default function BrandPage() {
     token,
     chosenBrandName,
     names,
-    effectiveSlogan,
+    selectedSlogan,
     displayBrandName,
     paletteListDisplayed,
     selectedPaletteId,
@@ -585,7 +581,6 @@ export default function BrandPage() {
     setGeneratedSlogans([]);
     setSloganGenMessage("");
     setSelectedSlogan("");
-    setCustomSlogan("");
     setGeneratedPaletteOptions([]);
     setSelectedPaletteId(null);
     setPaletteGenMessage("");
@@ -604,7 +599,7 @@ export default function BrandPage() {
             <SectionHeader
               step={1}
               title="À propos de votre projet"
-              sub="Synthèse issue du clarifier — complétez ou corrigez depuis l’Idea Clarifier si besoin."
+              sub="Synthèse des informations de votre projet pour démarrer le parcours d’identité."
             />
             <AboutProjectCard idea={idea} embedded />
           </div>
@@ -641,9 +636,7 @@ export default function BrandPage() {
             hasSloganResults={hasSloganResults}
             sloganGenMessage={sloganGenMessage}
             selectedSlogan={selectedSlogan}
-            customSlogan={customSlogan}
             onSelectSlogan={setSelectedSlogan}
-            onCustomSlogan={setCustomSlogan}
           />
         )}
 
@@ -674,7 +667,7 @@ export default function BrandPage() {
         {step === 5 && (
           <FinalBrandPreview
             brandName={displayBrandName}
-            sloganText={effectiveSlogan}
+            sloganText={selectedSlogan}
             paletteOptions={paletteListDisplayed}
             selectedPaletteId={selectedPaletteId}
             logoPreviewUrl={logoPreviewUrl}
@@ -685,51 +678,59 @@ export default function BrandPage() {
   }
 
   return (
-    <div
-      className="bi-studio flex min-h-0 flex-1 flex-col overflow-y-auto"
-      style={{ padding: 0 }}
-    >
-      <div className="mx-auto w-full max-w-[860px] px-6 py-10">
-        <div className="bi-fade-up mb-10 text-center">
-          <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-[#c7d2fe] bg-[#eef2ff] px-3.5 py-1">
-            <div className="h-1.5 w-1.5 rounded-full bg-[#6366f1]" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6366f1]">
-              Brand Identity Studio
+    <div className="app-content-scroll flex flex-1 flex-col gap-3">
+
+      {/* ── Pipeline step header — même pattern que MarketPage / MarketingPage ── */}
+      <AgentPageHeader
+        agent={brandAgent}
+        subtitle="Brand Identity · Étape 4 sur 6"
+      />
+
+      {/* ── Contenu centré ────────────────────────────────────────────────────── */}
+      <div className="bi-studio mx-auto w-full max-w-[860px] flex flex-col gap-3">
+
+        {/* ── Intro card : titre + description + aperçu marque ─────────────── */}
+        <div className="rounded-2xl border border-brand-border bg-white px-5 py-4 shadow-card">
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-light">
+              <FiLayers size={16} className="text-brand" />
             </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-extrabold text-ink">Identité de marque</p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                Parcours en 6 étapes : projet, naming, slogan, palette, logo généré, puis aperçu final de votre kit.
+              </p>
+              {(selectedSlogan || chosenBrandName || names[0]) && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-brand/20 bg-brand-light px-2.5 py-0.5 text-xs font-semibold text-brand-darker">
+                    {displayBrandName}
+                  </span>
+                  {selectedSlogan && (
+                    <span className="text-xs italic text-ink-muted">
+                      &ldquo;{selectedSlogan}&rdquo;
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          <h1 className="mb-2 text-[28px] font-bold text-[#111827]">
-            Identité de marque
-          </h1>
-          <p className="mx-auto max-w-lg text-[13px] text-[#6b7280]">
-            Parcours en 6 étapes : projet, naming, slogan, palette, logo généré, puis aperçu final de votre kit.
-            {effectiveSlogan || chosenBrandName || names[0] ? (
-              <span className="mt-2 block text-[12px] text-[#9ca3af]">
-                Aperçu :{" "}
-                <strong className="font-semibold text-[#6366f1]">
-                  {displayBrandName}
-                </strong>
-                {effectiveSlogan ? (
-                  <>
-                    {" "}
-                    — <em>&ldquo;{effectiveSlogan}&rdquo;</em>
-                  </>
-                ) : null}
-              </span>
-            ) : null}
-          </p>
         </div>
 
+        {/* ── Stepper ───────────────────────────────────────────────────────── */}
         <BrandStepper steps={STEPS} current={step} />
 
+        {/* ── Erreur de chargement ──────────────────────────────────────────── */}
         {loadError && (
-          <div className="mb-4 rounded-lg border border-red-100 bg-red-50/90 px-4 py-3 text-center text-[13px] text-red-800">
+          <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
             {loadError}
           </div>
         )}
 
-        <div className="mb-6">{renderStepContent()}</div>
+        {/* ── Contenu de l'étape ────────────────────────────────────────────── */}
+        <div>{renderStepContent()}</div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-[#e5e7eb] pt-5">
+        {/* ── Navigation ───────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-brand-border bg-white px-5 py-3 shadow-card">
           <button
             type="button"
             className="bi-btn-outline"
@@ -740,7 +741,7 @@ export default function BrandPage() {
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-[#9ca3af]">
+            <span className="text-[11px] text-ink-subtle">
               {step + 1} / {STEPS.length}
             </span>
             <div className="flex gap-1">
@@ -750,7 +751,7 @@ export default function BrandPage() {
                   className="h-[3px] rounded-[3px] transition-all duration-300"
                   style={{
                     width: i === step ? 18 : 5,
-                    background: i <= step ? "#6366f1" : "#e5e7eb",
+                    background: i <= step ? "var(--brand)" : "var(--brand-border)",
                   }}
                 />
               ))}
@@ -770,13 +771,13 @@ export default function BrandPage() {
             <button
               type="button"
               className="bi-btn-outline"
-              style={{ borderColor: "#6366f1", color: "#6366f1" }}
               onClick={restartWizard}
             >
               Recommencer
             </button>
           )}
         </div>
+
       </div>
     </div>
   );

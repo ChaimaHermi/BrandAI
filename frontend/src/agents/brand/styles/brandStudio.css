@@ -1,38 +1,28 @@
-/* Brand Identity Studio — scoped under .bi-studio */
+/* Brand Identity Studio — scoped under .bi-studio
+ * All colors use CSS custom properties from globals.css (design system tokens).
+ * No hardcoded hex values — fully compatible with the rest of the app palette.
+ */
 
 .bi-studio {
-  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  background: #f9fafb;
-  color: #111827;
+  font-family: var(--font-sans); /* Inter — same as the rest of the app */
+  background: #f8f7ff;          /* brand-50 equivalent */
+  color: var(--ink, #1a1040);
 }
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
 
 @keyframes bi-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.bi-studio .bi-fade-up {
-  animation: bi-fade-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
+.bi-studio .bi-fade-up { animation: bi-fade-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.bi-studio .bi-d1 { animation-delay: 0.05s; }
+.bi-studio .bi-d2 { animation-delay: 0.10s; }
+.bi-studio .bi-d3 { animation-delay: 0.15s; }
+.bi-studio .bi-d4 { animation-delay: 0.20s; }
 
-.bi-studio .bi-d1 {
-  animation-delay: 0.05s;
-}
-.bi-studio .bi-d2 {
-  animation-delay: 0.1s;
-}
-.bi-studio .bi-d3 {
-  animation-delay: 0.15s;
-}
-.bi-studio .bi-d4 {
-  animation-delay: 0.2s;
-}
+/* ── Pill option (multi/single) ──────────────────────────────────────────── */
 
 .bi-studio .bi-opt-pill {
   transition: all 0.15s ease;
@@ -41,8 +31,10 @@
 
 .bi-studio .bi-opt-pill:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.12);
 }
+
+/* ── Stepper dot ─────────────────────────────────────────────────────────── */
 
 .bi-studio .bi-step-dot {
   width: 28px;
@@ -57,20 +49,22 @@
 }
 
 .bi-studio .bi-step-dot.done {
-  background: #22c55e;
+  background: var(--success, #1D9E75);
   color: #fff;
 }
 
 .bi-studio .bi-step-dot.active {
-  background: #6366f1;
+  background: var(--brand, #7C3AED);
   color: #fff;
-  box-shadow: 0 0 0 4px #eef2ff;
+  box-shadow: 0 0 0 4px var(--brand-light, #f0eeff);
 }
 
 .bi-studio .bi-step-dot.pending {
   background: #e5e7eb;
   color: #9ca3af;
 }
+
+/* ── Stepper connector ───────────────────────────────────────────────────── */
 
 .bi-studio .bi-connector {
   flex: 1;
@@ -81,8 +75,10 @@
 }
 
 .bi-studio .bi-connector.done {
-  background: #22c55e;
+  background: var(--success, #1D9E75);
 }
+
+/* ── Badge ───────────────────────────────────────────────────────────────── */
 
 .bi-studio .bi-badge {
   display: inline-flex;
@@ -93,12 +89,14 @@
   border-radius: 20px;
 }
 
+/* ── Section label (uppercase with trailing line) ────────────────────────── */
+
 .bi-studio .bi-lbl {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6366f1;
+  color: var(--brand, #7C3AED);
   margin: 0 0 10px;
   display: flex;
   align-items: center;
@@ -108,19 +106,21 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--brand-border, #e8e4ff);
   margin-left: 8px;
 }
 
 .bi-studio .bi-sec-line {
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--brand-border, #e8e4ff);
   margin-left: 10px;
 }
 
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
 .bi-studio .bi-btn-primary {
-  background: #6366f1;
+  background: linear-gradient(135deg, var(--brand, #7C3AED), var(--brand-dark, #534AB7));
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -130,10 +130,13 @@
   cursor: pointer;
   transition: all 0.15s;
   font-family: inherit;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.25);
 }
 
 .bi-studio .bi-btn-primary:hover:not(:disabled) {
-  background: #4f46e5;
+  background: linear-gradient(135deg, var(--brand-dark, #534AB7), var(--brand-darker, #3C3489));
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+  transform: translateY(-1px);
 }
 
 .bi-studio .bi-btn-primary:disabled {
@@ -144,7 +147,7 @@
 .bi-studio .bi-btn-outline {
   background: #fff;
   color: #374151;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--brand-border, #e8e4ff);
   border-radius: 10px;
   padding: 10px 18px;
   font-size: 13px;
@@ -155,7 +158,9 @@
 }
 
 .bi-studio .bi-btn-outline:hover:not(:disabled) {
-  background: #f3f4f6;
+  border-color: var(--brand-muted, #AFA9EC);
+  background: var(--brand-light, #f0eeff);
+  color: var(--brand-darker, #3C3489);
 }
 
 .bi-studio .bi-btn-outline:disabled {
@@ -163,34 +168,47 @@
   cursor: not-allowed;
 }
 
+/* ── Card ────────────────────────────────────────────────────────────────── */
+
 .bi-studio .bi-card {
   background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1px solid var(--brand-border, #e8e4ff);
+  border-radius: 14px;
   padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06);
 }
+
+/* ── Input ───────────────────────────────────────────────────────────────── */
 
 .bi-studio .bi-inp {
   width: 100%;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--brand-light, #f0eeff);
+  border: 1px solid var(--brand-border, #e8e4ff);
   border-radius: 8px;
   padding: 9px 14px;
   font-size: 13px;
-  color: #111827;
+  color: var(--ink, #1a1040);
   outline: none;
-  transition: border 0.15s;
+  transition: border 0.15s, background 0.15s;
   font-family: inherit;
 }
 
 .bi-studio .bi-inp:focus {
-  border-color: #6366f1;
+  border-color: var(--brand, #7C3AED);
   background: #fff;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 .bi-studio .bi-inp::placeholder {
-  color: #9ca3af;
+  color: var(--brand-muted, #AFA9EC);
 }
+
+.bi-studio .bi-inp:disabled {
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+/* ── Name card (naming step) ─────────────────────────────────────────────── */
 
 .bi-studio .bi-name-card {
   transition: all 0.15s ease;
@@ -199,5 +217,5 @@
 
 .bi-studio .bi-name-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.14);
 }

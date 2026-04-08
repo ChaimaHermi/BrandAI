@@ -22,12 +22,8 @@ export default function ConstraintsSection({
     <>
       {!embedded && (
         <div className="mb-4">
-          <h2 className="text-[15px] font-bold text-[#111827]">
-            Contraintes &amp; préférences
-          </h2>
-          <p className="text-[12px] text-[#6b7280]">
-            Guidez la génération avec des règles précises
-          </p>
+          <h2 className="text-sm font-bold text-ink">Contraintes &amp; préférences</h2>
+          <p className="text-xs text-ink-muted">Guidez la génération avec des règles précises</p>
         </div>
       )}
 
@@ -49,7 +45,7 @@ export default function ConstraintsSection({
         <div className="flex flex-col gap-4">
           <div>
             <label
-              className="mb-2 block text-[12px] font-semibold text-[#111827]"
+              className="mb-2 block text-xs font-semibold text-ink"
               htmlFor="bi-inc-keywords"
             >
               Mots-clés à inclure
@@ -65,7 +61,7 @@ export default function ConstraintsSection({
           </div>
           <div>
             <label
-              className="mb-2 block text-[12px] font-semibold text-[#111827]"
+              className="mb-2 block text-xs font-semibold text-ink"
               htmlFor="bi-exc-keywords"
             >
               Mots à éviter
@@ -89,7 +85,7 @@ export default function ConstraintsSection({
   }
 
   return (
-    <section className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+    <section className="rounded-xl border border-brand-border bg-white p-5 shadow-card">
       {inner}
     </section>
   );

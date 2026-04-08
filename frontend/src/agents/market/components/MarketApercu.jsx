@@ -1,10 +1,15 @@
+import {
+  FiBarChart2, FiDollarSign, FiTrendingUp,
+  FiActivity, FiUsers, FiPercent, FiExternalLink,
+} from "react-icons/fi";
+
 const FIELD_CONFIG = [
-  { key: "market_size", label: "Taille du marché" },
-  { key: "market_revenue", label: "Revenus 2024" },
-  { key: "CAGR", label: "CAGR" },
-  { key: "growth_rate", label: "Croissance" },
-  { key: "number_of_users", label: "Nombre d'utilisateurs" },
-  { key: "adoption_rate", label: "Taux d'adoption" },
+  { key: "market_size",     label: "Taille du marché",      Icon: FiBarChart2,  accent: "bg-brand-light text-brand" },
+  { key: "market_revenue",  label: "Revenus",               Icon: FiDollarSign, accent: "bg-success-light text-success" },
+  { key: "CAGR",            label: "CAGR",                  Icon: FiTrendingUp, accent: "bg-blue-50 text-blue-600" },
+  { key: "growth_rate",     label: "Croissance",            Icon: FiActivity,   accent: "bg-amber-50 text-amber-600" },
+  { key: "number_of_users", label: "Nb. utilisateurs",      Icon: FiUsers,      accent: "bg-rose-50 text-rose-600" },
+  { key: "adoption_rate",   label: "Taux d'adoption",       Icon: FiPercent,    accent: "bg-emerald-50 text-emerald-600" },
 ];
 
 function isUrlLike(value) {
@@ -16,71 +21,92 @@ export default function MarketApercu({ market }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-4">
-        {FIELD_CONFIG.map(({ key, label }) => {
+      {/* ── Metric cards ──────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {FIELD_CONFIG.map(({ key, label, Icon, accent }) => {
           const metric = market?.[key];
-          const value = metric?.value ?? "N/D";
-          const unit = metric?.unit ?? "";
+          const value  = metric?.value ?? "N/D";
+          const unit   = metric?.unit  ?? "";
           const source = metric?.source ?? "";
-          const isNd = value === "N/D";
+          const isNd   = value === "N/D";
 
           return (
             <div
               key={key}
-              className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+              className="flex flex-col gap-3 rounded-xl border border-brand-border bg-white p-4 shadow-card transition-shadow hover:shadow-card-md"
             >
-              <div className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                {label}
+              {/* Icon bubble + label */}
+              <div className="flex items-center gap-2">
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${accent}`}>
+                  <Icon size={15} />
+                </span>
+                {/* Label — same style as SectionLabel for consistency */}
+                <span className="border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
+                  {label}
+                </span>
               </div>
-              <div className="mt-2">
+
+              {/* Value */}
+              <div>
                 {isNd ? (
-                  <span className="text-lg italic text-gray-300">N/D</span>
+                  <span className="text-lg font-medium italic text-ink-subtle">N/D</span>
                 ) : (
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-bold text-ink">
                     {value}
-                    <span className="ml-1 text-sm text-gray-400">{unit}</span>
+                    {unit && (
+                      <span className="ml-1 text-sm font-normal text-ink-muted">{unit}</span>
+                    )}
                   </span>
                 )}
               </div>
-              <div className="mt-2 text-xs leading-relaxed text-gray-400">
-                {isUrlLike(source) ? (
-                  <a
-                    href={source}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-violet-600 hover:underline"
-                  >
-                    Source
-                  </a>
-                ) : (
-                  source
-                )}
-              </div>
+
+              {/* Source */}
+              {source && (
+                <div className="text-2xs leading-relaxed text-ink-subtle">
+                  {isUrlLike(source) ? (
+                    <a
+                      href={source}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-brand hover:underline"
+                    >
+                      <FiExternalLink size={10} />
+                      Source
+                    </a>
+                  ) : (
+                    source
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
+      {/* ── Market sources ────────────────────────────────────────────────── */}
       {marketSources.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-          <div className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-400">
+        <div className="rounded-xl border border-brand-border bg-white p-4 shadow-card">
+          <p className="mb-3 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
             Sources du marché
-          </div>
+          </p>
           <div className="grid grid-cols-1 gap-2">
             {marketSources.map((src, idx) => {
-              const url = typeof src?.url === "string" ? src.url : "";
-              if (!url) return null;
+              const url    = typeof src?.url    === "string" ? src.url    : "";
               const domain = typeof src?.domain === "string" ? src.domain : "";
+              if (!url) return null;
               return (
                 <a
                   key={`${url}-${idx}`}
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  className="flex items-center justify-between rounded-lg border border-brand-border px-3 py-2 text-sm transition-colors hover:bg-brand-light"
                 >
-                  <span className="font-medium text-gray-500">{domain || "source"}</span>
-                  <span className="ml-4 truncate text-violet-700">{url}</span>
+                  <span className="flex items-center gap-2 font-medium text-ink-muted">
+                    <FiExternalLink size={12} className="text-brand-muted" />
+                    {domain || "source"}
+                  </span>
+                  <span className="ml-4 truncate text-brand">{url}</span>
                 </a>
               );
             })}

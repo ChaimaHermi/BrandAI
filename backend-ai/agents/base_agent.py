@@ -181,10 +181,15 @@ class BaseAgent(ABC):
                     params["reasoning_effort"] = effort
 
                 response = await client.chat.completions.create(**params)
-
-                content = response.choices[0].message.content or ""
-                if not content.strip():
-                    raise RuntimeError("Empty response")
+                message = response.choices[0].message
+                # gpt-oss often puts JSON in reasoning_content while content is empty
+                content = (message.content or "").strip()
+                if not content:
+                    reasoning = getattr(message, "reasoning_content", None) or ""
+                    if isinstance(reasoning, str) and reasoning.strip():
+                        content = reasoning.strip()
+                if not content:
+                    raise RuntimeError("Empty response (no content or reasoning)")
 
                 return content
 
@@ -231,14 +236,43 @@ class BaseAgent(ABC):
     # ─────────────────────────────────────────
 
     def _parse_json(self, raw: str) -> dict:
-        cleaned = re.sub(r"```json\s*", "", raw)
-        cleaned = re.sub(r"```\s*", "", cleaned)
-        cleaned = cleaned.strip()
+        """Parse LLM output; tolerates markdown fences and leading prose."""
+        if raw is None:
+            raise json.JSONDecodeError("Invalid JSON (empty response)", "", 0)
 
+        s = str(raw).strip()
+        if not s:
+            raise json.JSONDecodeError("Invalid JSON (empty response)", raw or "", 0)
+
+        cleaned = re.sub(r"```(?:json)?\s*|\s*```", "", s, flags=re.IGNORECASE).strip()
+
+        # Direct JSON
         try:
-            return json.loads(cleaned)
-        except:
-            raise json.JSONDecodeError("Invalid JSON", raw, 0)
+            out = json.loads(cleaned)
+            if isinstance(out, dict):
+                return out
+        except json.JSONDecodeError:
+            pass
+
+        # First balanced { ... } block (non-greedy depth scan)
+        brace_start = cleaned.find("{")
+        if brace_start >= 0:
+            depth = 0
+            for i, ch in enumerate(cleaned[brace_start:], start=brace_start):
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        try:
+                            out = json.loads(cleaned[brace_start : i + 1])
+                            if isinstance(out, dict):
+                                return out
+                        except json.JSONDecodeError:
+                            break
+
+        preview = (s[:120] + "…") if len(s) > 120 else s
+        raise json.JSONDecodeError(f"Invalid JSON (no parseable object): {preview!r}", s, 0)
 
     # ─────────────────────────────────────────
     # LOGGING
