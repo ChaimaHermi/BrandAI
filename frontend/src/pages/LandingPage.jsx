@@ -134,7 +134,7 @@ export default function LandingPage() {
                       <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED]">
                         <Icon className="h-5 w-5" />
                       </span>
-                      <Badge variant="violet">Agent IA</Badge>
+                      <Badge variant="violet">Module</Badge>
                     </div>
                     <h3 className="mb-2 font-semibold text-[#111827]">{name}</h3>
                     <p className="text-[#6B7280]">{description}</p>

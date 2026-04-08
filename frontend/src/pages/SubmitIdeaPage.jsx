@@ -154,91 +154,50 @@ export default function SubmitIdeaPage() {
                   style={{
                     display: "flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     marginBottom: 24,
                   }}
                 >
-                  {[
-                    { n: 1, label: "Votre idée", active: true },
-                    { n: 2, label: "Affiner", active: false },
-                    { n: 3, label: "Pipeline", active: false },
-                  ].map(({ n, label, active }, i) => (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
                     <div
-                      key={n}
                       style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg,#7F77DD,#534AB7)",
                         display: "flex",
                         alignItems: "center",
-                        flex: i < 2 ? 1 : 0,
+                        justifyContent: "center",
+                        boxShadow: "0 2px 10px rgba(124,58,237,0.3)",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: "50%",
-                            background: active
-                              ? "linear-gradient(135deg,#7F77DD,#534AB7)"
-                              : "#f3f0ff",
-                            border: active ? "none" : "1.5px solid #e8e4ff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: active ? "white" : "#AFA9EC",
-                            boxShadow: active
-                              ? "0 2px 10px rgba(124,58,237,0.3)"
-                              : "none",
-                          }}
-                        >
-                          {active ? (
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 12 12"
-                              fill="none"
-                            >
-                              <path
-                                d="M6 1l1 2.5 2.5.4-1.8 1.7.4 2.4L6 6.8 3.9 8l.4-2.4L2.5 3.9l2.5-.4L6 1z"
-                                stroke="white"
-                                strokeWidth="1"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          ) : (
-                            n
-                          )}
-                        </div>
-                        <span
-                          style={{
-                            fontSize: 9,
-                            color: active ? "#7F77DD" : "#AFA9EC",
-                            fontWeight: active ? 700 : 500,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {label}
-                        </span>
-                      </div>
-                      {i < 2 && (
-                        <div
-                          style={{
-                            flex: 1,
-                            height: 1.5,
-                            background: active ? "#7F77DD" : "#f0eeff",
-                            margin: "0 6px 14px",
-                          }}
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path
+                          d="M6 1l1 2.5 2.5.4-1.8 1.7.4 2.4L6 6.8 3.9 8l.4-2.4L2.5 3.9l2.5-.4L6 1z"
+                          stroke="white"
+                          strokeWidth="1"
+                          strokeLinejoin="round"
                         />
-                      )}
+                      </svg>
                     </div>
-                  ))}
+                    <span
+                      style={{
+                        fontSize: 9,
+                        color: "#7F77DD",
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Votre idée
+                    </span>
+                  </div>
                 </div>
 
                 {/* Info pill */}
