@@ -8,7 +8,6 @@ export default function MarketVOC({ voc }) {
   const desiredFeatures = voc?.desired_features ?? [];
   const userQuotes = voc?.user_quotes ?? [];
   const marketInsights = voc?.market_insights ?? [];
-  const insightsFr = voc?.insights_fr ?? [];
   const sources = voc?.sources ?? [];
 
   const hasSummary =
@@ -22,8 +21,7 @@ export default function MarketVOC({ voc }) {
   const hasDesiredFeatures = countItems(desiredFeatures) > 0;
   const hasQuotesInsightsFr =
     countItems(userQuotes) > 0 ||
-    countItems(marketInsights) > 0 ||
-    countItems(insightsFr) > 0;
+    countItems(marketInsights) > 0;
   const hasSources = countItems(sources) > 0;
 
   return (
@@ -160,22 +158,6 @@ export default function MarketVOC({ voc }) {
             </div>
           )}
 
-          {countItems(insightsFr) > 0 && (
-            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-              <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-800">
-                Insights FR
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                  {countItems(insightsFr)}
-                </span>
-              </div>
-              {insightsFr?.map((insight, idx) => (
-                <div key={`${insight}-${idx}`} className="flex gap-2 py-2">
-                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-400" />
-                  <p className="text-sm text-gray-600">{insight}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 

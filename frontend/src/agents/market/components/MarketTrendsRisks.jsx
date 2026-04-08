@@ -40,7 +40,6 @@ function TrendCard({ title, items, dotClass }) {
 }
 
 export default function MarketTrendsRisks({ trends }) {
-  const insightsFr = trends?.insights_fr;
   const marketTrends = trends?.market_trends;
   const consumerTrends = trends?.consumer_trends;
   const technologyTrends = trends?.technology_trends;
@@ -50,25 +49,6 @@ export default function MarketTrendsRisks({ trends }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm">
-        <div className="mb-3 text-sm font-bold text-gray-800">Insights FR</div>
-        {isNonEmptyArray(insightsFr) ? (
-          insightsFr?.map((insight, idx) => (
-            <div
-              key={`insight-${idx}`}
-              className="mb-3 rounded-xl border-l-4 border-violet-400 bg-violet-50 p-4"
-            >
-              <div className="flex items-start gap-3">
-                <span className="font-serif text-3xl leading-none text-violet-200">&quot;</span>
-                <p className="text-sm font-medium leading-relaxed text-gray-700">{insight}</p>
-              </div>
-            </div>
-          ))
-        ) : (
-          <MarketSectionEmpty />
-        )}
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <TrendCard title="Tendances marché" items={marketTrends} dotClass="bg-violet-500" />

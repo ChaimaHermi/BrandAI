@@ -1,42 +1,304 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  HiOutlineClipboardDocumentList,
-  HiOutlineArrowPath,
-  HiOutlineCheckCircle,
-  HiOutlinePlus,
-} from "react-icons/hi2";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
-import { Card } from "@/shared/ui/Card";
-import { Button } from "@/shared/ui/Button";
-import {
-  IdeasTable,
-  IdeasTableSkeleton,
-  IdeasFilters,
-  Pagination,
-} from "@/components/dashboard";
-import {
-  apiGetIdeas,
-  apiDeleteIdea,
-  getErrorMessage,
-} from "@/services/ideaApi";
+import { apiGetIdeas, apiDeleteIdea, getErrorMessage } from "@/services/ideaApi";
 import { toast } from "react-toastify";
 import { useAuth } from "@/shared/hooks/useAuth";
 
-const IDEAS_PER_PAGE = 4;
+/* ─────────────────────────────────────────────────────────────────────────────
+   Constants
+───────────────────────────────────────────────────────────────────────────── */
+const IDEAS_PER_PAGE = 6;
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Sector color map — Tailwind classes only, no hex
+   avatarFrom/avatarTo → used as inline gradient (CSS vars not available in JIT)
+   bg/text            → Tailwind utility classes
+───────────────────────────────────────────────────────────────────────────── */
+const SECTOR_STYLES = {
+  tech:       { bg: "bg-blue-50",         text: "text-blue-700",        avatarFrom: "#E6F1FB", avatarTo: "#B5D4F4" },
+  education:  { bg: "bg-brand-light",     text: "text-brand-darker",    avatarFrom: "#EEEDFE", avatarTo: "#CECBF6" },
+  ecommerce:  { bg: "bg-success-light",   text: "text-success",         avatarFrom: "#E1F5EE", avatarTo: "#9FE1CB" },
+  sante:      { bg: "bg-pink-50",         text: "text-pink-700",        avatarFrom: "#FBEAF0", avatarTo: "#F4C0D1" },
+  finance:    { bg: "bg-pink-50",         text: "text-pink-700",        avatarFrom: "#FBEAF0", avatarTo: "#F4C0D1" },
+  default:    { bg: "bg-brand-light",     text: "text-brand-darker",    avatarFrom: "#EEEDFE", avatarTo: "#CECBF6" },
+};
+
+function getSectorStyle(sector) {
+  return SECTOR_STYLES[sector?.toLowerCase()] ?? SECTOR_STYLES.default;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Status helpers (logic unchanged)
+───────────────────────────────────────────────────────────────────────────── */
+const STATUS_PROGRESS_MAP = {
+  clarifier_done: 17,
+  market_done:    33,
+  brand_done:     50,
+  content_done:   67,
+  website_done:   83,
+  done:           100,
+};
+
+function getClarifierPct(idea) {
+  const steps = idea?.pipeline_progress?.clarifier_steps;
+  if (!Array.isArray(steps) || steps.length === 0) return 0;
+  return Math.min(Math.round((steps.length / 7) * 17), 17);
+}
+
+function getProgress(idea) {
+  if (idea?.status === "pending" || idea?.status === "in_progress")
+    return getClarifierPct(idea);
+  return STATUS_PROGRESS_MAP[idea?.status] ?? 0;
+}
+
+// Returns Tailwind text-color class + label string
+function getStatusMeta(idea) {
+  const pct = getProgress(idea);
+  const map = {
+    pending:        { cls: "text-ink-subtle",  label: `En attente · ${pct}%` },
+    in_progress:    { cls: "text-brand",       label: `Clarifier en cours · ${pct}%` },
+    clarifier_done: { cls: "text-brand",       label: `Clarifier ✓ · ${pct}%` },
+    done:           { cls: "text-success",     label: `Pipeline complet ✓ · ${pct}%` },
+  };
+  return map[idea?.status] ?? { cls: "text-ink-subtle", label: `En attente · ${pct}%` };
+}
+
+function getInitials(idea) {
+  return (idea.name || idea.description || "?").trim().slice(0, 2).toUpperCase();
+}
+
+function getDisplayName(idea) {
+  if (idea.name?.trim()) return idea.name;
+  const desc = idea.description || "";
+  return desc.length > 48 ? `${desc.slice(0, 48)}…` : desc || "Idée sans nom";
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Sub-components
+───────────────────────────────────────────────────────────────────────────── */
+
+/** Stat card — top 3 counters */
+function StatCard({ label, value, icon, accent = "brand" }) {
+  const accents = {
+    brand:   { card: "border-brand-border",  label: "text-ink-subtle",  value: "text-ink",         icon: "bg-brand-light"   },
+    active:  { card: "border-brand-muted",   label: "text-brand",       value: "text-brand-darker", icon: "bg-brand-100"     },
+    success: { card: "border-success-border",label: "text-success",     value: "text-success-dark", icon: "bg-success-light" },
+  };
+  const a = accents[accent];
+
+  return (
+    <div className={`rounded-xl border ${a.card} bg-white px-5 py-4 shadow-card`}>
+      <div className="mb-3 flex items-center justify-between">
+        <span className={`text-2xs font-bold uppercase tracking-widest ${a.label}`}>{label}</span>
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${a.icon}`}>
+          {icon}
+        </div>
+      </div>
+      <p className={`text-4xl font-extrabold ${a.value}`}>{value}</p>
+    </div>
+  );
+}
+
+/** Skeleton row while loading */
+function SkeletonRow() {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-brand-border bg-white px-5 py-4 shadow-card">
+      <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-brand-light" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3 w-3/5 animate-pulse rounded-full bg-brand-light" />
+        <div className="h-2.5 w-2/5 animate-pulse rounded-full bg-gray-100" />
+      </div>
+      <div className="h-7 w-20 animate-pulse rounded-full bg-brand-light" />
+    </div>
+  );
+}
+
+/** Empty state */
+function EmptyIdeas({ onNew }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-brand-border bg-white px-6 py-16 text-center shadow-card">
+      <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-light shadow-card">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 3l2 5.5 5.5.8-4 3.9.9 5.5L12 16l-4.4 2.7.9-5.5-4-3.9 5.5-.8L12 3z"
+            stroke="#7C3AED"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      <h3 className="mb-1.5 text-lg font-extrabold text-ink">Aucune idée pour l&apos;instant</h3>
+      <p className="mb-6 max-w-xs text-sm text-ink-muted">
+        Créez votre première idée et laissez l&apos;IA la transformer en marque complète.
+      </p>
+      <button
+        type="button"
+        onClick={onNew}
+        className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-brand to-brand-dark px-6 py-2.5 text-sm font-bold text-white shadow-btn transition-all hover:shadow-btn-hover hover:-translate-y-px"
+      >
+        Créer ma première idée →
+      </button>
+    </div>
+  );
+}
+
+/** Single idea row */
+function IdeaRow({ idea, onNavigate, onDelete }) {
+  const { bg, text, avatarFrom, avatarTo } = getSectorStyle(idea.sector);
+  const { cls: statusCls, label: statusLabel } = getStatusMeta(idea);
+  const progress  = getProgress(idea);
+  const isDone    = idea.status === "done";
+
+  return (
+    <div
+      className="idea-card"
+      onClick={() => onNavigate(`/ideas/${idea.id}`)}
+    >
+      {/* Avatar */}
+      <div
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold"
+        style={{ background: `linear-gradient(135deg, ${avatarFrom}, ${avatarTo})` }}
+      >
+        <span className={text}>{getInitials(idea)}</span>
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <p className="mb-1 truncate text-base font-bold text-ink">
+          {getDisplayName(idea)}
+        </p>
+        <div className="flex items-center gap-2">
+          {idea.sector && (
+            <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${bg} ${text}`}>
+              {idea.sector}
+            </span>
+          )}
+          <span className="text-xs text-ink-subtle">
+            {new Date(idea.created_at).toLocaleDateString("fr-FR", {
+              day: "numeric", month: "long", year: "numeric",
+            })}
+          </span>
+        </div>
+      </div>
+
+      {/* Progress + actions */}
+      <div className="flex shrink-0 items-center gap-3">
+        {/* Progress */}
+        <div className="hidden sm:block text-right">
+          <p className={`mb-1.5 text-2xs font-semibold ${statusCls}`}>{statusLabel}</p>
+          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-gray-100">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                isDone
+                  ? "bg-gradient-to-r from-success to-success-dark"
+                  : "bg-gradient-to-r from-brand to-brand-dark"
+              }`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Open button */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onNavigate(`/ideas/${idea.id}`); }}
+          className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+            isDone
+              ? "border border-success-border bg-white text-success hover:bg-success-light"
+              : "bg-gradient-to-br from-brand to-brand-dark text-white shadow-pill hover:shadow-btn"
+          }`}
+        >
+          {isDone ? "Voir →" : "Affiner →"}
+        </button>
+
+        {/* Delete button */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(idea.id); }}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-200 bg-white text-red-400 transition-all hover:bg-red-50 hover:text-red-600"
+          aria-label="Supprimer"
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path
+              d="M2 3h8M5 3V2h2v1M4 3v6h4V3"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Pagination controls */
+function Pagination({ currentPage, totalPages, onChange }) {
+  const pageNumbers = useMemo(() => {
+    const range = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) range.push(i);
+    } else if (currentPage <= 3) {
+      range.push(1, 2, 3, 4, 5);
+    } else if (currentPage >= totalPages - 2) {
+      for (let i = totalPages - 4; i <= totalPages; i++) range.push(i);
+    } else {
+      for (let i = currentPage - 2; i <= currentPage + 2; i++) range.push(i);
+    }
+    return range;
+  }, [currentPage, totalPages]);
+
+  const navBtn = "flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-white text-ink-muted transition-all hover:border-brand-muted hover:text-brand disabled:cursor-not-allowed disabled:opacity-40";
+
+  return (
+    <div className="flex items-center gap-1">
+      <button type="button" onClick={() => onChange(currentPage - 1)} disabled={currentPage === 1} className={navBtn}>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M7 2L3 6l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      {pageNumbers.map((p) => (
+        <button
+          key={p}
+          type="button"
+          onClick={() => onChange(p)}
+          className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-all ${
+            p === currentPage
+              ? "border-brand bg-gradient-to-br from-brand to-brand-dark text-white shadow-btn"
+              : "border-brand-border bg-white text-ink-muted hover:border-brand-muted hover:text-brand"
+          }`}
+        >
+          {p}
+        </button>
+      ))}
+
+      <button type="button" onClick={() => onChange(currentPage + 1)} disabled={currentPage === totalPages} className={navBtn}>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M5 2l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Main page
+───────────────────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
-  const { token } = useAuth();
-  const [ideas, setIdeas] = useState([]);
-  const [totalFromApi, setTotalFromApi] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const { token }       = useAuth();
+  const navigate        = useNavigate();
+  const [ideas,       setIdeas]       = useState([]);
+  const [totalFromApi,setTotalFromApi]= useState(0);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState("");
+  const [search,      setSearch]      = useState("");
+  const [statusFilter,setStatusFilter]= useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const navigate = useNavigate();
 
+  /* ── Fetch ─────────────────────────────────────────────────────────────── */
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
@@ -57,24 +319,20 @@ export default function DashboardPage() {
     return () => { cancelled = true; };
   }, [token]);
 
+  /* ── Filtering + pagination ────────────────────────────────────────────── */
   const filteredIdeas = useMemo(() => {
     let list = [...ideas];
-    const q = search.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        (i) =>
-          (i.name || "").toLowerCase().includes(q) ||
-          (i.sector || "").toLowerCase().includes(q),
-      );
-    }
-    if (statusFilter) {
-      list = list.filter((i) => i.status === statusFilter);
-    }
+    const q  = search.trim().toLowerCase();
+    if (q) list = list.filter((i) =>
+      (i.name || "").toLowerCase().includes(q) ||
+      (i.sector || "").toLowerCase().includes(q),
+    );
+    if (statusFilter) list = list.filter((i) => i.status === statusFilter);
     return list;
   }, [ideas, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredIdeas.length / IDEAS_PER_PAGE));
-  const pageIdeas = useMemo(() => {
+  const pageIdeas  = useMemo(() => {
     const start = (currentPage - 1) * IDEAS_PER_PAGE;
     return filteredIdeas.slice(start, start + IDEAS_PER_PAGE);
   }, [filteredIdeas, currentPage]);
@@ -83,7 +341,8 @@ export default function DashboardPage() {
     if (currentPage > totalPages) setCurrentPage(1);
   }, [currentPage, totalPages]);
 
-  const handleDeleteIdea = async (ideaId) => {
+  /* ── Actions ───────────────────────────────────────────────────────────── */
+  const handleDelete = async (ideaId) => {
     if (!token) return;
     try {
       await apiDeleteIdea(ideaId, token);
@@ -96,561 +355,167 @@ export default function DashboardPage() {
     }
   };
 
-  const totalCount = totalFromApi || ideas.length;
-  const runningCount = ideas.filter((i) => i.status === "running").length;
-  const doneCount = ideas.filter((i) => i.status === "done").length;
-
-  const getSectorStyle = (sector) => {
-    const map = {
-      tech: {
-        bg: "#E6F1FB",
-        color: "#185FA5",
-        avatarBg: "linear-gradient(135deg,#E6F1FB,#B5D4F4)",
-      },
-      education: {
-        bg: "#f0eeff",
-        color: "#534AB7",
-        avatarBg: "linear-gradient(135deg,#EEEDFE,#CECBF6)",
-      },
-      ecommerce: {
-        bg: "#E1F5EE",
-        color: "#0F6E56",
-        avatarBg: "linear-gradient(135deg,#E1F5EE,#9FE1CB)",
-      },
-      sante: {
-        bg: "#FBEAF0",
-        color: "#993556",
-        avatarBg: "linear-gradient(135deg,#FBEAF0,#F4C0D1)",
-      },
-      finance: {
-        bg: "#FBEAF0",
-        color: "#993556",
-        avatarBg: "linear-gradient(135deg,#FBEAF0,#F4C0D1)",
-      },
-    };
-    const key = sector?.toLowerCase();
-    return (
-      map[key] || {
-        bg: "#f0eeff",
-        color: "#534AB7",
-        avatarBg: "linear-gradient(135deg,#EEEDFE,#CECBF6)",
-      }
-    );
-  };
-
-  const getInitials = (idea) => {
-    const text = idea.name || idea.description || "?";
-    return text.trim().slice(0, 2).toUpperCase();
-  };
-
-  const getDisplayName = (idea) => {
-    if (idea.name && idea.name.trim() !== "") return idea.name;
-    const desc = idea.description || "";
-    return desc.length > 45 ? `${desc.slice(0, 45)}...` : desc || "Idée sans nom";
-  };
-
-  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-
-  // Pour le moment, on calcule la progression "clarifier" en % depuis
-  // `idea.pipeline_progress.clarifier_steps` (même si l'idée est encore "pending").
-  const getClarifierProgressFromSteps = (idea) => {
-    const steps = idea?.pipeline_progress?.clarifier_steps;
-    if (!Array.isArray(steps) || steps.length <= 0) return 0;
-
-    // Pipeline actuel : 6 étapes total, Clarifier ~= 17%.
-    const clarifierTotalSteps = 7;
-    const clarifierMaxPct = 17;
-
-    const pct = Math.round((steps.length / clarifierTotalSteps) * clarifierMaxPct);
-    return clamp(pct, 0, clarifierMaxPct);
-  };
-
-  const getProgress = (idea) => {
-    const statusMap = {
-      clarifier_done: 17,
-      market_done: 33,
-      brand_done: 50,
-      content_done: 67,
-      website_done: 83,
-      done: 100,
-    };
-
-    // Si l’idée est encore en cours de clarification,
-    // on affiche le % depuis le pipeline sauvegardé.
-    if (idea?.status === "pending" || idea?.status === "in_progress") {
-      const clarifierPct = getClarifierProgressFromSteps(idea);
-      return clarifierPct;
-    }
-
-    return statusMap[idea?.status] || 0;
-  };
-
-  const getStatusLabel = (idea) => {
-    const progress = getProgress(idea);
-    const map = {
-      pending: {
-        label: `En attente · ${progress}%`,
-        color: "#9ca3af",
-      },
-      in_progress: {
-        label: `Clarifier en cours · ${progress}%`,
-        color: "#7F77DD",
-      },
-      clarifier_done: {
-        label: `Clarifier ✓ · ${progress}%`,
-        color: "#7F77DD",
-      },
-      done: {
-        label: `Pipeline complet ✓ · ${progress}%`,
-        color: "#1D9E75",
-      },
-    };
-    return map[idea?.status] || { label: `En attente · ${progress}%`, color: "#9ca3af" };
-  };
-
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
   };
 
-  const total = totalFromApi || ideas.length;
+  /* ── Counts ─────────────────────────────────────────────────────────────── */
+  const totalCount   = totalFromApi || ideas.length;
+  const runningCount = ideas.filter((i) => ["running", "in_progress"].includes(i.status)).length;
+  const doneCount    = ideas.filter((i) => i.status === "done").length;
 
+  /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
     <>
       <Navbar variant="app" />
-      <div
-        className="pt-20 px-6"
-        style={{
-          background:
-            "linear-gradient(135deg,#f8f7ff 0%,#f0eeff 30%,#faf5ff 100%)",
-          minHeight: "100vh",
-          fontFamily: "var(--font-sans)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto w-full">
-        {/* Header */}
-        <div className="mb-5 flex items-start justify-between">
-          <div>
-            <h1 className="mb-1 text-[24px] font-extrabold text-[#1a1040]">
-              Mes idées
-            </h1>
-            <p className="m-0 text-[13px] text-gray-400">
-              Gérez et suivez vos projets IA
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate("/ideas/new")}
-            className="flex cursor-pointer items-center gap-1.5 rounded-full border-0 bg-gradient-to-br from-[#7F77DD] to-[#534AB7] px-5 py-[10px] text-[13px] font-bold text-white shadow-[0_2px_10px_rgba(124,58,237,0.25)] transition-all hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(124,58,237,0.35)]"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path
-                d="M7 2v10M2 7h10"
-                stroke="white"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-            Nouvelle idée
-          </button>
-        </div>
 
-        {/* Stats */}
-        <div className="mb-5 grid grid-cols-3 gap-[10px]">
-          {[
-            {
-              label: "Total idées",
-              value: totalCount,
-              border: "#e8e4ff",
-              labelColor: "#9ca3af",
-              valueColor: "#1a1040",
-              iconBg: "#f0eeff",
-              icon: (
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M7 1.5l1.2 3 3 .4-2.2 2.1.5 3L7 8.5l-2.5 1.5.5-3L2.8 5l3-.4L7 1.5z"
-                    stroke="#7F77DD"
-                    strokeWidth="1.1"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ),
-            },
-            {
-              label: "En cours",
-              value: runningCount,
-              border: "#AFA9EC",
-              labelColor: "#7F77DD",
-              valueColor: "#3C3489",
-              iconBg: "#EEEDFE",
-              icon: (
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <circle
-                    cx="7"
-                    cy="7"
-                    r="5"
-                    stroke="#7F77DD"
-                    strokeWidth="1.3"
-                  />
-                  <path
-                    d="M7 4.5v3M7 9v.3"
-                    stroke="#7F77DD"
-                    strokeWidth="1.3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              ),
-            },
-            {
-              label: "Terminées",
-              value: doneCount,
-              border: "#9FE1CB",
-              labelColor: "#1D9E75",
-              valueColor: "#085041",
-              iconBg: "#E1F5EE",
-              icon: (
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M2 7l3 3 7-6"
-                    stroke="#1D9E75"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              ),
-            },
-          ].map(
-            ({
-              label,
-              value,
-              border,
-              labelColor,
-              valueColor,
-              iconBg,
-              icon,
-            }) => (
-              <div
-                key={label}
-                className="rounded-[14px] bg-white px-[18px] py-4 shadow-[0_2px_8px_rgba(124,58,237,0.05)]"
-                style={{ border: `0.5px solid ${border}` }}
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.07em]" style={{ color: labelColor }}>
-                    {label}
-                  </span>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: iconBg }}>
-                    {icon}
-                  </div>
-                </div>
-                <div className="text-[28px] font-extrabold" style={{ color: valueColor }}>
-                  {value}
-                </div>
-              </div>
-            ),
-          )}
-        </div>
+      <div className="min-h-screen bg-[image:var(--gradient-page)] pt-20">
+        <div className="mx-auto w-full max-w-5xl px-6 py-8">
 
-        {/* Erreur */}
-        {error && (
-          <div className="mb-4 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-[14px] py-[10px] text-[13px] text-[#b91c1c]">
-            {error}
-          </div>
-        )}
-
-        {/* Filtres + Search */}
-        <div className="mb-[14px] flex items-center gap-[10px]">
-          <div className="relative flex-1">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 14 14"
-              fill="none"
-              className="absolute left-3 top-1/2 -translate-y-1/2"
-            >
-              <circle
-                cx="6"
-                cy="6"
-                r="4"
-                stroke="#AFA9EC"
-                strokeWidth="1.3"
-              />
-              <path
-                d="M9.5 9.5l2.5 2.5"
-                stroke="#AFA9EC"
-                strokeWidth="1.3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Rechercher par nom ou secteur..."
-              className="box-border w-full rounded-full border-[1.5px] border-[#e8e4ff] bg-white py-[9px] pl-9 pr-[14px] text-[13px] text-[#1a1040] outline-none transition-colors focus:border-[#7F77DD]"
-            />
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="cursor-pointer rounded-full border-[1.5px] border-[#e8e4ff] bg-white px-[14px] py-[9px] font-[var(--font-sans)] text-xs text-gray-500 outline-none"
-          >
-            <option value="">Tous les statuts</option>
-            <option value="pending">En attente</option>
-            <option value="in_progress">En cours</option>
-            <option value="done">Terminé</option>
-          </select>
-        </div>
-
-        {/* Liste d'idées */}
-        {loading ? (
-          <div className="mb-5 flex flex-col gap-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-3 rounded-[14px] border border-[#e8e4ff] bg-white px-4 py-[14px] shadow-[0_2px_8px_rgba(124,58,237,0.04)]">
-                <div className="h-10 w-10 shrink-0 rounded-[10px] bg-[#f0eeff]" />
-                <div className="flex-1">
-                  <div className="mb-2 h-[13px] w-3/5 rounded bg-[#f0eeff]" />
-                  <div className="h-[10px] w-[30%] rounded bg-[#f8f7ff]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : ideas.length === 0 ? (
-          <div className="mb-5 rounded-2xl border border-[#e8e4ff] bg-white px-6 py-12 text-center shadow-[0_2px_8px_rgba(124,58,237,0.04)]">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#f0eeff]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 3l2 5.5 5.5.8-4 3.9.9 5.5L12 16l-4.4 2.7.9-5.5-4-3.9 5.5-.8L12 3z"
-                  stroke="#7F77DD"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className="mb-2 text-[15px] font-bold text-[#1a1040]">
-              Aucune idée pour l&apos;instant
-            </div>
-            <div className="mb-5 text-[13px] text-gray-400">
-              Créez votre première idée et laissez l&apos;IA la transformer en
-              marque complète.
+          {/* ── Page header ─────────────────────────────────────────────── */}
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h1 className="mb-1 text-3xl font-extrabold text-ink">Mes idées</h1>
+              <p className="text-sm text-ink-muted">Gérez et suivez vos projets IA</p>
             </div>
             <button
               type="button"
               onClick={() => navigate("/ideas/new")}
-              className="cursor-pointer rounded-full border-0 bg-gradient-to-br from-[#7F77DD] to-[#534AB7] px-6 py-[10px] text-[13px] font-bold text-white shadow-[0_2px_10px_rgba(124,58,237,0.25)]"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-brand to-brand-dark px-5 py-2.5 text-sm font-bold text-white shadow-btn transition-all hover:shadow-btn-hover hover:-translate-y-px"
             >
-              Créer ma première idée →
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M7 2v10M2 7h10" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              Nouvelle idée
             </button>
           </div>
-        ) : (
-          <div className="mb-5 flex flex-col gap-2">
-            {pageIdeas.map((idea, index) => {
-              const { bg, color, avatarBg } = getSectorStyle(idea.sector);
-              const {
-                label: statusLabel,
-                color: statusColor,
-              } = getStatusLabel(idea);
-              const progress = getProgress(idea);
 
-              return (
-                <div
-                  key={idea.id}
-                  className="idea-card"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                  onClick={() => navigate(`/ideas/${idea.id}`)}
-                >
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-xs font-extrabold"
-                    style={{ background: avatarBg, color }}
-                  >
-                    {getInitials(idea)}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-[3px] overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold text-[#1a1040]">
-                      {getDisplayName(idea)}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {idea.sector && (
-                        <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: bg, color }}>
-                          {idea.sector}
-                        </span>
-                      )}
-                      <span className="text-[11px] text-gray-400">
-                        {new Date(idea.created_at).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-[10px]">
-                    <div className="text-right">
-                      <div className="mb-1 text-[10px] font-semibold" style={{ color: statusColor }}>
-                        {statusLabel}
-                      </div>
-                      <div className="h-1 w-[72px] overflow-hidden rounded-full" style={{ background: bg }}>
-                        <div
-                          style={{
-                            height: "100%",
-                            width: `${progress}%`,
-                            background:
-                              progress === 100
-                                ? "linear-gradient(90deg,#1D9E75,#085041)"
-                                : "linear-gradient(90deg,#7F77DD,#534AB7)",
-                            transition: "width 0.5s ease",
-                          }}
-                          className="rounded-full"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/ideas/${idea.id}`);
-                      }}
-                      className={`whitespace-nowrap rounded-full px-[14px] py-1.5 text-[11px] font-bold ${
-                        idea.status === "done"
-                          ? "border border-[#9FE1CB] bg-white text-[#1D9E75] shadow-none"
-                          : "bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_6px_rgba(124,58,237,0.25)]"
-                      }`}
-                    >
-                      {idea.status === "done" ? "Voir →" : "Affiner →"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteIdea(idea.id);
-                      }}
-                      className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#fecaca] bg-white transition-all duration-150 hover:bg-[#fff5f5]"
-                    >
-                      <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 12 12"
-                        fill="none"
-                      >
-                        <path
-                          d="M2 3h8M5 3V2h2v1M4 3v6h4V3"
-                          stroke="#e11d48"
-                          strokeWidth="1.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+          {/* ── Stats ───────────────────────────────────────────────────── */}
+          <div className="mb-6 grid grid-cols-3 gap-3">
+            <StatCard
+              label="Total idées"
+              value={totalCount}
+              accent="brand"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1.5l1.2 3 3 .4-2.2 2.1.5 3L7 8.5l-2.5 1.5.5-3L2.8 5l3-.4L7 1.5z" stroke="#7C3AED" strokeWidth="1.1" strokeLinejoin="round" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="En cours"
+              value={runningCount}
+              accent="active"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="7" r="5" stroke="#7C3AED" strokeWidth="1.3" />
+                  <path d="M7 4.5v3M7 9v.3" stroke="#7C3AED" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Terminées"
+              value={doneCount}
+              accent="success"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 7l3 3 7-6" stroke="#1D9E75" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              }
+            />
           </div>
-        )}
 
-        {/* Pagination avec style précédent */}
-        {totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-gray-400">
-              {filteredIdeas.length === 0
-                ? "Aucun résultat"
-                : `${(currentPage - 1) * IDEAS_PER_PAGE + 1}–${Math.min(
-                    currentPage * IDEAS_PER_PAGE,
-                    filteredIdeas.length,
-                  )} sur ${filteredIdeas.length} idées`}
-            </span>
+          {/* ── Error ───────────────────────────────────────────────────── */}
+          {error && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
 
-            <div className="flex items-center gap-1">
+          {/* ── Search + filter ─────────────────────────────────────────── */}
+          <div className="mb-4 flex items-center gap-3">
+            {/* Search input */}
+            <div className="relative flex-1">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted">
+                <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M9.5 9.5l2.5 2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                placeholder="Rechercher par nom ou secteur…"
+                className="w-full rounded-full border border-brand-border bg-white py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-subtle focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all"
+              />
+            </div>
+
+            {/* Status filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="cursor-pointer rounded-full border border-brand-border bg-white px-4 py-2.5 text-sm text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all"
+            >
+              <option value="">Tous les statuts</option>
+              <option value="pending">En attente</option>
+              <option value="in_progress">En cours</option>
+              <option value="done">Terminé</option>
+            </select>
+          </div>
+
+          {/* ── Ideas list ──────────────────────────────────────────────── */}
+          {loading ? (
+            <div className="mb-5 flex flex-col gap-2">
+              {[1, 2, 3, 4].map((i) => <SkeletonRow key={i} />)}
+            </div>
+          ) : ideas.length === 0 ? (
+            <EmptyIdeas onNew={() => navigate("/ideas/new")} />
+          ) : filteredIdeas.length === 0 ? (
+            <div className="rounded-xl border border-brand-border bg-white px-6 py-10 text-center shadow-card">
+              <p className="text-sm font-semibold text-ink">Aucun résultat pour &laquo;{search}&raquo;</p>
+              <p className="mt-1 text-xs text-ink-muted">Essayez un autre mot-clé ou réinitialisez les filtres.</p>
               <button
                 type="button"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#e8e4ff] bg-white transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => { setSearch(""); setStatusFilter(""); }}
+                className="mt-4 rounded-full border border-brand-border bg-white px-4 py-2 text-xs font-semibold text-brand transition-all hover:bg-brand-light"
               >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path
-                    d="M7 2L3 6l4 4"
-                    stroke="#6b7280"
-                    strokeWidth="1.3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                let page;
-                if (totalPages <= 5) {
-                  page = i + 1;
-                } else if (currentPage <= 3) {
-                  page = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  page = totalPages - 4 + i;
-                } else {
-                  page = currentPage - 2 + i;
-                }
-                return (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => handlePageChange(page)}
-                    className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#e8e4ff] transition-all duration-150 ${
-                      page === currentPage
-                        ? "bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_8px_rgba(124,58,237,0.25)]"
-                        : "bg-white text-xs text-gray-500"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-
-              {totalPages > 5 && currentPage < totalPages - 2 && (
-                <span className="px-1 text-xs text-gray-400">
-                  ...
-                </span>
-              )}
-
-              {totalPages > 5 && currentPage < totalPages - 2 && (
-                <button
-                  type="button"
-                  onClick={() => handlePageChange(totalPages)}
-                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#e8e4ff] bg-white text-xs text-gray-500 transition-all duration-150"
-                >
-                  {totalPages}
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#e8e4ff] bg-white transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path
-                    d="M5 2l4 4-4 4"
-                    stroke="#6b7280"
-                    strokeWidth="1.3"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                Réinitialiser les filtres
               </button>
             </div>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="mb-5 flex flex-col gap-2">
+              {pageIdeas.map((idea) => (
+                <IdeaRow
+                  key={idea.id}
+                  idea={idea}
+                  onNavigate={navigate}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* ── Pagination ──────────────────────────────────────────────── */}
+          {totalPages > 1 && (
+            <div className="mt-5 flex items-center justify-between">
+              <span className="text-xs text-ink-subtle">
+                {filteredIdeas.length === 0
+                  ? "Aucun résultat"
+                  : `${(currentPage - 1) * IDEAS_PER_PAGE + 1}–${Math.min(
+                      currentPage * IDEAS_PER_PAGE,
+                      filteredIdeas.length,
+                    )} sur ${filteredIdeas.length} idées`}
+              </span>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onChange={handlePageChange}
+              />
+            </div>
+          )}
+
+        </div>
       </div>
     </>
   );
 }
-

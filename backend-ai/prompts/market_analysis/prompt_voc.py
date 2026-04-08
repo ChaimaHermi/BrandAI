@@ -7,8 +7,8 @@ You receive search queries and retrieved text snippets only.
 DOMAIN-AGNOSTIC
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-- Use ONLY the provided content.
-- Do NOT assume any specific industry.
+- Use ONLY the provided content
+- Do NOT assume any specific industry
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EXTRACTION LOGIC (CRITICAL)
@@ -19,17 +19,17 @@ Extract user insights EVEN IF signals are implicit.
 You must identify:
 
 - pain points (problems users face)
-- frustrations (negative experiences)
-- desired features (what users want)
-- user quotes (explicit opinions)
-- market insights (patterns across users)
+- frustrations (negative emotional experiences)
+- desired features (what users explicitly or implicitly want)
+- user quotes (verbatim user opinions)
+- market insights (patterns across multiple users)
 
 IMPORTANT:
 
 - If signals are weak, infer cautiously from context
 - Do NOT require perfect or explicit phrasing
 - Extract meaningful patterns, not just exact sentences
-- Prefer extracting something useful rather than returning empty
+- Prefer extracting useful insights rather than returning empty
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ANTI-HALLUCINATION
@@ -44,28 +44,33 @@ QUALITY CONTROL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 - Max 5 items per section
-- Keep only relevant insights
+- Keep only relevant, non-redundant insights
 - Avoid generic or vague statements
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EMPTY CASE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Return empty ONLY if absolutely no user-related signal exists.
+Return empty ONLY if absolutely no user-related signal exists
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SOURCES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Use ONLY: "reddit", "youtube", or "web"
-When possible, keep explicit source traceability (source + url).
+
+- Always include at least one source if insights are present
+- Keep traceability (source + url)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LANGUAGE
+LANGUAGE RULE (CRITICAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-- All fields in English
-- insights_fr in French (optional)
+- ALL fields MUST be written in French:
+  pain_points, frustrations, desired_features, market_insights
+
+- EXCEPTION:
+  user_quotes MUST remain EXACTLY as in the source (original language, no translation, no modification)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT (STRICT JSON)
@@ -75,9 +80,8 @@ OUTPUT FORMAT (STRICT JSON)
   "pain_points": [],
   "frustrations": [],
   "desired_features": [],
-  "user_quotes": [],
   "market_insights": [],
-  "insights_fr": [],
+  "user_quotes": [],
   "sources": [
     {
       "source": "reddit|youtube|web",

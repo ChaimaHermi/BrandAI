@@ -35,7 +35,7 @@ export function usePipelineData(id, token) {
   const [hasBrandIdentityResult, setHasBrandIdentityResult] = useState(false);
 
   const refetch = useCallback(async () => {
-    if (!id || !token) return;
+    if (!id || !token) return null;
 
     const pathname = location.pathname;
     const checkBrand  = pathname.includes("/brand");
@@ -68,11 +68,13 @@ export function usePipelineData(id, token) {
       } else {
         setHasBrandIdentityResult(false);
       }
+      return data;
     } catch (e) {
       console.error("[usePipelineData] refetch error:", e);
       setHasMarketResult(false);
       setHasMarketingResult(false);
       setHasBrandIdentityResult(false);
+      return null;
     }
   }, [id, token, location.pathname]);
 

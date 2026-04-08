@@ -44,11 +44,54 @@ export default function MarketPage() {
     if (!idea?.id || !token) return;
 
     const state = location.state;
+    // #region agent log
+    fetch("http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "2401d3",
+      },
+      body: JSON.stringify({
+        sessionId: "2401d3",
+        runId: "pre-fix",
+        hypothesisId: "H2",
+        location: "MarketPage.jsx:47",
+        message: "MarketPage effect",
+        data: {
+          ideaId: idea.id,
+          autoStart: !!state?.autoStartMarket,
+          locationKey: location.key,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     if (state?.autoStartMarket) {
       // Ensure each navigation intent can trigger a new launch once.
       const launchKey = `${location.key}:${state?.sourceIdeaId || idea.id}`;
       if (lastAutoStartKeyRef.current === launchKey) return;
       lastAutoStartKeyRef.current = launchKey;
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "2401d3",
+          },
+          body: JSON.stringify({
+            sessionId: "2401d3",
+            runId: "pre-fix",
+            hypothesisId: "H2",
+            location: "MarketPage.jsx:54",
+            message: "Auto start pipeline call",
+            data: { ideaId: idea.id, launchKey },
+            timestamp: Date.now(),
+          }),
+        },
+      ).catch(() => {});
+      // #endregion
       startMarketAnalysis({
         mode: "pipeline",
         clarifiedIdea: state.clarifiedIdea,
@@ -90,7 +133,30 @@ export default function MarketPage() {
   const relaunchAction = (
     <button
       type="button"
-      onClick={() => canRelaunch && startMarketAnalysis({ mode: "pipeline" })}
+      onClick={() => {
+        // #region agent log
+        fetch(
+          "http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Debug-Session-Id": "2401d3",
+            },
+            body: JSON.stringify({
+              sessionId: "2401d3",
+              runId: "pre-fix",
+              hypothesisId: "H2",
+              location: "MarketPage.jsx:98",
+              message: "Relaunch clicked",
+              data: { ideaId: idea?.id || null, canRelaunch, isLoading },
+              timestamp: Date.now(),
+            }),
+          },
+        ).catch(() => {});
+        // #endregion
+        canRelaunch && startMarketAnalysis({ mode: "pipeline" });
+      }}
       disabled={!canRelaunch}
       className={`rounded-full px-4 py-1.5 text-[11px] font-bold transition-all ${
         canRelaunch

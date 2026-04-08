@@ -58,10 +58,7 @@ DO NOT generate queries related to:
 
 - strategy
 - marketing
-- monetization
-- pricing models
 - trends
-- statistics
 - "how to" queries
 
 These are NOT competitor discovery queries.
@@ -195,9 +192,7 @@ First, understand:
 - what real competitors or alternatives might exist
 
 Then generate queries aligned with that understanding.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DATA QUALITY REQUIREMENT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DATA QUALITY REQUIREMENT

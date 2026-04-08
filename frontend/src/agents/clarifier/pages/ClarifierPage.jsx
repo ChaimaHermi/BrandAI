@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { usePipeline } from "@/context/PipelineContext";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
-import { CLARITY_SCORE_MIN_PIPELINE } from "../constants";
 import XaiBlock from "../components/XaiBlock";
 import QuestionsBlock from "../components/QuestionsBlock";
 import ClarifiedBlock from "../components/ClarifiedBlock";
@@ -10,7 +8,6 @@ import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
   const { idea, token, refetch: refetchIdea } = usePipeline();
-  const navigate = useNavigate();
   const xaiHideTimerRef = useRef(null);
   const {
     currentStep,
@@ -40,19 +37,13 @@ export default function ClarifierPage() {
   });
 
   const scheduleHideXai = (delayMs = 50000) => {
-    if (xaiHideTimerRef.current) {
-      clearTimeout(xaiHideTimerRef.current);
-    }
-    xaiHideTimerRef.current = setTimeout(() => {
-      setXaiSteps([]);
-    }, delayMs);
+    if (xaiHideTimerRef.current) clearTimeout(xaiHideTimerRef.current);
+    xaiHideTimerRef.current = setTimeout(() => setXaiSteps([]), delayMs);
   };
 
   useEffect(() => {
     return () => {
-      if (xaiHideTimerRef.current) {
-        clearTimeout(xaiHideTimerRef.current);
-      }
+      if (xaiHideTimerRef.current) clearTimeout(xaiHideTimerRef.current);
     };
   }, []);
 
@@ -63,9 +54,6 @@ export default function ClarifierPage() {
 
     // ── CAS : idée déjà clarifiée ──────────────────
     if (status === "clarified" && idea.clarity_score != null) {
-      // Si on vient juste de générer via SSE, `idea.clarity_*` peut être vide
-      // pendant un court moment (refetch pas encore fait). Dans ce cas,
-      // ne pas écraser le résultat affiché (clarifiedIdea) par des champs vides.
       const hasPersistedClarifiedFields =
         !!idea.clarity_solution ||
         !!idea.clarity_target_users ||
@@ -118,8 +106,7 @@ export default function ClarifierPage() {
     if (
       status === "questions" &&
       (idea.clarity_questions?.length > 0 ||
-        (idea.clarity_agent_message &&
-          idea.clarity_agent_message.trim().length > 0))
+        (idea.clarity_agent_message && idea.clarity_agent_message.trim().length > 0))
     ) {
       setQuestions(idea.clarity_questions);
       setAgentMessage(idea.clarity_agent_message || "");
@@ -129,228 +116,76 @@ export default function ClarifierPage() {
     }
 
     // ── CAS : nouvelle idée → lancer l'analyse ─────
-    if (idea.description) {
-      startAnalysis();
-    }
+    if (idea.description) startAnalysis();
   }, [idea]);
 
-  const isLoading =
-    currentStep === "analyzing" || currentStep === "answering";
+  const isLoading = currentStep === "analyzing" || currentStep === "answering";
 
-  const canLaunchPipeline =
-    currentStep === "clarified" &&
-    !!clarifiedIdea &&
-    (clarityScore ?? 0) >= CLARITY_SCORE_MIN_PIPELINE;
-
-  const handleLaunchPipeline = () => {
-    if (!idea?.id || !canLaunchPipeline) return;
-    navigate(`/ideas/${idea.id}/market`, {
-      state: {
-        autoStartMarket: true,
-        sourceIdeaId: idea.id,
-        clarifiedIdea,
-      },
-    });
-  };
+  /* ── derived progress values ─────────────────────────────────────────── */
+  const progressPct = currentStep === "clarified" ? 17 : 8;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        padding: "16px 20px",
-        flex: 1,
-        overflowY: "auto",
-        minHeight: 0,
-      }}
-    >
-      {/* Agent header */}
-      <div
-        style={{
-          background: "white",
-          border: "0.5px solid #e8e4ff",
-          borderRadius: 14,
-          padding: "14px 18px",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          boxShadow: "0 2px 8px rgba(124,58,237,0.06)",
-          animation: "slideUp 0.3s ease forwards",
-        }}
-      >
-        <div
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg,#7F77DD,#534AB7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            boxShadow: "0 3px 12px rgba(124,58,237,0.3)",
-          }}
-        >
+    <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5" style={{ minHeight: 0 }}>
+
+      {/* ── Agent header card ──────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 rounded-2xl border border-brand-border bg-white px-5 py-3.5 shadow-card animate-[slideUp_0.3s_ease_forwards]">
+        {/* Icon bubble */}
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-dark shadow-pill">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <circle cx="9" cy="9" r="6" stroke="white" strokeWidth="1.4" />
-            <path
-              d="M9 6v4M9 12v.5"
-              stroke="white"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
+            <path d="M9 6v4M9 12v.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
-        <div style={{ flex: 1 }}>
-          <div
-            style={{
-              fontSize: 15,
-              fontWeight: 800,
-              color: "#1a1040",
-            }}
-          >
-            Idea Clarifier Agent
-          </div>
-          <div
-            style={{
-              fontSize: 11,
-              color: "#9ca3af",
-            }}
-          >
-            Analyse et structure votre idée · Étape 1 sur 6
-          </div>
+
+        {/* Title + subtitle */}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-extrabold text-ink">Idea Clarifier Agent</p>
+          <p className="text-xs text-ink-subtle">Analyse et structure votre idée · Étape 1 sur 6</p>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div
-            style={{
-              fontSize: 10,
-              color: "#7F77DD",
-              fontWeight: 600,
-              marginBottom: 5,
-            }}
-          >
-            Progression pipeline
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <div
-              style={{
-                width: 80,
-                height: 5,
-                borderRadius: 99,
-                background: "#f0eeff",
-                overflow: "hidden",
-              }}
-            >
+
+        {/* Mini progress */}
+        <div className="text-right">
+          <p className="mb-1 text-2xs font-semibold text-brand">Progression pipeline</p>
+          <div className="flex items-center gap-1.5">
+            <div className="h-[5px] w-20 overflow-hidden rounded-full bg-brand-light">
               <div
-                style={{
-                  height: "100%",
-                  width:
-                    currentStep === "clarified"
-                      ? "17%"
-                      : "8%",
-                  background: "linear-gradient(90deg,#7F77DD,#534AB7)",
-                  borderRadius: 99,
-                  transition: "width 0.5s ease",
-                }}
+                className="h-full rounded-full bg-gradient-to-r from-brand to-brand-dark transition-[width] duration-500"
+                style={{ width: `${progressPct}%` }}
               />
             </div>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#534AB7",
-              }}
-            >
-              {currentStep === "clarified" ? "17%" : "8%"}
-            </span>
+            <span className="text-xs font-bold text-brand-dark">{progressPct}%</span>
           </div>
         </div>
       </div>
 
-      {/* Idée soumise */}
+      {/* ── Idée soumise ────────────────────────────────────────────────────── */}
       {idea?.description && (
-        <div
-          style={{
-            background: "white",
-            border: "0.5px solid #e8e4ff",
-            borderRadius: 12,
-            padding: "12px 16px",
-            display: "flex",
-            gap: 10,
-            alignItems: "flex-start",
-            boxShadow: "0 1px 4px rgba(124,58,237,0.04)",
-          }}
-        >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 9,
-              background: "#f0eeff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
+        <div className="flex items-start gap-2.5 rounded-xl border border-brand-border bg-white px-4 py-3 shadow-card">
+          {/* Star icon bubble */}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-brand-light">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path
                 d="M7 1.5l1.2 3 3 .4-2.2 2.1.5 3L7 8.5l-2.5 1.5.5-3L2.8 5l3-.4L7 1.5z"
-                stroke="#7F77DD"
+                stroke="currentColor"
                 strokeWidth="1.1"
                 strokeLinejoin="round"
+                className="text-brand"
               />
             </svg>
           </div>
-          <div
-            style={{
-              flex: 1,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: "#AFA9EC",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: 3,
-              }}
-            >
+
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 text-2xs font-bold uppercase tracking-widest text-brand-muted">
               Idée soumise
-            </div>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#1a1040",
-              }}
-            >
-              {idea.description}
-            </div>
+            </p>
+            <p className="text-sm font-semibold text-ink">{idea.description}</p>
           </div>
+
+          {/* Sector pill (shown when XAI detects sector) */}
           {xaiSteps.find((s) => s.detail?.sector) && (
-            <div
-              style={{
-                padding: "3px 10px",
-                background: "#f0eeff",
-                border: "0.5px solid #AFA9EC",
-                borderRadius: 99,
-                fontSize: 10,
-                fontWeight: 600,
-                color: "#534AB7",
-                flexShrink: 0,
-              }}
-            >
+            <span className="shrink-0 rounded-full border border-brand-muted bg-brand-light px-2.5 py-0.5 text-2xs font-semibold text-brand-dark">
               {xaiSteps.find((s) => s.detail?.sector)?.detail.sector}
-            </div>
+            </span>
           )}
         </div>
       )}
@@ -358,13 +193,10 @@ export default function ClarifierPage() {
       <XaiBlock
         steps={xaiSteps}
         isLoading={isLoading}
-        collapsed={
-          currentStep === "clarified" || currentStep === "refused"
-        }
+        collapsed={currentStep === "clarified" || currentStep === "refused"}
       />
 
-      {(currentStep === "questions" ||
-        currentStep === "answering") && (
+      {(currentStep === "questions" || currentStep === "answering") && (
         <QuestionsBlock
           agentMessage={agentMessage}
           questions={questions}
@@ -378,30 +210,6 @@ export default function ClarifierPage() {
       {currentStep === "clarified" && (
         <>
           <ClarifiedBlock data={clarifiedIdea} score={clarityScore} />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
-          >
-            <button
-              type="button"
-              onClick={handleLaunchPipeline}
-              disabled={!canLaunchPipeline || !token}
-              style={{
-                border: "1px solid #7F77DD",
-                background: !canLaunchPipeline || !token ? "#e5e7eb" : "#7F77DD",
-                color: !canLaunchPipeline || !token ? "#6b7280" : "#ffffff",
-                borderRadius: 10,
-                padding: "10px 14px",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: !canLaunchPipeline || !token ? "not-allowed" : "pointer",
-              }}
-            >
-              Lancer pipeline
-            </button>
-          </div>
         </>
       )}
 
@@ -409,4 +217,3 @@ export default function ClarifierPage() {
     </div>
   );
 }
-

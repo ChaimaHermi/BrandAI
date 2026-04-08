@@ -1,59 +1,54 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   globals.css — Design Tokens & Layout System
+   These CSS variables MIRROR the Tailwind config so they can be used in
+   rare cases where Tailwind classes are not available (e.g., inline style
+   for dynamic gradients). Never invent new values here — always match Tailwind.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  /* Couleurs brand */
-  --brand-primary: #7F77DD;
-  --brand-dark: #534AB7;
-  --brand-darker: #3C3489;
-  --brand-light: #EEEDFE;
-  --brand-lighter: #f0eeff;
-  --brand-bg: #fafafe;
+  /* ── Brand colors (mirrors tailwind.config brand.*) ── */
+  --brand:         #7C3AED;
+  --brand-hover:   #6D28D9;
+  --brand-dark:    #534AB7;
+  --brand-darker:  #3C3489;
+  --brand-light:   #f0eeff;
+  --brand-border:  #e8e4ff;
+  --brand-muted:   #AFA9EC;
 
-  /* Backgrounds pages */
+  /* ── Gradient shortcuts (used where Tailwind bg-gradient can't be used) ── */
+  --gradient-brand: linear-gradient(135deg, #7C3AED, #534AB7);
+  --gradient-page:  linear-gradient(135deg, #f8f7ff 0%, #f0eeff 40%, #faf5ff 100%);
+
+  /* ── Status colors ── */
+  --success:        #1D9E75;
+  --success-light:  #E1F5EE;
+  --success-border: #9FE1CB;
+  --success-dark:   #085041;
+
+  /* ── Text colors (mirrors tailwind.config ink.*) ── */
+  --ink:        #1a1040;
+  --ink-body:   #374151;
+  --ink-muted:  #6B7280;
+  --ink-subtle: #9CA3AF;
+
+  /* ── Page background ── */
   --page-bg: #f8f7ff;
-  --card-bg: #ffffff;
-  --card-border: #e8e4ff;
-  --card-shadow: 0 2px 12px rgba(124, 58, 237, 0.08);
-  --card-shadow-hover: 0 6px 24px rgba(124, 58, 237, 0.14);
 
-  /* Gradients */
-  --gradient-brand: linear-gradient(135deg, #7F77DD, #534AB7);
-  --gradient-page: linear-gradient(
-    135deg,
-    #f8f7ff 0%,
-    #f0eeff 40%,
-    #faf5ff 100%
-  );
+  /* ── Typography ── */
+  --font-sans: "Inter", system-ui, sans-serif;
 
-  /* Typography */
-  --text-heading: #1a1040;
-  --text-body: #374151;
-  --text-muted: #6b7280;
-  --text-subtle: #9ca3af;
-
-  /* Border radius */
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 16px;
-  --radius-full: 99px;
-
-  /* Universal web dimensions */
-  --sidebar-width-desktop: 220px;
-  --sidebar-width-collapsed: 60px;
-  --content-padding-desktop: 32px;
-  --content-padding-tablet: 20px;
-  --content-padding-mobile: 16px;
-
-  /* Universal typography scale (Idea Clarifier reference) */
-  --font-title: 15px;
-  --font-subtitle: 12px;
-  --font-body: 13px;
-  --font-label: 11px;
-  --font-meta: 11px;
-  --font-section: 12px;
-  --font-card-title: 13px;
-  --font-tag: 11px;
-  --font-nav: 13px;
+  /* ── Layout dimensions ── */
+  --topbar-height:            52px;
+  --sidebar-width:            220px;
+  --sidebar-width-collapsed:  60px;
+  --content-pad-desktop:      24px;
+  --content-pad-tablet:       16px;
+  --content-pad-mobile:       12px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Base reset
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 *,
 *::before,
@@ -65,16 +60,19 @@ html {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   width: 100%;
   min-height: 100%;
   margin: 0;
-  background: #f8f7ff;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink-body);
+  background: var(--page-bg);
   overflow-x: hidden;
-  overflow-y: auto;
-  font-size: var(--font-body);
 }
 
 #root {
@@ -82,13 +80,17 @@ body {
   min-height: 100vh;
 }
 
-/* Universal application layout */
+/* ═══════════════════════════════════════════════════════════════════════════
+   App shell layout (pipeline pages only)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .app-shell {
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--gradient-page);
 }
 
 .app-shell-body {
@@ -99,11 +101,14 @@ body {
   overflow: hidden;
 }
 
+/* Sidebar */
 .app-sidebar {
-  width: var(--sidebar-width-desktop);
-  min-width: var(--sidebar-width-desktop);
-  height: 100vh;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  height: 100%;
   flex-shrink: 0;
+  transition: width 0.2s ease-in-out, min-width 0.2s ease-in-out;
+  overflow: hidden;
 }
 
 .app-sidebar.is-collapsed {
@@ -111,99 +116,79 @@ body {
   min-width: var(--sidebar-width-collapsed);
 }
 
+/* Main content */
 .app-shell-content {
-  width: calc(100vw - var(--sidebar-width-desktop));
+  flex: 1;
   min-width: 0;
   min-height: 0;
-  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--page-bg);
+  background: var(--gradient-page);
 }
 
-.app-sidebar.is-collapsed + .app-shell-content {
-  width: calc(100vw - var(--sidebar-width-collapsed));
-}
-
+/* Scrollable content area inside pipeline pages */
 .app-content-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--content-padding-desktop);
+  padding: var(--content-pad-desktop);
 }
 
-.app-grid-auto {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   Idea card (Dashboard list items)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.app-tabs-row {
-  width: 100%;
+.idea-card {
+  background: white;
+  border: 1px solid var(--brand-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.05);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  animation: slide-up 0.3s ease forwards;
 }
 
-.app-card {
-  width: 100%;
-  padding: 24px;
-  border-radius: 12px;
-  border: 0.5px solid #e2e8f0;
-  background: #fff;
+.idea-card:hover {
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.12);
+  border-color: var(--brand-muted);
+  transform: translateY(-1px);
 }
 
-/* Typography utilities for agent result screens */
-.typo-label {
-  font-size: var(--font-label);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+/* ═══════════════════════════════════════════════════════════════════════════
+   Animations (shared — Tailwind also defines these via config)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.typo-section {
-  font-size: var(--font-section);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.typo-title {
-  font-size: var(--font-title);
-  font-weight: 500;
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
 }
 
-.typo-card-title {
-  font-size: var(--font-card-title);
-  font-weight: 500;
-}
+.slide-up  { animation: slide-up  0.3s ease forwards; }
+.fade-in   { animation: fade-in   0.2s ease forwards; }
 
-.typo-body {
-  font-size: var(--font-body);
-  font-weight: 400;
-  line-height: 1.6;
-}
-
-.typo-secondary {
-  font-size: var(--font-subtitle);
-  font-weight: 400;
-}
-
-.typo-meta {
-  font-size: var(--font-meta);
-  font-weight: 400;
-}
-
-.typo-tag {
-  font-size: var(--font-tag);
-  font-weight: 500;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   Responsive overrides
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1024px) {
   .app-content-scroll {
-    padding: var(--content-padding-tablet);
+    padding: var(--content-pad-tablet);
   }
 }
 
@@ -218,58 +203,11 @@ body {
     min-width: 0;
   }
 
-  .app-shell-content,
-  .app-sidebar.is-collapsed + .app-shell-content {
+  .app-shell-content {
     width: 100vw;
   }
 
   .app-content-scroll {
-    padding: var(--content-padding-mobile);
+    padding: var(--content-pad-mobile);
   }
 }
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
-}
-
-.slide-up {
-  animation: slideUp 0.35s ease forwards;
-}
-
-.idea-card {
-  background: white;
-  border: 0.5px solid #e8e4ff;
-  border-radius: 14px;
-  padding: 14px 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06);
-  transition: all 0.2s;
-  animation: slideUp 0.3s ease forwards;
-}
-
-.idea-card:hover {
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.12);
-  border-color: #afa9ec;
-  transform: translateY(-1px);
-}
-

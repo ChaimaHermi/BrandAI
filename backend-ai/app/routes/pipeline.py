@@ -172,7 +172,17 @@ async def _stream_pipeline(body: PipelineStreamRequest):
                     },
                 )
                 return
-            raise RuntimeError("Pipeline terminé sans résultat market_analysis")
+
+            # Surface the actual graph outcome for easier debugging in frontend SSE.
+            detail = {
+                "status": status,
+                "errors": errors,
+                "has_marketing_plan": bool(marketing_plan),
+            }
+            raise RuntimeError(
+                "Pipeline sans market_analysis. "
+                f"Détails graph: {json.dumps(detail, ensure_ascii=False)}"
+            )
 
         yield sse_event("step", {"status": "loading", "stage": "persist_result", "message": "Sauvegarde du résultat..."})
         completed_at = datetime.now(timezone.utc)
