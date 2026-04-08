@@ -6,7 +6,7 @@ MARKETING_LLM_CONFIG = {
     "model": "openai/gpt-oss-120b",
 
     # marketing = raisonnement + créativité contrôlée
-    "temperature": 0.4,
+    "temperature": 0.2,
 
     # output structuré mais long (JSON complet)
     "max_tokens": 3500,

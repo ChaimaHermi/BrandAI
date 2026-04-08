@@ -1,0 +1,199 @@
+{
+  "idea_id": 233,
+  "clarified_idea": {
+    "short_pitch": "Marketplace de vêtements de sport abordables et de qualité",
+    "solution_description": "Plateforme en ligne qui regroupe divers fournisseurs de vêtements de sport, offrant un catalogue filtrable, des comparateurs de prix et des promotions pour faciliter l'achat d'articles de sport de qualité à moindre coût",
+    "target_users": "sportifs amateurs, jeunes et toute personne intéressée par les vêtements de sport",
+    "problem": "Difficulté à trouver des vêtements de sport de qualité à prix abordables en un seul endroit",
+    "sector": "e-commerce",
+    "country": "France",
+    "country_code": "FR",
+    "language": "fr"
+  },
+  "market_analysis": {
+    "keywords": {
+      "primary_keywords": [
+        "affordable sportswear marketplace",
+        "online sports clothing platform",
+        "budget athletic apparel e‑commerce",
+        "discount sportswear catalog",
+        "price comparison sportswear"
+      ],
+      "market_keywords": [
+        "sportswear e‑commerce market size",
+        "athletic apparel online sales",
+        "budget sports clothing market",
+        "sports apparel digital marketplace",
+        "online sportswear demand"
+      ],
+      "pricing_keywords": [
+        "sportswear price range",
+        "affordable athletic apparel pricing",
+        "discount sports clothing costs",
+        "budget sportswear price comparison",
+        "cheap sports apparel pricing"
+      ],
+      "adoption_keywords": [
+        "sportswear online purchase trends",
+        "athletic apparel user adoption",
+        "budget sports clothing usage",
+        "e‑commerce sportswear growth",
+        "online sports apparel penetration"
+      ],
+      "competitor_queries": [
+        "meilleurs vêtements sport France",
+        "comparateur prix sport France",
+        "boutique sport pas cher France",
+        "alternatives marques sport France",
+        "best affordable sportswear platforms",
+        "popular sports clothing marketplaces",
+        "sportswear price comparison sites",
+        "alternatives cheap athletic apparel",
+        "similar online sportswear stores",
+        "top discount sports apparel sites"
+      ],
+      "voc_keywords": [
+        "sportswear quality too low",
+        "price too high sports clothing",
+        "limited size options sportswear",
+        "slow delivery athletic apparel",
+        "poor customer service sportswear",
+        "inaccurate size charts"
+      ],
+      "trend_keywords": [
+        "rising demand affordable sportswear",
+        "growth online athletic apparel",
+        "increasing sportswear discount sites",
+        "market saturation sports clothing",
+        "supply chain risks sportswear"
+      ],
+      "sector_tags": [
+        "e‑commerce",
+        "sportswear",
+        "marketplace"
+      ]
+    },
+    "market": {
+      "market_size": {
+        "value": 10.47,
+        "unit": "USD Billion",
+        "source": "[Latest] Global Online Clothing Rental Market Size/Share Worth USD 10.47 Billion by 2035 at a 15.2% CAGR: Custom Market Insights"
+      },
+      "market_revenue": {
+        "value": 2.14,
+        "unit": "USD Billion",
+        "source": "According to a market research study published by Custom Market Insights, the demand analysis of Global Online Clothing Rental Market size & share revenue was valued at approximately USD 2.14 Billion in 2025"
+      },
+      "CAGR": {
+        "value": 15.2,
+        "unit": "%",
+        "source": "[Latest] Global Online Clothing Rental Market Size/Share Worth USD 10.47 Billion by 2035 at a 15.2% CAGR: Custom Market Insights"
+      },
+      "growth_rate": {
+        "value": null,
+        "unit": "%",
+        "source": ""
+      },
+      "number_of_users": {
+        "value": null,
+        "unit": "users",
+        "source": ""
+      },
+      "adoption_rate": {
+        "value": null,
+        "unit": "%",
+        "source": ""
+      }
+    },
+    "competitor": {},
+    "voc": {
+      "pain_points": [],
+      "frustrations": [],
+      "desired_features": [],
+      "user_quotes": [],
+      "market_insights": [],
+      "insights_fr": []
+    },
+    "trends": {
+      "market_trends": [],
+      "consumer_trends": [],
+      "technology_trends": [],
+      "regulatory_trends": [],
+      "emerging_opportunities": [],
+      "market_risks": [],
+      "insights_fr": []
+    },
+    "strategy": {
+      "pestel": {
+        "political": [
+          "Politiques publiques favorisant la réduction des déchets textiles et la promotion de l'économie circulaire dans de nombreux pays.",
+          "Incitations fiscales ou subventions pour les entreprises engagées dans la durabilité et la réutilisation des vêtements."
+        ],
+        "economic": [
+          "Croissance du marché mondial de la location de vêtements en ligne estimée à 15,2 % CAGR jusqu'en 2035, indiquant une forte dynamique de demande.",
+          "Augmentation du pouvoir d'achat des consommateurs urbains et volonté de réduire les dépenses liées à l'achat de vêtements neufs."
+        ],
+        "social": [
+          "Évolution des mentalités vers la consommation responsable et la mode durable, surtout chez les milléniaux et la génération Z.",
+          "Popularité croissante du concept de « sharing economy » appliqué à la mode."
+        ],
+        "technological": [
+          "Maturation des plateformes e‑commerce, IA et algorithmes de recommandation pour optimiser le matching taille‑style.",
+          "Développement de solutions logistiques (tracking, retours automatisés) et de technologies de désinfection (UV, vapeur) pour rassurer les utilisateurs."
+        ],
+        "environmental": [
+          "Réduction de l'empreinte carbone et de la mise en décharge textile grâce à la réutilisation des pièces.",
+          "Pression des ONG et des consommateurs pour des pratiques plus écologiques dans l'industrie de la mode."
+        ],
+        "legal": [
+          "Réglementations relatives à la sécurité sanitaire des vêtements loués (normes d'hygiène, traçabilité).",
+          "Obligations contractuelles et de protection du consommateur (droits de rétractation, responsabilité en cas de dommage)."
+        ]
+      },
+      "swot": {
+        "strengths": [
+          "Positionnement sur un marché à forte croissance (CAGR 15,2 %).",
+          "Valeur ajoutée environnementale clairement différenciatrice.",
+          "Possibilité d'utiliser les données d'usage pour personnaliser l'offre et améliorer la rétention."
+        ],
+        "weaknesses": [
+          "Complexité logistique (gestion des stocks, retours, nettoyage).",
+          "Coûts initiaux élevés pour l'acquisition et le maintien d'un inventaire diversifié.",
+          "Dépendance à la confiance du consommateur quant à l'hygiène des articles."
+        ],
+        "opportunities": [
+          "Extension vers des segments premium (robes de soirée, vêtements de créateurs) où la location est déjà pratiquée.",
+          "Partenariats avec des marques de mode souhaitant tester le modèle de location.",
+          "Déploiement dans des marchés géographiques où la législation encourage la durabilité."
+        ],
+        "threats": [
+          "Entrée de grands acteurs du e‑commerce (ex. Amazon, Zalando) dans le segment location.",
+          "Évolution réglementaire stricte sur les normes sanitaires pouvant augmenter les coûts.",
+          "Réticence persistante de certains consommateurs à porter des vêtements déjà portés."
+        ]
+      },
+      "demand_analysis": {
+        "demand_level": "Élevé",
+        "growth_potential": "Très fort, soutenu par un CAGR de 15,2 % prévu jusqu'en 2035 et une prise de conscience croissante de la mode durable.",
+        "drivers": [
+          "Sensibilisation environnementale et désir de réduire l'empreinte carbone personnelle.",
+          "Recherche d'alternatives économiques aux achats de vêtements neufs.",
+          "Attrait pour la variété de styles sans engagement d'achat."
+        ],
+        "barriers": [
+          "Coûts logistiques et exigences d'hygiène perçues comme contraignantes.",
+          "Manque de visibilité ou d'éducation du public sur le fonctionnement du modèle de location.",
+          "Risque de dommages ou de perte d'articles entraînant des coûts supplémentaires."
+        ],
+        "customer_insights": [
+          "Absence de données VOC spécifiques dans les informations fournies ; toutefois, les tendances sociétales indiquent une préférence croissante pour les solutions éco‑responsables."
+        ]
+      },
+      "strategic_insight": {
+        "opportunity": "Capitaliser sur la croissance rapide du marché de la location de vêtements en ligne en se positionnant comme une plateforme durable, fiable et technologiquement avancée.",
+        "risk": "Complexité opérationnelle liée à la logistique de retours, au nettoyage et à la conformité réglementaire, pouvant impacter la rentabilité si mal maîtrisée.",
+        "recommendation": "Lancer d'abord une offre ciblée (ex. location de tenues de soirée et d'événements) afin de limiter le volume d'inventaire, d'optimiser les processus de désinfection et de bâtir la confiance client. Parallèlement, développer des partenariats avec des marques éco‑responsables et investir dans des technologies de suivi et de recommandation pour différencier l'expérience utilisateur."
+      }
+    }
+  }
+}

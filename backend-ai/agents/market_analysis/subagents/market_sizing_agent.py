@@ -1,4 +1,5 @@
 import asyncio
+from urllib.parse import urlparse
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.market_analysis_config import MARKET_ANALYSIS_CONFIG, MARKET_SIZING_LLM_CONFIG
@@ -24,7 +25,8 @@ class MarketSizingAgent(BaseAgent):
 
         for r in results:
             text = (
-                r.get("title", "") + "\n"
+                "URL: " + (r.get("url", "") or r.get("link", "") or "") + "\n"
+                + r.get("title", "") + "\n"
                 + r.get("snippet", "") + "\n"
                 + r.get("content", "") + "\n"
                 + r.get("description", "") + "\n"
@@ -32,6 +34,47 @@ class MarketSizingAgent(BaseAgent):
             texts.append(text)
 
         return "\n\n".join(texts[:20])
+
+    def _extract_sources(self, results, max_items=8):
+        out = []
+        seen = set()
+        for r in results:
+            raw = (r.get("url") or r.get("link") or "").strip()
+            if not raw:
+                continue
+            if raw in seen:
+                continue
+            seen.add(raw)
+            domain = ""
+            try:
+                domain = urlparse(raw).netloc or ""
+            except Exception:
+                domain = ""
+            out.append({"url": raw, "domain": domain})
+            if len(out) >= max_items:
+                break
+        return out
+
+    def _attach_sources(self, data, sources):
+        if not isinstance(data, dict):
+            return data
+        first_source = sources[0]["url"] if sources else ""
+        metric_keys = [
+            "market_size",
+            "market_revenue",
+            "CAGR",
+            "growth_rate",
+            "number_of_users",
+            "adoption_rate",
+        ]
+        for key in metric_keys:
+            metric = data.get(key)
+            if isinstance(metric, dict):
+                src = (metric.get("source") or "").strip()
+                if not src and first_source:
+                    metric["source"] = first_source
+        data["sources"] = sources
+        return data
 
     def _market_keywords_from_state(self, state: PipelineState) -> list[str]:
         ma = state.market_analysis or {}
@@ -82,6 +125,7 @@ class MarketSizingAgent(BaseAgent):
         try:
             raw = await self._call_llm(PROMPT_MARKET_SIZING.strip(), user_prompt)
             data = self._parse_json(raw)
+            data = self._attach_sources(data, self._extract_sources(all_results))
         except Exception as e:
             self._log_error(e)
             return {

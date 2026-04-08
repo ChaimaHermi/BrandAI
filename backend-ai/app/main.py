@@ -4,7 +4,8 @@ import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import clarifier, logo, market_analysis, naming, palette, pipeline, slogan
+from app.routes import clarifier, market_analysis, pipeline
+from app.routes.branding import logo, naming, palette, slogan
 
 # Uvicorn configure le logging avant l’import : `basicConfig` peut être ignoré ; sans cela le
 # niveau root reste souvent WARNING et les INFO de `brandai.*` ne s’affichent pas.

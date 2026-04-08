@@ -23,4 +23,3 @@ export async function getLatestMarketAnalysis(ideaId, token) {
 
   return res.json();
 }
-

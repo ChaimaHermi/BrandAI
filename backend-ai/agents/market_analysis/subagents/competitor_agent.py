@@ -27,12 +27,14 @@ class CompetitorAgent(BaseAgent):
 
         for r in results:
             src = (r.get("source") or "").strip()
+            url = (r.get("url") or "").strip()
             title_raw = clean_text(r.get("title") or "")
             body_raw = clean_text(r.get("content") or "")
             title_s = title_raw[:200] if len(title_raw) > 200 else title_raw
             content_s = body_raw[:_CONTENT_MAX] if len(body_raw) > _CONTENT_MAX else body_raw
             block = (
                 f"SOURCE: {src}\n"
+                f"URL: {url}\n"
                 f"Title: {title_s}\n"
                 f"Content: {content_s}"
             )
@@ -54,6 +56,7 @@ class CompetitorAgent(BaseAgent):
                     "source": "Tavily",
                     "title": r.get("title") or "",
                     "content": r.get("content") or "",
+                    "url": r.get("url") or "",
                 })
 
         serp_rows = []
@@ -63,6 +66,7 @@ class CompetitorAgent(BaseAgent):
                     "source": "SerpAPI",
                     "title": r.get("title") or "",
                     "content": r.get("snippet") or "",
+                    "url": r.get("link") or "",
                 })
 
         final_results = (tavily_rows + serp_rows)[:_TOTAL_RESULTS_MAX]
@@ -88,6 +92,16 @@ class CompetitorAgent(BaseAgent):
             }
 
         data = self._parse_json(response)
+        competitors = data.get("competitors")
+        if isinstance(competitors, list):
+            fallback_urls = [x.get("url") for x in final_results if (x.get("url") or "").strip()]
+            fallback_url = fallback_urls[0] if fallback_urls else ""
+            for comp in competitors:
+                if not isinstance(comp, dict):
+                    continue
+                website = (comp.get("website") or "").strip()
+                if not website and fallback_url:
+                    comp["website"] = fallback_url
 
         return {
             "agent": "competitor",

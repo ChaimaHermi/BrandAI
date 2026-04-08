@@ -1,18 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Inter is loaded via index.html <link> for optimal performance */
 @import "./shared/styles/globals.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Base layer overrides ───────────────────────────────────────────────── */
 @layer base {
   html {
-    font-family: Inter, system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
   }
   body {
     margin: 0;
-    background: #ffffff;
-    color: #111827;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -21,37 +20,25 @@
   }
 }
 
+/* ─── Blob background animation (LandingPage / auth pages) ──────────────── */
 @keyframes blobFloat1 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, 20px) scale(1.05); }
+  50%       { transform: translate(30px, 20px) scale(1.05); }
 }
-
 @keyframes blobFloat2 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-25px, 15px) scale(0.97); }
+  50%       { transform: translate(-25px, 15px) scale(0.97); }
 }
-
 @keyframes blobFloat3 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(20px, -25px) scale(1.03); }
+  50%       { transform: translate(20px, -25px) scale(1.03); }
 }
 
+/* ─── Loading bar animation (used in Market/Marketing loading states) ────── */
 @keyframes progressBar {
   0%, 100% { width: 30%; }
-  50% { width: 70%; }
+  50%       { width: 70%; }
 }
-
 .animate-progress-bar {
   animation: progressBar 1.5s ease-in-out infinite;
 }
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
-}
-
