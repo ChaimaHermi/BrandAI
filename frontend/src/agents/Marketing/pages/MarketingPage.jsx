@@ -1,47 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { usePipeline } from "@/context/PipelineContext";
 import { useMarketingAgent } from "../hooks/useMarketingAgent";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { ErrorBanner } from "@/shared/ui/ErrorBanner";
+import { Loader } from "@/shared/ui/Loader";
+import { MarketingHeader, SECTION_TABS } from "../components/MarketingHeader";
+import { PositioningSection } from "../components/sections/PositioningSection";
+import { TargetsSection }     from "../components/sections/TargetsSection";
+import { ChannelsSection }    from "../components/sections/ChannelsSection";
+import { PricingSection }     from "../components/sections/PricingSection";
+import { GtmSection }         from "../components/sections/GtmSection";
+import { ActionSection }      from "../components/sections/ActionSection";
 
-const SECTION_TABS = [
-  { id: "positioning", label: "Positionnement" },
-  { id: "targets", label: "Cibles" },
-  { id: "channels", label: "Canaux" },
-  { id: "pricing", label: "Pricing" },
-  { id: "gtm", label: "Go-to-Market" },
-  { id: "action", label: "Plan d'action" },
-];
-
-function Card({ children, className = "" }) {
-  return <div className={`rounded-xl border border-slate-200 bg-white p-5 ${className}`}>{children}</div>;
-}
-
-function EmptyState() {
-  return (
-    <Card>
-      <p className="text-sm text-slate-600">
-        Aucun plan marketing disponible. Lance le pipeline après l&apos;analyse de marché.
-      </p>
-    </Card>
-  );
-}
-
-function SafeList({ items }) {
-  if (!Array.isArray(items) || items.length === 0) {
-    return <p className="text-sm text-slate-500">-</p>;
-  }
-  return (
-    <ul className="space-y-1">
-      {items.map((item, idx) => (
-        <li key={`${item}-${idx}`} className="text-sm text-slate-700">
-          • {item}
-        </li>
-      ))}
-    </ul>
-  );
-}
+const SECTION_MAP = {
+  positioning: PositioningSection,
+  targets:     TargetsSection,
+  channels:    ChannelsSection,
+  pricing:     PricingSection,
+  gtm:         GtmSection,
+  action:      ActionSection,
+};
 
 export default function MarketingPage() {
-  const { idea, token } = useOutletContext();
+  const { idea, token } = usePipeline();
   const { plan, hasData, isLoading, error, loadLatest } = useMarketingAgent({ idea, token });
   const [activeSection, setActiveSection] = useState("positioning");
 
@@ -50,242 +31,69 @@ export default function MarketingPage() {
     loadLatest().catch(() => {});
   }, [idea?.id, token, loadLatest]);
 
-  const activeIndex = useMemo(
-    () => Math.max(0, SECTION_TABS.findIndex((s) => s.id === activeSection)),
-    [activeSection],
-  );
+  const activeIndex = SECTION_TABS.findIndex((s) => s.id === activeSection);
 
-  if (isLoading && !hasData) {
-    return (
-      <div className="app-content-scroll flex flex-1 flex-col gap-4 bg-[#F8F9FC]">
-        <Card>
-          <p className="text-sm text-slate-600">Chargement du plan marketing...</p>
-        </Card>
-      </div>
-    );
+  function prevSection() {
+    if (activeIndex > 0) setActiveSection(SECTION_TABS[activeIndex - 1].id);
+  }
+  function nextSection() {
+    if (activeIndex < SECTION_TABS.length - 1) setActiveSection(SECTION_TABS[activeIndex + 1].id);
   }
 
-  if (!hasData) {
-    return (
-      <div className="app-content-scroll flex flex-1 flex-col gap-4 bg-[#F8F9FC]">
-        {error ? (
-          <Card className="border-rose-200 bg-rose-50">
-            <p className="text-sm text-rose-700">{error}</p>
-          </Card>
-        ) : null}
-        <EmptyState />
-      </div>
-    );
-  }
+  const ActiveSection = SECTION_MAP[activeSection] ?? null;
 
   return (
-    <div className="app-content-scroll flex flex-1 flex-col gap-4 bg-[#F8F9FC]">
-      {error ? (
-        <Card className="border-amber-200 bg-amber-50">
-          <p className="text-sm text-amber-700">{error}</p>
-        </Card>
-      ) : null}
+    <div className="app-content-scroll flex flex-1 flex-col gap-3">
+      <MarketingHeader
+        idea={idea}
+        plan={plan}
+        activeTab={activeSection}
+        onTabChange={setActiveSection}
+      />
 
-      <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.08em] text-slate-400">
-              Plan marketing · étape 3/7
-            </p>
-            <p className="text-base font-medium text-slate-900">{idea?.name || "Projet"}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs text-blue-700">
-              {idea?.clarity_sector || idea?.sector || "-"}
-            </span>
-            <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-700">
-              {idea?.clarity_country_code || "TN"}
-            </span>
-            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs text-amber-700">
-              Confiance {plan?.confidenceLevel || "-"}
-            </span>
-          </div>
+      {isLoading && !hasData && (
+        <div className="flex items-center gap-3 rounded-[14px] border border-[#e8e4ff] bg-white px-5 py-4">
+          <Loader className="h-5 w-5" />
+          <span className="text-[13px] text-[#534AB7]">Chargement du plan marketing…</span>
         </div>
+      )}
 
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-200 pt-3">
-          {SECTION_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveSection(tab.id)}
-              className={`rounded-lg border px-4 py-2 text-sm ${
-                activeSection === tab.id
-                  ? "border-slate-400 bg-slate-200 text-slate-900"
-                  : "border-slate-300 bg-slate-100 text-slate-700"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </Card>
+      {error && <ErrorBanner message={error} variant={hasData ? "warning" : "error"} />}
 
-      {activeSection === "positioning" ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Segment cible</p>
-            <p className="text-sm text-slate-800">{plan?.positioning?.target_segment || "-"}</p>
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Différenciation</p>
-            <p className="text-sm text-slate-800">{plan?.positioning?.differentiation || "-"}</p>
-          </Card>
-          <Card className="md:col-span-2">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Proposition de valeur</p>
-            <p className="text-sm text-slate-800">{plan?.positioning?.value_proposition || "-"}</p>
-          </Card>
-          <Card className="md:col-span-2">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Message principal</p>
-            <p className="text-sm text-slate-800">{plan?.messaging?.main_message || "-"}</p>
-            <div className="mt-3 grid gap-2 md:grid-cols-2">
-              <div className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
-                {plan?.messaging?.pain_point_focus || "-"}
-              </div>
-              <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
-                {plan?.messaging?.emotional_hook || "-"}
-              </div>
-            </div>
-          </Card>
-        </div>
-      ) : null}
+      {!isLoading && !hasData && !error && (
+        <EmptyState
+          title="Aucun plan marketing disponible"
+          description="Lancez le pipeline depuis le clarifier pour générer l'analyse de marché et le plan marketing."
+        />
+      )}
 
-      {activeSection === "targets" ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Persona principal</p>
-            <p className="text-sm text-slate-800">{plan?.targeting?.primary_persona || "-"}</p>
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Focus segment</p>
-            <p className="text-sm text-slate-800">{plan?.targeting?.market_segment_focus || "-"}</p>
-          </Card>
-          <Card className="md:col-span-2">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Personas secondaires</p>
-            <SafeList items={plan?.targeting?.secondary_personas} />
-          </Card>
-        </div>
-      ) : null}
+      {hasData && ActiveSection && (
+        <ActiveSection plan={plan} />
+      )}
 
-      {activeSection === "channels" ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Canaux prioritaires</p>
-            <SafeList items={plan?.channels?.primaryChannels} />
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Canaux secondaires</p>
-            <SafeList items={plan?.channels?.secondaryChannels} />
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Justification</p>
-            <p className="text-sm text-slate-800">{plan?.channels?.justification || "-"}</p>
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Ton</p>
-            <p className="text-sm text-slate-800">{plan?.contentDirection?.tone || "-"}</p>
-          </Card>
-        </div>
-      ) : null}
-
-      {activeSection === "pricing" ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Modèle</p>
-            <p className="text-sm text-slate-800">{plan?.pricingStrategy?.model || "-"}</p>
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Logique pricing</p>
-            <p className="text-sm text-slate-800">{plan?.pricingStrategy?.pricing_logic || "-"}</p>
-          </Card>
-          <Card className="md:col-span-2">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Justification</p>
-            <p className="text-sm text-slate-800">{plan?.pricingStrategy?.justification || "-"}</p>
-          </Card>
-          <Card className="md:col-span-2">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Hypothèses</p>
-            <SafeList items={plan?.assumptions} />
-          </Card>
-        </div>
-      ) : null}
-
-      {activeSection === "gtm" ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          <Card className="md:col-span-2">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Premiers utilisateurs</p>
-            <p className="text-sm text-slate-800">{plan?.goToMarket?.targetFirstUsers || "-"}</p>
-          </Card>
-          <Card className="md:col-span-2">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Stratégie de lancement</p>
-            <p className="text-sm text-slate-800">{plan?.goToMarket?.launchStrategy || "-"}</p>
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Partenariats</p>
-            <SafeList items={plan?.goToMarket?.partnerships} />
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Tactiques de croissance</p>
-            <SafeList items={plan?.goToMarket?.earlyGrowthTactics} />
-          </Card>
-        </div>
-      ) : null}
-
-      {activeSection === "action" ? (
-        <div className="grid gap-3 lg:grid-cols-3">
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Court terme</p>
-            <SafeList items={plan?.actionPlan?.shortTerm} />
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Moyen terme</p>
-            <SafeList items={plan?.actionPlan?.midTerm} />
-          </Card>
-          <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-slate-400">Long terme</p>
-            <SafeList items={plan?.actionPlan?.longTerm} />
-          </Card>
-        </div>
-      ) : null}
-
-      <Card>
-        <div className="flex items-center justify-between">
+      {hasData && (
+        <div className="flex items-center justify-between rounded-[14px] border border-[#e8e4ff] bg-white px-5 py-3">
           <button
             type="button"
             disabled={activeIndex === 0}
-            onClick={() => setActiveSection(SECTION_TABS[Math.max(0, activeIndex - 1)].id)}
-            className="rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm text-slate-700 disabled:opacity-40"
+            onClick={prevSection}
+            className="rounded-full border border-[#e8e4ff] bg-white px-4 py-1.5 text-[12px] font-semibold text-gray-500 transition-all disabled:opacity-40 hover:border-[#AFA9EC] hover:text-[#534AB7]"
           >
             ← Précédent
           </button>
-
-          <div className="flex items-center gap-2">
-            {SECTION_TABS.map((tab, idx) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveSection(tab.id)}
-                className={`h-7 w-9 rounded-full border ${
-                  idx === activeIndex ? "border-slate-400 bg-slate-300" : "border-slate-300 bg-slate-100"
-                }`}
-                aria-label={tab.label}
-              />
-            ))}
-          </div>
-
+          <span className="text-[11px] text-gray-400">
+            {activeIndex + 1} / {SECTION_TABS.length}
+          </span>
           <button
             type="button"
             disabled={activeIndex === SECTION_TABS.length - 1}
-            onClick={() => setActiveSection(SECTION_TABS[Math.min(SECTION_TABS.length - 1, activeIndex + 1)].id)}
-            className="rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm text-slate-700 disabled:opacity-40"
+            onClick={nextSection}
+            className="rounded-full border border-[#e8e4ff] bg-white px-4 py-1.5 text-[12px] font-semibold text-gray-500 transition-all disabled:opacity-40 hover:border-[#AFA9EC] hover:text-[#534AB7]"
           >
             Suivant →
           </button>
         </div>
-      </Card>
+      )}
     </div>
   );
 }

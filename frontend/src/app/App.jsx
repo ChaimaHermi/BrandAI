@@ -14,7 +14,7 @@ import IdeaPage from "@/pages/IdeaPage";
 import PipelineLayout from "@/app/layout/PipelineLayout";
 import ClarifierPage from "@/agents/clarifier/pages/ClarifierPage";
 import MarketPage from "@/agents/market/pages/MarketPage";
-import MarketingPage from "@/agents/marketing/pages/MarketingPage";
+import MarketingPage from "@/agents/Marketing/pages/MarketingPage";
 import BrandPage from "@/agents/brand/pages/BrandPage";
 
 function PlaceholderPage({ name }) {

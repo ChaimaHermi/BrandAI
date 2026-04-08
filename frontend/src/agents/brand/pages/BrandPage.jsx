@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { usePipeline } from "@/context/PipelineContext";
 import {
   buildLegacyRecordFromBundle,
   fetchBrandingBundle,
@@ -83,7 +83,7 @@ function buildSloganPayload(ideaId, brandName, form) {
 }
 
 export default function BrandPage() {
-  const { idea, token, refetchIdea } = useOutletContext();
+  const { idea, token, refetch: refetchIdea } = usePipeline();
   const [record, setRecord] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [savingFinal, setSavingFinal] = useState(false);

@@ -109,10 +109,6 @@ RÈGLE CRITIQUE DE SÉCURITÉ
 Analyser l'ENSEMBLE description originale + réponses.
 Une description innocente avec des réponses malveillantes = REFUSÉ.
 
-Exemples :
-- Description "marketplace" + réponse "vente de drogue" → refused / illegal
-- Description "app mobile" + réponse "escroquer des retraités" → refused / fraud
-- Description "marketplace" + réponse "vêtements pour enfants" → clarified
 
 Refuser si l'intention révélée est :
 - fraud   : tromper / escroquer des personnes

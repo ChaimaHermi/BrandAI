@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOutletContext } from "react-router-dom";
+import { usePipeline } from "@/context/PipelineContext";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
 import { CLARITY_SCORE_MIN_PIPELINE } from "../constants";
 import XaiBlock from "../components/XaiBlock";
@@ -9,7 +9,7 @@ import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
-  const { idea, token, refetchIdea } = useOutletContext();
+  const { idea, token, refetch: refetchIdea } = usePipeline();
   const navigate = useNavigate();
   const xaiHideTimerRef = useRef(null);
   const {

@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useMarketAgent } from "../hooks/useMarketAgent";
 import { CLARITY_SCORE_MIN_PIPELINE } from "@/agents/clarifier/constants";
+import { AGENTS } from "@/agents";
+import { TabBar } from "@/shared/ui/TabBar";
+import { ErrorBanner } from "@/shared/ui/ErrorBanner";
+import { Loader } from "@/shared/ui/Loader";
+import { AgentPageHeader } from "@/agents/shared/components/AgentPageHeader";
+import { usePipeline } from "@/context/PipelineContext";
 import MarketDashboardHeader from "../components/MarketDashboardHeader";
-import MarketDashboardTabs from "../components/MarketDashboardTabs";
-import MarketTabEmpty from "../components/MarketTabEmpty";
 import MarketRawDataViewer from "../components/MarketRawDataViewer";
 import MarketApercu from "../components/MarketApercu";
 import MarketCompetitors from "../components/MarketCompetitors";
@@ -12,27 +16,54 @@ import MarketVOC from "../components/MarketVOC";
 import MarketTrendsRisks from "../components/MarketTrendsRisks";
 import MarketStrategy from "../components/MarketStrategy";
 import MarketKeywords from "../components/MarketKeywords";
+import MarketTabEmpty from "../components/MarketTabEmpty";
 
-const marketTabs = [
-  { id: "raw", label: "Raw JSON" },
+// "Aperçu" is the default — raw data is last and accessible but not prominent.
+const MARKET_TABS = [
   { id: "apercu", label: "Aperçu" },
   { id: "competiteurs", label: "Compétiteurs" },
   { id: "voc", label: "VOC" },
   { id: "tendances", label: "Tendances" },
   { id: "strategie", label: "Stratégie" },
   { id: "mots-cles", label: "Mots-clés" },
+  { id: "raw", label: "Données brutes" },
 ];
 
-export default function MarketAnalysisDashboard() {
-  const { idea, token } = useOutletContext();
+const marketAgent = AGENTS.find((a) => a.id === "market");
+
+export default function MarketPage() {
+  const { idea, token } = usePipeline();
+  const location = useLocation();
+  const lastAutoStartKeyRef = useRef("");
   const { rawReport, isLoading, error, loadLatest, startMarketAnalysis } =
     useMarketAgent({ idea, token });
-  const [activeTab, setActiveTab] = useState("raw");
+  const [activeTab, setActiveTab] = useState("apercu");
 
+  // Auto-start pipeline when navigated from sidebar "Lancer le pipeline" button.
   useEffect(() => {
     if (!idea?.id || !token) return;
-    loadLatest().catch(() => {});
-  }, [idea?.id, token, loadLatest]);
+
+    const state = location.state;
+    if (state?.autoStartMarket) {
+      // Ensure each navigation intent can trigger a new launch once.
+      const launchKey = `${location.key}:${state?.sourceIdeaId || idea.id}`;
+      if (lastAutoStartKeyRef.current === launchKey) return;
+      lastAutoStartKeyRef.current = launchKey;
+      startMarketAnalysis({
+        mode: "pipeline",
+        clarifiedIdea: state.clarifiedIdea,
+      });
+    } else {
+      loadLatest().catch(() => {});
+    }
+  }, [
+    idea?.id,
+    token,
+    location.key,
+    location.state,
+    startMarketAnalysis,
+    loadLatest,
+  ]);
 
   const clarifiedIdea = rawReport?.clarified_idea ?? {
     short_pitch: idea?.clarity_short_pitch ?? "",
@@ -43,64 +74,40 @@ export default function MarketAnalysisDashboard() {
     target_users: idea?.clarity_target_users ?? "",
     solution_description: idea?.clarity_solution ?? "",
   };
+
   const competitorsCount =
     rawReport?.competitor?.top_competitors?.length ??
     rawReport?.competitor?.competitors?.length ??
     0;
 
-  const activeLabel =
-    marketTabs.find((tab) => tab.id === activeTab)?.label ?? "Section";
-
-  const canRelaunchPipeline =
+  const canRelaunch =
     !!idea?.id &&
     !!token &&
     idea?.clarity_status === "clarified" &&
     (idea?.clarity_score ?? 0) >= CLARITY_SCORE_MIN_PIPELINE &&
     !isLoading;
 
-  const handleRelaunchPipeline = () => {
-    if (!canRelaunchPipeline) return;
-    startMarketAnalysis({ mode: "pipeline" });
-  };
+  const relaunchAction = (
+    <button
+      type="button"
+      onClick={() => canRelaunch && startMarketAnalysis({ mode: "pipeline" })}
+      disabled={!canRelaunch}
+      className={`rounded-full px-4 py-1.5 text-[11px] font-bold transition-all ${
+        canRelaunch
+          ? "bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_8px_rgba(124,58,237,0.25)]"
+          : "cursor-not-allowed bg-[#f0eeff] text-[#AFA9EC]"
+      }`}
+    >
+      {isLoading ? "En cours…" : "Relancer"}
+    </button>
+  );
 
-  return (
-    <div className="app-content-scroll flex flex-1 flex-col gap-3">
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={handleRelaunchPipeline}
-          disabled={!canRelaunchPipeline}
-          className={
-            canRelaunchPipeline
-              ? "rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
-              : "cursor-not-allowed rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500"
-          }
-        >
-          {isLoading ? "Pipeline en cours..." : "Relancer pipeline"}
-        </button>
-      </div>
-
-      <MarketDashboardHeader
-        clarified_idea={clarifiedIdea}
-        idea_id={rawReport?.idea_id ?? idea?.id}
-        competitorsCount={competitorsCount}
-      />
-
-      <MarketDashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {isLoading ? (
-        <div className="rounded-xl border border-violet-200 bg-white p-4 text-sm text-violet-600">
-          Chargement des données marché...
-        </div>
-      ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-white p-4 text-sm text-red-600">
-          {error}
-        </div>
-      ) : activeTab === "raw" ? (
-        <MarketRawDataViewer data={rawReport} />
-      ) : activeTab === "apercu" ? (
-        <MarketApercu market={rawReport?.market} />
-      ) : activeTab === "competiteurs" ? (
+  function renderTabContent() {
+    if (activeTab === "raw") return <MarketRawDataViewer data={rawReport} />;
+    if (activeTab === "apercu")
+      return <MarketApercu market={rawReport?.market} />;
+    if (activeTab === "competiteurs")
+      return (
         <MarketCompetitors
           competitors={
             rawReport?.competitor?.top_competitors ??
@@ -108,16 +115,55 @@ export default function MarketAnalysisDashboard() {
             []
           }
         />
-      ) : activeTab === "voc" ? (
-        <MarketVOC voc={rawReport?.voc} />
-      ) : activeTab === "tendances" ? (
-        <MarketTrendsRisks trends={rawReport?.trends} />
-      ) : activeTab === "strategie" ? (
-        <MarketStrategy strategy={rawReport?.strategy} />
-      ) : activeTab === "mots-cles" ? (
-        <MarketKeywords keywords={rawReport?.keywords} />
-      ) : (
-        <MarketTabEmpty label={activeLabel} />
+      );
+    if (activeTab === "voc") return <MarketVOC voc={rawReport?.voc} />;
+    if (activeTab === "tendances")
+      return <MarketTrendsRisks trends={rawReport?.trends} />;
+    if (activeTab === "strategie")
+      return <MarketStrategy strategy={rawReport?.strategy} />;
+    if (activeTab === "mots-cles")
+      return <MarketKeywords keywords={rawReport?.keywords} />;
+    const label =
+      MARKET_TABS.find((t) => t.id === activeTab)?.label ?? "Section";
+    return <MarketTabEmpty label={label} />;
+  }
+
+  return (
+    <div className="app-content-scroll flex flex-1 flex-col gap-3">
+      <AgentPageHeader
+        agent={marketAgent}
+        subtitle="Analyse de marché · Étape 2 sur 6"
+        action={relaunchAction}
+      />
+
+      {/* Project summary card */}
+      <MarketDashboardHeader
+        clarified_idea={clarifiedIdea}
+        idea_id={rawReport?.idea_id ?? idea?.id}
+        competitorsCount={competitorsCount}
+      />
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center gap-3 rounded-[14px] border border-[#e8e4ff] bg-white px-5 py-4">
+          <Loader className="h-5 w-5" />
+          <span className="text-[13px] text-[#534AB7]">Pipeline en cours…</span>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && <ErrorBanner message={error} />}
+
+      {/* Tabs — shown when data exists */}
+      {!isLoading && rawReport && (
+        <>
+          <TabBar
+            tabs={MARKET_TABS}
+            activeId={activeTab}
+            onChange={setActiveTab}
+          />
+          {renderTabContent()}
+        </>
       )}
     </div>
   );

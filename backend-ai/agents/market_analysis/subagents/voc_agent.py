@@ -10,7 +10,7 @@ class VOCAgent(BaseAgent):
     def __init__(self):
         super().__init__(
             agent_name="voc",
-            temperature=0.2
+            temperature=0.1
         )
 
     # ─────────────────────────
