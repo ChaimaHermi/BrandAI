@@ -36,36 +36,27 @@ class KeywordBundle:
     Conteneur créé une seule fois depuis l'IDEA.
     Chaque sous-agent reçoit uniquement les keywords qui le concernent.
 
-      primary_keywords   → market_sizing_agent  (Google Trends)
-      market_keywords    → market_sizing_agent  (Tavily market research)
-      pricing_keywords   → market_sizing_agent  (TAM bottom-up)
-      adoption_keywords  → market_sizing_agent  (World Bank enrichi)
-      competitor_queries → competitor_agent     (Serper / Tavily)
-      voc_keywords       → voc_agent            (Reddit / YouTube / G2)
-      trend_keywords     → trends_agent         (GNews / NewsAPI)
-      sector_tags        → tous les agents      (contexte)
+      primary_keywords   → trend_queries (merge) / sizing contexte
+      market_keywords    → market_sizing_agent
+      competitor_queries → competitor_agent
+      voc_keywords       → voc_agent
+      trend_keywords     → trend_queries (merge) / trends_agent
     """
 
     primary_keywords:   list[str] = field(default_factory=list)
     market_keywords:    list[str] = field(default_factory=list)
-    pricing_keywords:   list[str] = field(default_factory=list)
-    adoption_keywords:  list[str] = field(default_factory=list)
     competitor_queries: list[str] = field(default_factory=list)
     voc_keywords:       list[str] = field(default_factory=list)
     trend_keywords:     list[str] = field(default_factory=list)
-    sector_tags:        list[str] = field(default_factory=list)
 
     # ── Accesseurs par agent ──────────────────────────────────
 
     def for_market_sizing(self) -> dict:
         """Envoyé à market_sizing_agent."""
         return {
-            "primary_keywords":  self.primary_keywords,
-            "market_keywords":   self.market_keywords,
-            "pricing_keywords":  self.pricing_keywords,
-            "adoption_keywords": self.adoption_keywords,
-            "trend_keywords":    self.trend_keywords,
-            "sector_tags":       self.sector_tags,
+            "primary_keywords": self.primary_keywords,
+            "market_keywords":  self.market_keywords,
+            "trend_keywords":   self.trend_keywords,
         }
 
     def for_competitor(self) -> list[str]:
@@ -287,20 +278,14 @@ class KeywordExtractor(BaseAgent):
         return KeywordBundle(
             primary_keywords   = _clean(data.get("primary_keywords"),   6),
             market_keywords    = _clean(data.get("market_keywords"),    6),
-            pricing_keywords   = _clean(data.get("pricing_keywords"),   5),
-            adoption_keywords  = _clean(data.get("adoption_keywords"),  5),
             competitor_queries = _clean(data.get("competitor_queries"), 10),
             voc_keywords       = _clean(data.get("voc_keywords"),       6),
             trend_keywords     = _clean(data.get("trend_keywords"),     5),
-            sector_tags        = _clean(data.get("sector_tags"),        4),
         )
 
     def _log_bundle(self, b: KeywordBundle) -> None:
         logger.info(f"  primary_keywords   → {b.primary_keywords}")
         logger.info(f"  market_keywords    → {b.market_keywords}")
-        logger.info(f"  pricing_keywords   → {b.pricing_keywords}")
-        logger.info(f"  adoption_keywords  → {b.adoption_keywords}")
         logger.info(f"  competitor_queries → {b.competitor_queries}")
         logger.info(f"  voc_keywords       → {b.voc_keywords}")
         logger.info(f"  trend_keywords     → {b.trend_keywords}")
-        logger.info(f"  sector_tags        → {b.sector_tags}")

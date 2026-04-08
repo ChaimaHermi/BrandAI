@@ -21,7 +21,7 @@ import MarketTabEmpty from "../components/MarketTabEmpty";
 // "Aperçu" is the default — raw data is last and accessible but not prominent.
 const MARKET_TABS = [
   { id: "apercu", label: "Aperçu" },
-  { id: "competiteurs", label: "Compétiteurs" },
+  { id: "competiteurs", label: "TOP compétiteurs" },
   { id: "voc", label: "VOC" },
   { id: "tendances", label: "Tendances" },
   { id: "strategie", label: "Stratégie" },

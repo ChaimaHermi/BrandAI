@@ -1,5 +1,3 @@
-"""Prompts for market-analysis keyword extraction."""
-
 SYSTEM_PROMPT = """\
 You are a senior market intelligence analyst specialized in competitor discovery.
 
@@ -162,6 +160,10 @@ FINAL RULE
 The system must adapt to ANY startup idea without relying on predefined examples.
 """
 
+
+
+
+
 USER_PROMPT = """\
 Startup idea to analyze:
 
@@ -193,7 +195,6 @@ First, understand:
 
 Then generate queries aligned with that understanding.
 
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DATA QUALITY REQUIREMENT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -208,12 +209,56 @@ They should prioritize:
 
 Keywords must be directly usable in search engines, APIs, or data sources.
 
-They should closely match phrases that would realistically return results,
-not abstract or artificial wording.
+Prefer explicit, natural, and realistic search queries.
 
-Prefer explicit, complete, and natural search queries
-over shortened or conceptual expressions.
 
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MARKET KEYWORDS (CRITICAL FIX)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+These rules apply STRICTLY to the "market_keywords" field in the output.
+
+Market keywords MUST be designed to retrieve quantitative data ONLY.
+
+They MUST explicitly target:
+
+- number of users / customers
+- number of companies / providers
+- number of transactions / volume
+- yearly activity (per year, per month)
+- percentages (adoption, participation, usage)
+
+Use search patterns such as:
+
+- "number of ..."
+- "how many ..."
+- "statistics ..."
+- "data ..."
+- "report ..."
+- "study ..."
+- "percentage ..."
+- "rate ..."
+
+Examples:
+
+- number of users [market]
+- [sector] statistics [country]
+- how many [target users] [country]
+- [industry] market data report
+- [activity] participation rate
+
+Avoid:
+
+- vague terms like "market trends"
+- generic "growth" without numbers
+- abstract wording without measurable data
+
+CRITICAL:
+
+- Each market keyword MUST be likely to return numerical data
+- If a keyword does not lead to numbers → it is INVALID
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TRENDS & RISKS COVERAGE (CRITICAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -225,18 +270,10 @@ Keywords must enable discovery of:
 - risks and threats affecting the market
 - regulatory or legal constraints
 
-Keywords must explicitly cover BOTH:
-
-- positive signals (growth, trends, demand)
-- negative signals (risks, challenges, problems, barriers)
-
 Ensure that:
 
-- at least one keyword clearly targets risks or negative outcomes
-- multiple keywords reflect trends and growth dynamics
-- keywords remain natural, search-oriented, and realistic
-
-Avoid generating keywords focused only on positive or descriptive aspects.
+- at least one keyword targets risks or negative outcomes
+- multiple keywords reflect trends and growth
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 VOC-SPECIFIC REQUIREMENT
@@ -250,32 +287,12 @@ VOC keywords must focus on:
 - reviews
 - real user experiences
 
-They should reflect how users express issues in forums, reviews, or discussions.
+They should reflect real user language (forums, reviews, discussions).
 
 Avoid:
 
-- generic or marketing-style terms
-- product features without user context
-- abstract or descriptive wording without real user signal
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-VOC-SPECIFIC REQUIREMENT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-VOC keywords must focus on:
-
-- user problems
-- frustrations
-- complaints
-- reviews
-- real user experiences
-
-They should reflect how users express issues in forums, reviews, or discussions.
-
-Avoid:
-
-- generic, descriptive, or marketing-style terms
-- product features without user context
-- abstract concepts that do not lead to real user feedback
+- generic marketing terms
+- feature-only keywords without user context
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GENERAL AVOIDANCE RULES
@@ -283,9 +300,9 @@ GENERAL AVOIDANCE RULES
 
 Avoid:
 
-- vague, abstract, or conceptual wording
-- product feature descriptions without market context
-- terms that do not lead to quantifiable or actionable insights
+- vague or abstract wording
+- non-searchable concepts
+- keywords that do not lead to actionable insights
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT (STRICT JSON)
@@ -295,10 +312,6 @@ OUTPUT FORMAT (STRICT JSON)
   "primary_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
   "market_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
-
-  "pricing_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
-
-  "adoption_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
   "competitor_queries": [
     "<local query 1>",
@@ -315,9 +328,7 @@ OUTPUT FORMAT (STRICT JSON)
 
   "voc_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
 
-  "trend_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"],
-
-  "sector_tags": ["<tag>", "<tag>", "<tag>"]
+  "trend_keywords": ["<keyword>", "<keyword>", "<keyword>", "<keyword>", "<keyword>"]
 }}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -329,9 +340,9 @@ IMPORTANT
   → 4 local
   → 6 global
 
-- queries MUST be adapted to the idea dynamically
-- queries MUST be diverse and non-repetitive
-- queries MUST reflect real user search behavior
+- queries MUST be dynamic and idea-specific
+- queries MUST be diverse
+- queries MUST reflect real user behavior
 - output must be valid JSON only
 - no explanation
 """

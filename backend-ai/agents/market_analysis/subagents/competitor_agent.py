@@ -10,8 +10,8 @@ from utils.text_cleaner import clean_text
 _TAVILY_PER_QUERY = 5
 _SERP_PER_QUERY = 2
 _TOTAL_RESULTS_MAX = 20
-_CONTENT_MAX = 300
-_CONTEXT_MAX = 5000
+_CONTENT_MAX = 700
+_CONTEXT_MAX = 7000
 
 
 class CompetitorAgent(BaseAgent):
@@ -91,7 +91,17 @@ class CompetitorAgent(BaseAgent):
                 "data": {}
             }
 
-        data = self._parse_json(response)
+        try:
+            data = self._parse_json(response)
+        except Exception as e:
+            preview = (response[:220] + "...") if len(response) > 220 else response
+            return {
+                "agent": "competitor",
+                "status": "error",
+                "error": f"Invalid competitor JSON: {e}; preview={preview!r}",
+                "data": {},
+            }
+
         competitors = data.get("competitors")
         if isinstance(competitors, list):
             fallback_urls = [x.get("url") for x in final_results if (x.get("url") or "").strip()]
@@ -102,6 +112,11 @@ class CompetitorAgent(BaseAgent):
                 website = (comp.get("website") or "").strip()
                 if not website and fallback_url:
                     comp["website"] = fallback_url
+                # Keep schema stable for frontend rendering.
+                if comp.get("strengths") is None:
+                    comp["strengths"] = []
+                if comp.get("weaknesses") is None:
+                    comp["weaknesses"] = []
 
         return {
             "agent": "competitor",
