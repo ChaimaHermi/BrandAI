@@ -1,6 +1,4 @@
 import json
-import re
-from pathlib import Path
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -12,9 +10,6 @@ from agents.market_analysis.subagents.market_sizing_agent import MarketSizingAge
 from agents.market_analysis.subagents.strategy_analysis_agent import StrategyAnalysisAgent
 from agents.market_analysis.subagents.trends_risks_agent import TrendsRisksAgent
 from agents.market_analysis.subagents.voc_agent import VOCAgent
-
-
-_WORKFLOWS_DIR = Path(__file__).resolve().parent.parent / "workflows"
 
 
 class MarketGraphState(TypedDict, total=False):
@@ -35,11 +30,6 @@ def _debug_ma(agent_name: str, ma: dict) -> None:
     print(f"AFTER {agent_name}")
     snap = {k: ma.get(k) for k in ("keywords", "market", "competitor", "voc", "trends", "strategy")}
     print(json.dumps(snap, indent=2, ensure_ascii=False))
-
-
-def _safe_filename_part(value: Any) -> str:
-    s = re.sub(r"[^\w\-.]+", "_", str(value), flags=re.UNICODE).strip("_")
-    return (s or "run")[:120]
 
 
 def _merge_trend_queries(bundle) -> list:
@@ -146,22 +136,7 @@ async def node_strategy_analysis(state: MarketGraphState) -> dict:
 
 async def node_save_results(state: MarketGraphState) -> dict:
     ma = dict(state.get("market_analysis") or {})
-    idea_id = state.get("idea_id")
     clean_ma = _final_market_analysis(ma)
-    payload = {
-        "idea_id": idea_id,
-        "clarified_idea": dict(state.get("clarified_idea") or {}),
-        "market_analysis": clean_ma,
-    }
-    _WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
-    name = f"market_analysis_{_safe_filename_part(idea_id)}.json"
-    out_path = _WORKFLOWS_DIR / name
-    out_path.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
-    print("\n====================")
-    print(f"SAVED: {out_path}")
     return {"market_analysis": clean_ma}
 
 
