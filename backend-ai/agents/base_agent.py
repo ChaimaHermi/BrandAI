@@ -10,6 +10,7 @@ import re
 import time
 from abc import ABC, abstractmethod
 
+import httpx
 from groq import AsyncGroq
 from langchain_core.messages import HumanMessage, SystemMessage
 from llm.llm_rotator import LLMRotator
@@ -80,6 +81,14 @@ GROQ_DIRECT_MODELS = {
     "openai/gpt-oss-120b",
 }
 
+# Modèles routés vers NVIDIA NIM en priorité (pas de limite TPM)
+NVIDIA_MODELS = {
+    "openai/gpt-oss-120b",
+}
+
+NVIDIA_API_BASE = "https://integrate.api.nvidia.com/v1/chat/completions"
+NVIDIA_MAX_TOKENS_CAP = 65_536  # limite max output NVIDIA gpt-oss-120b
+
 REASONING_EFFORT_MAP = {
     "openai/gpt-oss-120b": "medium",
 }
@@ -94,7 +103,7 @@ class BaseAgent(ABC):
     def __init__(
         self,
         agent_name: str,
-        temperature: float = 0.7,
+        temperature: float = 0.2,
         max_retries: int = 3,
         llm_model: str = "openai/gpt-oss-120b",
         llm_max_tokens: int | None = None,
@@ -103,7 +112,7 @@ class BaseAgent(ABC):
         self.temperature = temperature
         self.max_retries = max_retries
         self.llm_model = llm_model
-        self.llm_max_tokens = llm_max_tokens or 4096
+        self.llm_max_tokens = llm_max_tokens or 65_536  # max output NVIDIA gpt-oss-120b
 
         self.logger = logging.getLogger(f"brandai.{agent_name}")
         self.llm_rotator = LLMRotator.groq_model(llm_model, max_tokens=llm_max_tokens)
@@ -117,6 +126,17 @@ class BaseAgent(ABC):
         ]
         self._groq_key_idx = 0
 
+        # Clés NVIDIA NIM (rotation)
+        self._nvidia_keys = [
+            k for k in [
+                os.getenv("NVIDIA_API_KEY_1", ""),
+                os.getenv("NVIDIA_API_KEY_2", ""),
+                os.getenv("NVIDIA_API_KEY_3", ""),
+                os.getenv("NVIDIA_API_KEY_4", ""),
+            ] if k
+        ]
+        self._nvidia_key_idx = 0
+
     def _next_groq_key(self) -> str:
         if not self._groq_keys:
             raise RuntimeError("Aucune clé GROQ_API_KEY définie")
@@ -124,21 +144,132 @@ class BaseAgent(ABC):
         self._groq_key_idx += 1
         return key
 
+    def _next_nvidia_key(self) -> str:
+        if not self._nvidia_keys:
+            raise RuntimeError("Aucune clé NVIDIA_API_KEY définie")
+        key = self._nvidia_keys[self._nvidia_key_idx % len(self._nvidia_keys)]
+        self._nvidia_key_idx += 1
+        return key
+
     # ─────────────────────────────────────────
     # LLM CALL
     # ─────────────────────────────────────────
 
     async def _call_llm(self, system_prompt: str, user_prompt: str) -> str:
-        if self.llm_model in GROQ_DIRECT_MODELS:
+        # ── Priorité 1 : NVIDIA NIM (pas de limite TPM, 40 RPM) ──
+        if self.llm_model in NVIDIA_MODELS and self._nvidia_keys:
+            try:
+                return await self._call_nvidia_direct(system_prompt, user_prompt)
+            except Exception as e:
+                self.logger.warning(
+                    f"[{self.agent_name}] NVIDIA échoué → fallback Groq | {str(e)[:160]}"
+                )
+                # ── Fallback Groq si clés disponibles ──
+                if self.llm_model in GROQ_DIRECT_MODELS and self._groq_keys:
+                    try:
+                        return await self._call_groq_direct(system_prompt, user_prompt)
+                    except Exception as e2:
+                        self.logger.warning(
+                            f"[{self.agent_name}] Groq échoué → fallback LangChain | {str(e2)[:160]}"
+                        )
+                return await self._call_langchain(system_prompt, user_prompt)
+
+        # ── Priorité 2 : Groq direct (si pas de clés NVIDIA) ──
+        if self.llm_model in GROQ_DIRECT_MODELS and self._groq_keys:
             try:
                 return await self._call_groq_direct(system_prompt, user_prompt)
             except Exception as e:
                 self.logger.warning(
-                    f"[{self.agent_name}] fallback LangChain | {str(e)[:160]}"
+                    f"[{self.agent_name}] Groq échoué → fallback LangChain | {str(e)[:160]}"
                 )
                 return await self._call_langchain(system_prompt, user_prompt)
 
+        # ── Priorité 3 : LangChain ──
         return await self._call_langchain(system_prompt, user_prompt)
+
+    async def _call_nvidia_direct(self, system_prompt: str, user_prompt: str) -> str:
+        """
+        Appel NVIDIA NIM (OpenAI-compatible).
+        Pas de limite TPM — limite RPM : 40 requêtes/minute par clé.
+        Context window : 128 000 tokens | Max output : 65 536 tokens.
+
+        Stratégie sur 429 :
+          1. Essayer la clé suivante immédiatement (rotation)
+          2. Si toutes les clés épuisées → attendre 60 sec → recommencer
+          3. Après 3 cycles complets → lever une erreur
+        """
+        max_tokens = min(self.llm_max_tokens, NVIDIA_MAX_TOKENS_CAP)
+        effort = REASONING_EFFORT_MAP.get(self.llm_model)
+        n_keys = len(self._nvidia_keys)
+        last_error = None
+
+        async def _do_request(key: str) -> str:
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    NVIDIA_API_BASE,
+                    headers={
+                        "Authorization": f"Bearer {key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": self.llm_model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        "temperature": self.temperature,
+                        "max_tokens": max_tokens,
+                        **({"reasoning_effort": effort} if effort else {}),
+                    },
+                )
+                resp.raise_for_status()
+                message = resp.json()["choices"][0]["message"]
+                content = (message.get("content") or "").strip()
+                if not content:
+                    content = (message.get("reasoning_content") or "").strip()
+                if not content:
+                    raise RuntimeError("Réponse NVIDIA vide")
+                return content
+
+        # 3 cycles : chaque cycle essaie toutes les clés, puis attend 60 sec
+        for cycle in range(self.max_retries):
+            for _ in range(n_keys):
+                key = self._next_nvidia_key()
+                try:
+                    content = await _do_request(key)
+                    self.logger.info(
+                        f"[{self.agent_name}] NVIDIA OK | cycle={cycle} | "
+                        f"tokens ≈ {len(content)//4}"
+                    )
+                    return content
+                except httpx.HTTPStatusError as e:
+                    last_error = e
+                    if e.response.status_code == 429:
+                        # Rate limit → essayer la clé suivante immédiatement
+                        self.logger.warning(
+                            f"[{self.agent_name}] NVIDIA 429 → rotation clé suivante"
+                        )
+                        continue
+                    # Autre erreur HTTP → pas de rotation, on sort du cycle
+                    raise
+                except Exception as e:
+                    last_error = e
+                    self.logger.warning(
+                        f"[{self.agent_name}] NVIDIA erreur → {str(e)[:120]}"
+                    )
+                    continue
+
+            # Toutes les clés épuisées → attendre 60 sec avant le prochain cycle
+            if cycle < self.max_retries - 1:
+                self.logger.warning(
+                    f"[{self.agent_name}] Toutes les clés NVIDIA en limite "
+                    f"→ attente 60 sec (cycle {cycle+1}/{self.max_retries})"
+                )
+                await asyncio.sleep(60)
+
+        raise RuntimeError(
+            f"NVIDIA failed après {self.max_retries} cycles × {n_keys} clés : {last_error}"
+        )
 
     async def _call_groq_direct(self, system_prompt: str, user_prompt: str) -> str:
         attempt = 0
@@ -201,6 +332,12 @@ class BaseAgent(ABC):
         raise RuntimeError(f"Groq failed: {last_error}")
 
     async def _call_langchain(self, system_prompt: str, user_prompt: str) -> str:
+
+        if not self.llm_rotator or not self.llm_rotator._clients.get("groq"):
+            raise RuntimeError(
+                "LangChain fallback indisponible : aucune clé Groq configurée. "
+                "Ajoutez GROQ_API_KEY dans .env ou utilisez NVIDIA."
+            )
 
         messages = [
             SystemMessage(content=system_prompt),

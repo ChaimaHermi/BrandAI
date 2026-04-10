@@ -12,7 +12,6 @@ Flow :
 
 import json
 import logging
-import os
 import re
 from dataclasses import asdict, dataclass, field
 
@@ -102,21 +101,14 @@ class KeywordExtractor(BaseAgent):
     """
 
     def __init__(self):
-        # Sortie JSON longue (8 listes) : 800 tokens coupait la réponse → JSON invalide
-        _cap = min(LLM_CONFIG.get("max_tokens") or 4096, 4096)
+        # Output = JSON bundle ~33 keywords → 4096 tokens suffisent
         super().__init__(
             agent_name     = "keyword_extractor",
             llm_model      = LLM_CONFIG["model"],
-            llm_max_tokens = max(1500, _cap),
+            llm_max_tokens = 4096,
             temperature    = 0.1,
         )
-        self._groq_keys = [
-            k for k in [
-                os.getenv("GROQ_API_KEY",   ""),
-                os.getenv("GROQ_API_KEY_2", ""),
-                os.getenv("GROQ_API_KEY_3", ""),
-            ] if k
-        ]
+        # _groq_keys et _nvidia_keys déjà initialisés par BaseAgent
 
     async def run(self, state: PipelineState) -> PipelineState:
         raise NotImplementedError("Utiliser extract(idea).")
@@ -142,7 +134,8 @@ class KeywordExtractor(BaseAgent):
 
         for attempt in range(3):
             try:
-                raw    = await self._call_groq_reasoning(SYSTEM_PROMPT, user_prompt)
+                # _call_llm : NVIDIA en priorité → Groq fallback → LangChain
+                raw    = await self._call_llm(SYSTEM_PROMPT, user_prompt)
                 data   = self._parse_json_robust(raw)
                 bundle = self._build_bundle(data)
                 self._log_bundle(bundle)
@@ -154,58 +147,6 @@ class KeywordExtractor(BaseAgent):
         # Fallback : bundle vide — jamais de valeurs inventées
         logger.error("[keyword_extractor] toutes les tentatives échouées → bundle vide")
         return KeywordBundle()
-
-    # ── Appel Groq compatible reasoning ──────────────────────
-
-    async def _call_groq_reasoning(self, system: str, user: str) -> str:
-        """
-        Appel HTTP direct à Groq.
-        Lit content en priorité, puis reasoning_content.
-        """
-        if not self._groq_keys:
-            raise RuntimeError("Aucune GROQ_API_KEY dans .env")
-
-        last_err = None
-        for key in self._groq_keys:
-            try:
-                async with httpx.AsyncClient(timeout=30) as client:
-                    resp = await client.post(
-                        "https://api.groq.com/openai/v1/chat/completions",
-                        headers={
-                            "Authorization": f"Bearer {key}",
-                            "Content-Type":  "application/json",
-                        },
-                        json={
-                            "model":            self.llm_model,
-                            "max_tokens":       self.llm_max_tokens,
-                            "temperature":      self.temperature,
-                            "reasoning_effort": "medium",
-                            "messages": [
-                                {"role": "system", "content": system},
-                                {"role": "user",   "content": user},
-                            ],
-                        },
-                    )
-                    resp.raise_for_status()
-                    message = resp.json()["choices"][0]["message"]
-
-                # Priorité 1 : content (réponse normale)
-                content = (message.get("content") or "").strip()
-                if content:
-                    return content
-
-                # Priorité 2 : reasoning_content (gpt-oss-120b)
-                reasoning = (message.get("reasoning_content") or "").strip()
-                if reasoning:
-                    return reasoning
-
-                raise RuntimeError(f"Réponse Groq vide — message: {message}")
-
-            except Exception as e:
-                last_err = e
-                continue
-
-        raise RuntimeError(f"Toutes les clés Groq ont échoué : {last_err}")
 
     # ── JSON parser — 3 stratégies ────────────────────────────
 

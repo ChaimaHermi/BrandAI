@@ -1,6 +1,6 @@
 import {
   FiBarChart2, FiDollarSign, FiTrendingUp,
-  FiActivity, FiUsers, FiPercent, FiExternalLink,
+  FiActivity, FiUsers, FiPercent, FiExternalLink, FiZap,
 } from "react-icons/fi";
 
 const FIELD_CONFIG = [
@@ -18,6 +18,7 @@ function isUrlLike(value) {
 
 export default function MarketApercu({ market }) {
   const marketSources = Array.isArray(market?.sources) ? market.sources : [];
+  const marketSignals = Array.isArray(market?.market_signals) ? market.market_signals : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -82,6 +83,60 @@ export default function MarketApercu({ market }) {
           );
         })}
       </div>
+
+      {/* ── Market signals ───────────────────────────────────────────────── */}
+      {marketSignals.length > 0 && (
+        <div className="rounded-xl border border-brand-border bg-white p-4 shadow-card">
+          <p className="mb-3 flex items-center gap-2 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
+            <FiZap size={12} />
+            Signaux marché
+          </p>
+          <div className="flex flex-col gap-3">
+            {marketSignals.map((signal, idx) => {
+              const hasSource = typeof signal?.source === "string" && signal.source.trim();
+              return (
+                <div
+                  key={idx}
+                  className="flex flex-col gap-1 rounded-lg border border-brand-border bg-brand-light/40 px-4 py-3"
+                >
+                  {/* Value + unit + year */}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold text-ink">
+                      {signal.value}
+                    </span>
+                    {signal.unit && (
+                      <span className="text-sm font-medium text-ink-muted">{signal.unit}</span>
+                    )}
+                    {signal.year && (
+                      <span className="ml-auto rounded-full bg-brand-muted/20 px-2 py-0.5 text-2xs font-semibold text-brand">
+                        {signal.year}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  {signal.description && (
+                    <p className="text-sm leading-relaxed text-ink-muted">{signal.description}</p>
+                  )}
+
+                  {/* Source */}
+                  {hasSource && (
+                    <a
+                      href={signal.source}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-2xs text-brand hover:underline"
+                    >
+                      <FiExternalLink size={10} />
+                      Source
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Market sources ────────────────────────────────────────────────── */}
       {marketSources.length > 0 && (

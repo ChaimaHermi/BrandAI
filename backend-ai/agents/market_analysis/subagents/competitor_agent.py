@@ -7,11 +7,11 @@ from tools.market_analysis.tavily_tool import tavily_search
 from utils.text_cleaner import clean_text
 
 
-_TAVILY_PER_QUERY = 5
-_SERP_PER_QUERY = 2
-_TOTAL_RESULTS_MAX = 20
-_CONTENT_MAX = 700
-_CONTEXT_MAX = 7000
+_TAVILY_PER_QUERY = 10
+_SERP_PER_QUERY = 5
+_TOTAL_RESULTS_MAX = 30
+_CONTENT_MAX = 2_000   # chars par résultat — max data par source
+_CONTEXT_MAX = 500_000  # pas de limite effective — NVIDIA 128K context
 
 
 class CompetitorAgent(BaseAgent):
