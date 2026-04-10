@@ -15,7 +15,7 @@ LLM_CONFIG = {
 MARKET_SIZING_LLM_CONFIG = {
     "model": LLM_CONFIG["model"],
     "temperature": 0.1,
-    "max_tokens": 2000,
+    "max_tokens": 65_536,  # max NVIDIA gpt-oss-120b
 }
 
 

@@ -22,7 +22,7 @@ class LLMRotator:
         )
 
         if not self._clients["groq"]:
-            raise RuntimeError("Aucune clé Groq trouvée")
+            logger.warning("[rotator] Aucune clé Groq — LLMRotator désactivé (NVIDIA utilisé en priorité)")
 
     # ─────────────────────────────────────────────
     # 🔥 GROQ ONLY (LLAMA)

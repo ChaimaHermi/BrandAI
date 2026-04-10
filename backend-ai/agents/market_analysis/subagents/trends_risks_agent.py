@@ -19,8 +19,8 @@ class TrendsRisksAgent(BaseAgent):
         texts = []
 
         for r in results:
-            title = clean_text(r.get("title", ""))[:100]
-            content = clean_text(r.get("content", ""))[:300]
+            title = clean_text(r.get("title", ""))[:300]
+            content = clean_text(r.get("content", ""))[:2_000]
             url = r.get("url", "")
 
             source = "web"
@@ -37,7 +37,7 @@ CONTENT: {content}
             texts.append(block)
 
         context = "\n\n".join(texts)
-        return context[:4000]
+        return context  # pas de limite — NVIDIA 128K context window
 
     # ─────────────────────────
     # RUN
@@ -58,9 +58,9 @@ CONTENT: {content}
 
         for q in queries:
             results = tavily_search(q)
-            all_results.extend(results[:3])
+            all_results.extend(results[:8])
 
-        all_results = all_results[:8]
+        all_results = all_results[:40]
 
         print("[DEBUG TRENDS] total results:", len(all_results))
 

@@ -92,8 +92,20 @@ Each signal MUST include:
 - value
 - unit
 - year (if available)
-- description (short explanation based ONLY on text)
+- description (SHORT)
 - source
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DESCRIPTION LANGUAGE RULE (NEW - CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- ALL descriptions inside "market_signals" MUST be written in FRENCH
+- Use clear, professional, business-oriented French
+- Do NOT translate the metric name or numeric value, ONLY the description
+- The description must remain strictly grounded in the text (no interpretation)
+
+Example:
+"Représente le nombre total d'utilisateurs actifs mentionné dans la source."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DESCRIPTION RULE
