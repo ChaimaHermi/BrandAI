@@ -703,6 +703,7 @@ export default function BrandPage() {
             paletteOptions={paletteListDisplayed}
             selectedPaletteId={selectedPaletteId}
             logoPreviewUrl={logoPreviewUrl}
+            logoConcept={logoConceptsDisplayed[0] ?? null}
             nameWhyText={selectedNameWhyText}
           />
         )}

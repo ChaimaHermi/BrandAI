@@ -1,10 +1,46 @@
-import { FiMessageSquare, FiDroplet, FiImage } from "react-icons/fi";
+import { FiDownload, FiImage, FiMessageSquare, FiDroplet } from "react-icons/fi";
 import SectionHeader from "./SectionHeader";
 
 function swatchHexes(palette) {
   const sw = palette?.swatches;
   if (!Array.isArray(sw)) return [];
   return sw.map((s) => s?.hex).filter(Boolean);
+}
+
+function slugifyFileBase(name) {
+  const s = (name || "logo")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48);
+  return s || "logo";
+}
+
+function triggerBlobDownload(blob, filename) {
+  const a = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** SVG vectoriel si fourni ; sinon enveloppe SVG avec image raster intégrée (compatible outils de design). */
+function buildSvgForLogo(logoPreviewUrl, logoConcept) {
+  const rawSvg = (logoConcept?.svg_data || "").replace(/^\uFEFF/, "").trim();
+  if (/^<\?xml/i.test(rawSvg) || /^<svg[\s>/]/i.test(rawSvg)) {
+    return rawSvg;
+  }
+  if (!logoPreviewUrl) return "";
+  const esc = logoPreviewUrl
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <image xlink:href="${esc}" href="${esc}" width="1024" height="1024" preserveAspectRatio="xMidYMid meet"/>
+</svg>`;
 }
 
 /**
@@ -16,6 +52,8 @@ export default function FinalBrandPreview({
   paletteOptions,
   selectedPaletteId,
   logoPreviewUrl,
+  /** Premier élément de logo_concepts (image_base64, svg_data, …) */
+  logoConcept = null,
   /** Court texte issu du naming (description / rationale du nom choisi) */
   nameWhyText = "",
 }) {
@@ -28,6 +66,34 @@ export default function FinalBrandPreview({
   }
   const hexes       = palette ? swatchHexes(palette) : [];
   const paletteTitle = (palette?.palette_name || "Palette choisie").trim() || "Palette choisie";
+  const fileBase = slugifyFileBase(brandName);
+
+  async function handleDownloadPng() {
+    if (!logoPreviewUrl) return;
+    try {
+      const res = await fetch(logoPreviewUrl);
+      const blob = await res.blob();
+      const ext = blob.type.includes("png") ? "png" : blob.type.includes("jpeg") || blob.type.includes("jpg") ? "jpg" : "png";
+      triggerBlobDownload(blob, `${fileBase}-logo.${ext}`);
+    } catch {
+      const b64 = logoConcept?.image_base64;
+      const mime = logoConcept?.image_mime || "image/png";
+      if (!b64) return;
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      triggerBlobDownload(new Blob([arr], { type: mime }), `${fileBase}-logo.png`);
+    }
+  }
+
+  function handleDownloadSvg() {
+    const svg = buildSvgForLogo(logoPreviewUrl, logoConcept);
+    if (!svg) return;
+    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    triggerBlobDownload(blob, `${fileBase}-logo.svg`);
+  }
+
+  const canDownloadLogo = Boolean(logoPreviewUrl || logoConcept?.image_base64);
 
   return (
     <div className="bi-fade-up">
@@ -100,11 +166,33 @@ export default function FinalBrandPreview({
               <p className="text-2xs font-semibold uppercase tracking-widest text-ink-subtle">Logo</p>
             </div>
             {logoPreviewUrl ? (
-              <img
-                src={logoPreviewUrl}
-                alt="Logo"
-                className="mx-auto max-h-48 w-auto rounded-xl border border-brand-border object-contain"
-              />
+              <>
+                <img
+                  src={logoPreviewUrl}
+                  alt="Logo"
+                  className="mx-auto max-h-48 w-auto rounded-xl border border-brand-border object-contain"
+                />
+                {canDownloadLogo && (
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleDownloadPng()}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-sm transition hover:bg-brand-light"
+                    >
+                      <FiDownload size={14} aria-hidden />
+                      Télécharger PNG
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadSvg}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-sm transition hover:bg-brand-light"
+                    >
+                      <FiDownload size={14} aria-hidden />
+                      Télécharger SVG
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-brand-border bg-brand-light">
                 <p className="text-xs text-brand-muted">Aucun logo généré pour l&apos;instant</p>

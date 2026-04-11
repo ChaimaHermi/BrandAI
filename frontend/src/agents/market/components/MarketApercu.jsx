@@ -31,6 +31,8 @@ export default function MarketApercu({ market }) {
           const source = metric?.source ?? "";
           const isNd   = value === "N/D";
 
+          if (isNd) return null;
+
           return (
             <div
               key={key}
