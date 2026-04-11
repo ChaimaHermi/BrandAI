@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiLayers } from "react-icons/fi";
 import { usePipeline } from "@/context/PipelineContext";
 import { AGENTS } from "@/agents";
@@ -6,6 +6,7 @@ import { AgentPageHeader } from "@/agents/shared/components/AgentPageHeader";
 import {
   buildLegacyRecordFromBundle,
   fetchBrandingBundle,
+  hasSavedBrandIdentityPreview,
   generateBrandNames,
   generateLogo,
   generatePalettes,
@@ -25,6 +26,9 @@ import SloganStep from "../components/steps/SloganStep";
 import PaletteStep from "../components/steps/PaletteStep";
 import LogoStep from "../components/steps/LogoStep";
 import "../styles/brandStudio.css";
+
+const brandWizardStorageKey = (ideaId) =>
+  ideaId != null ? `brand_wizard_${ideaId}` : "";
 
 /** Labels stepper — projet → naming → slogan → couleurs → logo → aperçu final */
 const STEPS = ["Projet", "Naming", "Slogan", "Couleurs", "Logo", "Aperçu"];
@@ -112,11 +116,15 @@ export default function BrandPage() {
   const [isGeneratingLogo, setIsGeneratingLogo] = useState(false);
   const [logoGenMessage, setLogoGenMessage] = useState("");
 
+  /** Évite de réappliquer l’atterrissage (aperçu / assistant) à chaque refetch. */
+  const appliedLandingForIdeaRef = useRef(null);
+
   useEffect(() => {
     refetchIdea?.();
   }, [idea?.id, refetchIdea]);
 
   useEffect(() => {
+    appliedLandingForIdeaRef.current = null;
     setStep(0);
     setChosenBrandName(null);
     setSloganForm(initialSloganForm());
@@ -168,6 +176,16 @@ export default function BrandPage() {
         }
         if (b?.slogan?.chosen_slogan) {
           setSelectedSlogan(b.slogan.chosen_slogan);
+        }
+        if (appliedLandingForIdeaRef.current !== idea.id) {
+          appliedLandingForIdeaRef.current = idea.id;
+          const wKey = brandWizardStorageKey(idea.id);
+          if (wKey && sessionStorage.getItem(wKey) === "1") {
+            setStep(0);
+          } else if (hasSavedBrandIdentityPreview(b)) {
+            setStep(5);
+            setAnimKey((k) => k + 1);
+          }
         }
       } catch (e) {
         if (!cancelled) setLoadError(e?.message || "Chargement impossible");
@@ -535,6 +553,8 @@ export default function BrandPage() {
       palette_id: b.palette?.id ?? null,
       logo_id: b.logo?.id ?? null,
     });
+    const wKey = brandWizardStorageKey(idea.id);
+    if (wKey) sessionStorage.removeItem(wKey);
     await refetchBrandRecord();
   }, [
     idea?.id,
@@ -582,6 +602,10 @@ export default function BrandPage() {
   }
 
   function restartWizard() {
+    if (idea?.id != null) {
+      const wKey = brandWizardStorageKey(idea.id);
+      if (wKey) sessionStorage.setItem(wKey, "1");
+    }
     setAnimKey((k) => k + 1);
     setStep(0);
     setChosenBrandName(null);
@@ -692,7 +716,11 @@ export default function BrandPage() {
       {/* ── Pipeline step header — même pattern que MarketPage / MarketingPage ── */}
       <AgentPageHeader
         agent={brandAgent}
-        subtitle="Brand Identity · Étape 4 sur 6"
+        subtitle={
+          step === 5
+            ? "Brand Identity · Aperçu enregistré (vous pouvez recommencer le parcours ci‑dessous)"
+            : "Brand Identity · Parcours guidé"
+        }
       />
 
       {/* ── Contenu centré ────────────────────────────────────────────────────── */}
@@ -707,7 +735,17 @@ export default function BrandPage() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-extrabold text-ink">Identité de marque</p>
               <p className="mt-0.5 text-xs text-ink-muted">
-                Parcours en 6 étapes : projet, naming, slogan, palette, logo généré, puis aperçu final de votre kit.
+                {step === 5 ? (
+                  <>
+                    Aperçu de votre kit enregistré. Utilisez « Retour » pour modifier une étape, ou
+                    « Recommencer » pour relancer tout le parcours depuis le début.
+                  </>
+                ) : (
+                  <>
+                    Parcours en 6 étapes : projet, naming, slogan, palette, logo généré, puis aperçu
+                    final de votre kit.
+                  </>
+                )}
               </p>
               {(selectedSlogan || chosenBrandName || names[0]) && (
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">

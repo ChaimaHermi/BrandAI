@@ -53,6 +53,28 @@ export function mergeGeneratedFromBundle(bundle) {
 }
 
 /**
+ * Indique si un kit d’identité a déjà été enregistré (aperçu final sauvegardé).
+ * Utilisé pour ouvrir directement l’étape « Aperçu » au retour sur Brand Identity.
+ */
+export function hasSavedBrandIdentityPreview(bundle) {
+  if (!bundle) return false;
+  if (bundle.brandKit?.id) return true;
+  const v = (row) => row?.status === "validated";
+  if (
+    v(bundle.naming) &&
+    v(bundle.slogan) &&
+    v(bundle.palette) &&
+    v(bundle.logo)
+  ) {
+    return true;
+  }
+  const merged = mergeGeneratedFromBundle(bundle);
+  const hasLogo =
+    Array.isArray(merged.logo_concepts) && merged.logo_concepts.length > 0;
+  return !!(hasLogo && bundle.naming?.chosen_name);
+}
+
+/**
  * Objet compatible avec l’ancien usage `record` + `result_json` dans BrandPage.
  */
 export function buildLegacyRecordFromBundle(ideaId, bundle) {
