@@ -198,15 +198,10 @@ def patch_logo_result(
 # --- Brand kit ---
 
 
-def get_brand_kit(db: Session, idea_id: int, user_id: int) -> BrandKit:
+def get_brand_kit(db: Session, idea_id: int, user_id: int) -> BrandKit | None:
+    """Retourne la ligne brand kit ou None si l’idée existe mais aucun kit encore créé."""
     _require_idea_for_user(db, idea_id, user_id)
-    row = db.query(BrandKit).filter(BrandKit.idea_id == idea_id).first()
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun brand kit pour cette idée",
-        )
-    return row
+    return db.query(BrandKit).filter(BrandKit.idea_id == idea_id).first()
 
 
 def patch_brand_kit(

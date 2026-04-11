@@ -11,17 +11,13 @@ from langsmith import traceable
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.branding_config import (
+    LOGO_HF_IMAGE_MODEL,
     LOGO_IMAGE_PROVIDER,
-    LOGO_IMAGE_SIZE,
     LOGO_LLM_CONFIG,
-    LOGO_OPENROUTER_MODEL,
 )
 from llm.llm_factory import create_azure_openai_client
 from prompts.branding.logo_prompt import LOGO_IMAGE_PROMPT_SYSTEM, build_logo_user_message
-from tools.branding.logo_image_client import (
-    fetch_logo_image_openrouter_flux,
-    fetch_logo_image_pollinations,
-)
+from tools.branding.logo_image_client import fetch_logo_image_huggingface
 
 logger = logging.getLogger("brandai.logo_agent")
 
@@ -77,7 +73,7 @@ def _normalize_logo_result(data: dict[str, Any]) -> tuple[str, str]:
 
 
 class LogoAgent(BaseAgent):
-    """Rédige un prompt image via LLM puis génère l’image (OpenRouter FLUX / option Pollinations) ou skip si none."""
+    """Rédige un prompt image via LLM puis génère l’image via Hugging Face (Replicate) + Qwen Image, ou skip si LOGO_IMAGE_PROVIDER=none."""
 
     def __init__(self):
         super().__init__(
@@ -125,28 +121,15 @@ class LogoAgent(BaseAgent):
         image_prompt: str,
         negative_prompt: str,
     ) -> tuple[bytes | None, str | None]:
-        provider = (LOGO_IMAGE_PROVIDER or "openrouter_flux").strip().lower()
+        provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
         if provider == "none":
             return None, None
-        if provider in ("openrouter_flux", "openrouter", "flux"):
-            data, mime = await fetch_logo_image_openrouter_flux(
-                image_prompt,
-                negative_prompt,
-                model=LOGO_OPENROUTER_MODEL,
-            )
-            return data, mime
-        if provider == "pollinations":
-            full = image_prompt
-            if negative_prompt:
-                full = f"{image_prompt}. Avoid: {negative_prompt}"
-            data = await fetch_logo_image_pollinations(
-                full,
-                width=LOGO_IMAGE_SIZE,
-                height=LOGO_IMAGE_SIZE,
-            )
-            return data, "image/png"
-        logger.warning("LOGO_IMAGE_PROVIDER inconnu: %s — pas d’image générée", provider)
-        return None, None
+        data, mime = await fetch_logo_image_huggingface(
+            image_prompt,
+            negative_prompt,
+            model=LOGO_HF_IMAGE_MODEL,
+        )
+        return data, mime
 
     @traceable(name="logo_agent.run", tags=["branding", "logo_agent"])
     async def run(self, state: PipelineState) -> PipelineState:
@@ -184,7 +167,7 @@ class LogoAgent(BaseAgent):
             data = _extract_json_object(raw)
             image_prompt, negative_prompt = _normalize_logo_result(data)
             logger.info(
-                "[logo_agent] Prompt image généré (FLUX / modèle image) — image_prompt:\n%s",
+                "[logo_agent] Prompt image généré (LLM) — image_prompt:\n%s",
                 _trunc_log(image_prompt),
             )
             if negative_prompt:
@@ -204,22 +187,16 @@ class LogoAgent(BaseAgent):
 
         image_bytes: bytes | None = None
         mime: str | None = None
-        provider = (LOGO_IMAGE_PROVIDER or "openrouter_flux").strip().lower()
+        provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
         try:
             if provider == "none":
                 logger.info(
                     "[logo_agent] Étape 2/2 — Génération image désactivée (LOGO_IMAGE_PROVIDER=none)"
                 )
             else:
-                extra = ""
-                if provider in ("openrouter_flux", "openrouter", "flux"):
-                    extra = f", modèle={LOGO_OPENROUTER_MODEL}"
-                elif provider == "pollinations":
-                    extra = f", taille={LOGO_IMAGE_SIZE}px"
                 logger.info(
-                    "[logo_agent] Étape 2/2 — Génération image (%s%s)",
-                    provider,
-                    extra,
+                    "[logo_agent] Étape 2/2 — Hugging Face Replicate (modèle=%s)",
+                    LOGO_HF_IMAGE_MODEL,
                 )
             image_bytes, mime = await self._maybe_fetch_image(image_prompt, negative_prompt)
         except Exception as e:
@@ -251,7 +228,8 @@ class LogoAgent(BaseAgent):
             "title": "Generated mark",
             "image_prompt": image_prompt,
             "negative_prompt": negative_prompt,
-            "image_provider": (LOGO_IMAGE_PROVIDER or "openrouter_flux").lower(),
+            "image_provider": "huggingface",
+            "image_model": LOGO_HF_IMAGE_MODEL,
         }
         if b64 and mime:
             concept["image_base64"] = b64

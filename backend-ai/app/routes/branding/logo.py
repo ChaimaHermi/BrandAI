@@ -1,9 +1,10 @@
 """
-Génération logo : LLM (prompt image) puis Pollinations (phase test). FLUX peut remplacer le client image plus tard.
+Génération logo : LLM (prompt image) puis image via Hugging Face Inference (Replicate, ex. Qwen Image).
 """
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 from fastapi import APIRouter
@@ -11,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.services.branding_service import BrandingService
 
+logger = logging.getLogger("brandai.logo_route")
 router = APIRouter(tags=["Logo"])
 
 
@@ -52,6 +54,11 @@ class LogoGenerateResponse(BaseModel):
 
 @router.post("/logo/generate", response_model=LogoGenerateResponse)
 async def logo_generate(body: LogoGenerateRequest) -> LogoGenerateResponse:
+    logger.info(
+        "[logo/generate] idea_id=%s brand_name=%r",
+        body.idea_id,
+        (body.brand_name or "")[:80],
+    )
     data = await BrandingService.generate_logo(
         idea_id=body.idea_id,
         brand_name=body.brand_name,

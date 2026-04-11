@@ -1,6 +1,6 @@
 """Endpoints résultats branding par idée (nouvelles tables)."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -149,13 +149,17 @@ def update_logo(
     "/{idea_id}/brand-kit",
     response_model=BrandKitOut,
     summary="Brand kit assemblé pour une idée",
+    responses={204: {"description": "Idée OK mais aucun brand kit enregistré encore"}},
 )
 def read_brand_kit(
     idea_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return get_brand_kit(db, idea_id, current_user.id)
+    row = get_brand_kit(db, idea_id, current_user.id)
+    if row is None:
+        return Response(status_code=204)
+    return row
 
 
 @router.patch(

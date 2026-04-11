@@ -23,6 +23,7 @@ export async function fetchBrandingBundle(ideaId, token) {
   const getJson = async (path) => {
     const res = await fetch(`${brandingBase(ideaId)}/${path}`, { headers });
     if (res.status === 404) return null;
+    if (res.status === 204) return null;
     if (!res.ok) {
       console.warn(`[branding] GET ${path}`, res.status);
       return null;
@@ -184,9 +185,9 @@ export async function generateSlogans(ideaId, token, { brand_name, preferences }
 }
 
 /**
- * Génération de palettes (backend-ai) : nom + idée clarifiée + préférences.
+ * Génération de palettes (backend-ai) : idée clarifiée + nom de marque uniquement (3 options alignées sur le projet).
  */
-export async function generatePalettes(ideaId, token, { brand_name, preferences = {}, slogan_hint = "" }) {
+export async function generatePalettes(ideaId, token, { brand_name }) {
   if (!ideaId || !token || !brand_name) {
     throw new Error("ideaId, token et brand_name requis");
   }
@@ -196,8 +197,6 @@ export async function generatePalettes(ideaId, token, { brand_name, preferences 
     body: JSON.stringify({
       idea_id: ideaId,
       brand_name,
-      preferences,
-      slogan_hint: (slogan_hint || "").trim(),
       access_token: token,
       persist: true,
     }),
@@ -220,7 +219,8 @@ export async function generatePalettes(ideaId, token, { brand_name, preferences 
 }
 
 /**
- * Génération logo (backend-ai) : contexte idée + nom / slogan / palette → prompt LLM + image FLUX.
+ * Génération logo (backend-ai) : contexte idée + nom / slogan / palette → prompt LLM + image HF (Qwen).
+ * Timeout client : VITE_LOGO_GENERATE_TIMEOUT_MS (défaut 11 min).
  */
 export async function generateLogo(
   ideaId,
@@ -236,19 +236,35 @@ export async function generateLogo(
   if (!ideaId || !token) {
     throw new Error("ideaId et token requis");
   }
-  const res = await fetch(`${AI_URL}/logo/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      idea_id: ideaId,
-      brand_name,
-      slogan_hint,
-      palette_color_hint,
-      access_token: token,
-      persist,
-      persist_image_base64,
-    }),
-  });
+  const timeoutMs = Number(import.meta.env.VITE_LOGO_GENERATE_TIMEOUT_MS) || 660000;
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(`${AI_URL}/logo/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        idea_id: ideaId,
+        brand_name,
+        slogan_hint,
+        palette_color_hint,
+        access_token: token,
+        persist,
+        persist_image_base64,
+      }),
+    });
+  } catch (e) {
+    if (e?.name === "AbortError") {
+      throw new Error(
+        `Délai dépassé (${Math.round(timeoutMs / 1000)} s). Vérifiez que backend-ai tourne et que la génération HF n’est pas bloquée.`,
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(tid);
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const d = data?.detail;
