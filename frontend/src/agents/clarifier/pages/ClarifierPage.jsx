@@ -1,13 +1,14 @@
 import { useEffect, useRef } from "react";
 import { usePipeline } from "@/context/PipelineContext";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
+import { CLARITY_SCORE_MIN_PIPELINE } from "../constants";
 import XaiBlock from "../components/XaiBlock";
 import QuestionsBlock from "../components/QuestionsBlock";
 import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
-  const { idea, token, refetch: refetchIdea } = usePipeline();
+  const { idea, token, refetch: refetchIdea, onLaunchPipeline, pipelineEnabled, pipelineCompleted } = usePipeline();
   const xaiHideTimerRef = useRef(null);
   const {
     currentStep,
@@ -210,6 +211,81 @@ export default function ClarifierPage() {
       {currentStep === "clarified" && (
         <>
           <ClarifiedBlock data={clarifiedIdea} score={clarityScore} />
+
+          {/* ── Pipeline ready banner ──────────────────────────────────────── */}
+          <div
+            className={`animate-[slideUp_0.4s_ease_forwards] rounded-2xl border px-5 py-4 shadow-card ${
+              pipelineCompleted
+                ? "border-success/30 bg-success/5"
+                : pipelineEnabled
+                  ? "border-brand/30 bg-gradient-to-br from-brand-light to-brand-50"
+                  : "border-brand-border bg-white"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {/* Icon */}
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                  pipelineCompleted
+                    ? "bg-success"
+                    : pipelineEnabled
+                      ? "bg-gradient-to-br from-brand to-brand-dark shadow-pill"
+                      : "bg-brand-light"
+                }`}
+              >
+                {pipelineCompleted ? (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M2.5 8l3.5 3.5 7-7" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : pipelineEnabled ? (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8h10M10 5l3 3-3 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="#9B8FD4" strokeWidth="1.3" />
+                    <path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="#9B8FD4" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                )}
+              </div>
+
+              {/* Text */}
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm font-extrabold ${pipelineCompleted ? "text-success" : pipelineEnabled ? "text-brand-darker" : "text-ink-muted"}`}>
+                  {pipelineCompleted
+                    ? "Pipeline terminé"
+                    : pipelineEnabled
+                      ? "Idée prête pour l'analyse"
+                      : "Pipeline verrouillé"}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-subtle">
+                  {pipelineCompleted
+                    ? "Le pipeline de market analysis est déjà terminé"
+                    : pipelineEnabled
+                      ? "Le pipeline de market analysis est prêt à être lancé"
+                      : `Score insuffisant (${clarityScore}/100 — minimum ${CLARITY_SCORE_MIN_PIPELINE})`}
+                </p>
+              </div>
+
+              {/* CTA button */}
+              {!pipelineCompleted && (
+                <button
+                  onClick={onLaunchPipeline}
+                  disabled={!pipelineEnabled}
+                  className={`shrink-0 flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 ${
+                    pipelineEnabled
+                      ? "cursor-pointer bg-gradient-to-br from-brand to-brand-dark text-white shadow-btn hover:-translate-y-px hover:shadow-btn-hover"
+                      : "cursor-not-allowed border border-brand-border bg-brand-light text-brand-muted opacity-60"
+                  }`}
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Lancer pipeline d'analyse de marché
+                </button>
+              )}
+            </div>
+          </div>
         </>
       )}
 

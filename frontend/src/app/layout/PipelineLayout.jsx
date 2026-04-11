@@ -60,7 +60,7 @@ export default function PipelineLayout() {
   }
 
   return (
-    <PipelineContext.Provider value={{ idea, token, refetch }}>
+    <PipelineContext.Provider value={{ idea, token, refetch, onLaunchPipeline: handleLaunchPipeline, pipelineEnabled, pipelineCompleted }}>
       <div className="app-shell">
         <PipelineTopBar
           ideaTitle={ideaTitle}

@@ -9,15 +9,18 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from agents.base_agent import PipelineState
+from agents.marketing.marketing_agent import MarketingAgent
 from app.services.persistence.market_marketing_persistence_service import (
     persist_market_result,
     persist_marketing_result,
 )
-from workflows.pipeline_graph import build_graph
+from pipeline.market_graph import build_market_graph
 
 
 router = APIRouter(tags=["Pipeline"])
-pipeline_graph = build_graph()
+market_graph = build_market_graph()
+marketing_agent = MarketingAgent()
 
 
 def sse_event(event: str, data: dict) -> str:
@@ -33,6 +36,22 @@ class PipelineStreamRequest(BaseModel):
 
 _MIN_CLARITY_SCORE = 80
 
+# ── Market graph node sequence (matches LangGraph edge order) ─────────────────
+# (stage_id, loading_message, done_message)
+MARKET_NODE_SEQUENCE = [
+    ("keyword_extractor",       "Extraction des mots-clés…",    "Mots-clés extraits"),
+    ("market_sizing",           "Dimensionnement du marché…",   "Dimensionnement terminé"),
+    ("competitor",              "Analyse des concurrents…",     "Concurrents analysés"),
+    ("voc",                     "Voice of Customer…",           "VOC terminé"),
+    ("trends_risks",            "Tendances et risques…",        "Tendances et risques analysés"),
+    ("strategy_analysis_agent", "Stratégie SWOT / PESTEL…",    "Stratégie terminée"),
+    ("save_results",            "Finalisation du rapport…",     "Rapport de marché finalisé"),
+]
+
+_NODE_IDX  = {name: i   for i, (name, _, _) in enumerate(MARKET_NODE_SEQUENCE)}
+_NODE_LOAD = {name: msg for name, msg, _   in MARKET_NODE_SEQUENCE}
+_NODE_DONE = {name: msg for name, _, msg   in MARKET_NODE_SEQUENCE}
+
 
 async def _fetch_idea_context(idea_id: int, access_token: str) -> dict[str, Any]:
     base = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
@@ -44,38 +63,18 @@ async def _fetch_idea_context(idea_id: int, access_token: str) -> dict[str, Any]
         return resp.json()
 
 
-def _validation_done_payload(idea_row: dict[str, Any]) -> dict[str, Any] | None:
+def _validation_error(idea_row: dict[str, Any]) -> dict[str, Any] | None:
     clarity_status = (idea_row.get("clarity_status") or "").strip().lower()
-    clarity_score = int(idea_row.get("clarity_score") or 0)
+    clarity_score  = int(idea_row.get("clarity_score") or 0)
 
     if clarity_status == "refused":
-        return {
-            "success": False,
-            "reason": "clarifier_refused",
-            "message": "Idée refusée par le Clarifier.",
-        }
-
+        return {"success": False, "reason": "clarifier_refused",    "message": "Idée refusée par le Clarifier."}
     if clarity_status == "questions":
-        return {
-            "success": False,
-            "reason": "clarifier_questions",
-            "message": "Répondez aux questions du Clarifier avant de lancer le pipeline.",
-        }
-
+        return {"success": False, "reason": "clarifier_questions",  "message": "Répondez aux questions du Clarifier avant de lancer le pipeline."}
     if clarity_status != "clarified":
-        return {
-            "success": False,
-            "reason": "clarifier_not_ready",
-            "message": "L'idée n'est pas encore clarifiée.",
-        }
-
+        return {"success": False, "reason": "clarifier_not_ready",  "message": "L'idée n'est pas encore clarifiée."}
     if clarity_score < _MIN_CLARITY_SCORE:
-        return {
-            "success": False,
-            "reason": "clarity_score_too_low",
-            "message": f"Score de clarté insuffisant ({clarity_score}/{_MIN_CLARITY_SCORE}).",
-        }
-
+        return {"success": False, "reason": "clarity_score_too_low","message": f"Score de clarté insuffisant ({clarity_score}/{_MIN_CLARITY_SCORE})."}
     return None
 
 
@@ -84,107 +83,131 @@ async def _stream_pipeline(body: PipelineStreamRequest):
     t0 = time.time()
 
     try:
-        yield sse_event("step", {"status": "loading", "stage": "build_state", "message": "Préparation du pipeline..."})
-        yield sse_event(
-            "step",
-            {
-                "status": "loading",
-                "stage": "fetch_idea_context",
-                "message": "Chargement de l'idée depuis la base...",
-            },
-        )
+        # ── 1. Initialisation ─────────────────────────────────────────────
+        yield sse_event("step", {
+            "status": "loading",
+            "stage":  "build_state",
+            "message": "Préparation du pipeline…",
+        })
+
+        # ── 2. Chargement + validation de l'idée ─────────────────────────
+        yield sse_event("step", {
+            "status": "loading",
+            "stage":  "fetch_idea_context",
+            "message": "Chargement de l'idée depuis la base…",
+        })
         idea_row = await _fetch_idea_context(body.idea_id, body.access_token)
 
-        invalid = _validation_done_payload(idea_row)
-        if invalid is not None:
-            yield sse_event(
-                "done",
-                {
-                    "idea_id": body.idea_id,
-                    **invalid,
-                },
-            )
+        error_payload = _validation_error(idea_row)
+        if error_payload is not None:
+            yield sse_event("done", {"idea_id": body.idea_id, **error_payload})
             return
 
         clarified_idea = {
-            "short_pitch": idea_row.get("clarity_short_pitch") or idea_row.get("name") or "",
-            "solution_description": (
-                idea_row.get("clarity_solution") or idea_row.get("description") or ""
-            ),
-            "target_users": (
-                idea_row.get("clarity_target_users") or idea_row.get("target_audience") or ""
-            ),
-            "problem": idea_row.get("clarity_problem") or idea_row.get("description") or "",
-            "sector": idea_row.get("clarity_sector") or idea_row.get("sector") or "",
-            "country": (idea_row.get("clarity_country") or "").strip() or "Non précisé",
-            "country_code": idea_row.get("clarity_country_code") or "TN",
-            "language": idea_row.get("clarity_language") or "fr",
+            "short_pitch":          idea_row.get("clarity_short_pitch") or idea_row.get("name") or "",
+            "solution_description": idea_row.get("clarity_solution")    or idea_row.get("description") or "",
+            "target_users":         idea_row.get("clarity_target_users")or idea_row.get("target_audience") or "",
+            "problem":              idea_row.get("clarity_problem")     or idea_row.get("description") or "",
+            "sector":               idea_row.get("clarity_sector")      or idea_row.get("sector") or "",
+            "country":              (idea_row.get("clarity_country") or "").strip() or "Non précisé",
+            "country_code":         idea_row.get("clarity_country_code") or "TN",
+            "language":             idea_row.get("clarity_language") or "fr",
         }
-        yield sse_event(
-            "step",
-            {
-                "status": "success",
-                "stage": "clarifier",
-                "message": "Clarifier validé en base — passage à Market Analysis",
-            },
-        )
 
-        graph_input = {
-            "idea_id": body.idea_id,
-            "name": idea_row.get("name") or clarified_idea["short_pitch"] or "",
-            "sector": idea_row.get("sector") or clarified_idea["sector"] or "",
-            "description": idea_row.get("description") or clarified_idea["solution_description"] or "",
-            "target_audience": idea_row.get("target_audience") or clarified_idea["target_users"] or "",
-            "clarified_idea": clarified_idea,
+        yield sse_event("step", {
+            "status": "done",
+            "stage":  "fetch_idea_context",
+            "message": "Clarifier validé — démarrage de l'analyse de marché",
+        })
+
+        # ── 3. Analyse de marché — streaming nœud par nœud ───────────────
+        first_name, first_msg, _ = MARKET_NODE_SEQUENCE[0]
+        yield sse_event("step", {
+            "status": "loading",
+            "stage":  first_name,
+            "message": first_msg,
+        })
+
+        market_input = {
+            "idea_id":         body.idea_id,
+            "clarified_idea":  clarified_idea,
             "market_analysis": {},
-            "brand_identity": {},
-            "marketing_plan": {},
-            "status": "running",
-            "errors": [],
         }
 
-        yield sse_event("step", {
-            "status": "loading",
-            "stage": "run_pipeline_graph",
-            "message": "Orchestration LangGraph en cours...",
-        })
-        yield sse_event("step", {
-            "status": "loading",
-            "stage": "run_market_analysis",
-            "message": "Analyse de marché en cours...",
-        })
-        graph_result = await pipeline_graph.ainvoke(graph_input)
-        status = graph_result.get("status", "error")
-        errors = graph_result.get("errors", []) or []
-        market_analysis = graph_result.get("market_analysis") or {}
-        marketing_plan = graph_result.get("marketing_plan") or {}
+        market_analysis: dict = {}
+
+        async for chunk in market_graph.astream(market_input, stream_mode="updates"):
+            for node_name, node_output in chunk.items():
+                if node_name not in _NODE_IDX:
+                    continue
+
+                idx = _NODE_IDX[node_name]
+
+                # Nœud terminé → done
+                yield sse_event("step", {
+                    "status": "done",
+                    "stage":  node_name,
+                    "message": _NODE_DONE[node_name],
+                })
+
+                # Prochain nœud → loading (sauf après save_results)
+                if idx + 1 < len(MARKET_NODE_SEQUENCE):
+                    next_name, next_msg, _ = MARKET_NODE_SEQUENCE[idx + 1]
+                    yield sse_event("step", {
+                        "status": "loading",
+                        "stage":  next_name,
+                        "message": next_msg,
+                    })
+
+                if isinstance(node_output, dict) and "market_analysis" in node_output:
+                    market_analysis = node_output["market_analysis"]
 
         if not market_analysis:
-            # Clarifier may have stopped with questions/refused.
-            if status in {"questions", "refused"}:
-                yield sse_event(
-                    "done",
-                    {
-                        "success": True,
-                        "stopped_at": "clarifier",
-                        "status": status,
-                        "errors": errors,
-                    },
-                )
-                return
+            raise RuntimeError("Le graph market n'a produit aucun résultat.")
 
-            # Surface the actual graph outcome for easier debugging in frontend SSE.
-            detail = {
-                "status": status,
-                "errors": errors,
-                "has_marketing_plan": bool(marketing_plan),
-            }
-            raise RuntimeError(
-                "Pipeline sans market_analysis. "
-                f"Détails graph: {json.dumps(detail, ensure_ascii=False)}"
-            )
+        # ── 4. Plan marketing ─────────────────────────────────────────────
+        yield sse_event("step", {
+            "status": "loading",
+            "stage":  "marketing_plan",
+            "message": "Génération du plan marketing…",
+        })
 
-        yield sse_event("step", {"status": "loading", "stage": "persist_result", "message": "Sauvegarde du résultat..."})
+        ps = PipelineState(
+            idea_id=body.idea_id,
+            name=idea_row.get("name") or clarified_idea["short_pitch"],
+            sector=idea_row.get("sector") or clarified_idea["sector"],
+            description=idea_row.get("description") or clarified_idea["solution_description"],
+            target_audience=idea_row.get("target_audience") or clarified_idea["target_users"],
+        )
+        ps.clarified_idea  = clarified_idea
+        ps.market_analysis = market_analysis
+
+        marketing_plan: dict = {}
+        try:
+            marketing_plan = await marketing_agent.run(ps) or {}
+        except Exception as e:
+            # Marketing is non-blocking — log but don't fail the pipeline
+            marketing_plan = {}
+            yield sse_event("step", {
+                "status": "error",
+                "stage":  "marketing_plan",
+                "message": f"Plan marketing non généré : {e}",
+            })
+
+        if marketing_plan:
+            yield sse_event("step", {
+                "status": "done",
+                "stage":  "marketing_plan",
+                "message": "Plan marketing généré",
+            })
+
+        # ── 5. Sauvegarde ─────────────────────────────────────────────────
+        yield sse_event("step", {
+            "status": "loading",
+            "stage":  "persist_result",
+            "message": "Sauvegarde des résultats en base…",
+        })
+
         completed_at = datetime.now(timezone.utc)
         persisted = await persist_market_result(
             idea_id=body.idea_id,
@@ -196,32 +219,32 @@ async def _stream_pipeline(body: PipelineStreamRequest):
 
         persisted_marketing = None
         if marketing_plan:
-            yield sse_event("step", {
-                "status": "loading",
-                "stage": "persist_marketing_result",
-                "message": "Sauvegarde du plan marketing...",
-            })
             persisted_marketing = await persist_marketing_result(
                 idea_id=body.idea_id,
                 result_json=marketing_plan,
                 access_token=body.access_token,
             )
 
+        yield sse_event("step", {
+            "status": "done",
+            "stage":  "persist_result",
+            "message": "Résultats sauvegardés avec succès",
+        })
+
         elapsed_ms = int((time.time() - t0) * 1000)
         yield sse_event("done", {
-            "success": True,
-            "idea_id": body.idea_id,
-            "status": status,
-            "persisted_id": persisted.get("id"),
-            "persisted_marketing_id": (
-                persisted_marketing.get("id") if persisted_marketing else None
-            ),
-            "elapsed_ms": elapsed_ms,
+            "success":                True,
+            "idea_id":                body.idea_id,
+            "status":                 "done",
+            "persisted_id":           persisted.get("id"),
+            "persisted_marketing_id": persisted_marketing.get("id") if persisted_marketing else None,
+            "elapsed_ms":             elapsed_ms,
         })
+
     except Exception as e:
         elapsed_ms = int((time.time() - t0) * 1000)
         yield sse_event("error", {"success": False, "message": str(e), "elapsed_ms": elapsed_ms})
-        yield sse_event("done", {"success": False})
+        yield sse_event("done",  {"success": False})
 
 
 @router.post("/pipeline/stream")
@@ -231,4 +254,3 @@ async def pipeline_stream(body: PipelineStreamRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
-
