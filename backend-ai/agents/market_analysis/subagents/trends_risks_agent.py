@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from agents.base_agent import BaseAgent
 from prompts.market_analysis.prompt_trends_risks import PROMPT_TRENDS_RISKS
 from tools.market_analysis.tavily_tool import tavily_search
@@ -38,6 +40,31 @@ CONTENT: {content}
 
         context = "\n\n".join(texts)
         return context  # pas de limite — NVIDIA 128K context window
+
+    def _extract_sources(self, results, max_items=12):
+        """Deduplicated Tavily URLs for UI (same shape as market_sizing: url + domain)."""
+        out = []
+        seen = set()
+        for r in results:
+            raw = (r.get("url") or r.get("link") or "").strip()
+            if not raw or raw in seen:
+                continue
+            seen.add(raw)
+            domain = ""
+            try:
+                domain = urlparse(raw).netloc or ""
+            except Exception:
+                domain = ""
+            out.append({"url": raw, "domain": domain})
+            if len(out) >= max_items:
+                break
+        return out
+
+    def _attach_sources(self, data, all_results):
+        if not isinstance(data, dict):
+            return data
+        data["sources"] = self._extract_sources(all_results)
+        return data
 
     # ─────────────────────────
     # RUN
@@ -91,6 +118,8 @@ CONTENT: {content}
                 "error": "Invalid JSON",
                 "data": {}
             }
+
+        data = self._attach_sources(data, all_results)
 
         return {
             "agent": "trends_risks",

@@ -1,5 +1,5 @@
 import {
-  FiBarChart2, FiUsers, FiCpu, FiShield, FiStar, FiAlertTriangle,
+  FiBarChart2, FiUsers, FiCpu, FiShield, FiStar, FiAlertTriangle, FiExternalLink,
 } from "react-icons/fi";
 
 function isNonEmptyArray(v) {
@@ -54,6 +54,7 @@ export default function MarketTrendsRisks({ trends }) {
   const regulatoryTrends   = trends?.regulatory_trends;
   const emergingOpportunities = trends?.emerging_opportunities;
   const marketRisks        = trends?.market_risks;
+  const sources            = Array.isArray(trends?.sources) ? trends.sources : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -114,6 +115,37 @@ export default function MarketTrendsRisks({ trends }) {
           <EmptySlot />
         )}
       </div>
+
+      {/* ── Sources (Tavily) ─────────────────────────────────────────────── */}
+      {sources.length > 0 && (
+        <div className="rounded-xl border border-brand-border bg-white p-4 shadow-card">
+          <p className="mb-3 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
+            Sources tendances & risques
+          </p>
+          <div className="grid grid-cols-1 gap-2">
+            {sources.map((src, idx) => {
+              const url = typeof src?.url === "string" ? src.url : "";
+              const domain = typeof src?.domain === "string" ? src.domain : "";
+              if (!url) return null;
+              return (
+                <a
+                  key={`${url}-${idx}`}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-lg border border-brand-border px-3 py-2 text-sm transition-colors hover:bg-brand-light"
+                >
+                  <span className="flex items-center gap-2 font-medium text-ink-muted">
+                    <FiExternalLink size={12} className="text-brand-muted" />
+                    {domain || "source"}
+                  </span>
+                  <span className="ml-4 truncate text-brand">{url}</span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
