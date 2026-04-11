@@ -16,6 +16,8 @@ export default function FinalBrandPreview({
   paletteOptions,
   selectedPaletteId,
   logoPreviewUrl,
+  /** Court texte issu du naming (description / rationale du nom choisi) */
+  nameWhyText = "",
 }) {
   let palette = null;
   if (selectedPaletteId && String(selectedPaletteId).startsWith("p-")) {
@@ -108,6 +110,14 @@ export default function FinalBrandPreview({
                 <p className="text-xs text-brand-muted">Aucun logo généré pour l&apos;instant</p>
               </div>
             )}
+            {(nameWhyText || "").trim() ? (
+              <div className="mt-3 rounded-xl border border-brand-border/80 bg-brand-light/60 px-3 py-2.5">
+                <p className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
+                  Pourquoi ce nom ?
+                </p>
+                <p className="mt-1.5 text-xs leading-relaxed text-ink-muted">{nameWhyText.trim()}</p>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

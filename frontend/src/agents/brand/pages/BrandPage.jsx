@@ -264,6 +264,18 @@ export default function BrandPage() {
     [chosenBrandName, names, idea?.name],
   );
 
+  /** Texte « pourquoi ce nom » : aligné sur l’option naming choisie (description / rationale). */
+  const selectedNameWhyText = useMemo(() => {
+    const target = (displayBrandName || "").trim().toLowerCase();
+    if (!target || !names.length) return "";
+    const opt = names.find(
+      (o) =>
+        typeof o?.name === "string" && o.name.trim().toLowerCase() === target,
+    );
+    const raw = (opt?.rationale || opt?.description || "").trim();
+    return raw;
+  }, [names, displayBrandName]);
+
   useEffect(() => {
     if (paletteListDisplayed.length === 0) return;
     setSelectedPaletteId((prev) => (prev == null ? "p-0" : prev));
@@ -387,16 +399,12 @@ export default function BrandPage() {
 
   const handleGeneratePalettes = useCallback(async (opts = {}) => {
     if (!idea?.id || !token) return { ok: false };
-    const userRemarks =
-      typeof opts.userRemarks === "string" ? opts.userRemarks.trim() : "";
     const fromRegeneratePopup = Boolean(opts.fromRegeneratePopup);
     setIsGeneratingPalettes(true);
     setPaletteGenMessage("");
     try {
       const result = await generatePalettes(idea.id, token, {
         brand_name: displayBrandName,
-        preferences: { user_remarks: userRemarks },
-        slogan_hint: selectedSlogan || "",
       });
       const rawOpts = result.palette_options || [];
       setGeneratedPaletteOptions(Array.isArray(rawOpts) ? rawOpts : []);
@@ -433,7 +441,7 @@ export default function BrandPage() {
     } finally {
       setIsGeneratingPalettes(false);
     }
-  }, [idea?.id, token, displayBrandName, selectedSlogan, refetchBrandRecord]);
+  }, [idea?.id, token, displayBrandName, refetchBrandRecord]);
 
   const handleGenerateLogo = useCallback(async () => {
     if (!idea?.id || !token) return { ok: false };
@@ -671,6 +679,7 @@ export default function BrandPage() {
             paletteOptions={paletteListDisplayed}
             selectedPaletteId={selectedPaletteId}
             logoPreviewUrl={logoPreviewUrl}
+            nameWhyText={selectedNameWhyText}
           />
         )}
       </div>

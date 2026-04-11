@@ -43,12 +43,11 @@ export default function PaletteStep({
       setRegenOpen(true);
       return;
     }
-    onGeneratePalettes?.({ userRemarks: "", fromRegeneratePopup: false });
+    onGeneratePalettes?.({ fromRegeneratePopup: false });
   }
 
   async function confirmRegen() {
     const res = await onGeneratePalettes?.({
-      userRemarks: (draftRemarks || "").trim(),
       fromRegeneratePopup: true,
     });
     if (res && res.ok) {
@@ -62,7 +61,7 @@ export default function PaletteStep({
       <SectionHeader
         step={4}
         title="Palette de couleurs"
-        sub="Trois propositions générées à partir de votre projet et de votre nom de marque — choisissez un kit cohérent."
+        sub="Trois propositions générées uniquement à partir de votre idée clarifiée (secteur, cible, offre) et de votre nom de marque — choisissez un kit."
       />
 
       {brandNameLabel ? (
@@ -165,8 +164,8 @@ export default function PaletteStep({
       <RegenerateDialog
         open={regenOpen}
         title="Régénérer les palettes"
-        description="Indiquez des contraintes (ambiance, teintes à éviter…). Laissez vide pour une nouvelle salve."
-        placeholder="Ex. : plus chaud, éviter le rose, style premium sombre…"
+        description="Une nouvelle salve de trois palettes sera produite à partir de votre projet et de votre marque."
+        placeholder=""
         draft={draftRemarks}
         onDraftChange={setDraftRemarks}
         confirmLabel="Générer"

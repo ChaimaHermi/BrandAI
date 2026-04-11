@@ -73,7 +73,7 @@ def _normalize_palette_options(raw: list) -> list[dict[str, Any]]:
 
 
 class PaletteAgent(BaseAgent):
-    """Génère 3 palettes de couleurs à partir de l’idée clarifiée et du nom de marque."""
+    """Génère des palettes de couleurs à partir de l’idée clarifiée et du nom de marque (sans préférences utilisateur)."""
 
     def __init__(self):
         super().__init__(
@@ -133,19 +133,11 @@ class PaletteAgent(BaseAgent):
             return state
 
         idea = state.clarified_idea or {}
-        prefs = getattr(state, "palette_preferences", None) or {}
-        slogan_hint = str(getattr(state, "palette_slogan_hint", "") or "").strip()
-        if not slogan_hint:
-            slogans = (state.brand_identity or {}).get("slogan_options") or []
-            if isinstance(slogans, list) and slogans and isinstance(slogans[0], dict):
-                slogan_hint = str(slogans[0].get("text") or "").strip()
 
         try:
             user_prompt = build_palette_user_prompt(
                 idea,
                 brand_name,
-                prefs,
-                slogan_hint=slogan_hint,
                 target=PALETTE_TARGET_COUNT,
             )
             raw = await self._invoke_palette_llm(PALETTE_SYSTEM_PROMPT, user_prompt)
@@ -171,6 +163,13 @@ class PaletteAgent(BaseAgent):
             self._log_error(msg)
             return state
 
+        # Toujours exactement PALETTE_TARGET_COUNT (3) palettes côté produit
+        if len(options) > PALETTE_TARGET_COUNT:
+            logger.warning(
+                "[palette_agent] %d palettes reçues — tronqué à %d",
+                len(options),
+                PALETTE_TARGET_COUNT,
+            )
         options = options[:PALETTE_TARGET_COUNT]
         state.brand_identity["palette_options"] = options
         first = options[0]

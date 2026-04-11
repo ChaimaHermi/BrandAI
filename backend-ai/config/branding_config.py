@@ -28,7 +28,7 @@ NAME_EXISTS_MEMORY_MAX = 20
 # SloganAgent : nombre de slogans à proposer
 SLOGAN_TARGET_COUNT = 5
 
-# PaletteAgent : nombre de palettes de couleurs complètes à proposer
+# PaletteAgent : toujours exactement 3 palettes (produit + validation stricte)
 PALETTE_TARGET_COUNT = 3
 
 # LogoAgent : LLM pour rédiger le prompt image (Azure recommandé, ex. gpt-4.1 via déploiement dédié)
@@ -37,8 +37,7 @@ LOGO_LLM_CONFIG = {
     "temperature": 0.4,
     "max_tokens": 900,
 }
-# openrouter_flux (FLUX via OpenRouter, défaut) | pollinations | none
-LOGO_IMAGE_PROVIDER = "openrouter_flux"
-LOGO_IMAGE_SIZE = 512
-# Modèle image OpenRouter (ex. black-forest-labs/flux.2-pro). Surcharge : env LOGO_OPENROUTER_MODEL
-LOGO_OPENROUTER_MODEL = "black-forest-labs/flux.2-pro"
+# none = pas de génération d’image ; sinon Hugging Face Inference (Replicate) + Qwen Image
+LOGO_IMAGE_PROVIDER = "huggingface"
+# Modèle Hub pour text_to_image. Surcharge : env LOGO_HF_IMAGE_MODEL
+LOGO_HF_IMAGE_MODEL = "Qwen/Qwen-Image"

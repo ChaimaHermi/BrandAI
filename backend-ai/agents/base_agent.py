@@ -53,7 +53,6 @@ class PipelineState:
         # Branding (optionnel, renseigné par les routes / orchestrateur)
         self.brand_name_chosen = ""
         self.slogan_preferences: dict = {}
-        self.palette_preferences: dict = {}
         self.palette_slogan_hint = ""
         self.logo_palette_hint: str = ""
 

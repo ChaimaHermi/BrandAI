@@ -298,22 +298,15 @@ class BrandingService:
         *,
         idea_id: int,
         brand_name: str | None,
-        palette_preferences: dict[str, Any],
-        slogan_hint: str | None,
         access_token: str,
         persist: bool,
     ) -> dict[str, Any]:
         resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
-        resolved_slogan_hint = await cls.resolve_slogan_hint(
-            idea_id, access_token, slogan_hint
-        )
         row = await cls.fetch_idea_row(idea_id, access_token.strip())
         clarified = cls.idea_api_to_clarified(row)
         st = cls._base_state(idea_id, row, clarified)
         st.clarified_idea = clarified
         st.brand_name_chosen = resolved_name
-        st.palette_preferences = palette_preferences
-        st.palette_slogan_hint = resolved_slogan_hint
 
         agent = PaletteAgent()
         st = await agent.run(st)
@@ -331,7 +324,6 @@ class BrandingService:
             "errors": list(st.errors or []),
             "persisted": False,
             "resolved_brand_name": resolved_name,
-            "resolved_slogan_hint": resolved_slogan_hint,
         }
 
         if (
@@ -383,7 +375,7 @@ class BrandingService:
         persist: bool,
         persist_image_base64: bool = False,
     ) -> dict[str, Any]:
-        """LLM → prompt image → OpenRouter FLUX (ou none). Retourne image_base64 si généré."""
+        """LLM → prompt image → Hugging Face Replicate / Qwen Image (ou none). Retourne image_base64 si généré."""
         resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
         resolved_slogan = await cls.resolve_slogan_hint(idea_id, access_token, slogan_hint)
         palette_hint = await cls.resolve_palette_hint_for_logo(
@@ -398,7 +390,17 @@ class BrandingService:
         st.logo_palette_hint = palette_hint
 
         agent = LogoAgent()
+        logger.info(
+            "[branding_service] generate_logo — agent.run start idea_id=%s name=%r",
+            idea_id,
+            (resolved_name or "")[:100],
+        )
         st = await agent.run(st)
+        logger.info(
+            "[branding_service] generate_logo — agent.run done idea_id=%s status=%s",
+            idea_id,
+            st.status,
+        )
         bi = st.brand_identity or {}
         concepts = bi.get("logo_concepts") or []
 

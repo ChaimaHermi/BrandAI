@@ -38,10 +38,25 @@ GROQ_KEYS = clean([
     os.getenv("GROQ_API_KEY_3"),
 ])
 
+# Hugging Face (logo image : InferenceClient + Replicate) — HF_TOKEN_1 / HF_TOKEN_2 prioritaires
+_seen_hf: set[str] = set()
+HF_KEYS: list[str] = []
+for _k in (
+    os.getenv("HF_TOKEN_1"),
+    os.getenv("HF_TOKEN_2"),
+    os.getenv("HF_TOKEN"),
+    os.getenv("HUGGINGFACE_HUB_TOKEN"),
+    os.getenv("HUGGINGFACE_API_KEY"),
+    os.getenv("HUGGINGFACE_API_KEY_2"),
+):
+    if _k and _k.strip() and _k.strip() not in _seen_hf:
+        _seen_hf.add(_k.strip())
+        HF_KEYS.append(_k.strip())
+
 # ─────────────────────────────────────────────
 # VALIDATION
 # ─────────────────────────────────────────────
-if not (OPENROUTER_KEYS or GEMINI_KEYS or GROQ_KEYS):
+if not (OPENROUTER_KEYS or GEMINI_KEYS or GROQ_KEYS or HF_KEYS):
     raise ValueError("Aucune API key trouvée dans .env")
 
 # ─────────────────────────────────────────────
@@ -74,5 +89,5 @@ else:
 print(
     f"[settings] Loaded .env from: {ENV_PATH}\n"
     f"[settings] Keys -> OpenRouter={len(OPENROUTER_KEYS)} | "
-    f"Gemini={len(GEMINI_KEYS)} | Groq={len(GROQ_KEYS)}"
+    f"Gemini={len(GEMINI_KEYS)} | Groq={len(GROQ_KEYS)} | HF={len(HF_KEYS)}"
 )
