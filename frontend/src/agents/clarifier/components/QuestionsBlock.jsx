@@ -34,7 +34,7 @@ export default function QuestionsBlock({
   );
 
   return (
-    <div className="overflow-hidden rounded-[14px] border border-[#AFA9EC] bg-white shadow-[0_2px_12px_rgba(124,58,237,0.08)] animate-[slideUp_0.35s_ease]">
+    <div className="flex flex-col overflow-hidden rounded-[14px] border border-[#AFA9EC] bg-white shadow-[0_2px_12px_rgba(124,58,237,0.08)] animate-[slideUp_0.35s_ease]">
       <div className="flex items-center gap-2 border-b border-[#AFA9EC] bg-gradient-to-br from-[#EEEDFE] to-[#f3f0ff] px-[14px] py-2">
         <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-[10px] font-bold text-white shadow-[0_2px_6px_rgba(124,58,237,0.3)]">
           ?
@@ -44,7 +44,8 @@ export default function QuestionsBlock({
         </span>
       </div>
 
-      <div className="flex flex-col gap-3 p-[14px]">
+      {/* Scrollable questions area */}
+      <div className="flex flex-col gap-3 overflow-y-auto p-[14px]">
         {agentMessage && (
           <p className="m-0 text-[13px] leading-[1.6] text-[color:var(--color-text-primary)]">
             {agentMessage}
@@ -54,7 +55,6 @@ export default function QuestionsBlock({
         {hasQuestions &&
           questions.map((question, i) => {
           const axis = getAxis(question, i) || `q${i}`;
-          const key = axis;
           const text = getText(question);
           if (!text) return null;
           const isGeo = axis === "geography";
@@ -83,12 +83,15 @@ export default function QuestionsBlock({
             </div>
           );
         })}
+      </div>
 
-        {hasQuestions && (
+      {/* Button pinned at the bottom — always visible */}
+      {hasQuestions && (
+        <div className="border-t border-[#AFA9EC] bg-white px-[14px] py-3">
           <button
             onClick={onSubmit}
             disabled={!isValid || isLoading}
-            className={`self-end rounded-[var(--border-radius-md)] border-0 px-5 py-[9px] text-[13px] font-medium transition-all ${
+            className={`w-full rounded-[var(--border-radius-md)] border-0 px-5 py-[10px] text-[13px] font-medium transition-all ${
               isValid && !isLoading
                 ? "cursor-pointer bg-[#7F77DD] text-white"
                 : "cursor-not-allowed bg-[color:var(--color-background-secondary)] text-[color:var(--color-text-secondary)]"
@@ -96,8 +99,8 @@ export default function QuestionsBlock({
           >
             {isLoading ? "Analyse en cours..." : "Envoyer mes réponses →"}
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -86,29 +86,42 @@ export default function MarketApercu({ market }) {
 
       {/* ── Market signals ───────────────────────────────────────────────── */}
       {marketSignals.length > 0 && (
-        <div className="rounded-xl border border-brand-border bg-white p-4 shadow-card">
+        <div>
           <p className="mb-3 flex items-center gap-2 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
             <FiZap size={12} />
             Signaux marché
           </p>
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {marketSignals.map((signal, idx) => {
               const hasSource = typeof signal?.source === "string" && signal.source.trim();
+              const label = (signal.metric || "")
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (c) => c.toUpperCase());
               return (
                 <div
                   key={idx}
-                  className="flex flex-col gap-1 rounded-lg border border-brand-border bg-brand-light/40 px-4 py-3"
+                  className="flex flex-col gap-3 rounded-xl border border-brand-border bg-white p-4 shadow-card transition-shadow hover:shadow-card-md"
                 >
+                  {/* Icon + label */}
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                      <FiZap size={15} />
+                    </span>
+                    <span className="border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand line-clamp-2">
+                      {label}
+                    </span>
+                  </div>
+
                   {/* Value + unit + year */}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-ink">
-                      {signal.value}
+                  <div className="flex flex-wrap items-baseline gap-1">
+                    <span className="text-2xl font-bold text-ink">
+                      {signal.value ?? "N/D"}
                     </span>
                     {signal.unit && (
-                      <span className="text-sm font-medium text-ink-muted">{signal.unit}</span>
+                      <span className="text-sm font-normal text-ink-muted">{signal.unit}</span>
                     )}
                     {signal.year && (
-                      <span className="ml-auto rounded-full bg-brand-muted/20 px-2 py-0.5 text-2xs font-semibold text-brand">
+                      <span className="ml-1 rounded-full bg-violet-50 px-2 py-0.5 text-2xs font-semibold text-violet-600">
                         {signal.year}
                       </span>
                     )}
@@ -116,7 +129,9 @@ export default function MarketApercu({ market }) {
 
                   {/* Description */}
                   {signal.description && (
-                    <p className="text-sm leading-relaxed text-ink-muted">{signal.description}</p>
+                    <p className="text-xs leading-relaxed text-ink-muted line-clamp-3">
+                      {signal.description}
+                    </p>
                   )}
 
                   {/* Source */}
@@ -125,7 +140,7 @@ export default function MarketApercu({ market }) {
                       href={signal.source}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-1 inline-flex items-center gap-1 text-2xs text-brand hover:underline"
+                      className="mt-auto inline-flex items-center gap-1 text-2xs text-brand hover:underline"
                     >
                       <FiExternalLink size={10} />
                       Source
