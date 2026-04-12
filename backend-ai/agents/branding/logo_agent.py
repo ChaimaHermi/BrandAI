@@ -14,10 +14,12 @@ from config.branding_config import (
     LOGO_HF_IMAGE_MODEL,
     LOGO_IMAGE_PROVIDER,
     LOGO_LLM_CONFIG,
+    LOGO_POLLINATIONS_FALLBACK,
+    LOGO_POLLINATIONS_IMAGE_MODEL,
 )
 from llm.llm_factory import create_azure_openai_client
 from prompts.branding.logo_prompt import LOGO_IMAGE_PROMPT_SYSTEM, build_logo_user_message
-from tools.branding.logo_image_client import fetch_logo_image_huggingface
+from tools.branding.logo_image_client import fetch_logo_image_hf_with_pollinations_fallback
 
 logger = logging.getLogger("brandai.logo_agent")
 
@@ -73,7 +75,7 @@ def _normalize_logo_result(data: dict[str, Any]) -> tuple[str, str]:
 
 
 class LogoAgent(BaseAgent):
-    """Rédige un prompt image via LLM puis génère l’image via Hugging Face (Replicate) + Qwen Image, ou skip si LOGO_IMAGE_PROVIDER=none."""
+    """Rédige un prompt image via LLM puis génère l’image (HF Replicate + Qwen, fallback Pollinations.AI si configuré), ou skip si LOGO_IMAGE_PROVIDER=none."""
 
     def __init__(self):
         super().__init__(
@@ -120,16 +122,21 @@ class LogoAgent(BaseAgent):
     async def _maybe_fetch_image(
         image_prompt: str,
         negative_prompt: str,
-    ) -> tuple[bytes | None, str | None]:
+    ) -> tuple[bytes | None, str | None, str | None]:
+        """
+        Retourne (octets, mime, source) avec source \"huggingface\" | \"pollinations\" si succès ;
+        (None, None, None) si génération désactivée.
+        """
         provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
         if provider == "none":
-            return None, None
-        data, mime = await fetch_logo_image_huggingface(
+            return None, None, None
+        data, mime, src = await fetch_logo_image_hf_with_pollinations_fallback(
             image_prompt,
             negative_prompt,
             model=LOGO_HF_IMAGE_MODEL,
+            pollinations_fallback=LOGO_POLLINATIONS_FALLBACK,
         )
-        return data, mime
+        return data, mime, src
 
     @traceable(name="logo_agent.run", tags=["branding", "logo_agent"])
     async def run(self, state: PipelineState) -> PipelineState:
@@ -187,6 +194,7 @@ class LogoAgent(BaseAgent):
 
         image_bytes: bytes | None = None
         mime: str | None = None
+        image_source: str | None = None
         provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
         try:
             if provider == "none":
@@ -195,10 +203,14 @@ class LogoAgent(BaseAgent):
                 )
             else:
                 logger.info(
-                    "[logo_agent] Étape 2/2 — Hugging Face Replicate (modèle=%s)",
+                    "[logo_agent] Étape 2/2 — HF Replicate (modèle=%s), fallback Pollinations=%s",
                     LOGO_HF_IMAGE_MODEL,
+                    LOGO_POLLINATIONS_FALLBACK,
                 )
-            image_bytes, mime = await self._maybe_fetch_image(image_prompt, negative_prompt)
+            image_bytes, mime, image_source = await self._maybe_fetch_image(
+                image_prompt,
+                negative_prompt,
+            )
         except Exception as e:
             logger.error("logo image fetch failed: %s", e)
             state.brand_identity["logo_image_error"] = str(e)
@@ -211,7 +223,8 @@ class LogoAgent(BaseAgent):
         if image_bytes:
             b64 = base64.standard_b64encode(image_bytes).decode("ascii")
             logger.info(
-                "[logo_agent] Image générée OK — %s, %d octets (base64 non loggé)",
+                "[logo_agent] Image générée OK — source=%s, %s, %d octets (base64 non loggé)",
+                image_source or "?",
                 mime or "image",
                 len(image_bytes),
             )
@@ -224,7 +237,7 @@ class LogoAgent(BaseAgent):
                     provider,
                 )
 
-        concept = {
+        concept: dict[str, Any] = {
             "title": "Generated mark",
             "image_prompt": image_prompt,
             "negative_prompt": negative_prompt,
@@ -234,6 +247,29 @@ class LogoAgent(BaseAgent):
         if b64 and mime:
             concept["image_base64"] = b64
             concept["image_mime"] = mime
+            if image_source == "pollinations":
+                concept["image_provider"] = "pollinations"
+                concept["image_model"] = LOGO_POLLINATIONS_IMAGE_MODEL
+                pm = LOGO_POLLINATIONS_IMAGE_MODEL
+                qwen_lbl = (
+                    f"Qwen Image ({pm})"
+                    if "qwen" in pm.lower()
+                    else pm
+                )
+                concept["image_attribution"] = (
+                    f"Image générée avec Pollinations.AI — modèle {qwen_lbl} — "
+                    "service tiers (fallback lorsque Hugging Face n’est pas disponible)."
+                )
+            elif image_source == "huggingface":
+                m = LOGO_HF_IMAGE_MODEL
+                if "qwen" in m.lower():
+                    concept["image_attribution"] = (
+                        f"Image générée avec le modèle Qwen Image ({m}) via Hugging Face Inference."
+                    )
+                else:
+                    concept["image_attribution"] = (
+                        f"Image générée avec le modèle {m} via Hugging Face Inference."
+                    )
 
         state.brand_identity["logo_concepts"] = [concept]
         state.brand_identity["branding_status"] = "logo_generated"

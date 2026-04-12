@@ -2,6 +2,8 @@
 # config/branding_config.py
 # ══════════════════════════════════════════════════════════════
 
+import os
+
 LLM_CONFIG = {
     # provider: "azure" → AzureChatOpenAI (GPT-4o via Azure)
     #           "groq"  → ChatGroq (openai/gpt-oss-120b via Groq)
@@ -41,3 +43,17 @@ LOGO_LLM_CONFIG = {
 LOGO_IMAGE_PROVIDER = "huggingface"
 # Modèle Hub pour text_to_image. Surcharge : env LOGO_HF_IMAGE_MODEL
 LOGO_HF_IMAGE_MODEL = "Qwen/Qwen-Image"
+
+# Si Hugging Face échoue ou s’il n’y a pas de clé HF, fallback Pollinations (GET image.pollinations.ai).
+# Désactiver le fallback : LOGO_POLLINATIONS_FALLBACK=0
+def _env_flag(name: str, default: str = "1") -> bool:
+    v = (os.getenv(name) or default).strip().lower()
+    return v not in ("0", "false", "no", "off")
+
+
+LOGO_POLLINATIONS_FALLBACK = _env_flag("LOGO_POLLINATIONS_FALLBACK", "1")
+# Slug Pollinations par défaut = Z-Image Turbo (catalogue). Surcharge : LOGO_POLLINATIONS_MODEL dans .env (ex. Z-Image Turbo ou zimage)
+LOGO_POLLINATIONS_MODEL_DEFAULT = "zimage"
+# Libellé / valeur .env pour logo_concepts.image_model (source Pollinations). Si vide → nom lisible pour le défaut zimage.
+_pm_env = (os.getenv("LOGO_POLLINATIONS_MODEL") or "").strip()
+LOGO_POLLINATIONS_IMAGE_MODEL = _pm_env if _pm_env else "Z-Image Turbo"

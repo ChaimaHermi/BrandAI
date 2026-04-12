@@ -21,9 +21,6 @@ export function useSSEStream() {
   }, []);
 
   const readSSEStream = useCallback(async (url, body, onEvent, options = {}) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2401d3'},body:JSON.stringify({sessionId:'2401d3',runId:'pre-fix',hypothesisId:'H1',location:'useSSEStream.js:24',message:'readSSEStream called',data:{url,hasActiveAbort:!!abortRef.current},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     // Cancel any previous in-flight stream before starting a new one.
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -43,9 +40,6 @@ export function useSSEStream() {
       });
 
       if (!response.ok) {
-        // #region agent log
-        fetch('http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2401d3'},body:JSON.stringify({sessionId:'2401d3',runId:'pre-fix',hypothesisId:'H4',location:'useSSEStream.js:42',message:'SSE response not ok',data:{url,status:response.status},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         const text = await response.text();
         throw new Error(`HTTP ${response.status}: ${text}`);
       }
@@ -157,9 +151,6 @@ export function useSSEStream() {
     } catch (err) {
       // Suppress AbortError — it is expected when the stream is intentionally cancelled
       // (e.g. navigation away, component unmount, or a new call aborting the previous one).
-      // #region agent log
-      fetch('http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2401d3'},body:JSON.stringify({sessionId:'2401d3',runId:'pre-fix',hypothesisId:'H1',location:'useSSEStream.js:153',message:'SSE catch',data:{name:err?.name||'',message:err?.message||''},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       if (err.name !== "AbortError") {
         throw err;
       }

@@ -55,20 +55,15 @@ def get_latest_market_analysis_by_idea(
     db: Session,
     idea_id: int,
     user_id: int,
-) -> MarketAnalysisResult:
+) -> MarketAnalysisResult | None:
+    """Dernier résultat ou None si l’idée existe mais aucune analyse enregistrée (→ route renvoie 204)."""
     _get_user_idea_or_404(db, idea_id, user_id)
-    row = (
+    return (
         db.query(MarketAnalysisResult)
         .filter(MarketAnalysisResult.idea_id == idea_id)
         .order_by(MarketAnalysisResult.created_at.desc(), MarketAnalysisResult.id.desc())
         .first()
     )
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun résultat d'analyse de marché pour cette idée",
-        )
-    return row
 
 
 def list_market_analysis_by_idea(

@@ -28,55 +28,8 @@ export function useMarketAgent({ idea, token }) {
 
   const startMarketAnalysis = useCallback(
     async ({ clarifiedIdea, onDone, mode = "pipeline" } = {}) => {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "2401d3",
-          },
-          body: JSON.stringify({
-            sessionId: "2401d3",
-            runId: "pre-fix",
-            hypothesisId: "H2",
-            location: "useMarketAgent.js:30",
-            message: "startMarketAnalysis called",
-            data: {
-              ideaId: idea?.id || null,
-              mode,
-              inFlight: inFlightRef.current,
-              hasToken: !!token,
-            },
-            timestamp: Date.now(),
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
       if (!idea || !token) return;
       if (inFlightRef.current) {
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Debug-Session-Id": "2401d3",
-            },
-            body: JSON.stringify({
-              sessionId: "2401d3",
-              runId: "pre-fix",
-              hypothesisId: "H2",
-              location: "useMarketAgent.js:33",
-              message: "startMarketAnalysis blocked by inFlight",
-              data: { ideaId: idea?.id || null, mode },
-              timestamp: Date.now(),
-            }),
-          },
-        ).catch(() => {});
-        // #endregion
         return;
       }
       inFlightRef.current = true;
@@ -173,31 +126,6 @@ export function useMarketAgent({ idea, token }) {
           }
 
           if (eventType === "done") {
-            // #region agent log
-            fetch(
-              "http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "X-Debug-Session-Id": "2401d3",
-                },
-                body: JSON.stringify({
-                  sessionId: "2401d3",
-                  runId: "pre-fix",
-                  hypothesisId: "H3",
-                  location: "useMarketAgent.js:124",
-                  message: "pipeline done event",
-                  data: {
-                    success: !!data?.success,
-                    stoppedAt: data?.stopped_at || null,
-                    hasMessage: !!data?.message,
-                  },
-                  timestamp: Date.now(),
-                }),
-              },
-            ).catch(() => {});
-            // #endregion
             if (data?.success) {
               if (mode !== "market_only" && data?.stopped_at === "clarifier") {
                 setError(
@@ -223,27 +151,6 @@ export function useMarketAgent({ idea, token }) {
         });
       } catch (e) {
         if (runIdRef.current !== runId) return;
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Debug-Session-Id": "2401d3",
-            },
-            body: JSON.stringify({
-              sessionId: "2401d3",
-              runId: "pre-fix",
-              hypothesisId: "H1",
-              location: "useMarketAgent.js:145",
-              message: "startMarketAnalysis catch",
-              data: { name: e?.name || "", message: e?.message || "" },
-              timestamp: Date.now(),
-            }),
-          },
-        ).catch(() => {});
-        // #endregion
         setError(e.message || "Erreur stream market");
         console.error("[market SSE catch]", { runId, error: e });
         inFlightRef.current = false;

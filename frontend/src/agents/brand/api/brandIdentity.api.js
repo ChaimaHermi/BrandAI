@@ -6,7 +6,7 @@ const AI_URL =
 const brandingBase = (ideaId) => `${API_URL}/branding/ideas/${ideaId}`;
 
 /**
- * GET parallèle des 4 résultats + brand-kit (404 → null).
+ * GET agrégé `/bundle` (une requête 200, champs absents → null).
  * @returns {Promise<{ naming: object|null, slogan: object|null, palette: object|null, logo: object|null, brandKit: object|null }>}
  */
 export async function fetchBrandingBundle(ideaId, token) {
@@ -20,24 +20,25 @@ export async function fetchBrandingBundle(ideaId, token) {
     };
   }
   const headers = { Authorization: `Bearer ${token}` };
-  const getJson = async (path) => {
-    const res = await fetch(`${brandingBase(ideaId)}/${path}`, { headers });
-    if (res.status === 404) return null;
-    if (res.status === 204) return null;
-    if (!res.ok) {
-      console.warn(`[branding] GET ${path}`, res.status);
-      return null;
-    }
-    return res.json();
+  const res = await fetch(`${brandingBase(ideaId)}/bundle`, { headers });
+  if (!res.ok) {
+    console.warn("[branding] GET bundle", res.status);
+    return {
+      naming: null,
+      slogan: null,
+      palette: null,
+      logo: null,
+      brandKit: null,
+    };
+  }
+  const data = await res.json();
+  return {
+    naming: data.naming ?? null,
+    slogan: data.slogan ?? null,
+    palette: data.palette ?? null,
+    logo: data.logo ?? null,
+    brandKit: data.brand_kit ?? null,
   };
-  const [naming, slogan, palette, logo, brandKit] = await Promise.all([
-    getJson("naming"),
-    getJson("slogan"),
-    getJson("palette"),
-    getJson("logo"),
-    getJson("brand-kit"),
-  ]);
-  return { naming, slogan, palette, logo, brandKit };
 }
 
 /**

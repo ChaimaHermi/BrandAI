@@ -495,9 +495,21 @@ export default function BrandPage() {
           `Le prompt image a été enregistré, mais la génération d’image a échoué : ${result.logo_image_error}`,
         );
       } else {
+        const c0 = concepts[0];
+        const sourceHint = (() => {
+          if (c0?.image_provider === "pollinations") {
+            return " (image via Pollinations.AI, fallback)";
+          }
+          if (c0?.image_provider === "huggingface") {
+            const im = String(c0?.image_model || "").toLowerCase();
+            if (im.includes("qwen")) return " (Qwen Image via Hugging Face)";
+            return " (Hugging Face Inference)";
+          }
+          return "";
+        })();
         setLogoGenMessage(
           concepts.length
-            ? "Logo généré. Vous pouvez passer à l’aperçu final."
+            ? `Logo généré${sourceHint}. Vous pouvez passer à l’aperçu final.`
             : "Réponse reçue sans image.",
         );
       }
@@ -693,6 +705,7 @@ export default function BrandPage() {
             onGenerateLogo={handleGenerateLogo}
             logoGenMessage={logoGenMessage}
             logoPreviewUrl={logoPreviewUrl}
+            logoConcept={logoConceptsDisplayed[0] ?? null}
           />
         )}
 

@@ -16,6 +16,7 @@ export async function getLatestMarketAnalysis(ideaId, token) {
   });
 
   if (res.status === 404) return null;
+  if (res.status === 204) return null;
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Erreur lecture market latest (${res.status}): ${text}`);

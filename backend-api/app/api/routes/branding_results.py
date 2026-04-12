@@ -7,6 +7,7 @@ from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.branding_results import (
+    BrandingBundleOut,
     BrandKitOut,
     BrandKitPatch,
     LogoResultOut,
@@ -20,6 +21,7 @@ from app.schemas.branding_results import (
 )
 from app.services.branding_results_service import (
     get_brand_kit,
+    get_branding_bundle,
     get_logo_result,
     get_naming_result,
     get_palette_result,
@@ -38,8 +40,23 @@ router = APIRouter(
 
 
 @router.get(
+    "/{idea_id}/bundle",
+    response_model=BrandingBundleOut,
+    status_code=200,
+    summary="Tous les résultats branding (naming, slogan, palette, logo, brand-kit)",
+)
+def read_branding_bundle(
+    idea_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return get_branding_bundle(db, idea_id, current_user.id)
+
+
+@router.get(
     "/{idea_id}/naming",
     response_model=NamingResultOut,
+    responses={204: {"description": "Idée OK mais aucun résultat naming"}},
     summary="Résultat naming pour une idée",
 )
 def read_naming(
@@ -47,7 +64,10 @@ def read_naming(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return get_naming_result(db, idea_id, current_user.id)
+    row = get_naming_result(db, idea_id, current_user.id)
+    if row is None:
+        return Response(status_code=204)
+    return row
 
 
 @router.patch(
@@ -67,6 +87,7 @@ def update_naming(
 @router.get(
     "/{idea_id}/slogan",
     response_model=SloganResultOut,
+    responses={204: {"description": "Idée OK mais aucun résultat slogan"}},
     summary="Résultat slogan pour une idée",
 )
 def read_slogan(
@@ -74,7 +95,10 @@ def read_slogan(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return get_slogan_result(db, idea_id, current_user.id)
+    row = get_slogan_result(db, idea_id, current_user.id)
+    if row is None:
+        return Response(status_code=204)
+    return row
 
 
 @router.patch(
@@ -94,6 +118,7 @@ def update_slogan(
 @router.get(
     "/{idea_id}/palette",
     response_model=PaletteResultOut,
+    responses={204: {"description": "Idée OK mais aucun résultat palette"}},
     summary="Résultat palette pour une idée",
 )
 def read_palette(
@@ -101,7 +126,10 @@ def read_palette(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return get_palette_result(db, idea_id, current_user.id)
+    row = get_palette_result(db, idea_id, current_user.id)
+    if row is None:
+        return Response(status_code=204)
+    return row
 
 
 @router.patch(
@@ -121,6 +149,7 @@ def update_palette(
 @router.get(
     "/{idea_id}/logo",
     response_model=LogoResultOut,
+    responses={204: {"description": "Idée OK mais aucun résultat logo"}},
     summary="Résultat logo pour une idée",
 )
 def read_logo(
@@ -128,7 +157,10 @@ def read_logo(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return get_logo_result(db, idea_id, current_user.id)
+    row = get_logo_result(db, idea_id, current_user.id)
+    if row is None:
+        return Response(status_code=204)
+    return row
 
 
 @router.patch(

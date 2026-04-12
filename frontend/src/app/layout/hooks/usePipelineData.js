@@ -7,15 +7,6 @@ function authHeaders(token) {
   return { Authorization: "Bearer " + token };
 }
 
-async function safeFetch(url, token) {
-  try {
-    const res = await fetch(url, { headers: authHeaders(token) });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * usePipelineData
  * Extracted from PipelineLayout — owns the idea fetch and module-availability checks.
@@ -50,22 +41,43 @@ export function usePipelineData(id, token) {
 
       const pipelineMayHaveResults = ["market_done", "done", "running"].includes(data?.status);
 
-      if (checkMarket && pipelineMayHaveResults) {
-        const [marketOk, marketingOk] = await Promise.all([
-          safeFetch(`${API_URL}/market-analysis/${id}/latest`, token),
-          safeFetch(`${API_URL}/marketing-plans/${id}/latest`, token),
-        ]);
-        setHasMarketResult(marketOk);
-        setHasMarketingResult(marketingOk);
+      const needsAvailability =
+        data &&
+        ((checkMarket && pipelineMayHaveResults) || checkBrand);
+
+      if (needsAvailability) {
+        try {
+          const avRes = await fetch(
+            `${API_URL}/ideas/${id}/pipeline-availability`,
+            { headers: authHeaders(token) },
+          );
+          if (avRes.ok) {
+            const av = await avRes.json();
+            if (checkMarket && pipelineMayHaveResults) {
+              setHasMarketResult(!!av.has_market_analysis);
+              setHasMarketingResult(!!av.has_marketing_plan);
+            } else {
+              setHasMarketResult(false);
+              setHasMarketingResult(false);
+            }
+            if (checkBrand) {
+              setHasBrandIdentityResult(!!av.has_branding_naming);
+            } else {
+              setHasBrandIdentityResult(false);
+            }
+          } else {
+            setHasMarketResult(false);
+            setHasMarketingResult(false);
+            setHasBrandIdentityResult(false);
+          }
+        } catch {
+          setHasMarketResult(false);
+          setHasMarketingResult(false);
+          setHasBrandIdentityResult(false);
+        }
       } else {
         setHasMarketResult(false);
         setHasMarketingResult(false);
-      }
-
-      if (checkBrand) {
-        const brandOk = await safeFetch(`${API_URL}/branding/ideas/${id}/naming`, token);
-        setHasBrandIdentityResult(brandOk);
-      } else {
         setHasBrandIdentityResult(false);
       }
       return data;
