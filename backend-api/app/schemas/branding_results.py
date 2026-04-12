@@ -127,3 +127,15 @@ class BrandKitPatch(BaseModel):
     slogan_id: Optional[UUID] = None
     palette_id: Optional[UUID] = None
     logo_id: Optional[UUID] = None
+
+
+class BrandingBundleOut(BaseModel):
+    """Agrégat lecture seule : champs absents en base = null (pas de 404)."""
+
+    naming: Optional[NamingResultOut] = None
+    slogan: Optional[SloganResultOut] = None
+    palette: Optional[PaletteResultOut] = None
+    logo: Optional[LogoResultOut] = None
+    brand_kit: Optional[BrandKitOut] = None
+
+    model_config = ConfigDict(from_attributes=True)

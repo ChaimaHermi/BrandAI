@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -38,6 +38,7 @@ def create_marketing_plan_result(
     "/{idea_id}/latest",
     response_model=MarketingPlanOut,
     status_code=200,
+    responses={204: {"description": "Idée OK mais aucun plan enregistré"}},
     summary="Récupérer le dernier plan marketing",
 )
 def get_latest_marketing_plan_result(
@@ -45,7 +46,10 @@ def get_latest_marketing_plan_result(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return get_latest_marketing_plan_by_idea(db, idea_id, current_user.id)
+    row = get_latest_marketing_plan_by_idea(db, idea_id, current_user.id)
+    if row is None:
+        return Response(status_code=204)
+    return row
 
 
 @router.get(

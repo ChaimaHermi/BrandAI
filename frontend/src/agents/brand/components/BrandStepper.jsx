@@ -3,7 +3,7 @@
  */
 export default function BrandStepper({ steps, current }) {
   return (
-    <div className="mb-8 flex items-center justify-center px-4">
+    <div className="mb-3 flex items-center justify-center px-4">
       {steps.map((label, i) => {
         const done   = i < current;
         const active = i === current;

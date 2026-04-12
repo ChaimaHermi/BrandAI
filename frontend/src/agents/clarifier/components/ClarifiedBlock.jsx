@@ -3,22 +3,24 @@ import {
   CLARITY_SCORE_MIN_PIPELINE,
 } from "../constants";
 
+function truncate(str, max = 60) {
+  const s = (str || "").trim();
+  return s.length > max ? s.slice(0, max) + "…" : s;
+}
+
 export default function ClarifiedBlock({ data, score }) {
   if (!data) return null;
 
   const messageText = (data.message || "").trim();
   const hasCountry = !!data.country && data.country !== "Non précisé";
-  const countryBadge = hasCountry
-    ? `🌍 ${data.country}${data.country_code ? ` (${data.country_code})` : ""}`
-    : null;
 
   // ── Score insuffisant → bloc warning ────────────────
   if (score < CLARITY_SCORE_MIN_DISPLAY) {
     return (
       <div className="overflow-hidden rounded-[14px] border border-[#FAC775] bg-white shadow-[0_4px_16px_rgba(239,159,39,0.1)] animate-[slideUp_0.35s_ease_forwards]">
-        <div className="flex items-center justify-between border-b border-[#FAC775] bg-[#FAEEDA] px-[18px] py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#FAC775] bg-[#FAEEDA] px-[18px] py-3">
           <div className="flex items-center gap-2">
-            <div className="h-[7px] w-[7px] rounded-full bg-[#EF9F27]" />
+            <div className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#EF9F27]" />
             <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#854F0B]">
               Idée insuffisamment claire
             </span>
@@ -26,19 +28,12 @@ export default function ClarifiedBlock({ data, score }) {
           <div className="flex items-center gap-2">
             <div className="h-[6px] w-20 overflow-hidden rounded-full bg-[#FAC775]">
               <div
-                style={{
-                  height: "100%",
-                  width: `${score}%`,
-                }}
-                className="rounded-full bg-[#EF9F27]"
+                style={{ width: `${score}%`, transition: "width 1s ease" }}
+                className="h-full rounded-full bg-[#EF9F27]"
               />
             </div>
-            <span className="text-sm font-extrabold text-[#854F0B]">
-              {score}
-            </span>
-            <span className="text-[11px] text-[#EF9F27]">
-              /100
-            </span>
+            <span className="text-sm font-extrabold text-[#854F0B]">{score}</span>
+            <span className="text-[11px] text-[#EF9F27]">/100</span>
           </div>
         </div>
 
@@ -46,22 +41,11 @@ export default function ClarifiedBlock({ data, score }) {
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#FAC775] bg-[#FAEEDA]">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle
-                  cx="8"
-                  cy="8"
-                  r="6"
-                  stroke="#EF9F27"
-                  strokeWidth="1.3"
-                />
-                <path
-                  d="M8 5v3.5M8 10.5v.5"
-                  stroke="#EF9F27"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                />
+                <circle cx="8" cy="8" r="6" stroke="#EF9F27" strokeWidth="1.3" />
+                <path d="M8 5v3.5M8 10.5v.5" stroke="#EF9F27" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="mb-1.5 text-[13px] font-bold text-[#854F0B]">
                 Votre idée nécessite plus de précisions
               </div>
@@ -74,36 +58,61 @@ export default function ClarifiedBlock({ data, score }) {
             </div>
           </div>
 
-            {messageText && (
-              <div className="rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] px-[14px] py-[10px] text-xs font-semibold leading-[1.6] text-gray-700">
-                {messageText}
-              </div>
-            )}
+          {messageText && (
+            <div className="rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] px-[14px] py-[10px] text-xs font-semibold leading-[1.6] text-gray-700">
+              {messageText}
+            </div>
+          )}
 
-          {/* Dimensions manquantes */}
-          <div className="grid grid-cols-3 gap-2">
+          {hasCountry && (
+            <div className="flex items-center gap-3 rounded-xl border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#93c5fd] bg-white text-base shadow-[0_1px_4px_rgba(59,130,246,0.15)]">
+                🌍
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="mb-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#1d4ed8]">
+                  Zone géographique
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#1e3a8a]">{data.country}</span>
+                  {data.country_code && (
+                    <span className="rounded-md border border-[#93c5fd] bg-white px-1.5 py-0.5 font-[var(--font-mono)] text-[10px] font-bold text-[#2563eb]">
+                      {data.country_code}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Dimensions — responsive 1→3 cols */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {[
               { label: "Problème", ok: !!data.problem, value: data.problem },
-              {
-                label: "Cible",
-                ok: !!data.target_users,
-                value: data.target_users,
-              },
-              {
-                label: "Solution",
-                ok: !!data.solution_description,
-                value: data.solution_description,
-              },
+              { label: "Cible", ok: !!data.target_users, value: data.target_users },
+              { label: "Solution", ok: !!data.solution_description, value: data.solution_description },
             ].map(({ label, ok, value }) => (
               <div
                 key={label}
-                className={`rounded-[10px] p-[10px] ${ok ? "border border-[#9FE1CB] bg-[#f0fdf4]" : "border border-[#fecaca] bg-[#fff5f5]"}`}
+                className={`rounded-[10px] p-[10px] ${
+                  ok
+                    ? "border border-[#9FE1CB] bg-[#f0fdf4]"
+                    : "border border-[#fecaca] bg-[#fff5f5]"
+                }`}
               >
-                <div className={`mb-1 text-[9px] font-bold uppercase tracking-[0.07em] ${ok ? "text-[#1D9E75]" : "text-rose-600"}`}>
+                <div
+                  className={`mb-1 text-[9px] font-bold uppercase tracking-[0.07em] ${
+                    ok ? "text-[#1D9E75]" : "text-rose-600"
+                  }`}
+                >
                   {ok ? "✓" : "✗"} {label}
                 </div>
-                <div className={`text-[11px] ${ok ? "font-normal text-gray-700" : "font-semibold text-rose-600"}`}>
-                  {ok ? (value || "").slice(0, 40) + "..." : "Non renseigné"}
+                <div
+                  className={`text-[11px] ${
+                    ok ? "font-normal text-gray-700" : "font-semibold text-rose-600"
+                  }`}
+                >
+                  {ok ? truncate(value, 50) : "Non renseigné"}
                 </div>
               </div>
             ))}
@@ -129,9 +138,9 @@ export default function ClarifiedBlock({ data, score }) {
   return (
     <div className="overflow-hidden rounded-[14px] border border-[#AFA9EC] bg-white shadow-[0_4px_20px_rgba(124,58,237,0.1)] animate-[slideUp_0.35s_ease_forwards]">
       {/* Header avec score */}
-      <div className="flex items-center justify-between border-b border-[#AFA9EC] bg-gradient-to-br from-[#f0eeff] to-[#fafafe] px-[18px] py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#AFA9EC] bg-gradient-to-br from-[#f0eeff] to-[#fafafe] px-[18px] py-3">
         <div className="flex items-center gap-2">
-          <div className="h-[7px] w-[7px] rounded-full bg-[#7F77DD]" />
+          <div className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#7F77DD]" />
           <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#3C3489]">
             Idée structurée
           </span>
@@ -157,7 +166,14 @@ export default function ClarifiedBlock({ data, score }) {
             </span>
             <span className="text-[11px] text-[#AFA9EC]">/100</span>
           </div>
-          <div className="rounded-full border px-[10px] py-[3px] text-[10px] font-bold" style={{ background: scoreLabel.bg, borderColor: scoreLabel.border, color: scoreLabel.color }}>
+          <div
+            className="rounded-full border px-[10px] py-[3px] text-[10px] font-bold"
+            style={{
+              background: scoreLabel.bg,
+              borderColor: scoreLabel.border,
+              color: scoreLabel.color,
+            }}
+          >
             {scoreLabel.text} ✓
           </div>
         </div>
@@ -166,7 +182,7 @@ export default function ClarifiedBlock({ data, score }) {
       <div className="flex flex-col gap-3 px-[18px] py-4">
         {data.short_pitch && (
           <div className="border-l-[3px] border-l-[#7F77DD] bg-[#f8f7ff] px-4 py-3 text-sm font-semibold italic leading-[1.5] text-[#534AB7]">
-            "{data.short_pitch}"
+            &ldquo;{data.short_pitch}&rdquo;
           </div>
         )}
 
@@ -176,31 +192,37 @@ export default function ClarifiedBlock({ data, score }) {
           </div>
         )}
 
-        {countryBadge && (
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#e8e4ff] bg-white px-3 py-1 text-[11px] font-bold text-[#3C3489] shadow-[0_1px_6px_rgba(124,58,237,0.08)]">
-            {countryBadge}
-          </div>
-        )}
-
-        <div className="grid grid-cols-3 gap-2">
+        {/* Info cards — 1 col on small, 3 on medium+ */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div className="rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] p-3">
-            <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#7F77DD]">
-              Ce que c&apos;est
+            <div className="mb-1.5 flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.08em] text-[#7F77DD]">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M1.5 8.5l7-7M5 1.5h3v3" stroke="#7F77DD" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Solution proposée
             </div>
             <div className="text-xs leading-[1.5] text-gray-700">
               {data.solution_description || "—"}
             </div>
           </div>
           <div className="rounded-xl border border-[#9FE1CB] bg-[#f0fdf4] p-3">
-            <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#1D9E75]">
-              Pour qui ?
+            <div className="mb-1.5 flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.08em] text-[#1D9E75]">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <circle cx="5" cy="3.5" r="1.8" stroke="#1D9E75" strokeWidth="1.2"/>
+                <path d="M1.5 8.5c0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5" stroke="#1D9E75" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+              Cible
             </div>
             <div className="text-xs font-semibold leading-[1.5] text-gray-700">
               {data.target_users || "—"}
             </div>
           </div>
           <div className="rounded-xl border border-[#FAC775] bg-[#FAEEDA] p-3">
-            <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#854F0B]">
+            <div className="mb-1.5 flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.08em] text-[#854F0B]">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <rect x="1" y="3" width="8" height="6" rx="1" stroke="#854F0B" strokeWidth="1.2"/>
+                <path d="M3.5 3V2a1.5 1.5 0 013 0v1" stroke="#854F0B" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
               Secteur
             </div>
             <div className="text-xs font-bold text-gray-700">
@@ -208,6 +230,30 @@ export default function ClarifiedBlock({ data, score }) {
             </div>
           </div>
         </div>
+
+        {/* Zone géographique */}
+        {hasCountry && (
+          <div className="flex items-center gap-3 rounded-xl border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#93c5fd] bg-white text-lg shadow-[0_1px_4px_rgba(59,130,246,0.15)]">
+              🌍
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#1d4ed8]">
+                Zone géographique
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-[#1e3a8a]">
+                  {data.country}
+                </span>
+                {data.country_code && (
+                  <span className="rounded-md border border-[#93c5fd] bg-white px-1.5 py-0.5 font-[var(--font-mono)] text-[10px] font-bold text-[#2563eb]">
+                    {data.country_code}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="rounded-xl border border-[#fecaca] bg-[#fff5f5] px-[14px] py-3">
           <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-rose-600">

@@ -22,6 +22,7 @@ import MarketTrendsRisks from "../components/MarketTrendsRisks";
 import MarketStrategy from "../components/MarketStrategy";
 import MarketKeywords from "../components/MarketKeywords";
 import MarketTabEmpty from "../components/MarketTabEmpty";
+import PipelineLaunchModal from "../components/PipelineLaunchModal";
 
 const MARKET_TABS = [
   { id: "apercu",       label: "Aperçu" },
@@ -49,9 +50,12 @@ export default function MarketPage() {
   const { idea, token } = usePipeline();
   const location = useLocation();
   const lastAutoStartKeyRef = useRef("");
-  const { rawReport, isLoading, error, loadLatest, startMarketAnalysis } =
+  const { rawReport, xaiSteps, isLoading, error, loadLatest, startMarketAnalysis } =
     useMarketAgent({ idea, token });
   const [activeTab, setActiveTab] = useState("apercu");
+  const [showModal, setShowModal] = useState(false);
+  const [modalDone, setModalDone] = useState(false);
+  const wasLoadingRef = useRef(false);
 
   useEffect(() => {
     if (!idea?.id || !token) return;
@@ -61,11 +65,35 @@ export default function MarketPage() {
       const launchKey = `${location.key}:${state?.sourceIdeaId || idea.id}`;
       if (lastAutoStartKeyRef.current === launchKey) return;
       lastAutoStartKeyRef.current = launchKey;
+      setShowModal(true);
+      setModalDone(false);
+      wasLoadingRef.current = false;
       startMarketAnalysis({ mode: "pipeline", clarifiedIdea: state.clarifiedIdea });
     } else {
       loadLatest().catch(() => {});
     }
+
+    return () => {
+      // Reset dedup guard on cleanup so a Strict Mode remount (dev) can retry
+      // if the stream was aborted during the simulated unmount.
+      lastAutoStartKeyRef.current = "";
+    };
   }, [idea?.id, token, location.key, location.state, startMarketAnalysis, loadLatest]);
+
+  /* ── Track loading → done to drive modal state ─────────────────────────── */
+  useEffect(() => {
+    if (isLoading) {
+      wasLoadingRef.current = true;
+    } else if (wasLoadingRef.current) {
+      wasLoadingRef.current = false;
+      setModalDone(true);
+      // Auto-close after 1.5 s when no error
+      if (!error) {
+        const t = setTimeout(() => setShowModal(false), 1500);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [isLoading, error]);
 
   const clarifiedIdea = rawReport?.clarified_idea ?? {
     short_pitch:          idea?.clarity_short_pitch ?? "",
@@ -133,6 +161,15 @@ export default function MarketPage() {
   }
 
   return (
+    <>
+      <PipelineLaunchModal
+        isOpen={showModal}
+        isDone={modalDone}
+        xaiSteps={xaiSteps}
+        error={error}
+        onClose={() => setShowModal(false)}
+      />
+
     <div className="app-content-scroll flex flex-1 flex-col gap-3">
       <AgentPageHeader
         agent={marketAgent}
@@ -164,5 +201,6 @@ export default function MarketPage() {
         </>
       )}
     </div>
+    </>
   );
 }

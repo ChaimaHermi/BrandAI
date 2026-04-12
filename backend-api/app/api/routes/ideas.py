@@ -23,12 +23,14 @@ from app.api.deps import get_current_user
 from app.models.user import User
 from app.models.idea import Idea
 from app.schemas.idea import IdeaCreate, IdeaOut, IdeaListOut
+from app.schemas.pipeline_availability import PipelineAvailabilityOut
 from app.services.idea_service import (
     create_idea,
     get_user_ideas,
     get_idea_by_id,
     delete_idea,
 )
+from app.services.pipeline_availability_service import get_pipeline_availability
 
 router = APIRouter(prefix="/ideas", tags=["Idées"])
 
@@ -99,6 +101,20 @@ def list_ideas(
     """
     ideas = get_user_ideas(current_user.id, db)
     return IdeaListOut(ideas=ideas, total=len(ideas))
+
+
+@router.get(
+    "/{idea_id}/pipeline-availability",
+    response_model=PipelineAvailabilityOut,
+    status_code=200,
+    summary="Indicateurs market / marketing / branding (sans requêtes 404)",
+)
+def pipeline_availability(
+    idea_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return get_pipeline_availability(db, idea_id, current_user.id)
 
 
 @router.get(

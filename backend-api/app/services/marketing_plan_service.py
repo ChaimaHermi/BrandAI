@@ -51,20 +51,15 @@ def get_latest_marketing_plan_by_idea(
     db: Session,
     idea_id: int,
     user_id: int,
-) -> MarketingPlan:
+) -> MarketingPlan | None:
+    """Dernier plan ou None si l’idée existe mais aucun plan (→ route renvoie 204)."""
     _get_user_idea_or_404(db, idea_id, user_id)
-    row = (
+    return (
         db.query(MarketingPlan)
         .filter(MarketingPlan.idea_id == idea_id)
         .order_by(MarketingPlan.created_at.desc(), MarketingPlan.id.desc())
         .first()
     )
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun plan marketing pour cette idée",
-        )
-    return row
 
 
 def list_marketing_plans_by_idea(

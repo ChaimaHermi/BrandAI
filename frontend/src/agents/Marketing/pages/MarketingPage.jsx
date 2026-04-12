@@ -3,18 +3,18 @@ import {
   FiTarget, FiUsers, FiRadio, FiDollarSign, FiFlag, FiCalendar,
 } from "react-icons/fi";
 import { usePipeline } from "@/context/PipelineContext";
-import { useMarketingAgent } from "../hooks/useMarketingAgent";
+import { useMarketingAgent } from "@/agents/Marketing/hooks/useMarketingAgent";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ErrorBanner } from "@/shared/ui/ErrorBanner";
 import { Loader } from "@/shared/ui/Loader";
 import { SectionIntro } from "@/shared/ui/SectionIntro";
-import { MarketingHeader, SECTION_TABS } from "../components/MarketingHeader";
-import { PositioningSection } from "../components/sections/PositioningSection";
-import { TargetsSection }     from "../components/sections/TargetsSection";
-import { ChannelsSection }    from "../components/sections/ChannelsSection";
-import { PricingSection }     from "../components/sections/PricingSection";
-import { GtmSection }         from "../components/sections/GtmSection";
-import { ActionSection }      from "../components/sections/ActionSection";
+import { MarketingHeader, SECTION_TABS } from "@/agents/Marketing/components/MarketingHeader";
+import { PositioningSection } from "@/agents/Marketing/components/sections/PositioningSection";
+import { TargetsSection }     from "@/agents/Marketing/components/sections/TargetsSection";
+import { ChannelsSection }    from "@/agents/Marketing/components/sections/ChannelsSection";
+import { PricingSection }     from "@/agents/Marketing/components/sections/PricingSection";
+import { GtmSection }         from "@/agents/Marketing/components/sections/GtmSection";
+import { ActionSection }      from "@/agents/Marketing/components/sections/ActionSection";
 
 const SECTION_MAP = {
   positioning: PositioningSection,

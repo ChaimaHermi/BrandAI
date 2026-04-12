@@ -172,6 +172,11 @@ export default function FinalBrandPreview({
                   alt="Logo"
                   className="mx-auto max-h-48 w-auto rounded-xl border border-brand-border object-contain"
                 />
+                {logoConcept?.image_attribution ? (
+                  <p className="mt-2 text-center text-[11px] leading-snug text-ink-subtle">
+                    {logoConcept.image_attribution}
+                  </p>
+                ) : null}
                 {canDownloadLogo && (
                   <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                     <button

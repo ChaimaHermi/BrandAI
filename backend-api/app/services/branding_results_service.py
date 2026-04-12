@@ -16,6 +16,7 @@ from app.models.branding_results import (
 )
 from app.models.idea import Idea
 from app.schemas.branding_results import (
+    BrandingBundleOut,
     BrandKitPatch,
     LogoResultPatch,
     NamingResultPatch,
@@ -61,15 +62,10 @@ def _assert_result_belongs_to_idea(
 # --- Naming ---
 
 
-def get_naming_result(db: Session, idea_id: int, user_id: int) -> NamingResult:
+def get_naming_result(db: Session, idea_id: int, user_id: int) -> NamingResult | None:
+    """Ligne naming ou None si l’idée existe mais aucun enregistrement (→ route renvoie 204)."""
     _require_idea_for_user(db, idea_id, user_id)
-    row = db.query(NamingResult).filter(NamingResult.idea_id == idea_id).first()
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun résultat naming pour cette idée",
-        )
-    return row
+    return db.query(NamingResult).filter(NamingResult.idea_id == idea_id).first()
 
 
 def patch_naming_result(
@@ -96,15 +92,9 @@ def patch_naming_result(
 # --- Slogan ---
 
 
-def get_slogan_result(db: Session, idea_id: int, user_id: int) -> SloganResult:
+def get_slogan_result(db: Session, idea_id: int, user_id: int) -> SloganResult | None:
     _require_idea_for_user(db, idea_id, user_id)
-    row = db.query(SloganResult).filter(SloganResult.idea_id == idea_id).first()
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun résultat slogan pour cette idée",
-        )
-    return row
+    return db.query(SloganResult).filter(SloganResult.idea_id == idea_id).first()
 
 
 def patch_slogan_result(
@@ -130,15 +120,9 @@ def patch_slogan_result(
 # --- Palette ---
 
 
-def get_palette_result(db: Session, idea_id: int, user_id: int) -> PaletteResult:
+def get_palette_result(db: Session, idea_id: int, user_id: int) -> PaletteResult | None:
     _require_idea_for_user(db, idea_id, user_id)
-    row = db.query(PaletteResult).filter(PaletteResult.idea_id == idea_id).first()
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun résultat palette pour cette idée",
-        )
-    return row
+    return db.query(PaletteResult).filter(PaletteResult.idea_id == idea_id).first()
 
 
 def patch_palette_result(
@@ -164,15 +148,9 @@ def patch_palette_result(
 # --- Logo ---
 
 
-def get_logo_result(db: Session, idea_id: int, user_id: int) -> LogoResult:
+def get_logo_result(db: Session, idea_id: int, user_id: int) -> LogoResult | None:
     _require_idea_for_user(db, idea_id, user_id)
-    row = db.query(LogoResult).filter(LogoResult.idea_id == idea_id).first()
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun résultat logo pour cette idée",
-        )
-    return row
+    return db.query(LogoResult).filter(LogoResult.idea_id == idea_id).first()
 
 
 def patch_logo_result(
@@ -202,6 +180,23 @@ def get_brand_kit(db: Session, idea_id: int, user_id: int) -> BrandKit | None:
     """Retourne la ligne brand kit ou None si l’idée existe mais aucun kit encore créé."""
     _require_idea_for_user(db, idea_id, user_id)
     return db.query(BrandKit).filter(BrandKit.idea_id == idea_id).first()
+
+
+def get_branding_bundle(db: Session, idea_id: int, user_id: int) -> BrandingBundleOut:
+    """Tous les résultats branding en une requête (200, champs nulls si absents)."""
+    _require_idea_for_user(db, idea_id, user_id)
+    naming = db.query(NamingResult).filter(NamingResult.idea_id == idea_id).first()
+    slogan = db.query(SloganResult).filter(SloganResult.idea_id == idea_id).first()
+    palette = db.query(PaletteResult).filter(PaletteResult.idea_id == idea_id).first()
+    logo = db.query(LogoResult).filter(LogoResult.idea_id == idea_id).first()
+    brand_kit = db.query(BrandKit).filter(BrandKit.idea_id == idea_id).first()
+    return BrandingBundleOut(
+        naming=naming,
+        slogan=slogan,
+        palette=palette,
+        logo=logo,
+        brand_kit=brand_kit,
+    )
 
 
 def patch_brand_kit(

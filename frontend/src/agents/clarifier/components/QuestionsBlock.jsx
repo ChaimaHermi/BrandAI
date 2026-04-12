@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export default function QuestionsBlock({
   agentMessage,
   questions,
@@ -6,6 +8,8 @@ export default function QuestionsBlock({
   onSubmit,
   isLoading,
 }) {
+  const [submitted, setSubmitted] = useState(false);
+
   const hasQuestions = Array.isArray(questions) && questions.length > 0;
 
   const keys = ["problem", "target", "solution", "geography"];
@@ -29,79 +33,149 @@ export default function QuestionsBlock({
   );
 
   const axesToValidate = requiredAxes.length ? requiredAxes : keys;
-  const isValid = axesToValidate.every(
-    (axis) => answers[axis]?.trim().length > 3
-  );
+
+  const isAxisValid = (axis) => (answers[axis] || "").trim().length > 3;
+  const isValid = axesToValidate.every(isAxisValid);
+
+  const answeredCount = axesToValidate.filter(isAxisValid).length;
+  const totalCount = axesToValidate.length;
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+    if (!isValid) return;
+    onSubmit();
+  };
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-[14px] border border-[#AFA9EC] bg-white shadow-[0_2px_12px_rgba(124,58,237,0.08)] animate-[slideUp_0.35s_ease]">
-      <div className="flex items-center gap-2 border-b border-[#AFA9EC] bg-gradient-to-br from-[#EEEDFE] to-[#f3f0ff] px-[14px] py-2">
-        <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-[10px] font-bold text-white shadow-[0_2px_6px_rgba(124,58,237,0.3)]">
-          ?
+    <div className="flex flex-col rounded-[14px] border border-[#AFA9EC] bg-white shadow-[0_2px_12px_rgba(124,58,237,0.08)] animate-[slideUp_0.35s_ease] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 border-b border-[#AFA9EC] bg-gradient-to-br from-[#EEEDFE] to-[#f3f0ff] px-[14px] py-2.5">
+        <div className="flex items-center gap-2">
+          <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-[10px] font-bold text-white shadow-[0_2px_6px_rgba(124,58,237,0.3)]">
+            ?
+          </div>
+          <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[color:var(--color-text-secondary)]">
+            Questions de clarification
+          </span>
         </div>
-        <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[color:var(--color-text-secondary)]">
-          Questions de clarification
-        </span>
+        {/* Progress badge */}
+        <div className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+          answeredCount === totalCount
+            ? "border-[#9FE1CB] bg-[#f0fdf4] text-[#1D9E75]"
+            : "border-[#AFA9EC] bg-white text-[#534AB7]"
+        }`}>
+          {answeredCount}/{totalCount} rempli{totalCount > 1 ? "es" : ""}
+        </div>
       </div>
 
-      {/* Scrollable questions area */}
-      <div className="flex flex-col gap-3 overflow-y-auto p-[14px]">
+      {/* Scrollable questions area — max-height prevents page overflow */}
+      <div className="flex flex-col gap-3 overflow-y-auto p-[14px]" style={{ maxHeight: "55vh" }}>
         {agentMessage && (
-          <p className="m-0 text-[13px] leading-[1.6] text-[color:var(--color-text-primary)]">
-            {agentMessage}
-          </p>
+          <div className="flex items-start gap-2 rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] px-3 py-2.5">
+            <div className="mt-0.5 h-[6px] w-[6px] shrink-0 rounded-full bg-[#7F77DD]" />
+            <p className="m-0 text-[13px] leading-[1.6] text-[#3C3489]">
+              {agentMessage}
+            </p>
+          </div>
         )}
 
         {hasQuestions &&
           questions.map((question, i) => {
-          const axis = getAxis(question, i) || `q${i}`;
-          const text = getText(question);
-          if (!text) return null;
-          const isGeo = axis === "geography";
-          return (
-            <div
-              key={i}
-              className="overflow-hidden rounded-[var(--border-radius-md)] border border-[#AFA9EC]"
-            >
-              <div className="bg-[#EEEDFE] px-3 py-2 text-xs font-medium text-[#3C3489]">
-                {i + 1}. {isGeo ? "🌍 " : ""}{text}
+            const axis = getAxis(question, i) || `q${i}`;
+            const text = getText(question);
+            if (!text) return null;
+
+            const isGeo = axis === "geography";
+            const isFilled = isAxisValid(axis);
+            const showError = submitted && !isFilled;
+
+            return (
+              <div
+                key={i}
+                className={`overflow-hidden rounded-[var(--border-radius-md,10px)] border transition-colors ${
+                  showError
+                    ? "border-rose-400 shadow-[0_0_0_2px_rgba(225,29,72,0.08)]"
+                    : isFilled
+                    ? "border-[#9FE1CB]"
+                    : "border-[#AFA9EC]"
+                }`}
+              >
+                {/* Question label */}
+                <div className={`flex items-start gap-2 px-3 py-2 text-xs font-medium ${
+                  isFilled ? "bg-[#f0fdf4] text-[#085041]" : "bg-[#EEEDFE] text-[#3C3489]"
+                }`}>
+                  <span className={`mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                    isFilled ? "bg-[#1D9E75] text-white" : "bg-[#7F77DD] text-white"
+                  }`}>
+                    {isFilled ? "✓" : i + 1}
+                  </span>
+                  <span className="leading-[1.5]">
+                    {isGeo && <span className="mr-1">🌍</span>}
+                    {text}
+                  </span>
+                </div>
+
+                {/* Answer textarea */}
+                <textarea
+                  value={answers[axis] || ""}
+                  onChange={(e) =>
+                    setAnswers((prev) => ({ ...prev, [axis]: e.target.value }))
+                  }
+                  placeholder={
+                    isGeo
+                      ? "Ex: Tunisie, France, Maroc, Algérie..."
+                      : "Votre réponse (min. 4 caractères)..."
+                  }
+                  rows={3}
+                  disabled={isLoading}
+                  className={`box-border w-full resize-y border-0 border-t bg-[color:var(--color-background-primary,#fff)] px-3 py-2.5 font-[var(--font-sans)] text-[13px] leading-[1.5] text-[color:var(--color-text-primary,#1a1040)] transition-colors focus:outline-none focus:ring-1 ${
+                    showError
+                      ? "border-rose-300 focus:ring-rose-300"
+                      : "border-[#AFA9EC] focus:ring-[#7F77DD]"
+                  } disabled:opacity-60`}
+                />
+
+                {/* Inline error */}
+                {showError && (
+                  <div className="bg-rose-50 px-3 py-1.5 text-[11px] text-rose-600">
+                    Cette réponse est requise (min. 4 caractères)
+                  </div>
+                )}
               </div>
-              <textarea
-                value={answers[axis] || ""}
-                onChange={(e) =>
-                  setAnswers((prev) => ({ ...prev, [axis]: e.target.value }))
-                }
-                placeholder={
-                  isGeo
-                    ? "Ex: Tunisie, France, Maroc, Algérie..."
-                    : "Votre réponse..."
-                }
-                rows={2}
-                disabled={isLoading}
-                className="box-border w-full resize-y border-0 border-t border-[#AFA9EC] bg-[color:var(--color-background-primary)] px-3 py-[10px] font-[var(--font-sans)] text-[13px] leading-[1.5] text-[color:var(--color-text-primary)] outline-none transition-colors"
-              />
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
 
-      {/* Button pinned at the bottom — always visible */}
+      {/* Submit button — always pinned at bottom */}
       {hasQuestions && (
         <div className="border-t border-[#AFA9EC] bg-white px-[14px] py-3">
           <button
-            onClick={onSubmit}
-            disabled={!isValid || isLoading}
-            className={`w-full rounded-[var(--border-radius-md)] border-0 px-5 py-[10px] text-[13px] font-medium transition-all ${
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className={`flex w-full items-center justify-center gap-2 rounded-[var(--border-radius-md,10px)] border-0 px-5 py-[10px] text-[13px] font-semibold transition-all ${
               isValid && !isLoading
-                ? "cursor-pointer bg-[#7F77DD] text-white"
-                : "cursor-not-allowed bg-[color:var(--color-background-secondary)] text-[color:var(--color-text-secondary)]"
+                ? "cursor-pointer bg-gradient-to-br from-[#7F77DD] to-[#534AB7] text-white shadow-[0_2px_8px_rgba(124,58,237,0.25)] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(124,58,237,0.35)]"
+                : isLoading
+                ? "cursor-wait bg-[#7F77DD] text-white opacity-70"
+                : "cursor-pointer bg-[color:var(--color-background-secondary,#f3f0ff)] text-[#534AB7]"
             }`}
           >
-            {isLoading ? "Analyse en cours..." : "Envoyer mes réponses →"}
+            {isLoading ? (
+              <>
+                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Analyse en cours...
+              </>
+            ) : (
+              <>
+                Envoyer mes réponses
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </>
+            )}
           </button>
         </div>
       )}
     </div>
   );
 }
-

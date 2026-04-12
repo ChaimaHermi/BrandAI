@@ -21,9 +21,6 @@ export function useSSEStream() {
   }, []);
 
   const readSSEStream = useCallback(async (url, body, onEvent, options = {}) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2401d3'},body:JSON.stringify({sessionId:'2401d3',runId:'pre-fix',hypothesisId:'H1',location:'useSSEStream.js:24',message:'readSSEStream called',data:{url,hasActiveAbort:!!abortRef.current},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     // Cancel any previous in-flight stream before starting a new one.
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -34,102 +31,99 @@ export function useSSEStream() {
       ...(options.headers || {}),
     };
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: requestHeaders,
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      // #region agent log
-      fetch('http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2401d3'},body:JSON.stringify({sessionId:'2401d3',runId:'pre-fix',hypothesisId:'H4',location:'useSSEStream.js:42',message:'SSE response not ok',data:{url,status:response.status},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
-
-    // Store the last "result" received — only forward it after "done" arrives.
-    let pendingResult = null;
-
-    const parseBlock = (block) => {
-      const trimmed = block.trim();
-      if (!trimmed) return;
-
-      let eventType = "message";
-      const dataLines = [];
-
-      for (const line of trimmed.split("\n")) {
-        if (line.startsWith("event:")) {
-          eventType = line.slice(6).trim();
-        } else if (line.startsWith("data:")) {
-          dataLines.push(line.slice(5).trimStart());
-        }
-      }
-
-      const rawData = dataLines.join("\n").trim();
-      if (!rawData) return;
-
-      // Basic structural check — not a full JSON validator, but guards obvious truncation.
-      const isComplete =
-        (rawData.startsWith("{") && rawData.endsWith("}")) ||
-        (rawData.startsWith("[") && rawData.endsWith("]")) ||
-        (!rawData.startsWith("{") && !rawData.startsWith("["));
-
-      if (!isComplete) {
-        // Incomplete JSON — put back into buffer and wait for more data.
-        buffer = block + "\n\n" + buffer;
-        return;
-      }
-
-      let parsed;
-      try {
-        parsed = JSON.parse(rawData);
-      } catch {
-        parsed = rawData;
-      }
-
-      if (eventType === "step") {
-        onEvent("step", parsed);
-        return;
-      }
-
-      if (eventType === "result") {
-        pendingResult = parsed;
-        return;
-      }
-
-      if (eventType === "error") {
-        onEvent("error", parsed);
-        return;
-      }
-
-      if (eventType === "done") {
-        if (pendingResult !== null) {
-          onEvent("result", pendingResult);
-          pendingResult = null;
-        }
-        onEvent("done", parsed);
-        return;
-      }
-
-      onEvent(eventType, parsed);
-    };
-
-    const processBuffer = () => {
-      const normalized = buffer.replace(/\r\n/g, "\n");
-      const blocks = normalized.split("\n\n");
-      buffer = blocks.pop() ?? "";
-      for (const block of blocks) {
-        parseBlock(block);
-      }
-    };
-
     try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: requestHeaders,
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      // Store the last "result" received — only forward it after "done" arrives.
+      let pendingResult = null;
+
+      const parseBlock = (block) => {
+        const trimmed = block.trim();
+        if (!trimmed) return;
+
+        let eventType = "message";
+        const dataLines = [];
+
+        for (const line of trimmed.split("\n")) {
+          if (line.startsWith("event:")) {
+            eventType = line.slice(6).trim();
+          } else if (line.startsWith("data:")) {
+            dataLines.push(line.slice(5).trimStart());
+          }
+        }
+
+        const rawData = dataLines.join("\n").trim();
+        if (!rawData) return;
+
+        // Basic structural check — not a full JSON validator, but guards obvious truncation.
+        const isComplete =
+          (rawData.startsWith("{") && rawData.endsWith("}")) ||
+          (rawData.startsWith("[") && rawData.endsWith("]")) ||
+          (!rawData.startsWith("{") && !rawData.startsWith("["));
+
+        if (!isComplete) {
+          // Incomplete JSON — put back into buffer and wait for more data.
+          buffer = block + "\n\n" + buffer;
+          return;
+        }
+
+        let parsed;
+        try {
+          parsed = JSON.parse(rawData);
+        } catch {
+          parsed = rawData;
+        }
+
+        if (eventType === "step") {
+          onEvent("step", parsed);
+          return;
+        }
+
+        if (eventType === "result") {
+          pendingResult = parsed;
+          return;
+        }
+
+        if (eventType === "error") {
+          onEvent("error", parsed);
+          return;
+        }
+
+        if (eventType === "done") {
+          if (pendingResult !== null) {
+            onEvent("result", pendingResult);
+            pendingResult = null;
+          }
+          onEvent("done", parsed);
+          return;
+        }
+
+        onEvent(eventType, parsed);
+      };
+
+      const processBuffer = () => {
+        const normalized = buffer.replace(/\r\n/g, "\n");
+        const blocks = normalized.split("\n\n");
+        buffer = blocks.pop() ?? "";
+        for (const block of blocks) {
+          parseBlock(block);
+        }
+      };
+
       while (true) {
         const { done, value } = await reader.read();
 
@@ -155,10 +149,8 @@ export function useSSEStream() {
         }
       }
     } catch (err) {
-      // Suppress AbortError — it is expected when the stream is intentionally cancelled.
-      // #region agent log
-      fetch('http://127.0.0.1:7388/ingest/0467a1a6-9592-4997-af51-266c4e6ab3de',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2401d3'},body:JSON.stringify({sessionId:'2401d3',runId:'pre-fix',hypothesisId:'H1',location:'useSSEStream.js:153',message:'SSE catch',data:{name:err?.name||'',message:err?.message||''},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
+      // Suppress AbortError — it is expected when the stream is intentionally cancelled
+      // (e.g. navigation away, component unmount, or a new call aborting the previous one).
       if (err.name !== "AbortError") {
         throw err;
       }

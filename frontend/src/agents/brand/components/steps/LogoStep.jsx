@@ -6,6 +6,7 @@ export default function LogoStep({
   onGenerateLogo,
   logoGenMessage,
   logoPreviewUrl,
+  logoConcept = null,
 }) {
   return (
     <div className="bi-fade-up">
@@ -47,6 +48,11 @@ export default function LogoStep({
               alt="Logo généré"
               className="mx-auto max-h-56 w-auto rounded-lg object-contain"
             />
+            {logoConcept?.image_attribution ? (
+              <p className="mt-3 text-center text-[11px] leading-snug text-ink-subtle">
+                {logoConcept.image_attribution}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

@@ -53,6 +53,14 @@ for _k in (
         _seen_hf.add(_k.strip())
         HF_KEYS.append(_k.strip())
 
+# Pollinations (fallback image logo) — optionnel. Ex. POLLINATIONS_API_KEY=pk_… (sans espaces autour du =).
+_pollinations_key = (os.getenv("POLLINATIONS_API_KEY") or "").strip()
+if not _pollinations_key:
+    _pollinations_key = (os.getenv("Pollination_API_Key") or "").strip()
+if not _pollinations_key:
+    _pollinations_key = (os.getenv("POLLINATION_API_KEY") or "").strip()
+POLLINATIONS_API_KEY = _pollinations_key if _pollinations_key else None
+
 # ─────────────────────────────────────────────
 # VALIDATION
 # ─────────────────────────────────────────────
