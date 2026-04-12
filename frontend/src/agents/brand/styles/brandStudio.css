@@ -5,8 +5,8 @@
 
 .bi-studio {
   font-family: var(--font-sans); /* Inter — same as the rest of the app */
-  background: #f8f7ff;          /* brand-50 equivalent */
   color: var(--ink, #1a1040);
+  /* No background override — inherits the app-shell gradient (same as Market/Marketing) */
 }
 
 /* ── Animations ───────────────────────────────────────────────────────────── */

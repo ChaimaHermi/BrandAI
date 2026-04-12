@@ -165,7 +165,29 @@ async def _stream_pipeline(body: PipelineStreamRequest):
         if not market_analysis:
             raise RuntimeError("Le graph market n'a produit aucun résultat.")
 
-        # ── 4. Plan marketing ─────────────────────────────────────────────
+        # ── 4. Sauvegarde analyse de marché ───────────────────────────────
+        yield sse_event("step", {
+            "status": "loading",
+            "stage":  "persist_result",
+            "message": "Sauvegarde de l'analyse de marché en base…",
+        })
+
+        completed_at = datetime.now(timezone.utc)
+        persisted = await persist_market_result(
+            idea_id=body.idea_id,
+            result_json=market_analysis,
+            started_at=started_at,
+            completed_at=completed_at,
+            access_token=body.access_token,
+        )
+
+        yield sse_event("step", {
+            "status": "done",
+            "stage":  "persist_result",
+            "message": "Analyse de marché sauvegardée",
+        })
+
+        # ── 5. Plan marketing ─────────────────────────────────────────────
         yield sse_event("step", {
             "status": "loading",
             "stage":  "marketing_plan",
@@ -186,8 +208,6 @@ async def _stream_pipeline(body: PipelineStreamRequest):
         try:
             marketing_plan = await marketing_agent.run(ps) or {}
         except Exception as e:
-            # Marketing is non-blocking — log but don't fail the pipeline
-            marketing_plan = {}
             yield sse_event("step", {
                 "status": "error",
                 "stage":  "marketing_plan",
@@ -201,35 +221,24 @@ async def _stream_pipeline(body: PipelineStreamRequest):
                 "message": "Plan marketing généré",
             })
 
-        # ── 5. Sauvegarde ─────────────────────────────────────────────────
-        yield sse_event("step", {
-            "status": "loading",
-            "stage":  "persist_result",
-            "message": "Sauvegarde des résultats en base…",
-        })
-
-        completed_at = datetime.now(timezone.utc)
-        persisted = await persist_market_result(
-            idea_id=body.idea_id,
-            result_json=market_analysis,
-            started_at=started_at,
-            completed_at=completed_at,
-            access_token=body.access_token,
-        )
-
+        # ── 6. Sauvegarde plan marketing ──────────────────────────────────
         persisted_marketing = None
         if marketing_plan:
+            yield sse_event("step", {
+                "status": "loading",
+                "stage":  "persist_marketing_result",
+                "message": "Sauvegarde du plan marketing en base…",
+            })
             persisted_marketing = await persist_marketing_result(
                 idea_id=body.idea_id,
                 result_json=marketing_plan,
                 access_token=body.access_token,
             )
-
-        yield sse_event("step", {
-            "status": "done",
-            "stage":  "persist_result",
-            "message": "Résultats sauvegardés avec succès",
-        })
+            yield sse_event("step", {
+                "status": "done",
+                "stage":  "persist_marketing_result",
+                "message": "Plan marketing sauvegardé",
+            })
 
         elapsed_ms = int((time.time() - t0) * 1000)
         yield sse_event("done", {

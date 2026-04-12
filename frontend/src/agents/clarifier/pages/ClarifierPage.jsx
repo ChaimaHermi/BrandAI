@@ -126,7 +126,8 @@ export default function ClarifierPage() {
   const progressPct = currentStep === "clarified" ? 17 : 8;
 
   return (
-    <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5" style={{ minHeight: 0 }}>
+    <div className="app-content-scroll flex flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
 
       {/* ── Agent header card ──────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 rounded-2xl border border-brand-border bg-white px-5 py-3.5 shadow-card animate-[slideUp_0.3s_ease_forwards]">
@@ -281,7 +282,8 @@ export default function ClarifierPage() {
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                     <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  Lancer pipeline d'analyse de marché
+                  <span className="hidden sm:inline">Lancer le pipeline d&apos;analyse</span>
+                  <span className="sm:hidden">Analyser</span>
                 </button>
               )}
             </div>
@@ -290,6 +292,7 @@ export default function ClarifierPage() {
       )}
 
       {currentStep === "refused" && <RefusedBlock data={refusalData} />}
+    </div>
     </div>
   );
 }

@@ -4,7 +4,7 @@
 export default function SectionHeader({ step, title, sub }) {
   const stepLabel = String(step).padStart(2, "0");
   return (
-    <div className="mb-6 bi-fade-up">
+    <div className="mb-4 bi-fade-up">
       <div className="mb-1.5 flex items-center">
         <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-brand">
           Étape {stepLabel}

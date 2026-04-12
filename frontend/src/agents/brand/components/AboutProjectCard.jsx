@@ -61,17 +61,34 @@ export default function AboutProjectCard({ idea, embedded = false }) {
         </dl>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
-        {[
-          idea.clarity_country,
-          idea.clarity_country_code ? `(${idea.clarity_country_code})` : null,
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        {idea.clarity_language && (
-          <span className="text-ink-subtle"> · langue {idea.clarity_language}</span>
-        )}
-      </div>
+      {(idea.clarity_country || idea.clarity_language) && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {idea.clarity_country && (
+            <div className="flex items-center gap-2 rounded-xl border border-[#bfdbfe] bg-[#eff6ff] px-3 py-2">
+              <span className="text-base leading-none">🌍</span>
+              <div>
+                <div className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#1d4ed8]">
+                  Zone géographique
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-[#1e3a8a]">{idea.clarity_country}</span>
+                  {idea.clarity_country_code && (
+                    <span className="rounded border border-[#93c5fd] bg-white px-1 py-px font-mono text-[9px] font-bold text-[#2563eb]">
+                      {idea.clarity_country_code}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {idea.clarity_language && (
+            <div className="rounded-xl border border-brand-border bg-brand-light px-3 py-2">
+              <div className="text-[9px] font-bold uppercase tracking-[0.08em] text-brand">Langue</div>
+              <div className="text-xs font-bold text-brand-darker">{idea.clarity_language}</div>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 

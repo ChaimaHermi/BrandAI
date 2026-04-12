@@ -8,7 +8,9 @@ function BulletList({ items, dotClass }) {
     <ul className="space-y-1.5">
       {items.map((item, i) => (
         <li key={i} className="flex items-start gap-2 text-sm text-ink">
-          <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`} />
+          <span
+            className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`}
+          />
           {item}
         </li>
       ))}
@@ -25,7 +27,9 @@ export function ActionSection({ plan }) {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-light">
             <FiClock size={14} className="text-brand" />
           </span>
-          <span className="text-xs font-semibold text-brand">Immédiat</span>
+          <span className="text-xs font-semibold text-brand">
+            Action immédiate
+          </span>
         </div>
         <BulletList items={a.shortTerm} dotClass="bg-brand" />
       </AgentSection>
@@ -35,7 +39,9 @@ export function ActionSection({ plan }) {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
             <FiCalendar size={14} className="text-amber-500" />
           </span>
-          <span className="text-xs font-semibold text-amber-600">3–6 mois</span>
+          <span className="text-xs font-semibold text-amber-600">
+            Croissance structurée
+          </span>
         </div>
         <BulletList items={a.midTerm} dotClass="bg-amber-400" />
       </AgentSection>
@@ -45,7 +51,9 @@ export function ActionSection({ plan }) {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-light">
             <FiTrendingUp size={14} className="text-success" />
           </span>
-          <span className="text-xs font-semibold text-success">6–12 mois</span>
+          <span className="text-xs font-semibold text-success">
+            Impact durable
+          </span>
         </div>
         <BulletList items={a.longTerm} dotClass="bg-success" />
       </AgentSection>

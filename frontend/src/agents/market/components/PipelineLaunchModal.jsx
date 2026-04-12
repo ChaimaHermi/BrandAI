@@ -8,14 +8,16 @@ import { createPortal } from "react-dom";
 
 /* ── Pipeline stages definition (order matters) ─────────────────────────── */
 const PIPELINE_STAGES = [
-  { id: "keyword_extractor",       label: "Extraction des mots-clés",    desc: "Analyse sémantique de l'idée" },
-  { id: "market_sizing",           label: "Dimensionnement du marché",   desc: "Taille, CAGR et revenus estimés" },
-  { id: "competitor",              label: "Analyse des concurrents",     desc: "Forces, faiblesses, positionnement" },
-  { id: "voc",                     label: "Voice of Customer",           desc: "Pain points et attentes utilisateurs" },
-  { id: "trends_risks",            label: "Tendances & Risques",         desc: "Signaux marché et menaces identifiées" },
-  { id: "strategy_analysis_agent", label: "Stratégie SWOT / PESTEL",    desc: "Analyse stratégique complète" },
-  { id: "save_results",            label: "Finalisation du rapport",     desc: "Compilation et structuration des données" },
-  { id: "persist_result",          label: "Sauvegarde du résultat",      desc: "Enregistrement en base de données" },
+  { id: "keyword_extractor",       label: "Extraction des mots-clés",      desc: "Analyse sémantique de l'idée" },
+  { id: "market_sizing",           label: "Dimensionnement du marché",     desc: "Taille, CAGR et revenus estimés" },
+  { id: "competitor",              label: "Analyse des concurrents",       desc: "Forces, faiblesses, positionnement" },
+  { id: "voc",                     label: "Voice of Customer",             desc: "Pain points et attentes utilisateurs" },
+  { id: "trends_risks",            label: "Tendances & Risques",           desc: "Signaux marché et menaces identifiées" },
+  { id: "strategy_analysis_agent", label: "Stratégie SWOT / PESTEL",      desc: "Analyse stratégique complète" },
+  { id: "save_results",            label: "Finalisation du rapport",       desc: "Compilation et structuration des données" },
+  { id: "persist_result",          label: "Sauvegarde analyse de marché",  desc: "Enregistrement en base de données" },
+  { id: "marketing_plan",          label: "Plan marketing",                desc: "Génération du plan marketing complet" },
+  { id: "persist_marketing_result",label: "Sauvegarde plan marketing",     desc: "Enregistrement du plan en base" },
 ];
 
 /* ── Icons ───────────────────────────────────────────────────────────────── */
@@ -61,7 +63,7 @@ function ErrorIcon() {
 }
 
 /* ── Component ───────────────────────────────────────────────────────────── */
-export default function PipelineLaunchModal({ isOpen, isLoading, isDone, xaiSteps, error, onClose }) {
+export default function PipelineLaunchModal({ isOpen, isDone, xaiSteps, error, onClose }) {
   /* Build a map: stageId → { status, message } using latest step per stage */
   const stageMap = useMemo(() => {
     const map = {};

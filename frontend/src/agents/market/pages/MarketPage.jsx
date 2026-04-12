@@ -164,7 +164,6 @@ export default function MarketPage() {
     <>
       <PipelineLaunchModal
         isOpen={showModal}
-        isLoading={isLoading}
         isDone={modalDone}
         xaiSteps={xaiSteps}
         error={error}
