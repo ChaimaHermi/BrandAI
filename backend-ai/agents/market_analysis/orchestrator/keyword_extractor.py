@@ -108,7 +108,7 @@ class KeywordExtractor(BaseAgent):
             llm_max_tokens = 4096,
             temperature    = 0.1,
         )
-        # _groq_keys et _nvidia_keys déjà initialisés par BaseAgent
+        # _nvidia_keys déjà initialisé par BaseAgent (gpt-oss-120b via NVIDIA uniquement)
 
     async def run(self, state: PipelineState) -> PipelineState:
         raise NotImplementedError("Utiliser extract(idea).")
@@ -134,7 +134,7 @@ class KeywordExtractor(BaseAgent):
 
         for attempt in range(3):
             try:
-                # _call_llm : NVIDIA en priorité → Groq fallback → LangChain
+                # _call_llm : openai/gpt-oss-120b via NVIDIA NIM uniquement
                 raw    = await self._call_llm(SYSTEM_PROMPT, user_prompt)
                 data   = self._parse_json_robust(raw)
                 bundle = self._build_bundle(data)

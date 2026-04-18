@@ -18,7 +18,7 @@ export function initialFacebookForm() {
     tone: DEFAULT_TONE[PLATFORMS.facebook],
     contentType: "feed_post",
     callToAction: "learn_more",
-    includeImage: false,
+    includeImage: true,
   };
 }
 
@@ -28,7 +28,7 @@ export function initialLinkedInForm() {
     tone: DEFAULT_TONE[PLATFORMS.linkedin],
     contentType: "feed_post",
     callToAction: "learn_more",
-    includeImage: false,
+    includeImage: true,
   };
 }
 
@@ -48,12 +48,16 @@ export function getInitialFormForPlatform(platform) {
 /**
  * Payload unifié pour l’API content generation (backend-ai).
  * Champs absents selon plateforme → null ou omis.
+ * @param {{ alignWithProject?: boolean }} [options]
  */
-export function buildGenerationPayload(ideaId, platform, formValues) {
+export function buildGenerationPayload(ideaId, platform, formValues, options = {}) {
+  const alignWithProject =
+    options.alignWithProject !== undefined ? options.alignWithProject : true;
   const brief = {
     subject: (formValues.subject || "").trim(),
     tone: formValues.tone,
     content_type: formValues.contentType,
+    align_with_project: Boolean(alignWithProject),
   };
 
   if (platform === PLATFORMS.instagram) {
