@@ -30,9 +30,9 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import Any, AsyncGenerator
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.prebuilt import create_react_agent
 from langsmith import traceable
 from langsmith.run_helpers import get_current_run_tree
@@ -384,10 +384,122 @@ async def run_content_react_agent(
     return state
 
 
+# -----------------------------------------------------------------------------
+# SSE helper — format Server-Sent Events
+# -----------------------------------------------------------------------------
+def sse_event(event: str, data: dict) -> str:
+    """Sérialise un dict en bloc SSE (event: + data: multi-lignes)."""
+    payload = json.dumps(data, ensure_ascii=False, indent=2)
+    data_lines = "\n".join(f"data: {line}" for line in payload.splitlines())
+    return f"event: {event}\n{data_lines}\n\n"
+
+
+# -----------------------------------------------------------------------------
+# Streaming SSE — utilisé par POST /content/generate/stream
+# -----------------------------------------------------------------------------
+async def stream_content_generation(
+    *,
+    idea_id: int,
+    platform: str,
+    brief: dict[str, Any],
+    access_token: str | None = None,
+    recursion_limit: int = 40,
+) -> AsyncGenerator[str, None]:
+    """
+    Générateur async SSE qui exécute l'agent ReAct en streaming.
+
+    Événements émis :
+      - tool_start  { tool: str }
+      - tool_end    { tool: str }
+      - done        { success: True, caption, image_url, char_count, platform }
+                 ou { success: False }
+      - error       { success: False, message: str }
+    """
+    state = ContentPipelineState()
+    runner = ContentLLMRunner()
+
+    tools = build_content_react_tools(
+        idea_id=idea_id,
+        platform=platform,
+        brief=brief,
+        access_token=access_token,
+        state=state,
+        runner=runner,
+    )
+
+    llm = create_react_orchestrator_llm(
+        model=CONTENT_LLM_CONFIG["model"],
+        temperature=float(CONTENT_LLM_CONFIG.get("temperature", 0.35)),
+        max_tokens=int(CONTENT_LLM_CONFIG.get("max_tokens", 4096)),
+    )
+
+    agent = create_react_agent(
+        llm,
+        tools,
+        prompt=REACT_ORCHESTRATOR_SYSTEM,
+        name="content_react",
+    )
+
+    user_msg = (
+        "Exécute la génération de contenu pour ce projet. "
+        f"Plateforme cible : {platform}. "
+        "Respecte l'ordre des outils décrit dans les instructions système."
+    )
+
+    initial = {"messages": [HumanMessage(content=user_msg)]}
+    cfg = {"recursion_limit": recursion_limit}
+
+    # Track already-seen message counts to detect new messages only
+    seen_count = 0
+
+    try:
+        async for chunk in agent.astream(initial, config=cfg, stream_mode="values"):
+            messages = chunk.get("messages") or []
+            new_messages = messages[seen_count:]
+            seen_count = len(messages)
+
+            for msg in new_messages:
+                # tool_start: AIMessage with tool_calls
+                if isinstance(msg, AIMessage) and msg.tool_calls:
+                    for tc in msg.tool_calls:
+                        tool_name = tc["name"] if isinstance(tc, dict) else tc.name
+                        yield sse_event("tool_start", {"tool": tool_name})
+
+                # tool_end: ToolMessage
+                elif isinstance(msg, ToolMessage):
+                    tool_name = msg.name or ""
+                    yield sse_event("tool_end", {"tool": tool_name})
+
+        # After the stream finishes — ensure image pipeline ran if needed
+        await _ensure_image_pipeline_when_brief_requires(
+            state,
+            platform=platform,
+            brief=brief,
+            runner=runner,
+        )
+        result = _build_generation_result(state, platform=platform, brief=brief)
+        yield sse_event(
+            "done",
+            {
+                "success": True,
+                "caption": result["caption"],
+                "image_url": result.get("image_url"),
+                "char_count": result["char_count"],
+                "platform": result["platform"],
+            },
+        )
+
+    except Exception as exc:
+        logger.exception("[stream_content_generation] erreur pendant le stream")
+        yield sse_event("error", {"success": False, "message": str(exc)})
+        yield sse_event("done", {"success": False})
+
+
 # Alias explicite pour imports externes
 __all__ = [
     "build_content_react_tools",
     "run_content_generation",
     "run_content_react_agent",
+    "stream_content_generation",
     "REACT_ORCHESTRATOR_SYSTEM",
 ]

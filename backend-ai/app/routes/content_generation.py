@@ -17,9 +17,13 @@ import logging
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from agents.content_generation.content_react_agent import run_content_generation
+from agents.content_generation.content_react_agent import (
+    run_content_generation,
+    stream_content_generation,
+)
 
 logger = logging.getLogger("brandai.content_generation_route")
 
@@ -92,6 +96,29 @@ class ContentGenerateResponse(BaseModel):
     image_url: str | None
     char_count: int
     platform: str
+
+
+@router.post("/content/generate/stream")
+async def content_generate_stream(body: ContentGenerateRequest) -> StreamingResponse:
+    """Délègue à stream_content_generation — retourne un flux SSE text/event-stream."""
+
+    async def _gen():
+        async for chunk in stream_content_generation(
+            idea_id=body.idea_id,
+            platform=body.platform,
+            brief=body.brief.model_dump(),
+            access_token=body.access_token,
+        ):
+            yield chunk
+
+    return StreamingResponse(
+        _gen(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/content/generate", response_model=ContentGenerateResponse)

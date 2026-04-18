@@ -3,7 +3,6 @@ import { AGENTS } from "@/agents";
 import { AgentPageHeader } from "@/agents/shared/components/AgentPageHeader";
 import { SectionIntro } from "@/shared/ui/SectionIntro";
 import { ErrorBanner } from "@/shared/ui/ErrorBanner";
-import { Loader } from "@/shared/ui/Loader";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePipeline } from "@/context/PipelineContext";
@@ -15,6 +14,7 @@ import GeneratedContentsHistoryModal from "../components/GeneratedContentsHistor
 import { Button } from "@/shared/ui/Button";
 import { useContentGeneration } from "../hooks/useContentGeneration";
 import { useSocialPublish } from "../hooks/useSocialPublish";
+import { GenerationProgressModal } from "../components/generation-progress";
 
 const contentAgent = AGENTS.find((a) => a.id === "content");
 
@@ -58,6 +58,7 @@ export default function ContentPage() {
     updateForm,
     generated,
     isGenerating,
+    generationSteps,
     error,
     generate,
     publish,
@@ -118,13 +119,6 @@ export default function ContentPage() {
 
       <PlatformTabs activePlatform={activePlatform} onSelect={setActivePlatform} />
 
-      {isGenerating && (
-        <div className="flex items-center gap-3 rounded-2xl border border-brand-border bg-white px-5 py-4 shadow-card">
-          <Loader className="h-5 w-5" />
-          <span className="text-sm text-brand-dark">Génération du contenu…</span>
-        </div>
-      )}
-
       {platformIntro && (
         <SectionIntro
           icon={platformIntro.icon}
@@ -163,6 +157,14 @@ export default function ContentPage() {
         onClose={() => setHistoryOpen(false)}
         ideaId={idea?.id}
         token={token}
+      />
+
+      <GenerationProgressModal
+        open={isGenerating}
+        platform={activePlatform}
+        steps={generationSteps}
+        isStreaming={isGenerating}
+        error={null}
       />
     </div>
   );

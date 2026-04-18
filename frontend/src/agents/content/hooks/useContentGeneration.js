@@ -6,11 +6,11 @@ import {
   initialFacebookForm,
   initialLinkedInForm,
 } from "../contentFormConfig";
-import { postContentGeneration } from "../api/contentGeneration.api";
 import {
   apiCreateGeneratedContent,
   apiPatchGeneratedContent,
 } from "@/services/generatedContentApi";
+import { useContentGenerationSSE } from "./useContentGenerationSSE";
 
 /**
  * @param {{ idea: object | null, token: string | null, publishToPlatform?: (platform: string, payload: { caption: string, imageUrl: string | null }) => Promise<any> }} params
@@ -24,13 +24,22 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
     [PLATFORMS.linkedin]: initialLinkedInForm(),
   });
 
-  const [generated, setGenerated] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedByPlatform, setGeneratedByPlatform] = useState({});
+  const generated = generatedByPlatform[activePlatform] ?? null;
   const [error, setError] = useState(null);
-  /** true = posts ancrés sur l’idée ; false = sujet libre / éducatif sans forcer le projet */
+  /** true = posts ancrés sur l'idée ; false = sujet libre / éducatif sans forcer le projet */
   const [alignWithProject, setAlignWithProject] = useState(true);
   const [publishLoading, setPublishLoading] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState("");
+
+  // SSE streaming hook — replaces isGenerating + postContentGeneration
+  const {
+    steps: generationSteps,
+    isStreaming: isGenerating,
+    sseError,
+    startStream,
+    resetSSE,
+  } = useContentGenerationSSE();
 
   const updateForm = useCallback((platform, patch) => {
     setForms((prev) => ({
@@ -58,48 +67,58 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
     }
 
     setError(null);
-    setIsGenerating(true);
-    setGenerated(null);
+    resetSSE();
+    setGeneratedByPlatform((prev) => ({ ...prev, [activePlatform]: null }));
     setPublishSuccess("");
 
-    try {
-      const payload = buildGenerationPayload(ideaId, activePlatform, formValues, {
-        alignWithProject,
-      });
-      const result = await postContentGeneration(payload, token);
-      let dbId = null;
-      if (token) {
-        try {
-          const row = await apiCreateGeneratedContent(ideaId, token, {
-            platform: result.platform || activePlatform,
-            caption: result.caption,
-            image_url: result.image_url || null,
-            char_count:
-              result.char_count ?? (result.caption || "").length,
-          });
-          dbId = row?.id ?? null;
-        } catch (err) {
-          console.warn("[content] Historique BDD non enregistré:", err?.message || err);
+    const payload = buildGenerationPayload(ideaId, activePlatform, formValues, {
+      alignWithProject,
+    });
+
+    // Capture activePlatform in closure for the async callback
+    const currentPlatform = activePlatform;
+
+    await startStream(payload, token, {
+      onResult: async (result) => {
+        // result = { success: true, caption, image_url, char_count, platform }
+        let dbId = null;
+        if (token) {
+          try {
+            const row = await apiCreateGeneratedContent(ideaId, token, {
+              platform: result.platform || currentPlatform,
+              caption: result.caption,
+              image_url: result.image_url || null,
+              char_count:
+                result.char_count ?? (result.caption || "").length,
+            });
+            dbId = row?.id ?? null;
+          } catch (err) {
+            console.warn(
+              "[content] Historique BDD non enregistré:",
+              err?.message || err
+            );
+          }
         }
-      }
-      setGenerated({
-        caption: result.caption,
-        imageUrl: result.image_url || null,
-        charCount: result.char_count ?? (result.caption || "").length,
-        platform: result.platform || activePlatform,
-        dbId,
-      });
-    } catch (e) {
-      setError(e?.message || "La génération a échoué.");
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [idea?.id, activePlatform, forms, token, alignWithProject]);
+        setGeneratedByPlatform((prev) => ({
+          ...prev,
+          [currentPlatform]: {
+            caption: result.caption,
+            imageUrl: result.image_url || null,
+            charCount: result.char_count ?? (result.caption || "").length,
+            platform: result.platform || currentPlatform,
+            dbId,
+          },
+        }));
+      },
+      onError: (msg) => setError(msg),
+    });
+  }, [idea?.id, activePlatform, forms, token, alignWithProject, startStream, resetSSE]);
 
   /** @returns {Promise<boolean>} */
   const publish = useCallback(async () => {
-    if (!generated?.caption?.trim()) {
-      setError("Générez d’abord un post.");
+    const current = generatedByPlatform[activePlatform];
+    if (!current?.caption?.trim()) {
+      setError("Générez d'abord un post.");
       return false;
     }
     if (!publishToPlatform) {
@@ -110,12 +129,12 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
     setPublishLoading(true);
     try {
       await publishToPlatform(activePlatform, {
-        caption: generated.caption,
-        imageUrl: generated.imageUrl ?? null,
+        caption:  current.caption,
+        imageUrl: current.imageUrl ?? null,
       });
-      if (token && idea?.id && generated?.dbId) {
+      if (token && idea?.id && current?.dbId) {
         try {
-          await apiPatchGeneratedContent(idea.id, generated.dbId, token, {
+          await apiPatchGeneratedContent(idea.id, current.dbId, token, {
             status: "published",
           });
         } catch (err) {
@@ -127,9 +146,10 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
       setTimeout(() => setPublishSuccess(""), 6000);
       return true;
     } catch (e) {
-      if (token && idea?.id && generated?.dbId) {
+      const current2 = generatedByPlatform[activePlatform];
+      if (token && idea?.id && current2?.dbId) {
         try {
-          await apiPatchGeneratedContent(idea.id, generated.dbId, token, {
+          await apiPatchGeneratedContent(idea.id, current2.dbId, token, {
             status: "publish_failed",
             publish_error: String(e?.message || "Publication échouée").slice(0, 2000),
           });
@@ -142,7 +162,7 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
     } finally {
       setPublishLoading(false);
     }
-  }, [generated, activePlatform, publishToPlatform, token, idea?.id]);
+  }, [generatedByPlatform, activePlatform, publishToPlatform, token, idea?.id]);
 
   return {
     activePlatform,
@@ -151,6 +171,8 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
     updateForm,
     generated,
     isGenerating,
+    generationSteps,
+    sseError,
     error,
     setError,
     generate,

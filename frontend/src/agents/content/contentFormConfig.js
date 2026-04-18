@@ -18,7 +18,7 @@ export function initialFacebookForm() {
     tone: DEFAULT_TONE[PLATFORMS.facebook],
     contentType: "feed_post",
     callToAction: "learn_more",
-    includeImage: false,
+    includeImage: true,
   };
 }
 
@@ -28,7 +28,7 @@ export function initialLinkedInForm() {
     tone: DEFAULT_TONE[PLATFORMS.linkedin],
     contentType: "feed_post",
     callToAction: "learn_more",
-    includeImage: false,
+    includeImage: true,
   };
 }
 

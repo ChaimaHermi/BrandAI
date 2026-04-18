@@ -16,6 +16,72 @@ function isUrlLike(value) {
   return typeof value === "string" && /^https?:\/\//i.test(value.trim());
 }
 
+/** Libellé secours si pas de description FR (évite le Title Case anglais agressif) */
+function formatMetricFallback(metric) {
+  if (typeof metric !== "string" || !metric.trim()) return "Indicateur";
+  return metric
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+const SIGNAL_BUBBLE_BASE =
+  "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg";
+
+/** Aligné sur les cartes métriques : Taux d'adoption / Revenus */
+const ACCENT_ADOPTION = FIELD_CONFIG.find((c) => c.key === "adoption_rate")?.accent ?? "bg-emerald-50 text-emerald-600";
+const ACCENT_REVENUE = FIELD_CONFIG.find((c) => c.key === "market_revenue")?.accent ?? "bg-success-light text-success";
+const ACCENT_DEFAULT = FIELD_CONFIG.find((c) => c.key === "market_size")?.accent ?? "bg-brand-light text-brand";
+
+/**
+ * Icône + pastille : pourcentage = même couleur que « Taux d'adoption », revenus = « Revenus ».
+ */
+function getMarketSignalIconConfig(signal) {
+  const metric = String(signal?.metric ?? "").toLowerCase();
+  const unit = String(signal?.unit ?? "").toLowerCase();
+  const desc = String(signal?.description ?? "").toLowerCase();
+  const haystack = `${metric} ${unit} ${desc}`;
+
+  const hasMoneyUnit =
+    /[$€£]|usd|eur|tnd|dt\b|mdt|million|milliard|md\b|k€|m€|bn\b/.test(haystack + unit);
+
+  if (
+    /\b(revenue|revenu|revenus|chiffre|affaires|sales|ventes|turnover|earnings|profit|marge|ca\b)/.test(
+      haystack,
+    ) ||
+    hasMoneyUnit
+  ) {
+    return { Icon: FiDollarSign, bubbleClass: `${SIGNAL_BUBBLE_BASE} ${ACCENT_REVENUE}` };
+  }
+
+  if (
+    unit.includes("%") ||
+    /\b(percent|percentage|pourcent|taux|ratio|proportion|part\s|share|adoption|wearing|portent)/.test(
+      haystack,
+    ) ||
+    /_pct|pct\b|percent|percentage|rate|taux|adoption/.test(metric)
+  ) {
+    return { Icon: FiPercent, bubbleClass: `${SIGNAL_BUBBLE_BASE} ${ACCENT_ADOPTION}` };
+  }
+
+  if (/\b(users|utilisateur|utilisateurs|population|personnes|people|ménage|household)/.test(haystack)) {
+    const a = FIELD_CONFIG.find((c) => c.key === "number_of_users")?.accent ?? ACCENT_DEFAULT;
+    return { Icon: FiUsers, bubbleClass: `${SIGNAL_BUBBLE_BASE} ${a}` };
+  }
+
+  if (/\b(cagr|growth|croissance|cro[iî]t|augment)/.test(haystack)) {
+    const a = FIELD_CONFIG.find((c) => c.key === "CAGR")?.accent ?? ACCENT_DEFAULT;
+    return { Icon: FiTrendingUp, bubbleClass: `${SIGNAL_BUBBLE_BASE} ${a}` };
+  }
+
+  if (/\b(market\s*size|taille\s*du\s*marché|volume|valeur\s*du\s*marché)/.test(haystack)) {
+    return { Icon: FiBarChart2, bubbleClass: `${SIGNAL_BUBBLE_BASE} ${ACCENT_DEFAULT}` };
+  }
+
+  return { Icon: FiZap, bubbleClass: `${SIGNAL_BUBBLE_BASE} ${ACCENT_DEFAULT}` };
+}
+
 export default function MarketApercu({ market }) {
   const marketSources = Array.isArray(market?.sources) ? market.sources : [];
   const marketSignals = Array.isArray(market?.market_signals) ? market.market_signals : [];
@@ -90,47 +156,49 @@ export default function MarketApercu({ market }) {
       {marketSignals.length > 0 && (
         <div>
           <p className="mb-3 flex items-center gap-2 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
-            <FiZap size={12} />
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
+              <FiZap size={12} />
+            </span>
             Signaux marché
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {marketSignals.map((signal, idx) => {
               const hasSource = typeof signal?.source === "string" && signal.source.trim();
-              const label = (signal.metric || "")
-                .replace(/_/g, " ")
-                .replace(/\b\w/g, (c) => c.toUpperCase());
+              const desc = typeof signal?.description === "string" ? signal.description.trim() : "";
+              const titleFr = desc || formatMetricFallback(signal.metric);
+              const { Icon: SignalIcon, bubbleClass } = getMarketSignalIconConfig(signal);
               return (
                 <div
                   key={idx}
                   className="flex flex-col gap-3 rounded-xl border border-brand-border bg-white p-4 shadow-card transition-shadow hover:shadow-card-md"
                 >
-                  {/* Icon + label */}
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                      <FiZap size={15} />
+                  {/* Icône % = couleur Taux d'adoption ; revenu = couleur Revenus (FIELD_CONFIG) */}
+                  <div className="flex items-start gap-2">
+                    <span className={bubbleClass}>
+                      <SignalIcon size={15} />
                     </span>
-                    <span className="border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand line-clamp-2">
-                      {label}
+                    <span className="border-l-2 border-brand-muted pl-2 text-sm font-semibold leading-snug text-ink-body line-clamp-3">
+                      {titleFr}
                     </span>
                   </div>
 
                   {/* Value + unit + year */}
                   <div className="flex flex-wrap items-baseline gap-1">
-                    <span className="text-2xl font-bold text-ink">
+                    <span className="text-2xl font-bold text-brand-dark">
                       {signal.value ?? "N/D"}
                     </span>
                     {signal.unit && (
                       <span className="text-sm font-normal text-ink-muted">{signal.unit}</span>
                     )}
                     {signal.year && (
-                      <span className="ml-1 rounded-full bg-violet-50 px-2 py-0.5 text-2xs font-semibold text-violet-600">
+                      <span className="ml-1 rounded-full bg-brand-light px-2 py-0.5 text-2xs font-semibold text-brand">
                         {signal.year}
                       </span>
                     )}
                   </div>
 
-                  {/* Description */}
-                  {signal.description && (
+                  {/* Détail FR seulement si le titre était un fallback anglais (évite doublon) */}
+                  {desc && titleFr !== desc && (
                     <p className="text-xs leading-relaxed text-ink-muted line-clamp-3">
                       {signal.description}
                     </p>
