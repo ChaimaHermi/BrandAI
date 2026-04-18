@@ -10,8 +10,9 @@ export function ContentWorkspace({
   generated,
   isGenerating,
   onGenerate,
-  onPublish,
+  onOpenPublishModal,
   canPublish,
+  publishLoading,
 }) {
   const formValues = forms[activePlatform];
 
@@ -39,10 +40,10 @@ export function ContentWorkspace({
               type="button"
               variant="secondary"
               size="md"
-              disabled={!canPublish}
-              onClick={onPublish}
+              disabled={!canPublish || publishLoading}
+              onClick={onOpenPublishModal}
             >
-              Publier
+              {publishLoading ? "Publication…" : "Publier"}
             </Button>
           </div>
         </div>

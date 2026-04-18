@@ -4,12 +4,20 @@
  *
  * Props:
  *   agent     — Agent object from @/agents/index.js  { label, short, gradient }
- *   subtitle  — Small muted text below the agent label (optional)
+ *   subtitle          — Small muted text below the agent label (optional)
+ *   subtitleClassName — Extra classes for the subtitle line (optional)
  *   badge     — React node rendered on the right side (optional)
  *   action    — React node rendered after the badge (optional)
  *   className — Extra classes on the wrapper (optional)
  */
-export function AgentPageHeader({ agent, subtitle, badge, action, className = "" }) {
+export function AgentPageHeader({
+  agent,
+  subtitle,
+  subtitleClassName = "",
+  badge,
+  action,
+  className = "",
+}) {
   const gradient = agent?.gradient || "linear-gradient(135deg,#7C3AED,#534AB7)";
   const short    = agent?.short    || "AI";
   const label    = agent?.label    || "Agent";
@@ -34,7 +42,9 @@ export function AgentPageHeader({ agent, subtitle, badge, action, className = ""
       {/* Agent label + subtitle */}
       <div className="min-w-0 flex-1">
         <p className="text-sm font-extrabold text-ink">{label}</p>
-        {subtitle && <p className="text-xs text-ink-subtle">{subtitle}</p>}
+        {subtitle && (
+          <p className={`text-xs text-ink-subtle ${subtitleClassName}`.trim()}>{subtitle}</p>
+        )}
       </div>
 
       {/* Right slot */}

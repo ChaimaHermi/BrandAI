@@ -199,6 +199,21 @@ function IdeaRow({ idea, onNavigate, onDelete }) {
           </div>
         </div>
 
+        {/* Publications traceability */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate(`/ideas/${idea.id}/content`, {
+              state: { openGeneratedHistory: true },
+            });
+          }}
+          className="hidden whitespace-nowrap rounded-full border border-brand-border bg-white px-3 py-1.5 text-2xs font-bold text-brand-dark transition-all hover:bg-brand-light sm:inline-flex"
+          title="Historique des publications générées"
+        >
+          Posts
+        </button>
+
         {/* Open button */}
         <button
           type="button"

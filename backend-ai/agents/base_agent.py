@@ -11,7 +11,6 @@ import time
 from abc import ABC, abstractmethod
 
 import httpx
-from groq import AsyncGroq
 from langchain_core.messages import HumanMessage, SystemMessage
 from llm.llm_rotator import LLMRotator
 
@@ -73,20 +72,26 @@ class PipelineState:
 
 
 # ══════════════════════════════════════════════════════════════
-# Modèles Groq direct
+# Modèles servis exclusivement par NVIDIA NIM (openai/gpt-oss-120b) — pas de Groq
 # ══════════════════════════════════════════════════════════════
-
-GROQ_DIRECT_MODELS = {
-    "openai/gpt-oss-120b",
-}
-
-# Modèles routés vers NVIDIA NIM en priorité (pas de limite TPM)
 NVIDIA_MODELS = {
     "openai/gpt-oss-120b",
 }
 
 NVIDIA_API_BASE = "https://integrate.api.nvidia.com/v1/chat/completions"
 NVIDIA_MAX_TOKENS_CAP = 65_536  # limite max output NVIDIA gpt-oss-120b
+
+# Timeout HTTP NVIDIA (génération longue). Défaut 600 s ; 0 / none / off = pas de limite.
+def _nvidia_http_timeout() -> float | None:
+    raw = (os.getenv("NVIDIA_HTTP_TIMEOUT_S") or "").strip()
+    if raw in ("0", "none", "off"):
+        return None
+    if not raw:
+        return 600.0
+    try:
+        return float(raw)
+    except ValueError:
+        return 600.0
 
 REASONING_EFFORT_MAP = {
     "openai/gpt-oss-120b": "medium",
@@ -116,16 +121,7 @@ class BaseAgent(ABC):
         self.logger = logging.getLogger(f"brandai.{agent_name}")
         self.llm_rotator = LLMRotator.groq_model(llm_model, max_tokens=llm_max_tokens)
 
-        self._groq_keys = [
-            k for k in [
-                os.getenv("GROQ_API_KEY", ""),
-                os.getenv("GROQ_API_KEY_2", ""),
-                os.getenv("GROQ_API_KEY_3", ""),
-            ] if k
-        ]
-        self._groq_key_idx = 0
-
-        # Clés NVIDIA NIM (rotation)
+        # Clés NVIDIA NIM (rotation) — seul fournisseur pour openai/gpt-oss-120b
         self._nvidia_keys = [
             k for k in [
                 os.getenv("NVIDIA_API_KEY_1", ""),
@@ -135,13 +131,6 @@ class BaseAgent(ABC):
             ] if k
         ]
         self._nvidia_key_idx = 0
-
-    def _next_groq_key(self) -> str:
-        if not self._groq_keys:
-            raise RuntimeError("Aucune clé GROQ_API_KEY définie")
-        key = self._groq_keys[self._groq_key_idx % len(self._groq_keys)]
-        self._groq_key_idx += 1
-        return key
 
     def _next_nvidia_key(self) -> str:
         if not self._nvidia_keys:
@@ -155,35 +144,17 @@ class BaseAgent(ABC):
     # ─────────────────────────────────────────
 
     async def _call_llm(self, system_prompt: str, user_prompt: str) -> str:
-        # ── Priorité 1 : NVIDIA NIM (pas de limite TPM, 40 RPM) ──
-        if self.llm_model in NVIDIA_MODELS and self._nvidia_keys:
-            try:
-                return await self._call_nvidia_direct(system_prompt, user_prompt)
-            except Exception as e:
-                self.logger.warning(
-                    f"[{self.agent_name}] NVIDIA échoué → fallback Groq | {str(e)[:160]}"
+        # openai/gpt-oss-120b : NVIDIA NIM uniquement (contexte ~128k tokens, sortie max 65 536).
+        if self.llm_model in NVIDIA_MODELS:
+            if not self._nvidia_keys:
+                raise RuntimeError(
+                    "Modèle openai/gpt-oss-120b : définissez au moins une variable "
+                    "d'environnement NVIDIA_API_KEY_1 … NVIDIA_API_KEY_4. "
+                    "Le routage Groq n'est pas utilisé pour ce modèle."
                 )
-                # ── Fallback Groq si clés disponibles ──
-                if self.llm_model in GROQ_DIRECT_MODELS and self._groq_keys:
-                    try:
-                        return await self._call_groq_direct(system_prompt, user_prompt)
-                    except Exception as e2:
-                        self.logger.warning(
-                            f"[{self.agent_name}] Groq échoué → fallback LangChain | {str(e2)[:160]}"
-                        )
-                return await self._call_langchain(system_prompt, user_prompt)
+            return await self._call_nvidia_direct(system_prompt, user_prompt)
 
-        # ── Priorité 2 : Groq direct (si pas de clés NVIDIA) ──
-        if self.llm_model in GROQ_DIRECT_MODELS and self._groq_keys:
-            try:
-                return await self._call_groq_direct(system_prompt, user_prompt)
-            except Exception as e:
-                self.logger.warning(
-                    f"[{self.agent_name}] Groq échoué → fallback LangChain | {str(e)[:160]}"
-                )
-                return await self._call_langchain(system_prompt, user_prompt)
-
-        # ── Priorité 3 : LangChain ──
+        # Autres modèles (ex. hors gpt-oss) : LangChain + rotator Groq si configuré
         return await self._call_langchain(system_prompt, user_prompt)
 
     async def _call_nvidia_direct(self, system_prompt: str, user_prompt: str) -> str:
@@ -202,8 +173,14 @@ class BaseAgent(ABC):
         n_keys = len(self._nvidia_keys)
         last_error = None
 
+        nv_timeout = _nvidia_http_timeout()
+        if nv_timeout is None:
+            httpx_timeout = httpx.Timeout(None)  # pas de limite (générations longues)
+        else:
+            httpx_timeout = httpx.Timeout(nv_timeout)
+
         async def _do_request(key: str) -> str:
-            async with httpx.AsyncClient(timeout=120) as client:
+            async with httpx.AsyncClient(timeout=httpx_timeout) as client:
                 resp = await client.post(
                     NVIDIA_API_BASE,
                     headers={
@@ -270,72 +247,12 @@ class BaseAgent(ABC):
             f"NVIDIA failed après {self.max_retries} cycles × {n_keys} clés : {last_error}"
         )
 
-    async def _call_groq_direct(self, system_prompt: str, user_prompt: str) -> str:
-        attempt = 0
-        last_error = None
-
-        tpm_budget = 7600
-        min_completion_tokens = 256
-        chars_per_token = 4
-
-        total_chars = len(system_prompt) + len(user_prompt)
-        est_tokens = max(1, total_chars // chars_per_token)
-
-        max_input_tokens = max(1, tpm_budget - min_completion_tokens)
-        if est_tokens > max_input_tokens:
-            allowed = max_input_tokens * chars_per_token - len(system_prompt)
-            user_prompt = user_prompt[:allowed]
-
-        dynamic_max_tokens = min(
-            self.llm_max_tokens,
-            max(min_completion_tokens, tpm_budget - est_tokens),
-        )
-
-        while attempt < self.max_retries:
-            try:
-                key = self._next_groq_key()
-                client = AsyncGroq(api_key=key)
-
-                params = {
-                    "model": self.llm_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "temperature": self.temperature,
-                    "max_tokens": dynamic_max_tokens,
-                }
-
-                effort = REASONING_EFFORT_MAP.get(self.llm_model)
-                if effort:
-                    params["reasoning_effort"] = effort
-
-                response = await client.chat.completions.create(**params)
-                message = response.choices[0].message
-                # gpt-oss often puts JSON in reasoning_content while content is empty
-                content = (message.content or "").strip()
-                if not content:
-                    reasoning = getattr(message, "reasoning_content", None) or ""
-                    if isinstance(reasoning, str) and reasoning.strip():
-                        content = reasoning.strip()
-                if not content:
-                    raise RuntimeError("Empty response (no content or reasoning)")
-
-                return content
-
-            except Exception as e:
-                last_error = e
-                attempt += 1
-                await asyncio.sleep(2 ** attempt)
-
-        raise RuntimeError(f"Groq failed: {last_error}")
-
     async def _call_langchain(self, system_prompt: str, user_prompt: str) -> str:
 
         if not self.llm_rotator or not self.llm_rotator._clients.get("groq"):
             raise RuntimeError(
-                "LangChain fallback indisponible : aucune clé Groq configurée. "
-                "Ajoutez GROQ_API_KEY dans .env ou utilisez NVIDIA."
+                "LangChain indisponible : aucune clé GROQ_API_KEY configurée "
+                "(rotator Groq requis pour ce modèle hors openai/gpt-oss-120b)."
             )
 
         messages = [
