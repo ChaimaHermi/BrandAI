@@ -66,6 +66,7 @@ export default function FinalBrandPreview({
   }
   const hexes       = palette ? swatchHexes(palette) : [];
   const paletteTitle = (palette?.palette_name || "Palette choisie").trim() || "Palette choisie";
+  const paletteWhy = (palette?.palette_description || "").trim();
   const fileBase = slugifyFileBase(brandName);
 
   async function handleDownloadPng() {
@@ -134,6 +135,9 @@ export default function FinalBrandPreview({
                 Palette — {paletteTitle}
               </p>
             </div>
+            {paletteWhy ? (
+              <p className="mb-2 text-[11px] leading-snug text-ink-muted">{paletteWhy}</p>
+            ) : null}
             {hexes.length > 0 ? (
               <div className="overflow-hidden rounded-xl border border-brand-border">
                 <div className="flex h-14">

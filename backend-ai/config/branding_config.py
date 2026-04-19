@@ -29,9 +29,13 @@ NAME_EXISTS_MEMORY_MAX = 20
 
 # SloganAgent : nombre de slogans à proposer
 SLOGAN_TARGET_COUNT = 5
+SLOGAN_AGENT_RECURSION_LIMIT = 45
+SLOGAN_AGENT_VERBOSE_REACT = True
 
 # PaletteAgent : toujours exactement 3 palettes (produit + validation stricte)
 PALETTE_TARGET_COUNT = 3
+PALETTE_AGENT_RECURSION_LIMIT = 40
+PALETTE_AGENT_VERBOSE_REACT = True
 
 # LogoAgent : LLM pour rédiger le prompt image (Azure recommandé, ex. gpt-4.1 via déploiement dédié)
 LOGO_LLM_CONFIG = {
