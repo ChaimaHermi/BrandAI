@@ -6,20 +6,28 @@ import os
 import sys
 from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langgraph.prebuilt import create_react_agent
 from langsmith import traceable
+from langsmith.run_helpers import get_current_run_tree
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.branding_config import (
+    LOGO_AGENT_RECURSION_LIMIT,
+    LOGO_AGENT_VERBOSE_REACT,
     LOGO_HF_IMAGE_MODEL,
     LOGO_IMAGE_PROVIDER,
     LOGO_LLM_CONFIG,
-    LOGO_POLLINATIONS_FALLBACK,
     LOGO_POLLINATIONS_IMAGE_MODEL,
 )
 from llm.llm_factory import create_azure_openai_client
-from prompts.branding.logo_prompt import LOGO_IMAGE_PROMPT_SYSTEM, build_logo_user_message
+from prompts.branding.logo_prompt import LOGO_REACT_SYSTEM_PROMPT, build_logo_react_user_message
 from tools.branding.logo_image_client import fetch_logo_image_hf_with_pollinations_fallback
+from tools.branding.logo_tools import (
+    make_draft_logo_prompt_tool,
+    make_render_logo_image_tool,
+    make_validate_logo_prompt_tool,
+)
 
 logger = logging.getLogger("brandai.logo_agent")
 
@@ -32,7 +40,6 @@ def _trunc_log(text: str, max_len: int = 2500) -> str:
 
 
 def _print_prompt_to_terminal(image_prompt: str, negative_prompt: str) -> None:
-    """Affiche le prompt image sur stderr (visible même si les loggers sont mal configurés). Désactiver : LOGO_PRINT_IMAGE_PROMPT=0."""
     v = (os.getenv("LOGO_PRINT_IMAGE_PROMPT") or "1").strip().lower()
     if v in ("0", "false", "no", "off"):
         return
@@ -47,35 +54,8 @@ def _print_prompt_to_terminal(image_prompt: str, negative_prompt: str) -> None:
     print("\n".join(lines), file=sys.stderr, flush=True)
 
 
-def _extract_json_object(raw: str) -> dict[str, Any]:
-    t = (raw or "").strip()
-    if t.startswith("```"):
-        lines = t.split("\n")
-        if lines and lines[0].startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].strip().startswith("```"):
-            lines = lines[:-1]
-        t = "\n".join(lines).strip()
-    start = t.find("{")
-    end = t.rfind("}")
-    if start >= 0 and end > start:
-        t = t[start : end + 1]
-    data = json.loads(t)
-    if not isinstance(data, dict):
-        raise ValueError("LLM output is not a JSON object")
-    return data
-
-
-def _normalize_logo_result(data: dict[str, Any]) -> tuple[str, str]:
-    ip = str(data.get("image_prompt") or "").strip()
-    np = str(data.get("negative_prompt") or "").strip()
-    if not ip:
-        raise ValueError("Missing image_prompt in LLM JSON")
-    return ip, np
-
-
 class LogoAgent(BaseAgent):
-    """Rédige un prompt image via LLM puis génère l’image (HF Replicate + Qwen, fallback Pollinations.AI si configuré), ou skip si LOGO_IMAGE_PROVIDER=none."""
+    """Prompt image via ReAct (draft → validate → render) puis kit logo (HF / Pollinations)."""
 
     def __init__(self):
         super().__init__(
@@ -87,46 +67,211 @@ class LogoAgent(BaseAgent):
         self._provider = LOGO_LLM_CONFIG.get("provider", "azure")
         self._logo_max_tokens = min(LOGO_LLM_CONFIG.get("max_tokens") or 900, 1200)
 
-    async def _invoke_logo_llm(self, system_prompt: str, user_prompt: str) -> str:
+    @staticmethod
+    def _extract_validated_logo_prompts(messages: list) -> tuple[str, str] | None:
+        for msg in reversed(messages or []):
+            if not isinstance(msg, ToolMessage):
+                continue
+            if getattr(msg, "name", None) != "validate_logo_prompt":
+                continue
+            raw = msg.content
+            if not isinstance(raw, str) or not raw.strip():
+                continue
+            try:
+                data = json.loads(raw)
+            except Exception:
+                continue
+            if not isinstance(data, dict) or not data.get("ok"):
+                continue
+            ip = str(data.get("image_prompt") or "").strip()
+            if not ip:
+                continue
+            np = str(data.get("negative_prompt") or "").strip()
+            return ip, np
+        return None
+
+    @staticmethod
+    def _print(msg: str = "") -> None:
+        print(msg, flush=True)
+
+    @staticmethod
+    def _header(title: str) -> None:
+        bar = "=" * 56
+        print(f"\n{bar}", flush=True)
+        print(f"  {title}", flush=True)
+        print(bar, flush=True)
+
+    @staticmethod
+    def _truncate(s: str, max_len: int = 480) -> str:
+        s = (s or "").strip()
+        if len(s) <= max_len:
+            return s
+        return s[: max_len - 3] + "..."
+
+    @classmethod
+    def _summarize_tool_observation(cls, tool_name: str, raw: str) -> str:
+        if not raw or not isinstance(raw, str):
+            return str(raw)[:400]
+        if tool_name == "validate_logo_prompt":
+            try:
+                data = json.loads(raw)
+                if isinstance(data, dict):
+                    if data.get("ok"):
+                        return "ok=true (image_prompt présent)"
+                    return f"ok=false: {cls._truncate(str(data.get('error') or raw), 400)}"
+            except Exception:
+                pass
+        if tool_name == "render_logo_image":
+            try:
+                data = json.loads(raw)
+                if isinstance(data, dict) and data.get("ok"):
+                    if data.get("skipped"):
+                        return "render skipped (provider=none)"
+                    return f"ok=true bytes≈{data.get('byte_count', '?')} source={data.get('source')}"
+            except Exception:
+                pass
+        if tool_name == "draft_logo_prompt":
+            return cls._truncate(raw, 520)
+        return cls._truncate(raw, 520)
+
+    @classmethod
+    def _log_react_message(cls, msg, step: int) -> None:
+        if isinstance(msg, HumanMessage):
+            cls._print(f"\n--- [Message utilisateur] ---\n{cls._truncate(str(msg.content), 600)}")
+            return
+        if isinstance(msg, SystemMessage):
+            cls._print(f"\n--- [System] (etape {step}) ---\n{cls._truncate(str(msg.content), 400)}")
+            return
+        if isinstance(msg, AIMessage):
+            tcalls = getattr(msg, "tool_calls", None) or []
+            text = (msg.content or "").strip() if isinstance(msg.content, str) else ""
+            if text:
+                cls._print(f"\n--- [Thought] (etape {step}) ---\n{cls._truncate(text, 700)}")
+            if tcalls:
+                cls._print(f"\n--- [Action] (etape {step}) ---")
+                for tc in tcalls:
+                    if isinstance(tc, dict):
+                        name = tc.get("name", "?")
+                        args = tc.get("args", {})
+                    else:
+                        name = getattr(tc, "name", "?")
+                        args = getattr(tc, "args", {})
+                    try:
+                        arg_s = json.dumps(args, ensure_ascii=False, indent=2) if isinstance(args, dict) else str(args)
+                    except Exception:
+                        arg_s = str(args)
+                    cls._print(f"  -> {name}({cls._truncate(arg_s, 400)})")
+            if not text and not tcalls:
+                cls._print(f"\n--- [AIMessage vide] (etape {step}) ---")
+            return
+        if isinstance(msg, ToolMessage):
+            tname = getattr(msg, "name", None) or "tool"
+            raw = msg.content if isinstance(msg.content, str) else str(msg.content)
+            cls._print(f"\n--- [Observation] (etape {step}) tool={tname} ---")
+            cls._print(cls._summarize_tool_observation(tname, raw))
+            return
+        cls._print(f"\n--- [{type(msg).__name__}] (etape {step}) ---\n{cls._truncate(str(getattr(msg, 'content', '')), 400)}")
+
+    async def _invoke_react_with_optional_trace(
+        self,
+        agent,
+        user_content: str,
+        recursion_limit: int,
+    ) -> dict:
+        cfg = {"recursion_limit": recursion_limit}
+        initial = {"messages": [HumanMessage(content=user_content)]}
+
+        if not LOGO_AGENT_VERBOSE_REACT:
+            return await agent.ainvoke(initial, config=cfg)
+
+        self._print("\n>>> ReAct logo (stream_mode=values)\n")
+        final_state: dict | None = None
+        prev_len = 0
+        step = 0
+        async for state in agent.astream(initial, config=cfg, stream_mode="values"):
+            final_state = state
+            msgs = state.get("messages") or []
+            for i in range(prev_len, len(msgs)):
+                step += 1
+                self._log_react_message(msgs[i], step)
+            prev_len = len(msgs)
+
+        if final_state is None:
+            return await agent.ainvoke(initial, config=cfg)
+        return final_state
+
+    def _make_llm_for_logo(self):
         if self._provider == "azure":
             from config.settings import AZURE_OPENAI_LOGO_DEPLOYMENT
 
             deployment = (AZURE_OPENAI_LOGO_DEPLOYMENT or "").strip() or None
-            messages = [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt),
-            ]
-            attempt = 0
-            last_error = None
-            while attempt < self.max_retries:
-                try:
-                    llm = create_azure_openai_client(
-                        temperature=self.temperature,
-                        max_tokens=self._logo_max_tokens,
-                        azure_deployment=deployment,
-                    )
-                    response = await llm.ainvoke(messages)
-                    content = response.content if response else ""
-                    if not (content or "").strip():
-                        raise RuntimeError("Empty response from Azure")
-                    return content
-                except Exception as e:
-                    last_error = e
-                    attempt += 1
-                    await asyncio.sleep(2**attempt)
-            raise RuntimeError(f"Azure logo LLM failed: {last_error}")
+            return create_azure_openai_client(
+                temperature=self.temperature,
+                max_tokens=self._logo_max_tokens,
+                azure_deployment=deployment,
+            )
+        return self.llm_rotator.get_client(self.temperature)
 
-        return await self._call_llm(system_prompt, user_prompt)
+    @traceable(name="logo_agent.react_invoke", tags=["branding", "logo_agent", "react"])
+    async def _run_react_logo_agent(
+        self,
+        llm,
+        idea: dict,
+        brand_name: str,
+        slogan_hint: str,
+        palette_hint: str,
+        holder: dict[str, Any],
+        *,
+        recursion_limit: int = LOGO_AGENT_RECURSION_LIMIT,
+    ) -> list | None:
+        rt = get_current_run_tree()
+        if rt:
+            rt.metadata.update({
+                "recursion_limit": recursion_limit,
+                "agent": "langgraph_react_logo",
+            })
+
+        draft_tool = make_draft_logo_prompt_tool(
+            llm,
+            idea,
+            brand_name,
+            slogan_hint,
+            palette_hint,
+        )
+        validate_tool = make_validate_logo_prompt_tool(brand_name=brand_name)
+        render_tool = make_render_logo_image_tool(holder)
+        tools = [draft_tool, validate_tool, render_tool]
+
+        agent = create_react_agent(
+            llm,
+            tools,
+            prompt=LOGO_REACT_SYSTEM_PROMPT,
+            name="logo_react",
+        )
+
+        user_content = build_logo_react_user_message(brand_name)
+
+        self._header("LangGraph ReAct — logo")
+        self.logger.info(
+            "[logo_agent] ReAct | recursion_limit=%s verbose=%s",
+            recursion_limit,
+            LOGO_AGENT_VERBOSE_REACT,
+        )
+
+        result = await self._invoke_react_with_optional_trace(
+            agent,
+            user_content,
+            recursion_limit,
+        )
+        return result.get("messages") or []
 
     @staticmethod
     async def _maybe_fetch_image(
         image_prompt: str,
         negative_prompt: str,
     ) -> tuple[bytes | None, str | None, str | None]:
-        """
-        Retourne (octets, mime, source) avec source \"huggingface\" | \"pollinations\" si succès ;
-        (None, None, None) si génération désactivée.
-        """
+        from config.branding_config import LOGO_POLLINATIONS_FALLBACK
+
         provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
         if provider == "none":
             return None, None, None
@@ -137,6 +282,46 @@ class LogoAgent(BaseAgent):
             pollinations_fallback=LOGO_POLLINATIONS_FALLBACK,
         )
         return data, mime, src
+
+    @staticmethod
+    def _build_concept_dict(
+        image_prompt: str,
+        negative_prompt: str,
+        *,
+        b64: str | None,
+        mime: str | None,
+        image_source: str | None,
+    ) -> dict[str, Any]:
+        concept: dict[str, Any] = {
+            "title": "Generated mark",
+            "image_prompt": image_prompt,
+            "negative_prompt": negative_prompt,
+            "image_provider": "huggingface",
+            "image_model": LOGO_HF_IMAGE_MODEL,
+        }
+        if b64 and mime:
+            concept["image_base64"] = b64
+            concept["image_mime"] = mime
+            if image_source == "pollinations":
+                concept["image_provider"] = "pollinations"
+                concept["image_model"] = LOGO_POLLINATIONS_IMAGE_MODEL
+                pm = LOGO_POLLINATIONS_IMAGE_MODEL
+                qwen_lbl = f"Qwen Image ({pm})" if "qwen" in pm.lower() else pm
+                concept["image_attribution"] = (
+                    f"Image générée avec Pollinations.AI — modèle {qwen_lbl} — "
+                    "service tiers (fallback lorsque Hugging Face n’est pas disponible)."
+                )
+            elif image_source == "huggingface":
+                m = LOGO_HF_IMAGE_MODEL
+                if "qwen" in m.lower():
+                    concept["image_attribution"] = (
+                        f"Image générée avec le modèle Qwen Image ({m}) via Hugging Face Inference."
+                    )
+                else:
+                    concept["image_attribution"] = (
+                        f"Image générée avec le modèle {m} via Hugging Face Inference."
+                    )
+        return concept
 
     @traceable(name="logo_agent.run", tags=["branding", "logo_agent"])
     async def run(self, state: PipelineState) -> PipelineState:
@@ -159,71 +344,145 @@ class LogoAgent(BaseAgent):
         slogan_hint = str(getattr(state, "palette_slogan_hint", "") or "").strip()
         palette_hint = str(getattr(state, "logo_palette_hint", "") or "").strip()
 
-        try:
-            user_prompt = build_logo_user_message(
-                idea,
-                brand_name,
-                slogan_hint,
-                palette_hint,
-            )
-            logger.info(
-                "[logo_agent] Étape 1/2 — Appel LLM pour le prompt image (marque=%r)",
-                brand_name,
-            )
-            raw = await self._invoke_logo_llm(LOGO_IMAGE_PROMPT_SYSTEM, user_prompt)
-            data = _extract_json_object(raw)
-            image_prompt, negative_prompt = _normalize_logo_result(data)
-            logger.info(
-                "[logo_agent] Prompt image généré (LLM) — image_prompt:\n%s",
-                _trunc_log(image_prompt),
-            )
-            if negative_prompt:
-                logger.info(
-                    "[logo_agent] negative_prompt:\n%s",
-                    _trunc_log(negative_prompt, max_len=1200),
+        def _is_tpd_error(err: Exception) -> bool:
+            s = str(err).lower()
+            return "tokens per day" in s or "tpd" in s
+
+        def _is_quota_error(err: Exception) -> bool:
+            s = str(err).lower()
+            return any(k in s for k in [
+                "429", "413", "rate_limit", "rate_limit_exceeded",
+                "tokens per minute", "tokens per day",
+                "request too large", "tpm", "tpd",
+            ])
+
+        holder: dict[str, Any] = {}
+        messages: list | None = None
+        last_error: Exception | None = None
+
+        for attempt in range(self.max_retries):
+            try:
+                llm = self._make_llm_for_logo()
+
+                rt = get_current_run_tree()
+                if rt:
+                    rt.metadata.update({
+                        "provider": self._provider,
+                        "brand": brand_name,
+                    })
+
+                self.logger.info(
+                    "[logo_agent] ReAct attempt %s/%s (marque=%r)",
+                    attempt + 1,
+                    self.max_retries,
+                    brand_name,
                 )
-            _print_prompt_to_terminal(image_prompt, negative_prompt)
-        except Exception as e:
-            msg = f"logo prompt LLM: {e}"
-            logger.exception("logo_agent LLM failed")
+
+                messages = await self._run_react_logo_agent(
+                    llm,
+                    idea,
+                    brand_name,
+                    slogan_hint,
+                    palette_hint,
+                    holder,
+                    recursion_limit=LOGO_AGENT_RECURSION_LIMIT,
+                )
+                pair = self._extract_validated_logo_prompts(messages or [])
+                if pair:
+                    break
+                last_error = RuntimeError(
+                    "Validation du prompt logo non confirmée (validate_logo_prompt ok: true introuvable)."
+                )
+            except Exception as e:
+                last_error = e
+                if self._provider == "groq":
+                    if _is_tpd_error(e):
+                        self.logger.error("[logo_agent] TPD quota | %s", str(e)[:200])
+                        msg = (
+                            "Quota journalier Groq (TPD) épuisé. "
+                            "Réessaie dans quelques heures ou change de modèle."
+                        )
+                        state.errors.append(f"logo_agent: {msg}")
+                        state.brand_identity["logo_error"] = msg
+                        state.brand_identity["branding_status"] = "logo_failed"
+                        state.status = "logo_failed"
+                        return state
+                    if _is_quota_error(e):
+                        rotated = self.llm_rotator.rotate()
+                        self.logger.warning(
+                            "[logo_agent] quota | rotated=%s | %s",
+                            rotated,
+                            str(e)[:180],
+                        )
+                        if rotated:
+                            continue
+                self._log_error(e)
+                msg = f"logo ReAct: {e}"
+                state.errors.append(f"logo_agent: {msg}")
+                state.brand_identity["logo_error"] = msg
+                state.brand_identity["branding_status"] = "logo_failed"
+                state.status = "logo_failed"
+                return state
+
+        if not messages:
+            err_detail = str(last_error) if last_error else "aucun message ReAct"
+            msg = f"Échec génération prompt logo : {err_detail}"
+            self._log_error(msg)
             state.brand_identity["logo_error"] = msg
             state.brand_identity["branding_status"] = "logo_failed"
             state.status = "logo_failed"
-            state.errors.append(f"logo_agent: {msg}")
             return state
 
-        image_bytes: bytes | None = None
-        mime: str | None = None
-        image_source: str | None = None
-        provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
-        try:
-            if provider == "none":
-                logger.info(
-                    "[logo_agent] Étape 2/2 — Génération image désactivée (LOGO_IMAGE_PROVIDER=none)"
-                )
-            else:
-                logger.info(
-                    "[logo_agent] Étape 2/2 — HF Replicate (modèle=%s), fallback Pollinations=%s",
-                    LOGO_HF_IMAGE_MODEL,
-                    LOGO_POLLINATIONS_FALLBACK,
-                )
-            image_bytes, mime, image_source = await self._maybe_fetch_image(
-                image_prompt,
-                negative_prompt,
-            )
-        except Exception as e:
-            logger.error("logo image fetch failed: %s", e)
-            state.brand_identity["logo_image_error"] = str(e)
+        pair = self._extract_validated_logo_prompts(messages)
+        if not pair:
+            msg = "Impossible d'extraire un prompt image validé (validate_logo_prompt)."
+            self._log_error(msg)
+            state.brand_identity["logo_error"] = msg
+            state.brand_identity["branding_status"] = "logo_failed"
+            state.status = "logo_failed"
+            return state
+
+        image_prompt, negative_prompt = pair
+        logger.info(
+            "[logo_agent] Prompt image validé — image_prompt:\n%s",
+            _trunc_log(image_prompt),
+        )
+        if negative_prompt:
             logger.info(
-                "[logo_agent] Rappel — prompt image conservé (étape 2 échouée) :\n%s",
-                _trunc_log(image_prompt, max_len=4000),
+                "[logo_agent] negative_prompt:\n%s",
+                _trunc_log(negative_prompt, max_len=1200),
             )
+        _print_prompt_to_terminal(image_prompt, negative_prompt)
+
+        provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
+        if (
+            provider != "none"
+            and not holder.get("skipped")
+            and holder.get("image_bytes") is None
+        ):
+            try:
+                logger.info("[logo_agent] Fallback image — render non présent ou incomplet")
+                data, mime, src = await self._maybe_fetch_image(image_prompt, negative_prompt)
+                if data:
+                    holder["image_bytes"] = data
+                    holder["mime"] = mime
+                    holder["image_source"] = src
+            except Exception as e:
+                logger.error("logo image fetch (fallback): %s", e)
+                state.brand_identity["logo_image_error"] = str(e)
+
+        if holder.get("render_error") and not state.brand_identity.get("logo_image_error"):
+            state.brand_identity["logo_image_error"] = str(holder["render_error"])
+
+        image_bytes: bytes | None = holder.get("image_bytes")
+        mime = holder.get("mime")
+        image_source = holder.get("image_source")
 
         b64: str | None = None
         if image_bytes:
             b64 = base64.standard_b64encode(image_bytes).decode("ascii")
             logger.info(
-                "[logo_agent] Image générée OK — source=%s, %s, %d octets (base64 non loggé)",
+                "[logo_agent] Image générée — source=%s, %s, %d octets",
                 image_source or "?",
                 mime or "image",
                 len(image_bytes),
@@ -231,45 +490,20 @@ class LogoAgent(BaseAgent):
         elif not state.brand_identity.get("logo_image_error"):
             if provider == "none":
                 pass
+            elif holder.get("skipped"):
+                pass
             else:
                 logger.warning(
-                    "[logo_agent] Aucun octet image reçu (provider=%s) — voir logo_image_error si défini",
-                    provider,
+                    "[logo_agent] Aucun octet image — voir logo_image_error si défini",
                 )
 
-        concept: dict[str, Any] = {
-            "title": "Generated mark",
-            "image_prompt": image_prompt,
-            "negative_prompt": negative_prompt,
-            "image_provider": "huggingface",
-            "image_model": LOGO_HF_IMAGE_MODEL,
-        }
-        if b64 and mime:
-            concept["image_base64"] = b64
-            concept["image_mime"] = mime
-            if image_source == "pollinations":
-                concept["image_provider"] = "pollinations"
-                concept["image_model"] = LOGO_POLLINATIONS_IMAGE_MODEL
-                pm = LOGO_POLLINATIONS_IMAGE_MODEL
-                qwen_lbl = (
-                    f"Qwen Image ({pm})"
-                    if "qwen" in pm.lower()
-                    else pm
-                )
-                concept["image_attribution"] = (
-                    f"Image générée avec Pollinations.AI — modèle {qwen_lbl} — "
-                    "service tiers (fallback lorsque Hugging Face n’est pas disponible)."
-                )
-            elif image_source == "huggingface":
-                m = LOGO_HF_IMAGE_MODEL
-                if "qwen" in m.lower():
-                    concept["image_attribution"] = (
-                        f"Image générée avec le modèle Qwen Image ({m}) via Hugging Face Inference."
-                    )
-                else:
-                    concept["image_attribution"] = (
-                        f"Image générée avec le modèle {m} via Hugging Face Inference."
-                    )
+        concept = self._build_concept_dict(
+            image_prompt,
+            negative_prompt,
+            b64=b64,
+            mime=mime,
+            image_source=image_source,
+        )
 
         state.brand_identity["logo_concepts"] = [concept]
         state.brand_identity["branding_status"] = "logo_generated"

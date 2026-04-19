@@ -43,6 +43,8 @@ LOGO_LLM_CONFIG = {
     "temperature": 0.4,
     "max_tokens": 900,
 }
+LOGO_AGENT_RECURSION_LIMIT = 35
+LOGO_AGENT_VERBOSE_REACT = True
 # none = pas de génération d’image ; sinon Hugging Face Inference (Replicate) + Qwen Image
 LOGO_IMAGE_PROVIDER = "huggingface"
 # Modèle Hub pour text_to_image. Surcharge : env LOGO_HF_IMAGE_MODEL
