@@ -95,8 +95,14 @@ async def meta_oauth_callback(
     error_description: str | None = Query(None, alias="error_description"),
 ) -> HTMLResponse:
     if error or error_description:
+        # error ex. access_denied quand l'utilisateur choisit « plus tard » ou ferme la fenêtre
         msg = error_description or error or "OAuth Meta refusé"
-        payload = {"type": "brandai-meta-oauth", "ok": False, "error": msg}
+        payload: dict[str, Any] = {
+            "type": "brandai-meta-oauth",
+            "ok": False,
+            "error": msg,
+            "oauth_error": error or "",
+        }
         return HTMLResponse(html_oauth_result(payload, FRONTEND_ORIGIN))
     if not code or not state:
         payload = {"type": "brandai-meta-oauth", "ok": False, "error": "code ou state manquant"}
@@ -159,8 +165,13 @@ async def linkedin_oauth_callback(
 ) -> HTMLResponse:
     if error or error_description:
         msg = error_description or error or "OAuth LinkedIn refusé"
-        payload = {"type": "brandai-linkedin-oauth", "ok": False, "error": msg}
-        return HTMLResponse(html_linkedin_oauth_result(payload, FRONTEND_ORIGIN))
+        payload_li: dict[str, Any] = {
+            "type": "brandai-linkedin-oauth",
+            "ok": False,
+            "error": msg,
+            "oauth_error": error or "",
+        }
+        return HTMLResponse(html_linkedin_oauth_result(payload_li, FRONTEND_ORIGIN))
     if not code or not state:
         payload = {"type": "brandai-linkedin-oauth", "ok": False, "error": "code ou state manquant"}
         return HTMLResponse(html_linkedin_oauth_result(payload, FRONTEND_ORIGIN))

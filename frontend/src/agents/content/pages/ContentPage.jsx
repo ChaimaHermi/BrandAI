@@ -22,17 +22,20 @@ const PLATFORM_INTROS = {
   instagram: {
     icon: FaInstagram,
     title: "Instagram",
-    description: "Créez un post accrocheur pour votre feed — ton, hashtags et visuel au rendez-vous.",
+    description:
+      "Créez un post pour votre compte pro, puis publiez depuis Brand AI : connexion Facebook, choix de la Page liée, envoi du post.",
   },
   facebook: {
     icon: FaFacebookF,
     title: "Facebook",
-    description: "Rédigez un post engageant pour votre page Facebook avec call-to-action personnalisé.",
+    description:
+      "Générez le texte (et lien d’aperçu si besoin), puis publiez sur votre Page : connexion Facebook dans la fenêtre, sélection de la Page, validation depuis cette plateforme.",
   },
   linkedin: {
     icon: FaLinkedinIn,
     title: "LinkedIn",
-    description: "Publiez un contenu professionnel sur LinkedIn adapté à votre réseau B2B.",
+    description:
+      "Contenu adapté au réseau B2B. Pour publier : connexion LinkedIn autorisée depuis Brand AI, puis envoi du post depuis ici.",
   },
 };
 

@@ -1,0 +1,389 @@
+{
+  "platform": "facebook",
+  "collected_at": "2026-04-20T13:45:57.874060+00:00",
+  "page": {
+    "id": "1135465166305898",
+    "name": "branding with chaima"
+  },
+  "page_metrics": {
+    "id": "1135465166305898",
+    "name": "branding with chaima",
+    "category": "Product/service",
+    "link": "https://www.facebook.com/1135465166305898",
+    "fan_count": 14,
+    "followers_count": 14,
+    "verification_status": "not_verified"
+  },
+  "posts_count": 4,
+  "posts": [
+    {
+      "id": "1135465166305898_122095329872601396",
+      "message": "Vous avez un placard qui déborde et vous ne savez pas quoi en faire ? 🌿\n\nEn Tunisie, le vide‑dressing devient le meilleur allié contre le gaspillage textile. Grâce à notre appli, créez votre dressing virtuel, mettez en vente vos pièces et trouvez des acheteurs locaux qui cherchent de bonnes affaires responsables.\n\nPrêt(e) à libérer de l’espace et à donner une seconde vie à vos vêtements ? En savoir plus.",
+      "created_time": "2026-04-18T19:48:31+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095329872601396"
+    },
+    {
+      "id": "1135465166305898_122095225856601396",
+      "message": "🚀 Aujourd’hui, nous lançons officiellement notre plateforme qui simplifie la recherche de stage en France ! Grâce à un algorithme automatisé, ton profil étudiant est mis en relation instantanément avec les offres qui correspondent à tes compétences et à tes envies. Fini les heures perdues à trier les annonces : utilise nos filtres pertinents et postule en quelques clics. 🎓💼\n\n👉 Découvre comment ça fonctionne et commence à matcher dès maintenant ! (En savoir plus)",
+      "created_time": "2026-04-18T16:00:04+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095225856601396"
+    },
+    {
+      "id": "1135465166305898_122095214960601396",
+      "message": "🚀 C’est officiel ! Notre nouvelle plateforme de mise en relation automatisée entre étudiants et stages en France est en ligne. Grâce à un algorithme intelligent et des filtres pertinents, trouver le stage qui vous correspond n’a jamais été aussi simple. 🎓💼 Vous êtes étudiant à la recherche d’une expérience professionnelle ? Essayez dès maintenant et simplifiez votre candidature. 👉 En savoir plus",
+      "created_time": "2026-04-18T15:30:59+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095214960601396"
+    },
+    {
+      "id": "1135465166305898_122094027926601396",
+      "message": "test test test",
+      "created_time": "2026-04-17T07:27:52+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122094027926601396"
+    }
+  ],
+  "posts_detailed": [
+    {
+      "post": {
+        "id": "1135465166305898_122095329872601396",
+        "message": "Vous avez un placard qui déborde et vous ne savez pas quoi en faire ? 🌿\n\nEn Tunisie, le vide‑dressing devient le meilleur allié contre le gaspillage textile. Grâce à notre appli, créez votre dressing virtuel, mettez en vente vos pièces et trouvez des acheteurs locaux qui cherchent de bonnes affaires responsables.\n\nPrêt(e) à libérer de l’espace et à donner une seconde vie à vos vêtements ? En savoir plus.",
+        "created_time": "2026-04-18T19:48:31+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095329872601396"
+      },
+      "metrics": {
+        "id": "1135465166305898_122095329872601396",
+        "reactions": {
+          "data": [
+            {
+              "id": "27146280481631007",
+              "name": "Chaima Hermi",
+              "type": "LOVE"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "QVFIU1FBbTdBZAlREMTN6SXF0WlNXZAmtnLW5nZAnZA1RUI1eHBOakRqbUtEMzV0YWxFSDdEbDI3M0FURWZAWbThZAVloyYzFKMW93ZAVllYlhWNHJtS0F3c1ZAnTEpR",
+              "after": "QVFIU1FBbTdBZAlREMTN6SXF0WlNXZAmtnLW5nZAnZA1RUI1eHBOakRqbUtEMzV0YWxFSDdEbDI3M0FURWZAWbThZAVloyYzFKMW93ZAVllYlhWNHJtS0F3c1ZAnTEpR"
+            }
+          },
+          "summary": {
+            "total_count": 1,
+            "viewer_reaction": "NONE"
+          }
+        },
+        "comments": {
+          "data": [
+            {
+              "created_time": "2026-04-20T12:47:02+0000",
+              "from": {
+                "name": "Chaima Hermi",
+                "id": "27146280481631007"
+              },
+              "message": "waaw",
+              "id": "122095329872601396_936368002334652"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "MQZDZD",
+              "after": "MQZDZD"
+            }
+          },
+          "summary": {
+            "order": "ranked",
+            "total_count": 1,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": null,
+      "comments": [
+        {
+          "id": "122095329872601396_936368002334652",
+          "from": {
+            "id": "27146280481631007",
+            "name": "Chaima Hermi"
+          },
+          "message": "waaw",
+          "created_time": "2026-04-20T12:47:02+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095329872601396?comment_id=936368002334652"
+        }
+      ],
+      "reactions": [
+        {
+          "id": "27146280481631007",
+          "name": "Chaima Hermi",
+          "type": "LOVE"
+        }
+      ],
+      "comments_count_fetched": 1,
+      "reactions_count_fetched": 1,
+      "interactions": {
+        "reactions_count": 1,
+        "comments_count": 1,
+        "shares_count": 0,
+        "interactions_total": 2
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122095225856601396",
+        "message": "🚀 Aujourd’hui, nous lançons officiellement notre plateforme qui simplifie la recherche de stage en France ! Grâce à un algorithme automatisé, ton profil étudiant est mis en relation instantanément avec les offres qui correspondent à tes compétences et à tes envies. Fini les heures perdues à trier les annonces : utilise nos filtres pertinents et postule en quelques clics. 🎓💼\n\n👉 Découvre comment ça fonctionne et commence à matcher dès maintenant ! (En savoir plus)",
+        "created_time": "2026-04-18T16:00:04+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095225856601396"
+      },
+      "metrics": {
+        "id": "1135465166305898_122095225856601396",
+        "reactions": {
+          "data": [
+            {
+              "id": "27146280481631007",
+              "name": "Chaima Hermi",
+              "type": "LOVE"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "QVFIU3IwLTJURnNEdll3OHVteTlDOF9iZAnp4SV9Kb2NaNUtrU3pzOTU3ZAWdyTjNWNDJkcUNScGJyUU5TVmFNZAHFiTEhjampPcFJlc3MyM3IxSjdFM1BjODZAR",
+              "after": "QVFIU3IwLTJURnNEdll3OHVteTlDOF9iZAnp4SV9Kb2NaNUtrU3pzOTU3ZAWdyTjNWNDJkcUNScGJyUU5TVmFNZAHFiTEhjampPcFJlc3MyM3IxSjdFM1BjODZAR"
+            }
+          },
+          "summary": {
+            "total_count": 1,
+            "viewer_reaction": "NONE"
+          }
+        },
+        "comments": {
+          "data": [
+            {
+              "created_time": "2026-04-20T12:46:59+0000",
+              "from": {
+                "name": "Chaima Hermi",
+                "id": "27146280481631007"
+              },
+              "message": "magnifique",
+              "id": "122095225856601396_1573499037075110"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "MQZDZD",
+              "after": "MQZDZD"
+            }
+          },
+          "summary": {
+            "order": "ranked",
+            "total_count": 1,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": null,
+      "comments": [
+        {
+          "id": "122095225856601396_1573499037075110",
+          "from": {
+            "id": "27146280481631007",
+            "name": "Chaima Hermi"
+          },
+          "message": "magnifique",
+          "created_time": "2026-04-20T12:46:59+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095225856601396?comment_id=1573499037075110"
+        }
+      ],
+      "reactions": [
+        {
+          "id": "27146280481631007",
+          "name": "Chaima Hermi",
+          "type": "LOVE"
+        }
+      ],
+      "comments_count_fetched": 1,
+      "reactions_count_fetched": 1,
+      "interactions": {
+        "reactions_count": 1,
+        "comments_count": 1,
+        "shares_count": 0,
+        "interactions_total": 2
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122095214960601396",
+        "message": "🚀 C’est officiel ! Notre nouvelle plateforme de mise en relation automatisée entre étudiants et stages en France est en ligne. Grâce à un algorithme intelligent et des filtres pertinents, trouver le stage qui vous correspond n’a jamais été aussi simple. 🎓💼 Vous êtes étudiant à la recherche d’une expérience professionnelle ? Essayez dès maintenant et simplifiez votre candidature. 👉 En savoir plus",
+        "created_time": "2026-04-18T15:30:59+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095214960601396"
+      },
+      "metrics": {
+        "id": "1135465166305898_122095214960601396",
+        "reactions": {
+          "data": [
+            {
+              "id": "27146280481631007",
+              "name": "Chaima Hermi",
+              "type": "LOVE"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "QVFIU3JPQ1d3dWNEODJxbUFrdTRmNWt6dFJUVnFiWFk5aWZAZAWENxQmMzVHRNX2NuNkllMlZA1WU43WTdpQnhGWGNVbVZANeWhtQk9FQnJHdXhHU1NzVW9MTzZA3",
+              "after": "QVFIU3JPQ1d3dWNEODJxbUFrdTRmNWt6dFJUVnFiWFk5aWZAZAWENxQmMzVHRNX2NuNkllMlZA1WU43WTdpQnhGWGNVbVZANeWhtQk9FQnJHdXhHU1NzVW9MTzZA3"
+            }
+          },
+          "summary": {
+            "total_count": 1,
+            "viewer_reaction": "NONE"
+          }
+        },
+        "comments": {
+          "data": [
+            {
+              "created_time": "2026-04-20T12:46:55+0000",
+              "from": {
+                "name": "Chaima Hermi",
+                "id": "27146280481631007"
+              },
+              "message": "waaaw",
+              "id": "122095214960601396_1491816915890573"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "MQZDZD",
+              "after": "MQZDZD"
+            }
+          },
+          "summary": {
+            "order": "ranked",
+            "total_count": 1,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": null,
+      "comments": [
+        {
+          "id": "122095214960601396_1491816915890573",
+          "from": {
+            "id": "27146280481631007",
+            "name": "Chaima Hermi"
+          },
+          "message": "waaaw",
+          "created_time": "2026-04-20T12:46:55+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095214960601396?comment_id=1491816915890573"
+        }
+      ],
+      "reactions": [
+        {
+          "id": "27146280481631007",
+          "name": "Chaima Hermi",
+          "type": "LOVE"
+        }
+      ],
+      "comments_count_fetched": 1,
+      "reactions_count_fetched": 1,
+      "interactions": {
+        "reactions_count": 1,
+        "comments_count": 1,
+        "shares_count": 0,
+        "interactions_total": 2
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122094027926601396",
+        "message": "test test test",
+        "created_time": "2026-04-17T07:27:52+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122094027926601396"
+      },
+      "metrics": {
+        "id": "1135465166305898_122094027926601396",
+        "reactions": {
+          "data": [
+            {
+              "id": "27146280481631007",
+              "name": "Chaima Hermi",
+              "type": "LIKE"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "QVFIU3RQRWRjUkg3bEFVU1pRYVEzNXRDNG5fRmh1N3ZAPQTE4T2M2Nlc2V3EyNDgxQlEzQndZAYjBBbUNTbXJ2YVB6YktiOEJuRHRGN2FTVlhZAa3pNTVJGa0ZA3",
+              "after": "QVFIUzlLYUN6QVVRaGF1THk3RlJyaEdONW1MQkRLMFdINW41c2g1TmRLM25ycXgwR0xWZA0QzbVljRkZABbjYyU1JiS0R3RzB1M0gyeXFycTlhc0V1RjZADbDRn"
+            }
+          },
+          "summary": {
+            "total_count": 4,
+            "viewer_reaction": "NONE"
+          }
+        },
+        "comments": {
+          "data": [
+            {
+              "created_time": "2026-04-20T12:46:51+0000",
+              "from": {
+                "name": "Chaima Hermi",
+                "id": "27146280481631007"
+              },
+              "message": "test",
+              "id": "122094027926601396_1280674286868324"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "MQZDZD",
+              "after": "MQZDZD"
+            }
+          },
+          "summary": {
+            "order": "ranked",
+            "total_count": 1,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": null,
+      "comments": [
+        {
+          "id": "122094027926601396_1280674286868324",
+          "from": {
+            "id": "27146280481631007",
+            "name": "Chaima Hermi"
+          },
+          "message": "test",
+          "created_time": "2026-04-20T12:46:51+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122094027926601396?comment_id=1280674286868324"
+        }
+      ],
+      "reactions": [
+        {
+          "id": "27146280481631007",
+          "name": "Chaima Hermi",
+          "type": "LIKE"
+        }
+      ],
+      "comments_count_fetched": 1,
+      "reactions_count_fetched": 1,
+      "interactions": {
+        "reactions_count": 4,
+        "comments_count": 1,
+        "shares_count": 0,
+        "interactions_total": 5
+      }
+    }
+  ],
+  "extract_config": {
+    "posts_limit": 10,
+    "comments_limit_per_post": 100,
+    "reactions_limit_per_post": 100,
+    "null_when_unavailable": true
+  },
+  "api_base": "https://graph.facebook.com/v25.0"
+}

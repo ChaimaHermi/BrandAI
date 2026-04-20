@@ -22,6 +22,7 @@
 // ==============================================================
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { clearSocialPublishSessionStorage } from "@/agents/content/hooks/useSocialPublish";
 
 // Clés de stockage dans localStorage
 const TOKEN_KEY = "brandai_token";
@@ -74,6 +75,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    clearSocialPublishSessionStorage();
     // ProtectedRoute redirigera automatiquement vers /login
   };
 

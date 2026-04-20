@@ -17,6 +17,7 @@ import MarketPage from "@/agents/market/pages/MarketPage";
 import MarketingPage from "@/agents/Marketing/pages/MarketingPage";
 import BrandPage from "@/agents/brand/pages/BrandPage";
 import ContentPage from "@/agents/content/pages/ContentPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 
 function PlaceholderPage({ name }) {
   return (
@@ -82,6 +83,8 @@ export default function App() {
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="/auth/callback" element={<PublicRoute><GoogleCallback /></PublicRoute>} />
+          {/* Légal / Meta : accessible sans login (URL HTTPS en production pour le dashboard développeur Meta) */}
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route
             path="/dashboard"
             element={
