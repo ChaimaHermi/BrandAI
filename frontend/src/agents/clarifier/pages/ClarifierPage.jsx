@@ -3,6 +3,7 @@ import { usePipeline } from "@/context/PipelineContext";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
 import { CLARITY_SCORE_MIN_PIPELINE } from "../constants";
 import XaiBlock from "../components/XaiBlock";
+import ClarifierProgressModal from "../components/ClarifierProgressModal";
 import QuestionsBlock from "../components/QuestionsBlock";
 import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
@@ -192,10 +193,20 @@ export default function ClarifierPage() {
         </div>
       )}
 
-      <XaiBlock
+      {/* XaiBlock shown only after loading — collapsed summary */}
+      {!isLoading && (
+        <XaiBlock
+          steps={xaiSteps}
+          isLoading={false}
+          collapsed={currentStep === "clarified" || currentStep === "refused"}
+        />
+      )}
+
+      {/* Modal overlay during active SSE stream */}
+      <ClarifierProgressModal
+        open={isLoading}
         steps={xaiSteps}
-        isLoading={isLoading}
-        collapsed={currentStep === "clarified" || currentStep === "refused"}
+        currentStep={currentStep}
       />
 
       {(currentStep === "questions" || currentStep === "answering") && (

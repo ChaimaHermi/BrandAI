@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { useSSEStream } from "@/agents/shared/hooks/useSSEStream";
 import { getLatestMarketAnalysis, marketApi } from "../api/market.api";
 import { mapMarketReport } from "../utils/mapMarketReport";
@@ -121,27 +122,28 @@ export function useMarketAgent({ idea, token }) {
 
           if (eventType === "error") {
             hasStreamErrorRef.current = true;
-            setError(data?.message || "Erreur pendant l'analyse de marché");
+            const errMsg = data?.message || "Erreur pendant l'analyse de marché";
+            setError(errMsg);
+            toast.error(errMsg);
             console.error("[market SSE error]", { runId, data });
           }
 
           if (eventType === "done") {
             if (data?.success) {
               if (mode !== "market_only" && data?.stopped_at === "clarifier") {
-                setError(
-                  "Le pipeline s'est arrêté au Clarifier (questions/refus).",
-                );
+                setError("Le pipeline s'est arrêté au Clarifier (questions/refus).");
+                toast.warning("Le pipeline s'est arrêté : l'idée nécessite des clarifications.");
               } else {
                 await loadLatest();
+                toast.success("Analyse de marché terminée !");
                 onDone?.();
               }
             } else {
               // Keep the real stream error if already received.
               if (!hasStreamErrorRef.current) {
-                setError(
-                  data?.message ||
-                    "Impossible de lancer le pipeline pour le moment. Veuillez réessayer.",
-                );
+                const failMsg = data?.message || "Impossible de lancer le pipeline pour le moment. Veuillez réessayer.";
+                setError(failMsg);
+                toast.error(failMsg);
               }
               console.error("[market SSE done:failed]", { runId, data });
             }
@@ -151,7 +153,9 @@ export function useMarketAgent({ idea, token }) {
         });
       } catch (e) {
         if (runIdRef.current !== runId) return;
-        setError(e.message || "Erreur stream market");
+        const catchMsg = e.message || "Erreur stream market";
+        setError(catchMsg);
+        toast.error(catchMsg);
         console.error("[market SSE catch]", { runId, error: e });
         inFlightRef.current = false;
         setIsLoading(false);

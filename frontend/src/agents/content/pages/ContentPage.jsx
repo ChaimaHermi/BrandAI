@@ -63,7 +63,6 @@ export default function ContentPage() {
     generate,
     publish,
     publishLoading,
-    publishSuccess,
     alignWithProject,
     setAlignWithProject,
   } = useContentGeneration({
@@ -111,11 +110,6 @@ export default function ContentPage() {
       />
 
       {error && <ErrorBanner message={error} />}
-      {publishSuccess ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          {publishSuccess}
-        </div>
-      ) : null}
 
       <PlatformTabs activePlatform={activePlatform} onSelect={setActivePlatform} />
 

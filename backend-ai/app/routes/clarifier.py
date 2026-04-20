@@ -21,6 +21,17 @@ def sse_event(event: str, data: dict) -> str:
     return f"event: {event}\n{data_lines}\n\n"
 
 
+def _xai_safety_block(result: dict) -> dict:
+    safety = result.get("safety") or {}
+    return {
+        "safety_enabled": bool(safety),
+        "safety_status": safety.get("status", "unknown"),
+        "safety_provider": safety.get("provider", ""),
+        "safety_model": safety.get("model", ""),
+        "safety_fallback_used": bool(safety.get("fallback_used", False)),
+    }
+
+
 class ClarifierStartRequest(BaseModel):
     idea_id:         int
     name:            Optional[str] = ""
@@ -89,6 +100,7 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
                 "status":  "error",
                 "message": f"Projet refusé — {result.get('reason_category', 'non conforme')}",
                 "elapsed_ms": elapsed_ms,
+                **_xai_safety_block(result),
             })
 
         elif result_type == "questions":
@@ -99,6 +111,7 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
                 "sector":     result.get("detected_sector") or result.get("sector") or "",
                 "elapsed_ms": elapsed_ms,
                 "model":      agent.llm_rotator.current_info(),
+                **_xai_safety_block(result),
             })
 
         elif result_type == "clarified":
@@ -108,6 +121,7 @@ async def _stream_clarifier_start(body: ClarifierStartRequest):
                 "sector":     result.get("sector") or "",
                 "elapsed_ms": elapsed_ms,
                 "model":      agent.llm_rotator.current_info(),
+                **_xai_safety_block(result),
             })
 
         yield sse_event("result", result)
@@ -192,6 +206,7 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
                 "status":  "error",
                 "message": f"Projet refusé — {result.get('reason_category', 'non conforme')}",
                 "elapsed_ms": elapsed_ms,
+                **_xai_safety_block(result),
             })
 
         elif result_type == "clarified":
@@ -209,6 +224,7 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
                 "sector":     result.get("sector", ""),
                 "model":      agent.llm_rotator.current_info(),
                 "elapsed_ms": elapsed_ms,
+                **_xai_safety_block(result),
             })
 
         yield sse_event("result", result)

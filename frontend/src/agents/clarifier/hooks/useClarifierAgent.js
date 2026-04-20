@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { toast } from "react-toastify";
 import { useSSEStream } from "@/agents/shared/hooks/useSSEStream";
 import { saveClarifierResult } from "../api/clarifier.api";
 import { apiGetIdea } from "@/services/ideaApi";
@@ -102,6 +103,7 @@ export function useClarifierAgent(idea, token, options = {}) {
           setClarityScore(fresh.clarity_score ?? 0);
           setIsReady(true);
           setCurrentStep("clarified");
+          toast.success(`Idée clarifiée avec un score de ${fresh.clarity_score ?? 0}/100 !`);
           optionsRef.current.onClarified?.(fresh);
         } else if (kind === "questions") {
           if (sseExtras.detected_sector) {
@@ -216,12 +218,11 @@ export function useClarifierAgent(idea, token, options = {}) {
         { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       );
     } catch (err) {
-      addXaiStep(
-        "error",
-        err.message.includes("Failed to fetch")
-          ? "Service IA injoignable — vérifiez le port 8001"
-          : `Erreur : ${err.message}`,
-      );
+      const msg = err.message.includes("Failed to fetch")
+        ? "Service IA injoignable — vérifiez le port 8001"
+        : `Erreur : ${err.message}`;
+      addXaiStep("error", msg);
+      toast.error(msg);
       setCurrentStep("questions");
     }
   }, [
@@ -343,6 +344,7 @@ export function useClarifierAgent(idea, token, options = {}) {
       );
     } catch (err) {
       addXaiStep("error", `Erreur : ${err.message}`);
+      toast.error(`Erreur lors de l'envoi des réponses : ${err.message}`);
       setCurrentStep("questions");
     }
   }, [
