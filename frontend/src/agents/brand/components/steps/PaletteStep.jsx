@@ -10,7 +10,7 @@ function swatchHexes(palette) {
 
 /**
  * @param {object} props
- * @param {Array<{ palette_name?: string, swatches?: Array<{ hex?: string, name?: string, role?: string, rationale?: string }> }>} props.paletteOptions
+ * @param {Array<{ palette_name?: string, palette_description?: string, swatches?: Array<{ hex?: string, name?: string, role?: string, rationale?: string }> }>} props.paletteOptions
  * @param {string|null} props.selectedPaletteId
  * @param {(id: string) => void} props.onSelectPalette
  * @param {boolean} props.isGeneratingPalettes
@@ -113,6 +113,11 @@ export default function PaletteStep({
                       </span>
                       {selected && <span className="text-brand">✦</span>}
                     </div>
+                    {(p.palette_description || "").trim() ? (
+                      <p className="mb-2 text-[11px] leading-snug text-ink-muted">
+                        {(p.palette_description || "").trim()}
+                      </p>
+                    ) : null}
                     <span className="bi-badge bg-brand-light text-brand-dark">
                       {hexes.length} couleur{hexes.length > 1 ? "s" : ""}
                     </span>

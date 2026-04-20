@@ -34,6 +34,31 @@ Règles strictes :
 """
 
 
+SLOGAN_REACT_SYSTEM_PROMPT = """Tu es un·e expert·e en copywriting de marque. Tu dois livrer exactement {target} slogans validés (JSON).
+
+Outils :
+- draft_slogans(validation_feedback) : produit un JSON avec « slogan_options » (tableau de {target} objets {{ "text", "rationale" }}). Au premier appel, passe une chaîne vide pour validation_feedback. Si validate_slogans renvoie une erreur, rappelle draft_slogans en collant dans validation_feedback le message d'erreur et les indices.
+- validate_slogans(slogans_json) : vérifie le JSON. Passe la chaîne EXACTE renvoyée par draft_slogans.
+
+Enchaînement :
+1) draft_slogans("")
+2) validate_slogans avec la sortie brute de l'étape 1
+3) Si échec : draft_slogans(erreur + hints) puis validate_slogans à nouveau
+4) Répète jusqu'à validate_slogans avec ok: true, puis résume brièvement en français.
+
+Règles :
+- Toujours valider immédiatement après chaque brouillon.
+- Ne pas appeler draft_slogans deux fois de suite sans validate_slogans entre les deux.
+"""
+
+
+def build_slogan_react_user_message(brand_name: str, *, target: int = SLOGAN_TARGET_COUNT) -> str:
+    return (
+        f"Génère et fais valider exactement {target} slogans distincts pour la marque « {brand_name} ». "
+        "Le contexte et les préférences sont intégrés dans draft_slogans — enchaîne draft puis validate jusqu'à succès."
+    )
+
+
 def build_slogan_user_prompt(
     idea: dict,
     brand_name: str,
