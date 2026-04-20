@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { FiLayers } from "react-icons/fi";
 import { usePipeline } from "@/context/PipelineContext";
 import { AGENTS } from "@/agents";
@@ -326,25 +327,28 @@ export default function BrandPage() {
             : null) ||
           "La génération de noms n'a pas abouti.";
         setLastMockMessage(err);
+        toast.error(err);
         return { ok: false };
       }
       if (fromRegeneratePopup) {
-        setLastMockMessage(
-          result.persisted
-            ? "Régénération réussie — nouveaux noms enregistrés."
-            : "Régénération réussie — vérifiez la sauvegarde si besoin.",
-        );
+        const msg = result.persisted
+          ? "Régénération réussie — nouveaux noms enregistrés."
+          : "Régénération réussie — vérifiez la sauvegarde si besoin.";
+        setLastMockMessage(msg);
+        toast.success(msg);
       } else {
-        setLastMockMessage(
-          result.persisted
-            ? "Noms générés et enregistrés."
-            : "Noms générés (la sauvegarde a peut-être échoué — voir message).",
-        );
+        const msg = result.persisted
+          ? "Noms générés et enregistrés."
+          : "Noms générés (la sauvegarde a peut-être échoué).";
+        setLastMockMessage(msg);
+        toast.success(msg);
       }
       await refetchBrandRecord();
       return { ok: true };
     } catch (e) {
-      setLastMockMessage(e?.message || "Erreur réseau ou serveur IA.");
+      const errMsg = e?.message || "Erreur réseau ou serveur IA.";
+      setLastMockMessage(errMsg);
+      toast.error(errMsg);
       return { ok: false };
     } finally {
       setIsGenerating(false);
@@ -382,32 +386,34 @@ export default function BrandPage() {
         .filter(Boolean);
       setGeneratedSlogans(texts);
       if (result.status !== "slogan_generated") {
-        setSloganGenMessage(
-          result.slogan_error ||
-            (Array.isArray(result.errors) && result.errors.length
-              ? result.errors.join(" ")
-              : null) ||
-            "La génération de slogans n'a pas abouti.",
-        );
+        const err = result.slogan_error ||
+          (Array.isArray(result.errors) && result.errors.length
+            ? result.errors.join(" ")
+            : null) ||
+          "La génération de slogans n'a pas abouti.";
+        setSloganGenMessage(err);
+        toast.error(err);
         return { ok: false };
       }
       if (fromRegeneratePopup) {
-        setSloganGenMessage(
-          result.persisted
-            ? "Régénération réussie — nouveaux slogans enregistrés."
-            : "Régénération réussie — vérifiez la sauvegarde si besoin.",
-        );
+        const msg = result.persisted
+          ? "Régénération réussie — nouveaux slogans enregistrés."
+          : "Régénération réussie — vérifiez la sauvegarde si besoin.";
+        setSloganGenMessage(msg);
+        toast.success(msg);
       } else {
-        setSloganGenMessage(
-          result.persisted
-            ? "Slogans générés et enregistrés."
-            : "Slogans générés (vérifiez la sauvegarde si besoin).",
-        );
+        const msg = result.persisted
+          ? "Slogans générés et enregistrés."
+          : "Slogans générés (vérifiez la sauvegarde si besoin).";
+        setSloganGenMessage(msg);
+        toast.success(msg);
       }
       await refetchBrandRecord();
       return { ok: true };
     } catch (e) {
-      setSloganGenMessage(e?.message || "Erreur réseau ou serveur IA.");
+      const errMsg = e?.message || "Erreur réseau ou serveur IA.";
+      setSloganGenMessage(errMsg);
+      toast.error(errMsg);
       setGeneratedSlogans([]);
       return { ok: false };
     } finally {
@@ -427,33 +433,35 @@ export default function BrandPage() {
       const rawOpts = result.palette_options || [];
       setGeneratedPaletteOptions(Array.isArray(rawOpts) ? rawOpts : []);
       if (result.status !== "palette_generated") {
-        setPaletteGenMessage(
-          result.palette_error ||
-            (Array.isArray(result.errors) && result.errors.length
-              ? result.errors.join(" ")
-              : null) ||
-            "La génération de palettes n'a pas abouti.",
-        );
+        const err = result.palette_error ||
+          (Array.isArray(result.errors) && result.errors.length
+            ? result.errors.join(" ")
+            : null) ||
+          "La génération de palettes n'a pas abouti.";
+        setPaletteGenMessage(err);
+        toast.error(err);
         return { ok: false };
       }
       setSelectedPaletteId("p-0");
       if (fromRegeneratePopup) {
-        setPaletteGenMessage(
-          result.persisted
-            ? "Régénération réussie — nouvelles palettes enregistrées."
-            : "Régénération réussie — vérifiez la sauvegarde si besoin.",
-        );
+        const msg = result.persisted
+          ? "Régénération réussie — nouvelles palettes enregistrées."
+          : "Régénération réussie — vérifiez la sauvegarde si besoin.";
+        setPaletteGenMessage(msg);
+        toast.success(msg);
       } else {
-        setPaletteGenMessage(
-          result.persisted
-            ? "Palettes générées et enregistrées."
-            : "Palettes générées (vérifiez la sauvegarde si besoin).",
-        );
+        const msg = result.persisted
+          ? "Palettes générées et enregistrées."
+          : "Palettes générées (vérifiez la sauvegarde si besoin).";
+        setPaletteGenMessage(msg);
+        toast.success(msg);
       }
       await refetchBrandRecord();
       return { ok: true };
     } catch (e) {
-      setPaletteGenMessage(e?.message || "Erreur réseau ou serveur IA.");
+      const errMsg = e?.message || "Erreur réseau ou serveur IA.";
+      setPaletteGenMessage(errMsg);
+      toast.error(errMsg);
       setGeneratedPaletteOptions([]);
       return { ok: false };
     } finally {
@@ -486,37 +494,38 @@ export default function BrandPage() {
             : null) ||
           "La génération du logo n’a pas abouti.";
         setLogoGenMessage(err);
+        toast.error(err);
         return { ok: false };
       }
       const concepts = result.logo_concepts || [];
       setGeneratedLogoConcepts(concepts);
       if (result.logo_image_error) {
-        setLogoGenMessage(
-          `Le prompt image a été enregistré, mais la génération d’image a échoué : ${result.logo_image_error}`,
-        );
+        const warnMsg = `Prompt enregistré, mais la génération d’image a échoué : ${result.logo_image_error}`;
+        setLogoGenMessage(warnMsg);
+        toast.warning(warnMsg);
       } else {
         const c0 = concepts[0];
         const sourceHint = (() => {
-          if (c0?.image_provider === "pollinations") {
-            return " (image via Pollinations.AI, fallback)";
-          }
+          if (c0?.image_provider === "pollinations") return " (Pollinations.AI)";
           if (c0?.image_provider === "huggingface") {
             const im = String(c0?.image_model || "").toLowerCase();
-            if (im.includes("qwen")) return " (Qwen Image via Hugging Face)";
-            return " (Hugging Face Inference)";
+            if (im.includes("qwen")) return " (Qwen via Hugging Face)";
+            return " (Hugging Face)";
           }
           return "";
         })();
-        setLogoGenMessage(
-          concepts.length
-            ? `Logo généré${sourceHint}. Vous pouvez passer à l’aperçu final.`
-            : "Réponse reçue sans image.",
-        );
+        const successMsg = concepts.length
+          ? `Logo généré${sourceHint}. Vous pouvez passer à l’aperçu final.`
+          : "Réponse reçue sans image.";
+        setLogoGenMessage(successMsg);
+        if (concepts.length) toast.success(`Logo généré${sourceHint} !`);
       }
       await refetchBrandRecord();
       return { ok: true };
     } catch (e) {
-      setLogoGenMessage(e?.message || "Erreur réseau ou serveur IA.");
+      const errMsg = e?.message || "Erreur réseau ou serveur IA.";
+      setLogoGenMessage(errMsg);
+      toast.error(errMsg);
       return { ok: false };
     } finally {
       setIsGeneratingLogo(false);
@@ -568,6 +577,7 @@ export default function BrandPage() {
     const wKey = brandWizardStorageKey(idea.id);
     if (wKey) sessionStorage.removeItem(wKey);
     await refetchBrandRecord();
+    toast.success("Kit de marque enregistré avec succès !");
   }, [
     idea?.id,
     token,

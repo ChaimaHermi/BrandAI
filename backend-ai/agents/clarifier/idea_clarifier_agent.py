@@ -3,7 +3,7 @@ import re
 import logging
 
 from agents.base_agent import BaseAgent, PipelineState
-from guardrails.safety_checks import get_refusal_message
+from guardrails.safety_checks import get_refusal_message, check_safety_with_llama_guard
 from prompts.clarifier.prompt_idea_clarifier import ANSWER_PROMPT, ANALYSE_PROMPT
 from tools.idea_tools import validate_idea_input
 logger = logging.getLogger(__name__)
@@ -88,6 +88,7 @@ class IdeaClarifierAgent(BaseAgent):
             max_retries=3,
             llm_model="openai/gpt-oss-120b",
         )
+        self._safety_meta: dict = {}
 
     # ─────────────────────────────────────────────────────────
     # Construction du contexte utilisateur
@@ -222,6 +223,52 @@ class IdeaClarifierAgent(BaseAgent):
             "detected_sector": clarified.get("sector", ""),
         }
 
+    async def _run_safety_gate(self, payload: dict) -> dict | None:
+        """
+        Run external safety gate with graceful fallback.
+        Returns refused payload if blocked, else None.
+        """
+        try:
+            safety = await check_safety_with_llama_guard(payload)
+            self._safety_meta = {
+                "enabled": True,
+                "provider": safety.get("provider", "nvidia"),
+                "model": safety.get("model", ""),
+                "status": "safe" if safety.get("safe", True) else "blocked",
+                "fallback_used": False,
+                "reason_category": safety.get("reason_category"),
+            }
+        except Exception as exc:
+            # Do not block product flow if safety service is temporarily unavailable.
+            self.logger.warning("[clarifier] safety gate unavailable, fallback to main LLM path: %s", exc)
+            self._safety_meta = {
+                "enabled": True,
+                "provider": "nvidia",
+                "model": "",
+                "status": "unavailable",
+                "fallback_used": True,
+                "reason_category": None,
+            }
+            return None
+
+        if safety.get("safe", True):
+            return None
+
+        reason_category = safety.get("reason_category") or "default"
+        return {
+            "type": "refused",
+            "reason_category": reason_category,
+            "message": get_refusal_message(reason_category),
+            "sector": "",
+            "score": 0,
+        }
+
+    def _attach_safety_meta(self, result: dict) -> dict:
+        enriched = dict(result)
+        if self._safety_meta:
+            enriched["safety"] = self._safety_meta
+        return enriched
+
     # ─────────────────────────────────────────────────────────
     # Méthode 1 — Appel initial (description seule)
     # ─────────────────────────────────────────────────────────
@@ -262,6 +309,18 @@ class IdeaClarifierAgent(BaseAgent):
                 "detected_sector": "",
             }
 
+        safety_block = await self._run_safety_gate(
+            {
+                "stage": "clarifier_input",
+                "name": state.name or "",
+                "sector": state.sector or "",
+                "description": state.description or "",
+                "target_audience": state.target_audience or "",
+            }
+        )
+        if safety_block:
+            return self._attach_safety_meta(safety_block)
+
         # ── 1 LLM call : sécurité + analyse ──────────────────
         user_prompt = self._build_context(state)
 
@@ -282,7 +341,7 @@ class IdeaClarifierAgent(BaseAgent):
         normalized["detected_sector"] = normalized.get("sector", "")
 
         self.logger.info(f"[clarifier] run_start → type={normalized['type']}")
-        return normalized
+        return self._attach_safety_meta(normalized)
 
     # ─────────────────────────────────────────────────────────
     # Méthode 2 — Appel après réponses utilisateur
@@ -303,6 +362,19 @@ class IdeaClarifierAgent(BaseAgent):
         if not answers or not any(v and v.strip() for v in answers.values()):
             raise ValueError("Aucune réponse fournie.")
 
+        safety_block = await self._run_safety_gate(
+            {
+                "stage": "clarifier_answers",
+                "name": state.name or "",
+                "sector": state.sector or "",
+                "description": state.description or "",
+                "target_audience": state.target_audience or "",
+                "answers": answers,
+            }
+        )
+        if safety_block:
+            return self._attach_safety_meta(safety_block)
+
         # ── 1 LLM call : sécurité sur réponses + structuration ──
         user_prompt = self._build_context(state, answers)
 
@@ -320,7 +392,7 @@ class IdeaClarifierAgent(BaseAgent):
             state.sector = normalized["sector"]
 
         self.logger.info(f"[clarifier] run_answer → type={normalized['type']}, score={normalized.get('score', 0)}")
-        return normalized
+        return self._attach_safety_meta(normalized)
 
     # ─────────────────────────────────────────────────────────
     # Compatibilité — méthodes conservées pour la route existante

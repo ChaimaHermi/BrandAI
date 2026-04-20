@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import {
   AI_ORIGIN,
   fetchLinkedInOAuthUrl,
@@ -92,7 +93,7 @@ export function useSocialPublish() {
       if (p.type === "brandai-meta-oauth") {
         setConnectBusy(null);
         if (!p.ok && p.error) {
-          window.alert(`Meta : ${p.error}`);
+          toast.error(`Connexion Meta échouée : ${p.error}`);
           return;
         }
         if (p.ok && Array.isArray(p.pages)) {
@@ -104,7 +105,7 @@ export function useSocialPublish() {
       if (p.type === "brandai-linkedin-oauth") {
         setConnectBusy(null);
         if (!p.ok && p.error) {
-          window.alert(`LinkedIn : ${p.error}`);
+          toast.error(`Connexion LinkedIn échouée : ${p.error}`);
           return;
         }
         if (p.ok && p.access_token) {
@@ -125,11 +126,11 @@ export function useSocialPublish() {
       const w = window.open(url, "brandai_meta_oauth", OAUTH_POPUP_FEATURES);
       if (!w) {
         setConnectBusy(null);
-        window.alert("Autorisez les fenêtres popup pour vous connecter à Meta.");
+        toast.warning("Popup bloquée — autorisez les fenêtres popup pour vous connecter à Meta.");
       }
     } catch (e) {
       setConnectBusy(null);
-      window.alert(e?.message || "OAuth Meta indisponible.");
+      toast.error(e?.message || "OAuth Meta indisponible.");
     }
   }, []);
 
@@ -140,11 +141,11 @@ export function useSocialPublish() {
       const w = window.open(url, "brandai_li_oauth", OAUTH_POPUP_FEATURES);
       if (!w) {
         setConnectBusy(null);
-        window.alert("Autorisez les fenêtres popup pour vous connecter à LinkedIn.");
+        toast.warning("Popup bloquée — autorisez les fenêtres popup pour vous connecter à LinkedIn.");
       }
     } catch (e) {
       setConnectBusy(null);
-      window.alert(e?.message || "OAuth LinkedIn indisponible.");
+      toast.error(e?.message || "OAuth LinkedIn indisponible.");
     }
   }, []);
 

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { getLatestMarketingPlan } from "../api/marketing.api";
 import { mapMarketingPlan } from "../utils/mapMarketingPlan";
 
@@ -17,7 +18,9 @@ export function useMarketingAgent({ idea, token }) {
       setPlan(mapped);
       return mapped;
     } catch (e) {
-      setError(e.message || "Erreur lecture plan marketing");
+      const errMsg = e.message || "Erreur lecture plan marketing";
+      setError(errMsg);
+      toast.error(`Impossible de charger le plan marketing : ${errMsg}`);
       return null;
     } finally {
       setIsLoading(false);

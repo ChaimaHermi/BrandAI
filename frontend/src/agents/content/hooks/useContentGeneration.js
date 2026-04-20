@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { toast } from "react-toastify";
 import { PLATFORMS, PLATFORM_LABELS } from "../constants";
 import {
   buildGenerationPayload,
@@ -30,7 +31,6 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
   /** true = posts ancrés sur l'idée ; false = sujet libre / éducatif sans forcer le projet */
   const [alignWithProject, setAlignWithProject] = useState(true);
   const [publishLoading, setPublishLoading] = useState(false);
-  const [publishSuccess, setPublishSuccess] = useState("");
 
   // SSE streaming hook — replaces isGenerating + postContentGeneration
   const {
@@ -69,7 +69,6 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
     setError(null);
     resetSSE();
     setGeneratedByPlatform((prev) => ({ ...prev, [activePlatform]: null }));
-    setPublishSuccess("");
 
     const payload = buildGenerationPayload(ideaId, activePlatform, formValues, {
       alignWithProject,
@@ -93,10 +92,8 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
             });
             dbId = row?.id ?? null;
           } catch (err) {
-            console.warn(
-              "[content] Historique BDD non enregistré:",
-              err?.message || err
-            );
+            console.warn("[content] Historique BDD non enregistré:", err?.message || err);
+            toast.warning("Post généré, mais l'historique n'a pas pu être enregistré.");
           }
         }
         setGeneratedByPlatform((prev) => ({
@@ -139,11 +136,11 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
           });
         } catch (err) {
           console.warn("[content] Statut publié non enregistré:", err?.message || err);
+          toast.warning("Publication réussie, mais le statut n'a pas pu être mis à jour.");
         }
       }
       const label = PLATFORM_LABELS[activePlatform] || activePlatform;
-      setPublishSuccess(`Publication publiée sur ${label}.`);
-      setTimeout(() => setPublishSuccess(""), 6000);
+      toast.success(`Publié sur ${label} avec succès !`);
       return true;
     } catch (e) {
       const current2 = generatedByPlatform[activePlatform];
@@ -157,7 +154,9 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
           console.warn("[content] Statut échec non enregistré:", err?.message || err);
         }
       }
-      setError(e?.message || "Publication échouée.");
+      const errMsg = e?.message || "Publication échouée.";
+      setError(errMsg);
+      toast.error(errMsg);
       return false;
     } finally {
       setPublishLoading(false);
@@ -178,7 +177,6 @@ export function useContentGeneration({ idea, token, publishToPlatform }) {
     generate,
     publish,
     publishLoading,
-    publishSuccess,
     alignWithProject,
     setAlignWithProject,
   };
