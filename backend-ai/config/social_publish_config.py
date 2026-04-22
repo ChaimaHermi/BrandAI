@@ -58,7 +58,7 @@ LINKEDIN_REDIRECT_URI = _LINKEDIN_REDIRECT_RAW or f"{_BRANDAI_AI_BASE}/api/ai/so
 # Alias pour le démarrage du proxy OAuth (main.py)
 BRANDAI_AI_BASE = _BRANDAI_AI_BASE
 LINKEDIN_SCOPE = (
-    os.getenv("LINKEDIN_SCOPE") or "openid profile email w_member_social"
+    os.getenv("LINKEDIN_SCOPE") or "openid profile email w_member_social r_profile_basicinfo"
 ).strip()
 
 # Front (postMessage origin)

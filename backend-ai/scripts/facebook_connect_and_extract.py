@@ -33,6 +33,37 @@ from tools.social_publishing.meta_client import (  # noqa: E402
     MetaGraphError,
 )
 
+FACEBOOK_PAGE_INSIGHT_METRICS = [
+    "page_impressions_unique",
+    "page_post_engagements",
+    "page_views_total",
+    "page_fans_online",
+    "page_actions_post_reactions_total",
+    "page_actions_post_comments_total",
+    "page_actions_post_shares_total",
+    "page_impressions",
+]
+
+FACEBOOK_POST_INSIGHT_METRICS = [
+    "post_impressions_unique",
+    "post_clicks",
+    "post_reactions_like_total",
+    "post_reactions_love_total",
+    "post_reactions_wow_total",
+    "post_reactions_haha_total",
+    "post_reactions_sorry_total",
+    "post_reactions_anger_total",
+    "post_video_views",
+    "post_video_complete_views_organic",
+    "post_impressions_paid",
+    "post_impressions_fan",
+    "post_impressions_organic",
+    "post_impressions",
+    "post_engaged_users",
+    "post_comments",
+    "post_shares",
+]
+
 
 class _OAuthCallbackHandler(BaseHTTPRequestHandler):
     payload: dict[str, str] = {}
@@ -88,6 +119,56 @@ async def _safe_graph_get(path: str, params: dict) -> dict | None:
         return None
 
 
+async def _safe_graph_get_with_error(path: str, params: dict) -> tuple[dict | None, dict | None]:
+    try:
+        return await _graph_get(path, params), None
+    except MetaGraphError as e:
+        return None, {"message": str(e), "code": e.code}
+    except Exception as e:
+        return None, {"message": str(e), "code": None}
+
+
+async def _fetch_insights_metrics_debug(
+    *,
+    object_id: str,
+    metrics: list[str],
+    access_token: str,
+    period: str | None = None,
+) -> tuple[list[dict] | None, dict | None]:
+    """
+    Fetch insights metrics one by one to avoid complete failure when one metric is invalid.
+    Returns combined data + debug info (accepted/rejected metrics).
+    """
+    combined: list[dict] = []
+    accepted: list[str] = []
+    rejected: list[dict] = []
+
+    total_metrics = len(metrics)
+    for metric_idx, metric in enumerate(metrics, start=1):
+        print(
+            f"[insights][{object_id}] metric {metric_idx}/{total_metrics}: {metric}",
+            flush=True,
+        )
+        params: dict[str, str] = {"metric": metric, "access_token": access_token}
+        if period:
+            params["period"] = period
+        data, err = await _safe_graph_get_with_error(f"{object_id}/insights", params)
+        if data and isinstance(data.get("data"), list):
+            rows = [x for x in (data.get("data") or []) if isinstance(x, dict)]
+            if rows:
+                combined.extend(rows)
+                accepted.append(metric)
+                continue
+        rejected.append({"metric": metric, "error": err})
+
+    debug = {
+        "requested_metrics": metrics,
+        "accepted_metrics": accepted,
+        "rejected_metrics": rejected,
+    }
+    return (combined or None), debug
+
+
 async def _fetch_graph_collection(
     *,
     path: str,
@@ -128,6 +209,51 @@ async def _fetch_graph_collection(
         except Exception as e:
             print(f"[Graph] paging error on {path}: {e}", flush=True)
             return results[:max_items]
+
+
+def _extract_insight_value(insights: list[dict] | None, metric_name: str) -> int | None:
+    if not insights:
+        return None
+    for item in insights:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("name") or "") != metric_name:
+            continue
+        values = item.get("values")
+        if isinstance(values, list) and values:
+            raw = values[0] if isinstance(values[0], dict) else {}
+            value = raw.get("value") if isinstance(raw, dict) else None
+            if isinstance(value, (int, float)):
+                return int(value)
+    return None
+
+
+def _facebook_post_type_api(post: dict[str, Any]) -> str:
+    status_type = str(post.get("status_type") or "").strip().lower()
+    attachments = post.get("attachments")
+    if isinstance(attachments, dict):
+        data = attachments.get("data")
+        if isinstance(data, list) and data:
+            first = data[0] if isinstance(data[0], dict) else {}
+            media_type = str(first.get("media_type") or "").strip().lower()
+            typ = str(first.get("type") or "").strip().lower()
+            if "video" in media_type or "video" in typ:
+                return "video"
+            if "photo" in media_type or "photo" in typ:
+                return "image"
+            if "album" in media_type or "album" in typ or "carousel" in typ:
+                return "carousel"
+            if "link" in typ:
+                return "link"
+    if "video" in status_type:
+        return "video"
+    if "photo" in status_type:
+        return "image"
+    if "link" in status_type:
+        return "link"
+    if status_type:
+        return status_type
+    return "unknown"
 
 
 def _run_callback_server(redirect_uri: str, timeout_s: int = 180) -> dict[str, str]:
@@ -389,12 +515,31 @@ async def _main() -> None:
             "access_token": page_token,
         },
     )
+    page_insights_data, page_insights_debug = await _fetch_insights_metrics_debug(
+        object_id=page_id,
+        metrics=FACEBOOK_PAGE_INSIGHT_METRICS,
+        access_token=page_token,
+        period="day",
+    )
 
     posts_detailed: list[dict] = []
-    for post in posts:
+    aggregate_post_reach = 0
+    aggregate_post_impressions = 0
+    aggregate_post_likes = 0
+    aggregate_post_comments = 0
+    aggregate_post_shares = 0
+    aggregate_post_interactions = 0
+    reach_known_count = 0
+    impressions_known_count = 0
+    total_posts = len(posts)
+    for post_idx, post in enumerate(posts, start=1):
         post_id = str(post.get("id") or "").strip()
         if not post_id:
             continue
+        print(
+            f"[facebook] processing post {post_idx}/{total_posts}: {post_id}",
+            flush=True,
+        )
 
         metrics: dict | None = None
         comments: list[dict] | None = None
@@ -421,19 +566,11 @@ async def _main() -> None:
         if not comments:
             comments = None
 
-        insights_data = await _safe_graph_get(
-            f"{post_id}/insights",
-            {
-                "metric": (
-                    "post_impressions,post_impressions_unique,"
-                    "post_engaged_users,post_clicks,post_reactions_like_total,"
-                    "post_comments,post_shares"
-                ),
-                "access_token": page_token,
-            },
+        post_insights, post_insights_debug = await _fetch_insights_metrics_debug(
+            object_id=post_id,
+            metrics=FACEBOOK_POST_INSIGHT_METRICS,
+            access_token=page_token,
         )
-        if insights_data and isinstance(insights_data.get("data"), list):
-            post_insights = insights_data.get("data") or None
 
         reactions = await _fetch_graph_collection(
             path=f"{post_id}/reactions",
@@ -455,12 +592,27 @@ async def _main() -> None:
         )
         shares_count = int((((metrics or {}).get("shares") or {}).get("count") or 0))
         interactions_total = reactions_count + comments_count + shares_count
+        post_reach = _extract_insight_value(post_insights, "post_impressions_unique")
+        post_impressions = _extract_insight_value(post_insights, "post_impressions")
+
+        if post_reach is not None:
+            aggregate_post_reach += post_reach
+            reach_known_count += 1
+        if post_impressions is not None:
+            aggregate_post_impressions += post_impressions
+            impressions_known_count += 1
+        aggregate_post_likes += reactions_count
+        aggregate_post_comments += comments_count
+        aggregate_post_shares += shares_count
+        aggregate_post_interactions += interactions_total
 
         posts_detailed.append(
             {
                 "post": post,
+                "post_type_api": _facebook_post_type_api(post),
                 "metrics": metrics,
                 "post_insights": post_insights,
+                "post_insights_debug": post_insights_debug,
                 "comments": comments,
                 "reactions": reactions,
                 "comments_count_fetched": (
@@ -478,18 +630,47 @@ async def _main() -> None:
                     "comments_count": comments_count,
                     "shares_count": shares_count,
                     "interactions_total": interactions_total,
+                    "reach": post_reach,
+                    "impressions": post_impressions,
                 },
             }
         )
+
+    page_followers = int((page_metrics or {}).get("followers_count") or 0)
+    page_likes = int((page_metrics or {}).get("fan_count") or 0)
+    page_reach_daily = _extract_insight_value(page_insights_data, "page_impressions_unique")
+    page_impressions_daily = _extract_insight_value(page_insights_data, "page_impressions")
+    page_post_engagements_daily = _extract_insight_value(page_insights_data, "page_post_engagements")
 
     out = {
         "platform": "facebook",
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "page": {"id": page_id, "name": page.get("name")},
         "page_metrics": page_metrics,
+        "page_insights": page_insights_data,
+        "page_insights_debug": page_insights_debug,
+        "page_social": {
+            "followers_count": page_followers or None,
+            "likes_count": page_likes or None,
+            "reach_daily": page_reach_daily,
+            "impressions_daily": page_impressions_daily,
+            "post_engagements_daily": page_post_engagements_daily,
+        },
         "posts_count": len(posts),
         "posts": posts,
         "posts_detailed": posts_detailed,
+        "posts_social_totals": {
+            "likes_count": aggregate_post_likes,
+            "comments_count": aggregate_post_comments,
+            "shares_count": aggregate_post_shares,
+            "interactions_total": aggregate_post_interactions,
+            "reach_total_known_posts": aggregate_post_reach if reach_known_count else None,
+            "impressions_total_known_posts": (
+                aggregate_post_impressions if impressions_known_count else None
+            ),
+            "reach_known_posts_count": reach_known_count,
+            "impressions_known_posts_count": impressions_known_count,
+        },
         "extract_config": {
             "posts_limit": limit,
             "comments_limit_per_post": comments_limit,

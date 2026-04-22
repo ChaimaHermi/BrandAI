@@ -177,31 +177,62 @@ def _resolve_profile_url(
 ) -> tuple[str, str]:
     """
     Retourne (profile_url, source).
-    Stratégie automatique :
-      1) .env  -> LINKEDIN_PROFILE_URL
-      2) cache -> linkedin_profile_map.json (par 'sub')
-      3) API   -> /v2/me vanityName (si le token le permet)
-      4) prompt 1 seule fois, puis persiste dans .env + cache
+    Stratégie stricte (sans fallback global) :
+      1) cache -> linkedin_profile_map.json (par 'sub' du compte connecté)
+      2) API   -> /v2/me vanityName (si le token le permet)
+      3) sinon erreur explicite (pas de fallback .env global)
     """
-    # 1) Direct env override if provided
-    direct = _env("LINKEDIN_PROFILE_URL", required=False)
-    if direct:
-        return direct, "env"
-
     sub = str(profile.get("sub") or "").strip()
+    if not sub:
+        raise RuntimeError(
+            "Impossible d'identifier le compte LinkedIn connecté (sub manquant). "
+            "URL profil non résolue par sécurité."
+        )
+
     map_file = ROOT / "scripts" / "results" / "linkedin_profile_map.json"
     mapping = _load_profile_map(map_file)
     if sub and sub in mapping:
         url = mapping[sub]
-        # Rewrite into .env so next run becomes 100% automatic.
-        _persist_env_var("LINKEDIN_PROFILE_URL", url)
         return url, "cache"
 
-    # 2) Try /v2/me vanityName (if allowed by token/app)
+    # 2) Try /rest/identityMe (r_profile_basicinfo -> basicInfo.profileUrl)
     headers = {
         "Authorization": f"Bearer {access_token}",
         "X-Restli-Protocol-Version": "2.0.0",
     }
+    identity_url = "https://api.linkedin.com/rest/identityMe"
+    identity_headers = {
+        **headers,
+        "Linkedin-Version": "202510",
+        "Accept": "application/json",
+    }
+    try:
+        r_identity = requests.get(identity_url, headers=identity_headers, timeout=30)
+        if r_identity.status_code == 200:
+            identity = r_identity.json() if r_identity.content else {}
+            basic = identity.get("basicInfo") if isinstance(identity, dict) else {}
+            if not isinstance(basic, dict):
+                basic = {}
+            profile_url = str(
+                basic.get("profileUrl")
+                or identity.get("profileUrl")
+                or ""
+            ).strip()
+            if profile_url:
+                mapping[sub] = profile_url
+                _save_profile_map(map_file, mapping)
+                print(f"[auto] URL profil resolue via /rest/identityMe: {profile_url}", flush=True)
+                return profile_url, "linkedin_identity"
+        else:
+            print(
+                f"[info] /rest/identityMe non disponible (HTTP {r_identity.status_code}). "
+                "Vérifie que le scope r_profile_basicinfo est bien demandé et accordé.",
+                flush=True,
+            )
+    except Exception as exc:
+        print(f"[info] /rest/identityMe erreur reseau: {exc}", flush=True)
+
+    # 3) Try /v2/me vanityName (legacy path on some apps/scopes)
     me_url = "https://api.linkedin.com/v2/me"
     params = {"projection": "(id,vanityName,localizedFirstName,localizedLastName)"}
     try:
@@ -214,45 +245,40 @@ def _resolve_profile_url(
                 if sub:
                     mapping[sub] = url
                     _save_profile_map(map_file, mapping)
-                _persist_env_var("LINKEDIN_PROFILE_URL", url)
                 print(f"[auto] URL profil resolue via /v2/me: {url}", flush=True)
                 return url, "linkedin_api"
         else:
             print(
                 f"[info] /v2/me non disponible (HTTP {r.status_code}). "
-                "L'app LinkedIn n'a pas 'Sign In with LinkedIn using OpenID Connect' + 'r_liteprofile', "
-                "ou le scope n'est pas accorde.",
+                "L'app LinkedIn n'a pas l'accès profil requis, ou le scope n'est pas accordé.",
                 flush=True,
             )
     except Exception as exc:
         print(f"[info] /v2/me erreur reseau: {exc}", flush=True)
 
-    # 3) One-time prompt, then persist everywhere (env + cache)
+    # 4) One-time manual fallback bound to the connected account (sub).
     print(
         "\n"
         "================ ACTION REQUISE (une seule fois) ================\n"
-        "L'API LinkedIn ne permet pas de resoudre automatiquement ton URL publique\n"
-        "avec les scopes actuels (c'est une limitation LinkedIn, pas un bug).\n"
-        "Colle une seule fois ton URL profil, elle sera ENREGISTREE dans .env\n"
-        "(LINKEDIN_PROFILE_URL). Les prochains lancements seront 100% automatiques.\n"
+        "Impossible de resoudre automatiquement l'URL profil pour ce compte.\n"
+        "Colle une seule fois l'URL publique du compte CONNECTE.\n"
+        "Cette URL sera enregistree uniquement dans linkedin_profile_map.json\n"
+        "pour le sub OAuth courant (aucun fallback global).\n"
         "Exemple: https://www.linkedin.com/in/ton-identifiant/\n"
         "=================================================================\n",
         flush=True,
     )
     while True:
-        raw = input("LinkedIn Profile URL: ").strip()
+        raw = input("LinkedIn Profile URL (compte connecté): ").strip()
         if raw.startswith("https://www.linkedin.com/in/"):
-            if sub:
-                mapping[sub] = raw
-                _save_profile_map(map_file, mapping)
-            persisted = _persist_env_var("LINKEDIN_PROFILE_URL", raw)
-            if persisted:
-                print(
-                    "[ok] LINKEDIN_PROFILE_URL enregistre dans .env. "
-                    "Les prochaines executions seront automatiques.",
-                    flush=True,
-                )
-            return raw, "manual_persisted"
+            mapping[sub] = raw
+            _save_profile_map(map_file, mapping)
+            print(
+                "[ok] URL profil enregistree pour ce compte. "
+                "Les prochains lancements seront automatiques pour ce meme compte.",
+                flush=True,
+            )
+            return raw, "manual_per_sub"
         print("URL invalide. Doit commencer par https://www.linkedin.com/in/", flush=True)
 
 
@@ -262,6 +288,29 @@ def _normalize_actor_id(actor_id: str) -> str:
     Ex: 'harvestapi/linkedin-profile-posts' -> 'harvestapi~linkedin-profile-posts'
     """
     return actor_id.strip().replace("/", "~")
+
+
+def _resolve_manual_profile_url() -> tuple[str, str]:
+    """
+    Résout l'URL profil LinkedIn sans OAuth.
+    Priorité:
+      1) argument CLI: python linkedin_apify_extract.py <profile_url>
+      2) env LINKEDIN_PROFILE_URL_INPUT
+      3) prompt terminal
+    """
+    cli_value = sys.argv[1].strip() if len(sys.argv) > 1 else ""
+    env_value = _env("LINKEDIN_PROFILE_URL_INPUT", required=False)
+    candidate = cli_value or env_value
+    source = "cli_arg" if cli_value else ("env_input" if env_value else "prompt")
+
+    while True:
+        if not candidate:
+            candidate = input("LinkedIn Profile URL: ").strip()
+            source = "prompt"
+        if candidate.startswith("https://www.linkedin.com/in/"):
+            return candidate, source
+        print("URL invalide. Doit commencer par https://www.linkedin.com/in/", flush=True)
+        candidate = ""
 
 
 def _run_actor(token: str, actor_id: str, run_input: dict[str, Any]) -> str:
@@ -314,9 +363,12 @@ def _read_dataset_items(token: str, dataset_id: str, limit: int) -> list[dict[st
 def _normalize_posts(items: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
     posts: list[dict[str, Any]] = []
     for item in items[:limit]:
+        raw_type = str(item.get("type") or "").strip().lower()
+        post_type_api = raw_type if raw_type else "unknown"
         posts.append(
             {
                 "id": item.get("id") or item.get("postId"),
+                "post_type_api": post_type_api,
                 "text": item.get("text") or item.get("content") or item.get("postText"),
                 "published_at": item.get("postedAt") or item.get("timestamp") or item.get("date"),
                 "post_url": item.get("postUrl") or item.get("url"),
@@ -529,11 +581,7 @@ def main() -> None:
     token = _env("APIFY_TOKEN")
     actor_id = _env("APIFY_LINKEDIN_ACTOR_ID")
     limit = int(_env("LINKEDIN_EXTRACT_LIMIT", required=False) or "10")
-
-    profile, access_token = asyncio.run(_oauth_profile())
-    profile_url, url_source = _resolve_profile_url(
-        access_token=access_token, profile=profile
-    )
+    profile_url, url_source = _resolve_manual_profile_url()
 
     # Generic input compatible with most LinkedIn profile actors.
     run_input = {
@@ -555,12 +603,7 @@ def main() -> None:
         "platform": "linkedin",
         "source": "apify",
         "collected_at": datetime.now(timezone.utc).isoformat(),
-        "profile": {
-            "sub": profile.get("sub"),
-            "name": profile.get("name"),
-            "email": profile.get("email"),
-            "profile_raw": profile,
-        },
+        "profile": {},
         "profile_url": profile_url,
         "profile_social": profile_counters,
         "posts_count": len(posts),
@@ -570,7 +613,7 @@ def main() -> None:
             "actor_id": actor_id,
             "dataset_id": dataset_id,
             "profile_url_source": url_source,
-            "profile_url_auto_resolved": url_source != "manual_persisted",
+            "profile_url_auto_resolved": False,
         },
     }
 

@@ -1,6 +1,6 @@
 {
   "platform": "facebook",
-  "collected_at": "2026-04-20T13:45:57.874060+00:00",
+  "collected_at": "2026-04-21T13:29:51.603726+00:00",
   "page": {
     "id": "1135465166305898",
     "name": "branding with chaima"
@@ -10,47 +10,209 @@
     "name": "branding with chaima",
     "category": "Product/service",
     "link": "https://www.facebook.com/1135465166305898",
-    "fan_count": 14,
-    "followers_count": 14,
+    "fan_count": 17,
+    "followers_count": 17,
     "verification_status": "not_verified"
   },
-  "posts_count": 4,
+  "page_insights": [
+    {
+      "name": "page_impressions_unique",
+      "period": "day",
+      "values": [
+        {
+          "value": 1,
+          "end_time": "2026-04-19T07:00:00+0000"
+        },
+        {
+          "value": 0,
+          "end_time": "2026-04-20T07:00:00+0000"
+        }
+      ],
+      "title": "Daily Total Reach",
+      "description": "Daily: The number of people who had any content from your Page or about your Page enter their screen. This includes posts, check-ins, ads, social information from people who interact with your Page and more. (Unique Users)",
+      "id": "1135465166305898/insights/page_impressions_unique/day"
+    },
+    {
+      "name": "page_post_engagements",
+      "period": "day",
+      "values": [
+        {
+          "value": 1,
+          "end_time": "2026-04-19T07:00:00+0000"
+        },
+        {
+          "value": 0,
+          "end_time": "2026-04-20T07:00:00+0000"
+        }
+      ],
+      "title": "Daily Post Engagements",
+      "description": "Daily: The number of times people have engaged with your posts through like, comments and shares and more.",
+      "id": "1135465166305898/insights/page_post_engagements/day"
+    },
+    {
+      "name": "page_views_total",
+      "period": "day",
+      "values": [
+        {
+          "value": 0,
+          "end_time": "2026-04-19T07:00:00+0000"
+        },
+        {
+          "value": 0,
+          "end_time": "2026-04-20T07:00:00+0000"
+        }
+      ],
+      "title": "Daily Total views count per Page",
+      "description": "Daily: Total views count per Page",
+      "id": "1135465166305898/insights/page_views_total/day"
+    },
+    {
+      "name": "page_actions_post_reactions_total",
+      "period": "day",
+      "values": [
+        {
+          "value": {},
+          "end_time": "2026-04-19T07:00:00+0000"
+        },
+        {
+          "value": {},
+          "end_time": "2026-04-20T07:00:00+0000"
+        }
+      ],
+      "title": "Daily: total post reactions of a page.",
+      "description": "Daily: total post reactions of a page.",
+      "id": "1135465166305898/insights/page_actions_post_reactions_total/day"
+    }
+  ],
+  "page_insights_debug": {
+    "requested_metrics": [
+      "page_impressions_unique",
+      "page_post_engagements",
+      "page_views_total",
+      "page_fans_online",
+      "page_actions_post_reactions_total",
+      "page_actions_post_comments_total",
+      "page_actions_post_shares_total",
+      "page_impressions"
+    ],
+    "accepted_metrics": [
+      "page_impressions_unique",
+      "page_post_engagements",
+      "page_views_total",
+      "page_actions_post_reactions_total"
+    ],
+    "rejected_metrics": [
+      {
+        "metric": "page_fans_online",
+        "error": {
+          "message": "(#100) The value must be a valid insights metric",
+          "code": 100
+        }
+      },
+      {
+        "metric": "page_actions_post_comments_total",
+        "error": {
+          "message": "(#100) The value must be a valid insights metric",
+          "code": 100
+        }
+      },
+      {
+        "metric": "page_actions_post_shares_total",
+        "error": {
+          "message": "(#100) The value must be a valid insights metric",
+          "code": 100
+        }
+      },
+      {
+        "metric": "page_impressions",
+        "error": {
+          "message": "(#100) The value must be a valid insights metric",
+          "code": 100
+        }
+      }
+    ]
+  },
+  "page_social": {
+    "followers_count": 17,
+    "likes_count": 17,
+    "reach_daily": 1,
+    "impressions_daily": null,
+    "post_engagements_daily": 1
+  },
+  "posts_count": 10,
   "posts": [
     {
-      "id": "1135465166305898_122095329872601396",
-      "message": "Vous avez un placard qui déborde et vous ne savez pas quoi en faire ? 🌿\n\nEn Tunisie, le vide‑dressing devient le meilleur allié contre le gaspillage textile. Grâce à notre appli, créez votre dressing virtuel, mettez en vente vos pièces et trouvez des acheteurs locaux qui cherchent de bonnes affaires responsables.\n\nPrêt(e) à libérer de l’espace et à donner une seconde vie à vos vêtements ? En savoir plus.",
-      "created_time": "2026-04-18T19:48:31+0000",
-      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095329872601396"
+      "id": "1135465166305898_122096973668601396",
+      "message": "Vous avez déjà remarqué comment un simple sourire peut changer une journée ? 🌟 L’amour, ce petit geste quotidien, est le vrai ciment de notre société. Il crée du lien, apaise les tensions et booste le bien‑être de chacun. Quand on partage un peu d’affection, on construit des communautés plus solidaires et résilientes. Et vous, quelles petites attentions vous permettent de semer plus d’amour autour de vous ?",
+      "created_time": "2026-04-20T22:05:55+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096973668601396"
     },
     {
-      "id": "1135465166305898_122095225856601396",
-      "message": "🚀 Aujourd’hui, nous lançons officiellement notre plateforme qui simplifie la recherche de stage en France ! Grâce à un algorithme automatisé, ton profil étudiant est mis en relation instantanément avec les offres qui correspondent à tes compétences et à tes envies. Fini les heures perdues à trier les annonces : utilise nos filtres pertinents et postule en quelques clics. 🎓💼\n\n👉 Découvre comment ça fonctionne et commence à matcher dès maintenant ! (En savoir plus)",
-      "created_time": "2026-04-18T16:00:04+0000",
-      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095225856601396"
+      "id": "1135465166305898_122096970944601396",
+      "message": "🌱 Vous avez déjà entendu parler de la RSE, mais savez‑vous vraiment pourquoi elle compte tant ?\n\nAujourd’hui, les consommateurs attendent des entreprises qu’elles prennent soin de la planète, de leurs employés et de leurs communautés. Adopter une démarche RSE, c’est réduire son impact environnemental, renforcer la confiance, fidéliser les clients et attirer les talents.\n\nEnvie d’en savoir plus sur les premières étapes pour intégrer la RSE dans votre activité ? En savoir plus : consultez le lien en bio.",
+      "created_time": "2026-04-20T22:03:56+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096970944601396"
     },
     {
-      "id": "1135465166305898_122095214960601396",
-      "message": "🚀 C’est officiel ! Notre nouvelle plateforme de mise en relation automatisée entre étudiants et stages en France est en ligne. Grâce à un algorithme intelligent et des filtres pertinents, trouver le stage qui vous correspond n’a jamais été aussi simple. 🎓💼 Vous êtes étudiant à la recherche d’une expérience professionnelle ? Essayez dès maintenant et simplifiez votre candidature. 👉 En savoir plus",
-      "created_time": "2026-04-18T15:30:59+0000",
-      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095214960601396"
+      "id": "1135465166305898_122096961746601396",
+      "message": "2026, c’est l’année où votre dressing prend vie ! 🎉 Vous avez des pièces qui traînent, vous rêvez de les transformer en argent tout en limitant le gaspillage textile ? Grâce à notre application mobile et web, créez votre dressing virtuel, mettez en vente vos vêtements d’occasion et touchez des acheteurs locaux qui cherchent de bonnes affaires responsables. 🌍\n\nEnvie d’un nouveau départ pour votre garde‑robe ? En savoir plus 👉 [lien]",
+      "created_time": "2026-04-20T22:00:27+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096961746601396"
     },
     {
-      "id": "1135465166305898_122094027926601396",
-      "message": "test test test",
-      "created_time": "2026-04-17T07:27:52+0000",
-      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122094027926601396"
+      "id": "1135465166305898_122096952356601396",
+      "message": "💚 Vous avez un dressing qui déborde ? Chaque pièce que vous revendez, c’est moins de vêtements jetés et moins de pollution textile.  \n\nNotre appli vous permet de créer un dressing virtuel, de mettre en vente vos vêtements d’occasion et de toucher des acheteurs locaux en Tunisie.  \n\nUne mode responsable, simple et locale. 🌍  \n\nEnvie d’en savoir plus ? Cliquez ici 👉 En savoir plus.",
+      "created_time": "2026-04-20T21:55:16+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096952356601396"
+    },
+    {
+      "id": "1135465166305898_122096931830601396",
+      "message": "🚀 Vous avez un dressing plein à ras bord et vous ne savez pas quoi en faire ?\n\nImaginez une appli où chaque pièce trouve preneur à côté de chez vous, à prix doux et sans gaspiller.\n\nEn quelques taps, créez votre dressing virtuel, choisissez vos articles, et connectez‑vous à une communauté de jeunes adultes tunisiens qui aiment la mode responsable.\n\nPrêt·e à donner une seconde vie à vos vêtements ? Dites‑nous ce que vous aimeriez vendre en premier !",
+      "created_time": "2026-04-20T21:36:35+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096931830601396"
+    },
+    {
+      "id": "1135465166305898_122096925986601396",
+      "message": "Vous avez des vêtements qui prennent la poussière ? 🎉  \n\nDécouvrez notre nouvelle appli de vide‑dressing : créez une annonce en un clic, vendez ou achetez des pièces d’occasion en toute sécurité, et libérez de l’espace dans votre placard tout en gagnant un peu d’argent. Disponible dès maintenant en Tunisie, avec une expansion prévue en France.  \n\nEnvie d’en savoir plus ? Cliquez ici 👉 En savoir plus.",
+      "created_time": "2026-04-20T21:25:30+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096925986601396"
+    },
+    {
+      "id": "1135465166305898_122096919236601396",
+      "message": "🚀 Vous avez des vêtements qui prennent la poussière ? Et si vous les transformiez en argent en un clin d’œil ?\n\nJe lance une appli de vide‑dressing en ligne, conçue pour la Tunisie. En quelques tapotements, créez votre annonce, gérez vos ventes et achetez des pièces uniques en toute sécurité, depuis votre mobile ou votre ordinateur. Et bientôt, on débarque en France !\n\nEnvie d’en savoir plus ? Cliquez ici 👉 En savoir plus.",
+      "created_time": "2026-04-20T21:12:53+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096919236601396"
+    },
+    {
+      "id": "1135465166305898_122096913560601396",
+      "message": "👗 Vous avez un dressing plein à craquer ? Et si chaque pièce trouvait une nouvelle vie près de chez vous !  \n\nJ’ai lancé une appli qui transforme votre placard en boutique virtuelle : créez votre dressing, mettez en vente vos vêtements d’occasion et touchez des acheteurs locaux qui cherchent des bonnes affaires responsables.  \n\nEnvie d’en savoir plus et de rejoindre la communauté ? En savoir plus 👉 [lien]",
+      "created_time": "2026-04-20T20:59:05+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096913560601396"
+    },
+    {
+      "id": "1135465166305898_122096892866601396",
+      "message": "🚀 Vous avez un dressing qui déborde ? Et si vous le transformiez en petite boutique ?\n\nAvec notre nouvelle appli, créez votre dressing virtuel en quelques taps, mettez en vente vos vêtements d'occasion et touchez des acheteurs locaux qui cherchent des pièces de qualité à petit prix.\n\nC’est simple, responsable et ultra local – parfait pour les 18‑35 ans qui veulent consommer mieux.\n\nVous avez déjà un article à revendre ? Dites‑nous ce que vous mettriez en ligne !",
+      "created_time": "2026-04-20T20:28:15+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096892866601396"
+    },
+    {
+      "id": "1135465166305898_122096886002601396",
+      "message": "Vous en avez marre de passer des heures à chercher le stage idéal ? 🎯\n\nNotre nouvelle plateforme en ligne utilise un algorithme automatisé pour mettre en relation votre profil étudiant avec les offres de stage disponibles en France. Grâce à des filtres pertinents, vous ne voyez que les missions qui correspondent vraiment à vos compétences, et le processus de candidature est simplifié en quelques clics.\n\nEt vous, quel critère compte le plus quand vous choisissez un stage ?",
+      "created_time": "2026-04-20T20:16:21+0000",
+      "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096886002601396"
     }
   ],
   "posts_detailed": [
     {
       "post": {
-        "id": "1135465166305898_122095329872601396",
-        "message": "Vous avez un placard qui déborde et vous ne savez pas quoi en faire ? 🌿\n\nEn Tunisie, le vide‑dressing devient le meilleur allié contre le gaspillage textile. Grâce à notre appli, créez votre dressing virtuel, mettez en vente vos pièces et trouvez des acheteurs locaux qui cherchent de bonnes affaires responsables.\n\nPrêt(e) à libérer de l’espace et à donner une seconde vie à vos vêtements ? En savoir plus.",
-        "created_time": "2026-04-18T19:48:31+0000",
-        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095329872601396"
+        "id": "1135465166305898_122096973668601396",
+        "message": "Vous avez déjà remarqué comment un simple sourire peut changer une journée ? 🌟 L’amour, ce petit geste quotidien, est le vrai ciment de notre société. Il crée du lien, apaise les tensions et booste le bien‑être de chacun. Quand on partage un peu d’affection, on construit des communautés plus solidaires et résilientes. Et vous, quelles petites attentions vous permettent de semer plus d’amour autour de vous ?",
+        "created_time": "2026-04-20T22:05:55+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096973668601396"
       },
+      "post_type_api": "unknown",
       "metrics": {
-        "id": "1135465166305898_122095329872601396",
+        "id": "1135465166305898_122096973668601396",
         "reactions": {
           "data": [
             {
@@ -61,8 +223,8 @@
           ],
           "paging": {
             "cursors": {
-              "before": "QVFIU1FBbTdBZAlREMTN6SXF0WlNXZAmtnLW5nZAnZA1RUI1eHBOakRqbUtEMzV0YWxFSDdEbDI3M0FURWZAWbThZAVloyYzFKMW93ZAVllYlhWNHJtS0F3c1ZAnTEpR",
-              "after": "QVFIU1FBbTdBZAlREMTN6SXF0WlNXZAmtnLW5nZAnZA1RUI1eHBOakRqbUtEMzV0YWxFSDdEbDI3M0FURWZAWbThZAVloyYzFKMW93ZAVllYlhWNHJtS0F3c1ZAnTEpR"
+              "before": "QVFIU1ZAPZAWtlZAEhlWEMyT0pWanQxNk1fTDBRSVIzOGtiQzJYellITXZAEaHp3VUVyTGJ5WFN1aHpRbGdILUkwQm95NDVpaW1IRlZARanNCdkZABRG51d3M0VC13",
+              "after": "QVFIU1ZAPZAWtlZAEhlWEMyT0pWanQxNk1fTDBRSVIzOGtiQzJYellITXZAEaHp3VUVyTGJ5WFN1aHpRbGdILUkwQm95NDVpaW1IRlZARanNCdkZABRG51d3M0VC13"
             }
           },
           "summary": {
@@ -71,45 +233,340 @@
           }
         },
         "comments": {
-          "data": [
-            {
-              "created_time": "2026-04-20T12:47:02+0000",
-              "from": {
-                "name": "Chaima Hermi",
-                "id": "27146280481631007"
-              },
-              "message": "waaw",
-              "id": "122095329872601396_936368002334652"
-            }
-          ],
-          "paging": {
-            "cursors": {
-              "before": "MQZDZD",
-              "after": "MQZDZD"
-            }
-          },
+          "data": [],
           "summary": {
-            "order": "ranked",
-            "total_count": 1,
+            "order": "chronological",
+            "total_count": 0,
             "can_comment": true
           }
         }
       },
-      "post_insights": null,
-      "comments": [
+      "post_insights": [
         {
-          "id": "122095329872601396_936368002334652",
-          "from": {
-            "id": "27146280481631007",
-            "name": "Chaima Hermi"
-          },
-          "message": "waaw",
-          "created_time": "2026-04-20T12:47:02+0000",
-          "like_count": 0,
-          "comment_count": 0,
-          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095329872601396?comment_id=936368002334652"
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096973668601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096973668601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096973668601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096973668601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096973668601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096973668601396/insights/post_video_complete_views_organic/lifetime"
         }
       ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
+      "comments": null,
       "reactions": [
         {
           "id": "27146280481631007",
@@ -117,24 +574,27 @@
           "type": "LOVE"
         }
       ],
-      "comments_count_fetched": 1,
+      "comments_count_fetched": null,
       "reactions_count_fetched": 1,
       "interactions": {
         "reactions_count": 1,
-        "comments_count": 1,
+        "comments_count": 0,
         "shares_count": 0,
-        "interactions_total": 2
+        "interactions_total": 1,
+        "reach": 2,
+        "impressions": null
       }
     },
     {
       "post": {
-        "id": "1135465166305898_122095225856601396",
-        "message": "🚀 Aujourd’hui, nous lançons officiellement notre plateforme qui simplifie la recherche de stage en France ! Grâce à un algorithme automatisé, ton profil étudiant est mis en relation instantanément avec les offres qui correspondent à tes compétences et à tes envies. Fini les heures perdues à trier les annonces : utilise nos filtres pertinents et postule en quelques clics. 🎓💼\n\n👉 Découvre comment ça fonctionne et commence à matcher dès maintenant ! (En savoir plus)",
-        "created_time": "2026-04-18T16:00:04+0000",
-        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095225856601396"
+        "id": "1135465166305898_122096970944601396",
+        "message": "🌱 Vous avez déjà entendu parler de la RSE, mais savez‑vous vraiment pourquoi elle compte tant ?\n\nAujourd’hui, les consommateurs attendent des entreprises qu’elles prennent soin de la planète, de leurs employés et de leurs communautés. Adopter une démarche RSE, c’est réduire son impact environnemental, renforcer la confiance, fidéliser les clients et attirer les talents.\n\nEnvie d’en savoir plus sur les premières étapes pour intégrer la RSE dans votre activité ? En savoir plus : consultez le lien en bio.",
+        "created_time": "2026-04-20T22:03:56+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096970944601396"
       },
+      "post_type_api": "unknown",
       "metrics": {
-        "id": "1135465166305898_122095225856601396",
+        "id": "1135465166305898_122096970944601396",
         "reactions": {
           "data": [
             {
@@ -145,8 +605,8 @@
           ],
           "paging": {
             "cursors": {
-              "before": "QVFIU3IwLTJURnNEdll3OHVteTlDOF9iZAnp4SV9Kb2NaNUtrU3pzOTU3ZAWdyTjNWNDJkcUNScGJyUU5TVmFNZAHFiTEhjampPcFJlc3MyM3IxSjdFM1BjODZAR",
-              "after": "QVFIU3IwLTJURnNEdll3OHVteTlDOF9iZAnp4SV9Kb2NaNUtrU3pzOTU3ZAWdyTjNWNDJkcUNScGJyUU5TVmFNZAHFiTEhjampPcFJlc3MyM3IxSjdFM1BjODZAR"
+              "before": "QVFIU2VCNzRGX1haaXVEd2tfay1yWDY1ZAnNYeGhjQ0NtZAVpnOHozcmZAibzhlUFJlUHlRb0RxejY4dUR5Y1liOFM4ZAjB3ekdTS0duV0VuRS1DU1NBdVh6dXhR",
+              "after": "QVFIU2VCNzRGX1haaXVEd2tfay1yWDY1ZAnNYeGhjQ0NtZAVpnOHozcmZAibzhlUFJlUHlRb0RxejY4dUR5Y1liOFM4ZAjB3ekdTS0duV0VuRS1DU1NBdVh6dXhR"
             }
           },
           "summary": {
@@ -155,45 +615,340 @@
           }
         },
         "comments": {
-          "data": [
-            {
-              "created_time": "2026-04-20T12:46:59+0000",
-              "from": {
-                "name": "Chaima Hermi",
-                "id": "27146280481631007"
-              },
-              "message": "magnifique",
-              "id": "122095225856601396_1573499037075110"
-            }
-          ],
-          "paging": {
-            "cursors": {
-              "before": "MQZDZD",
-              "after": "MQZDZD"
-            }
-          },
+          "data": [],
           "summary": {
-            "order": "ranked",
-            "total_count": 1,
+            "order": "chronological",
+            "total_count": 0,
             "can_comment": true
           }
         }
       },
-      "post_insights": null,
-      "comments": [
+      "post_insights": [
         {
-          "id": "122095225856601396_1573499037075110",
-          "from": {
-            "id": "27146280481631007",
-            "name": "Chaima Hermi"
-          },
-          "message": "magnifique",
-          "created_time": "2026-04-20T12:46:59+0000",
-          "like_count": 0,
-          "comment_count": 0,
-          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095225856601396?comment_id=1573499037075110"
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096970944601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096970944601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096970944601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096970944601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096970944601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096970944601396/insights/post_video_complete_views_organic/lifetime"
         }
       ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
+      "comments": null,
       "reactions": [
         {
           "id": "27146280481631007",
@@ -201,24 +956,397 @@
           "type": "LOVE"
         }
       ],
-      "comments_count_fetched": 1,
+      "comments_count_fetched": null,
       "reactions_count_fetched": 1,
       "interactions": {
         "reactions_count": 1,
-        "comments_count": 1,
+        "comments_count": 0,
         "shares_count": 0,
-        "interactions_total": 2
+        "interactions_total": 1,
+        "reach": 2,
+        "impressions": null
       }
     },
     {
       "post": {
-        "id": "1135465166305898_122095214960601396",
-        "message": "🚀 C’est officiel ! Notre nouvelle plateforme de mise en relation automatisée entre étudiants et stages en France est en ligne. Grâce à un algorithme intelligent et des filtres pertinents, trouver le stage qui vous correspond n’a jamais été aussi simple. 🎓💼 Vous êtes étudiant à la recherche d’une expérience professionnelle ? Essayez dès maintenant et simplifiez votre candidature. 👉 En savoir plus",
-        "created_time": "2026-04-18T15:30:59+0000",
-        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095214960601396"
+        "id": "1135465166305898_122096961746601396",
+        "message": "2026, c’est l’année où votre dressing prend vie ! 🎉 Vous avez des pièces qui traînent, vous rêvez de les transformer en argent tout en limitant le gaspillage textile ? Grâce à notre application mobile et web, créez votre dressing virtuel, mettez en vente vos vêtements d’occasion et touchez des acheteurs locaux qui cherchent de bonnes affaires responsables. 🌍\n\nEnvie d’un nouveau départ pour votre garde‑robe ? En savoir plus 👉 [lien]",
+        "created_time": "2026-04-20T22:00:27+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096961746601396"
       },
+      "post_type_api": "unknown",
       "metrics": {
-        "id": "1135465166305898_122095214960601396",
+        "id": "1135465166305898_122096961746601396",
+        "reactions": {
+          "data": [],
+          "paging": {
+            "cursors": {
+              "before": "QVFIUzlJRGNObGhZATUxnTGdPOGhmZA0lUbGozbnB2WWlUVTNpV2c0QjloS2RtS0ZAPcXJKR200TzV1WEpTTDVYSEE5Wkd6SmNrLS1tZAHVEbTlHMFI4Uno1R3JR",
+              "after": "QVFIUzlJRGNObGhZATUxnTGdPOGhmZA0lUbGozbnB2WWlUVTNpV2c0QjloS2RtS0ZAPcXJKR200TzV1WEpTTDVYSEE5Wkd6SmNrLS1tZAHVEbTlHMFI4Uno1R3JR"
+            }
+          },
+          "summary": {
+            "total_count": 1,
+            "viewer_reaction": "LOVE"
+          }
+        },
+        "comments": {
+          "data": [],
+          "summary": {
+            "order": "chronological",
+            "total_count": 0,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": [
+        {
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096961746601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096961746601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096961746601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096961746601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096961746601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096961746601396/insights/post_video_complete_views_organic/lifetime"
+        }
+      ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
+      "comments": null,
+      "reactions": null,
+      "comments_count_fetched": null,
+      "reactions_count_fetched": null,
+      "interactions": {
+        "reactions_count": 1,
+        "comments_count": 0,
+        "shares_count": 0,
+        "interactions_total": 1,
+        "reach": 2,
+        "impressions": null
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122096952356601396",
+        "message": "💚 Vous avez un dressing qui déborde ? Chaque pièce que vous revendez, c’est moins de vêtements jetés et moins de pollution textile.  \n\nNotre appli vous permet de créer un dressing virtuel, de mettre en vente vos vêtements d’occasion et de toucher des acheteurs locaux en Tunisie.  \n\nUne mode responsable, simple et locale. 🌍  \n\nEnvie d’en savoir plus ? Cliquez ici 👉 En savoir plus.",
+        "created_time": "2026-04-20T21:55:16+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096952356601396"
+      },
+      "post_type_api": "unknown",
+      "metrics": {
+        "id": "1135465166305898_122096952356601396",
         "reactions": {
           "data": [
             {
@@ -229,8 +1357,8 @@
           ],
           "paging": {
             "cursors": {
-              "before": "QVFIU3JPQ1d3dWNEODJxbUFrdTRmNWt6dFJUVnFiWFk5aWZAZAWENxQmMzVHRNX2NuNkllMlZA1WU43WTdpQnhGWGNVbVZANeWhtQk9FQnJHdXhHU1NzVW9MTzZA3",
-              "after": "QVFIU3JPQ1d3dWNEODJxbUFrdTRmNWt6dFJUVnFiWFk5aWZAZAWENxQmMzVHRNX2NuNkllMlZA1WU43WTdpQnhGWGNVbVZANeWhtQk9FQnJHdXhHU1NzVW9MTzZA3"
+              "before": "QVFIU0d2YjA5bkhMMENnb2ZAzcjhmRkZAJb09MeWk0WnpnTFRNaDdWREhiWmxWenJLTnRyMWlwM09XeHZAmQm9EUWVWMFNhOC0tU2dRVzJxVUFZATjNBNWd4WmlR",
+              "after": "QVFIU0d2YjA5bkhMMENnb2ZAzcjhmRkZAJb09MeWk0WnpnTFRNaDdWREhiWmxWenJLTnRyMWlwM09XeHZAmQm9EUWVWMFNhOC0tU2dRVzJxVUFZATjNBNWd4WmlR"
             }
           },
           "summary": {
@@ -241,13 +1369,13 @@
         "comments": {
           "data": [
             {
-              "created_time": "2026-04-20T12:46:55+0000",
+              "created_time": "2026-04-20T21:56:31+0000",
               "from": {
                 "name": "Chaima Hermi",
                 "id": "27146280481631007"
               },
               "message": "waaaw",
-              "id": "122095214960601396_1491816915890573"
+              "id": "122096952356601396_2071121070485370"
             }
           ],
           "paging": {
@@ -263,19 +1391,343 @@
           }
         }
       },
-      "post_insights": null,
+      "post_insights": [
+        {
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096952356601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096952356601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096952356601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096952356601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096952356601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096952356601396/insights/post_video_complete_views_organic/lifetime"
+        }
+      ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
       "comments": [
         {
-          "id": "122095214960601396_1491816915890573",
+          "id": "122096952356601396_2071121070485370",
           "from": {
             "id": "27146280481631007",
             "name": "Chaima Hermi"
           },
           "message": "waaaw",
-          "created_time": "2026-04-20T12:46:55+0000",
+          "created_time": "2026-04-20T21:56:31+0000",
           "like_count": 0,
           "comment_count": 0,
-          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122095214960601396?comment_id=1491816915890573"
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096952356601396?comment_id=2071121070485370"
         }
       ],
       "reactions": [
@@ -291,30 +1743,1276 @@
         "reactions_count": 1,
         "comments_count": 1,
         "shares_count": 0,
-        "interactions_total": 2
+        "interactions_total": 2,
+        "reach": 2,
+        "impressions": null
       }
     },
     {
       "post": {
-        "id": "1135465166305898_122094027926601396",
-        "message": "test test test",
-        "created_time": "2026-04-17T07:27:52+0000",
-        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122094027926601396"
+        "id": "1135465166305898_122096931830601396",
+        "message": "🚀 Vous avez un dressing plein à ras bord et vous ne savez pas quoi en faire ?\n\nImaginez une appli où chaque pièce trouve preneur à côté de chez vous, à prix doux et sans gaspiller.\n\nEn quelques taps, créez votre dressing virtuel, choisissez vos articles, et connectez‑vous à une communauté de jeunes adultes tunisiens qui aiment la mode responsable.\n\nPrêt·e à donner une seconde vie à vos vêtements ? Dites‑nous ce que vous aimeriez vendre en premier !",
+        "created_time": "2026-04-20T21:36:35+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096931830601396"
       },
+      "post_type_api": "unknown",
       "metrics": {
-        "id": "1135465166305898_122094027926601396",
+        "id": "1135465166305898_122096931830601396",
         "reactions": {
           "data": [
             {
               "id": "27146280481631007",
               "name": "Chaima Hermi",
-              "type": "LIKE"
+              "type": "LOVE"
             }
           ],
           "paging": {
             "cursors": {
-              "before": "QVFIU3RQRWRjUkg3bEFVU1pRYVEzNXRDNG5fRmh1N3ZAPQTE4T2M2Nlc2V3EyNDgxQlEzQndZAYjBBbUNTbXJ2YVB6YktiOEJuRHRGN2FTVlhZAa3pNTVJGa0ZA3",
-              "after": "QVFIUzlLYUN6QVVRaGF1THk3RlJyaEdONW1MQkRLMFdINW41c2g1TmRLM25ycXgwR0xWZA0QzbVljRkZABbjYyU1JiS0R3RzB1M0gyeXFycTlhc0V1RjZADbDRn"
+              "before": "QVFIU2dUdHhwdWFJYmhTOVR1STg4X0JOdXd1MkYxeVVGSE9mOEJnYVFqRTlrWkp5UFhBRWM5SXk2R1d1dVVWVDFqN3NianNlck44WTdUcXl0THp6d3FDUDVn",
+              "after": "QVFIUzZAnR2FTMC01bU9DYTJUSENjcnJveXpfclJoMks0QmFtaGhSR1ZAGTE0zbnRVMnVuZAmVPYWZAORktWTTI1NFFGcGt1NVBjbVlGYk9pbUFVNDIyajhLelN3"
+            }
+          },
+          "summary": {
+            "total_count": 6,
+            "viewer_reaction": "NONE"
+          }
+        },
+        "comments": {
+          "data": [
+            {
+              "created_time": "2026-04-20T21:56:39+0000",
+              "from": {
+                "name": "Chaima Hermi",
+                "id": "27146280481631007"
+              },
+              "message": "magique",
+              "id": "122096931830601396_2565940163870847"
+            },
+            {
+              "created_time": "2026-04-20T22:11:06+0000",
+              "message": "Bellevue",
+              "id": "122096931830601396_1987124778590070"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "MgZDZD",
+              "after": "MQZDZD"
+            }
+          },
+          "summary": {
+            "order": "ranked",
+            "total_count": 2,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": [
+        {
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 15
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096931830601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 3
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096931830601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 5
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 5,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 5,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096931830601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096931830601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096931830601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096931830601396/insights/post_video_complete_views_organic/lifetime"
+        }
+      ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
+      "comments": [
+        {
+          "id": "122096931830601396_2565940163870847",
+          "from": {
+            "id": "27146280481631007",
+            "name": "Chaima Hermi"
+          },
+          "message": "magique",
+          "created_time": "2026-04-20T21:56:39+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096931830601396?comment_id=2565940163870847"
+        },
+        {
+          "id": "122096931830601396_1987124778590070",
+          "message": "Bellevue",
+          "created_time": "2026-04-20T22:11:06+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096931830601396?comment_id=1987124778590070"
+        }
+      ],
+      "reactions": [
+        {
+          "id": "27146280481631007",
+          "name": "Chaima Hermi",
+          "type": "LOVE"
+        }
+      ],
+      "comments_count_fetched": 2,
+      "reactions_count_fetched": 1,
+      "interactions": {
+        "reactions_count": 6,
+        "comments_count": 2,
+        "shares_count": 0,
+        "interactions_total": 8,
+        "reach": 15,
+        "impressions": null
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122096925986601396",
+        "message": "Vous avez des vêtements qui prennent la poussière ? 🎉  \n\nDécouvrez notre nouvelle appli de vide‑dressing : créez une annonce en un clic, vendez ou achetez des pièces d’occasion en toute sécurité, et libérez de l’espace dans votre placard tout en gagnant un peu d’argent. Disponible dès maintenant en Tunisie, avec une expansion prévue en France.  \n\nEnvie d’en savoir plus ? Cliquez ici 👉 En savoir plus.",
+        "created_time": "2026-04-20T21:25:30+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096925986601396"
+      },
+      "post_type_api": "unknown",
+      "metrics": {
+        "id": "1135465166305898_122096925986601396",
+        "reactions": {
+          "data": [
+            {
+              "id": "27146280481631007",
+              "name": "Chaima Hermi",
+              "type": "LOVE"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "QVFIU2Jha2RGZAHR3R1NkZADdMdkZAUQWcyN3NnWkRiVDJxTjV1SERLTVRIZAUZAhTGxwYWFWcFltN2tKck1iZAHZAXS09Vbnc1UHJPaTdINWhqLVdCRDJSaWhLZAm5R",
+              "after": "QVFIU2tiVnp3d0J4MVZAiMVZAvYk1CTHR4Nm9NVWNtX1gyeVB1UC1LRGRaeDZAkZATVKVkRsdTRlRW8tT0tTWFRxV2hpYl81ejE5eURMZAE5UZAFdwclVRN2FGOFpn"
+            }
+          },
+          "summary": {
+            "total_count": 5,
+            "viewer_reaction": "NONE"
+          }
+        },
+        "comments": {
+          "data": [
+            {
+              "created_time": "2026-04-21T09:36:39+0000",
+              "message": "Not beautiful",
+              "id": "122096925986601396_843122181467292"
+            },
+            {
+              "created_time": "2026-04-21T07:20:49+0000",
+              "message": "Beautiful",
+              "id": "122096925986601396_1284084740493501"
+            },
+            {
+              "created_time": "2026-04-20T22:08:05+0000",
+              "message": "Nice brand 🎉",
+              "id": "122096925986601396_991330346883308"
+            },
+            {
+              "created_time": "2026-04-21T09:36:44+0000",
+              "message": "Nice",
+              "id": "122096925986601396_3676619162494474"
+            },
+            {
+              "created_time": "2026-04-20T22:11:15+0000",
+              "message": "Nice",
+              "id": "122096925986601396_1661221768452318"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "NQZDZD",
+              "after": "MQZDZD"
+            }
+          },
+          "summary": {
+            "order": "ranked",
+            "total_count": 5,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": [
+        {
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 15
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096925986601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 5
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096925986601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 5
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 4,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 4,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096925986601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096925986601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096925986601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096925986601396/insights/post_video_complete_views_organic/lifetime"
+        }
+      ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
+      "comments": [
+        {
+          "id": "122096925986601396_843122181467292",
+          "message": "Not beautiful",
+          "created_time": "2026-04-21T09:36:39+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096925986601396?comment_id=843122181467292"
+        },
+        {
+          "id": "122096925986601396_1284084740493501",
+          "message": "Beautiful",
+          "created_time": "2026-04-21T07:20:49+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096925986601396?comment_id=1284084740493501"
+        },
+        {
+          "id": "122096925986601396_991330346883308",
+          "message": "Nice brand 🎉",
+          "created_time": "2026-04-20T22:08:05+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096925986601396?comment_id=991330346883308"
+        },
+        {
+          "id": "122096925986601396_3676619162494474",
+          "message": "Nice",
+          "created_time": "2026-04-21T09:36:44+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096925986601396?comment_id=3676619162494474"
+        },
+        {
+          "id": "122096925986601396_1661221768452318",
+          "message": "Nice",
+          "created_time": "2026-04-20T22:11:15+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096925986601396?comment_id=1661221768452318"
+        }
+      ],
+      "reactions": [
+        {
+          "id": "27146280481631007",
+          "name": "Chaima Hermi",
+          "type": "LOVE"
+        }
+      ],
+      "comments_count_fetched": 5,
+      "reactions_count_fetched": 1,
+      "interactions": {
+        "reactions_count": 5,
+        "comments_count": 5,
+        "shares_count": 0,
+        "interactions_total": 10,
+        "reach": 15,
+        "impressions": null
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122096919236601396",
+        "message": "🚀 Vous avez des vêtements qui prennent la poussière ? Et si vous les transformiez en argent en un clin d’œil ?\n\nJe lance une appli de vide‑dressing en ligne, conçue pour la Tunisie. En quelques tapotements, créez votre annonce, gérez vos ventes et achetez des pièces uniques en toute sécurité, depuis votre mobile ou votre ordinateur. Et bientôt, on débarque en France !\n\nEnvie d’en savoir plus ? Cliquez ici 👉 En savoir plus.",
+        "created_time": "2026-04-20T21:12:53+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096919236601396"
+      },
+      "post_type_api": "unknown",
+      "metrics": {
+        "id": "1135465166305898_122096919236601396",
+        "reactions": {
+          "data": [],
+          "paging": {
+            "cursors": {
+              "before": "QVFIU2M0TlpMS05MSjF6U0oxT0N3aDltcG81VHV6eEVoQzdkWEdhT29zOEgzLUdrUFVTcFNRTEhDN1phelJXWkNsWE1JMWJaZAWhzUE9LVWUyaE5YSnJScTdB",
+              "after": "QVFIU3E0ZAzdJM0RDTXI3UWs5eEVHeF95S202ZAVN6ZAlMtdW1sdEVud0Vqb3Nwcnd3ZAHZAmbDZA2NHFLWno2eG56RHRBczNOTGpaalJ5V0JOYWVVbjFJYmNlWnFn"
+            }
+          },
+          "summary": {
+            "total_count": 4,
+            "viewer_reaction": "NONE"
+          }
+        },
+        "comments": {
+          "data": [],
+          "summary": {
+            "order": "chronological",
+            "total_count": 0,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": [
+        {
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 8
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096919236601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096919236601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 4
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 4,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 4,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096919236601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096919236601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096919236601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096919236601396/insights/post_video_complete_views_organic/lifetime"
+        }
+      ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
+      "comments": null,
+      "reactions": null,
+      "comments_count_fetched": null,
+      "reactions_count_fetched": null,
+      "interactions": {
+        "reactions_count": 4,
+        "comments_count": 0,
+        "shares_count": 0,
+        "interactions_total": 4,
+        "reach": 8,
+        "impressions": null
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122096913560601396",
+        "message": "👗 Vous avez un dressing plein à craquer ? Et si chaque pièce trouvait une nouvelle vie près de chez vous !  \n\nJ’ai lancé une appli qui transforme votre placard en boutique virtuelle : créez votre dressing, mettez en vente vos vêtements d’occasion et touchez des acheteurs locaux qui cherchent des bonnes affaires responsables.  \n\nEnvie d’en savoir plus et de rejoindre la communauté ? En savoir plus 👉 [lien]",
+        "created_time": "2026-04-20T20:59:05+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096913560601396"
+      },
+      "post_type_api": "unknown",
+      "metrics": {
+        "id": "1135465166305898_122096913560601396",
+        "reactions": {
+          "data": [],
+          "paging": {
+            "cursors": {
+              "before": "QVFIU0QxNEpkUUNab1RmV0JGQ2hLNV9Iemp3bE5IMUgyRnhhT2lTaW1LRW0wZAGZAQbUI1eDJJQzR2bmJVaF94TkF1WE9tNE4wd0FEQWgxejJISk50U0szZAlNB",
+              "after": "QVFIU3ZAjdHpLeFdqaUZAOaHZAaN1pUdWRUUGM3WmhnTXhSQ3BYOFlweFpwUlNJUEZAzWnZAnUkg3YUNwTi0wYjFXdGtZAZAzdtMzQ4TTczODU5WXlMZA29FN3JMdF9B"
             }
           },
           "summary": {
@@ -325,13 +3023,9 @@
         "comments": {
           "data": [
             {
-              "created_time": "2026-04-20T12:46:51+0000",
-              "from": {
-                "name": "Chaima Hermi",
-                "id": "27146280481631007"
-              },
-              "message": "test",
-              "id": "122094027926601396_1280674286868324"
+              "created_time": "2026-04-21T09:37:04+0000",
+              "message": "Can you provide us with more details?",
+              "id": "122096913560601396_26620035874304845"
             }
           ],
           "paging": {
@@ -347,38 +3041,1125 @@
           }
         }
       },
-      "post_insights": null,
+      "post_insights": [
+        {
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 7
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096913560601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096913560601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 4
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 4,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 4,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096913560601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096913560601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096913560601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096913560601396/insights/post_video_complete_views_organic/lifetime"
+        }
+      ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
       "comments": [
         {
-          "id": "122094027926601396_1280674286868324",
-          "from": {
-            "id": "27146280481631007",
-            "name": "Chaima Hermi"
-          },
-          "message": "test",
-          "created_time": "2026-04-20T12:46:51+0000",
+          "id": "122096913560601396_26620035874304845",
+          "message": "Can you provide us with more details?",
+          "created_time": "2026-04-21T09:37:04+0000",
           "like_count": 0,
           "comment_count": 0,
-          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122094027926601396?comment_id=1280674286868324"
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096913560601396?comment_id=26620035874304845"
         }
       ],
-      "reactions": [
-        {
-          "id": "27146280481631007",
-          "name": "Chaima Hermi",
-          "type": "LIKE"
-        }
-      ],
+      "reactions": null,
       "comments_count_fetched": 1,
-      "reactions_count_fetched": 1,
+      "reactions_count_fetched": null,
       "interactions": {
         "reactions_count": 4,
         "comments_count": 1,
         "shares_count": 0,
-        "interactions_total": 5
+        "interactions_total": 5,
+        "reach": 7,
+        "impressions": null
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122096892866601396",
+        "message": "🚀 Vous avez un dressing qui déborde ? Et si vous le transformiez en petite boutique ?\n\nAvec notre nouvelle appli, créez votre dressing virtuel en quelques taps, mettez en vente vos vêtements d'occasion et touchez des acheteurs locaux qui cherchent des pièces de qualité à petit prix.\n\nC’est simple, responsable et ultra local – parfait pour les 18‑35 ans qui veulent consommer mieux.\n\nVous avez déjà un article à revendre ? Dites‑nous ce que vous mettriez en ligne !",
+        "created_time": "2026-04-20T20:28:15+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096892866601396"
+      },
+      "post_type_api": "unknown",
+      "metrics": {
+        "id": "1135465166305898_122096892866601396",
+        "reactions": {
+          "data": [],
+          "paging": {
+            "cursors": {
+              "before": "QVFIUzl3X2ZAiT0JCMTcxZAWlRWjU4OENNS0FBRUNSZADZAFMXhQeUVweVRMMmY0UUhZATUZAiM2t0LWt0Qmd2ZADg1M0Itby02LTNTcHZAwV1VWUGNMcG9KU1pvZA0J3",
+              "after": "QVFIU1ZA5ODQweEVfYUF4QzBJODZAEa2ZATM3BxQ1hqRVk3S0ppbWM4c2pteVp4MjBXVE94Vm5iOWQ4YTJUbHk1bVJsWE9NSXJGdjhXcHhMUHI4V0RhV1RuRTBR"
+            }
+          },
+          "summary": {
+            "total_count": 3,
+            "viewer_reaction": "NONE"
+          }
+        },
+        "comments": {
+          "data": [
+            {
+              "created_time": "2026-04-21T09:37:36+0000",
+              "message": "The image is not matching the caption i think so!!",
+              "id": "122096892866601396_1468985308258822"
+            }
+          ],
+          "paging": {
+            "cursors": {
+              "before": "MQZDZD",
+              "after": "MQZDZD"
+            }
+          },
+          "summary": {
+            "order": "ranked",
+            "total_count": 1,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": [
+        {
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 6
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096892866601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096892866601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 2,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 2,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096892866601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096892866601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096892866601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096892866601396/insights/post_video_complete_views_organic/lifetime"
+        }
+      ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
+      "comments": [
+        {
+          "id": "122096892866601396_1468985308258822",
+          "message": "The image is not matching the caption i think so!!",
+          "created_time": "2026-04-21T09:37:36+0000",
+          "like_count": 0,
+          "comment_count": 0,
+          "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096892866601396?comment_id=1468985308258822"
+        }
+      ],
+      "reactions": null,
+      "comments_count_fetched": 1,
+      "reactions_count_fetched": null,
+      "interactions": {
+        "reactions_count": 3,
+        "comments_count": 1,
+        "shares_count": 0,
+        "interactions_total": 4,
+        "reach": 6,
+        "impressions": null
+      }
+    },
+    {
+      "post": {
+        "id": "1135465166305898_122096886002601396",
+        "message": "Vous en avez marre de passer des heures à chercher le stage idéal ? 🎯\n\nNotre nouvelle plateforme en ligne utilise un algorithme automatisé pour mettre en relation votre profil étudiant avec les offres de stage disponibles en France. Grâce à des filtres pertinents, vous ne voyez que les missions qui correspondent vraiment à vos compétences, et le processus de candidature est simplifié en quelques clics.\n\nEt vous, quel critère compte le plus quand vous choisissez un stage ?",
+        "created_time": "2026-04-20T20:16:21+0000",
+        "permalink_url": "https://www.facebook.com/122096520308601396/posts/122096886002601396"
+      },
+      "post_type_api": "unknown",
+      "metrics": {
+        "id": "1135465166305898_122096886002601396",
+        "reactions": {
+          "data": [],
+          "paging": {
+            "cursors": {
+              "before": "QVFIU3hfUVBxNTBhek1DWlV5d0FycnVzcDM0Nnd4SjNNalVnRzVNM0FUakhSWDhad05jRVhXeWhJXzkyd0l2Y2RqejJQbGNhQ2RiUGx3RHBZARlRVVlMtLWJn",
+              "after": "QVFIU3RLZAjl4WkphdTktVnJYY1pvNnIzRVp6SW9SR0Uwek9Ld2J6QUYycUVYUWlIOXhWTG0ydlJxbEh5cnk0RWZAiSHZAHUXowUURKUWg1WFlUOGpkaEowY25n"
+            }
+          },
+          "summary": {
+            "total_count": 4,
+            "viewer_reaction": "LIKE"
+          }
+        },
+        "comments": {
+          "data": [],
+          "summary": {
+            "order": "chronological",
+            "total_count": 0,
+            "can_comment": true
+          }
+        }
+      },
+      "post_insights": [
+        {
+          "name": "post_impressions_unique",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 8
+            }
+          ],
+          "title": "Lifetime Post Total Reach",
+          "description": "Lifetime: The number of people who had your Page's post enter their screen. Posts include statuses, photos, links, videos and more. (Unique Users)",
+          "id": "1135465166305898_122096886002601396/insights/post_impressions_unique/lifetime"
+        },
+        {
+          "name": "post_clicks",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Matched Audience Targeting Consumptions on Post",
+          "description": "Lifetime: The number of clicks anywhere in your post on News Feed from the user that matched the audience targeting on it. (Total Count)",
+          "id": "1135465166305898_122096886002601396/insights/post_clicks/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Total Like Reactions of a post.",
+          "description": "Lifetime: Total like reactions of a post.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_like_total/lifetime"
+        },
+        {
+          "name": "post_reactions_like_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Nombre de réactions J’aime d’une publication.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_like_total/day"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 2
+            }
+          ],
+          "title": "Lifetime Total Love Reactions of a post.",
+          "description": "Lifetime: Total love reactions of a post.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_love_total/lifetime"
+        },
+        {
+          "name": "post_reactions_love_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 2,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 2,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions J’adore d’une publication.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_love_total/day"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total wow Reactions of a post.",
+          "description": "Lifetime: Total wow Reactions of a post.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_wow_total/lifetime"
+        },
+        {
+          "name": "post_reactions_wow_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Wouah d’une publication.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_wow_total/day"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total haha Reactions of a post.",
+          "description": "Lifetime: Total haha reactions of a post.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_haha_total/lifetime"
+        },
+        {
+          "name": "post_reactions_haha_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Haha d’une publication.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_haha_total/day"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 1
+            }
+          ],
+          "title": "Lifetime Total sad Reactions of a post.",
+          "description": "Lifetime: Total sad reactions of a post.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_sorry_total/lifetime"
+        },
+        {
+          "name": "post_reactions_sorry_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 1,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 1,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions « Triste » d’une publication.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_sorry_total/day"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total anger Reactions of a post.",
+          "description": "Lifetime: Total anger reactions of a post.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_anger_total/lifetime"
+        },
+        {
+          "name": "post_reactions_anger_total",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": null,
+          "description": "Total de réactions Grr d’une publication.",
+          "id": "1135465166305898_122096886002601396/insights/post_reactions_anger_total/day"
+        },
+        {
+          "name": "post_video_views",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Total Video Views",
+          "description": "Lifetime: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096886002601396/insights/post_video_views/lifetime"
+        },
+        {
+          "name": "post_video_views",
+          "period": "day",
+          "values": [
+            {
+              "value": 0,
+              "end_time": "2026-04-18T07:00:00+0000"
+            },
+            {
+              "value": 0,
+              "end_time": "2026-04-19T07:00:00+0000"
+            }
+          ],
+          "title": "Daily Total Video Views",
+          "description": "Daily: Total number of times your video was viewed for more than 3 seconds. (Total Count)",
+          "id": "1135465166305898_122096886002601396/insights/post_video_views/day"
+        },
+        {
+          "name": "post_video_complete_views_organic",
+          "period": "lifetime",
+          "values": [
+            {
+              "value": 0
+            }
+          ],
+          "title": "Lifetime Organic views to 97%",
+          "description": "Lifetime: Number of times your video was viewed to 97% of its length without any paid promotion. (Total Count)",
+          "id": "1135465166305898_122096886002601396/insights/post_video_complete_views_organic/lifetime"
+        }
+      ],
+      "post_insights_debug": {
+        "requested_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic",
+          "post_impressions_paid",
+          "post_impressions_fan",
+          "post_impressions_organic",
+          "post_impressions",
+          "post_engaged_users",
+          "post_comments",
+          "post_shares"
+        ],
+        "accepted_metrics": [
+          "post_impressions_unique",
+          "post_clicks",
+          "post_reactions_like_total",
+          "post_reactions_love_total",
+          "post_reactions_wow_total",
+          "post_reactions_haha_total",
+          "post_reactions_sorry_total",
+          "post_reactions_anger_total",
+          "post_video_views",
+          "post_video_complete_views_organic"
+        ],
+        "rejected_metrics": [
+          {
+            "metric": "post_impressions_paid",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_fan",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions_organic",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_impressions",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_engaged_users",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_comments",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          },
+          {
+            "metric": "post_shares",
+            "error": {
+              "message": "(#100) The value must be a valid insights metric",
+              "code": 100
+            }
+          }
+        ]
+      },
+      "comments": null,
+      "reactions": null,
+      "comments_count_fetched": null,
+      "reactions_count_fetched": null,
+      "interactions": {
+        "reactions_count": 4,
+        "comments_count": 0,
+        "shares_count": 0,
+        "interactions_total": 4,
+        "reach": 8,
+        "impressions": null
       }
     }
   ],
+  "posts_social_totals": {
+    "likes_count": 30,
+    "comments_count": 10,
+    "shares_count": 0,
+    "interactions_total": 40,
+    "reach_total_known_posts": 67,
+    "impressions_total_known_posts": null,
+    "reach_known_posts_count": 10,
+    "impressions_known_posts_count": 0
+  },
   "extract_config": {
     "posts_limit": 10,
     "comments_limit_per_post": 100,
