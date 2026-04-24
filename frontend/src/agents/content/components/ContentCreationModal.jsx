@@ -239,9 +239,10 @@ function ContentCreationModalInner({ onClose, onScheduleCreated }) {
             />
 
             {/* Workspace */}
-            <ContentWorkspace
-              ideaId={idea?.id}
-              token={token}
+          <ContentWorkspace
+            idea={idea}
+            ideaId={idea?.id}
+            token={token}
               activePlatform={activePlatform}
               forms={forms}
               updateForm={updateForm}

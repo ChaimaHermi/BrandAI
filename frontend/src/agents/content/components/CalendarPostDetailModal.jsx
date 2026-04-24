@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import {
   FiX, FiEdit3, FiRefreshCw, FiSend, FiClock, FiCalendar, FiCheckCircle,
@@ -17,6 +17,7 @@ import {
   apiPatchScheduledPublication,
 } from "@/services/scheduledPublicationsApi";
 import { apiPatchGeneratedContent } from "@/services/generatedContentApi";
+import { useContentBrandPreview } from "../hooks/useContentBrandPreview";
 
 const PLATFORM_META = {
   instagram: {
@@ -96,6 +97,9 @@ export default function CalendarPostDetailModal({
   const [regenInstruction, setRegenInstruction] = useState("");
   const [publishOpen, setPublishOpen] = useState(false);
   const [publishLoading, setPublishLoading] = useState(false);
+
+  const previewIdea = useMemo(() => (ideaId ? { id: ideaId } : null), [ideaId]);
+  const brandPreview = useContentBrandPreview(previewIdea, token);
 
   useEffect(() => {
     if (!open || !scheduleId || !ideaId || !token) return;
@@ -416,6 +420,8 @@ export default function CalendarPostDetailModal({
                     caption={isEditing ? draftCaption : caption}
                     imageUrl={imageUrl}
                     emptyHint="Aucun contenu"
+                    brandDisplayName={brandPreview.brandName}
+                    brandLogoUrl={brandPreview.logoUrl}
                   />
                 </div>
               </>

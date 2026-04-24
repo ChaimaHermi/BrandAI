@@ -10,7 +10,7 @@ import { CharacterCount } from "./CharacterCount";
 /* ── Seuil "Voir plus" (en caractères) ────────────────────────────────────── */
 const PREVIEW_LIMIT = 240;
 
-/* ── Méta par plateforme ──────────────────────────────────────────────────── */
+/* ── Méta par plateforme (valeurs par défaut si pas de brand kit) ─────────── */
 const PLATFORM_META = {
   instagram: {
     Icon:        FaInstagram,
@@ -34,6 +34,49 @@ const PLATFORM_META = {
     timeLabel:   "Il y a 1 h · 🌍",
   },
 };
+
+function slugifyForHandle(name) {
+  const s = (name || "").trim();
+  if (!s) return "votre_marque";
+  const slug = s
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 28);
+  return slug || "marque";
+}
+
+function initialsFromBrandName(name) {
+  const t = (name || "").trim();
+  if (!t) return "VM";
+  const parts = t.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase().slice(0, 2);
+  }
+  return t.slice(0, 2).toUpperCase();
+}
+
+/** Fusionne méta plateforme + nom / logo du brand kit */
+function resolvePreviewMeta(platform, brandDisplayName, brandLogoUrl) {
+  const base = PLATFORM_META[platform] || PLATFORM_META.instagram;
+  const name = (brandDisplayName || "").trim();
+  const title =
+    name ||
+    (platform === "instagram" ? "Votre marque" : "Votre Marque");
+  const igSlug = name ? slugifyForHandle(name) : "votre_marque";
+  const linkedinHandle = name ? `${name} · 1er` : base.handle;
+
+  return {
+    ...base,
+    headerLine: title,
+    instagramCaptionPrefix: `@${igSlug}`,
+    linkedinHandle,
+    initials: initialsFromBrandName(title),
+    logoUrl: brandLogoUrl || null,
+  };
+}
 
 /* ── Caption avec bouton "Voir plus / Voir moins" ─────────────────────────── */
 function CaptionWithReadMore({ text, prefix }) {
@@ -143,10 +186,17 @@ function EmptyPreview({ platform, emptyHint }) {
 }
 
 /* ── Composant principal ──────────────────────────────────────────────────── */
-export function PostPreviewPanel({ platform, caption, imageUrl, emptyHint }) {
+export function PostPreviewPanel({
+  platform,
+  caption,
+  imageUrl,
+  emptyHint,
+  brandDisplayName,
+  brandLogoUrl,
+}) {
   const [copied, setCopied] = useState(false);
   const hasCaption = (caption || "").trim().length > 0;
-  const meta  = PLATFORM_META[platform] || PLATFORM_META.instagram;
+  const meta = resolvePreviewMeta(platform, brandDisplayName, brandLogoUrl);
 
   function handleCopy() {
     if (!caption) return;
@@ -185,15 +235,19 @@ export function PostPreviewPanel({ platform, caption, imageUrl, emptyHint }) {
             {/* Header post */}
             <div className="flex items-center gap-2.5 px-3 py-3">
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={meta.avatarStyle}
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-[10px] font-bold text-white"
+                style={meta.logoUrl ? undefined : meta.avatarStyle}
               >
-                {meta.username.slice(0, 2).toUpperCase()}
+                {meta.logoUrl ? (
+                  <img src={meta.logoUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  meta.initials
+                )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-ink leading-tight">{meta.username}</p>
-                {meta.handle && (
-                  <p className="text-2xs text-ink-subtle leading-tight">{meta.handle}</p>
+                <p className="truncate text-xs font-bold text-ink leading-tight">{meta.headerLine}</p>
+                {platform === "linkedin" && meta.linkedinHandle && (
+                  <p className="truncate text-2xs text-ink-subtle leading-tight">{meta.linkedinHandle}</p>
                 )}
                 <p className="text-2xs text-ink-subtle leading-tight">{meta.timeLabel}</p>
               </div>
@@ -239,7 +293,7 @@ export function PostPreviewPanel({ platform, caption, imageUrl, emptyHint }) {
             {/* Caption Instagram (après les actions) */}
             {hasCaption && platform === "instagram" && (
               <div className="px-3 pb-3">
-                <CaptionWithReadMore text={caption} prefix={meta.username} />
+                <CaptionWithReadMore text={caption} prefix={meta.instagramCaptionPrefix} />
               </div>
             )}
 

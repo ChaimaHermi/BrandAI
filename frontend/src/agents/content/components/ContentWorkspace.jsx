@@ -10,6 +10,7 @@ import { ContentForm } from "./ContentForm";
 import { PostPreviewPanel } from "./preview/PostPreviewPanel";
 import { apiCreateScheduledPublication } from "@/services/scheduledPublicationsApi";
 import { PLATFORM_LABELS } from "../constants";
+import { useContentBrandPreview } from "../hooks/useContentBrandPreview";
 
 /* ── Step badge ─────────────────────────────────────────────────────── */
 function StepBadge({ step }) {
@@ -284,6 +285,7 @@ function EditCaptionZone({ value, onChange, onCancel, onSave }) {
 
 /* ── Main workspace ─────────────────────────────────────────────────── */
 export function ContentWorkspace({
+  idea,
   ideaId,
   token,
   activePlatform,
@@ -306,6 +308,7 @@ export function ContentWorkspace({
   onSaveEditing,
   onScheduleCreated,
 }) {
+  const brandPreview = useContentBrandPreview(idea ?? (ideaId ? { id: ideaId } : null), token);
   const formValues = forms[activePlatform];
   const hasGenerated = !!(generated?.caption || generated?.imageUrl);
   const [regenOpen, setRegenOpen] = useState(false);
@@ -458,6 +461,8 @@ export function ContentWorkspace({
             caption={isEditing ? draftCaption : generated?.caption}
             imageUrl={generated?.imageUrl}
             emptyHint="Générez d'abord votre contenu"
+            brandDisplayName={brandPreview.brandName}
+            brandLogoUrl={brandPreview.logoUrl}
           />
 
           {/* Edit zone — inside preview panel */}
