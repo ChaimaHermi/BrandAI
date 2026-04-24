@@ -6,12 +6,12 @@ L’IA propose exactement 3 palettes alignées sur le contexte projet (secteur, 
 from config.branding_config import PALETTE_TARGET_COUNT
 
 
-PALETTE_SYSTEM_PROMPT = """Tu es un·e directeur·rice artistique senior en identité visuelle et design de marque.
+PALETTE_SYSTEM_PROMPT = f"""Tu es un·e directeur·rice artistique senior en identité visuelle et design de marque.
 Tu proposes des palettes de couleurs cohérentes, distinctes et utilisables (web & print), déduites uniquement du contexte projet fourni.
 
 Règles strictes :
 - Réponds UNIQUEMENT par un JSON valide, sans markdown ni texte avant/après.
-- Tu dois produire EXACTEMENT 3 palettes dans le tableau « palette_options », ni plus ni moins.
+- Tu dois produire EXACTEMENT {PALETTE_TARGET_COUNT} palettes dans le tableau « palette_options », ni plus ni moins.
 - La structure exacte est imposée dans le message utilisateur.
 - Chaque palette doit être clairement différente (ambiances ou codes couleur non redondants).
 - N’imite pas des palettes signature de grandes marques connues ; invente des combinaisons originales adaptées au secteur et à la cible décrits dans le contexte.
@@ -20,32 +20,6 @@ Règles strictes :
 - Chaque palette inclut « palette_description » en français : 1 à 3 phrases expliquant pourquoi cette direction couleur colle au secteur, à la cible et au positionnement.
 - Les champs « rationale » (par swatch) en français : courte phrase (rôle de la teinte dans la palette).
 """
-
-
-PALETTE_REACT_SYSTEM_PROMPT = """Tu es un·e directeur·rice artistique. Tu dois livrer exactement {target} palettes de couleurs validées pour la marque.
-
-Outils (appels obligatoires dans l’ordre ci-dessous) :
-- draft_palettes(validation_feedback) : produit un JSON avec la clé « palette_options » (tableau de {target} palettes). Au premier essai, passe une chaîne vide pour validation_feedback. Si validate_palettes renvoie une erreur, rappelle draft_palettes en collant dans validation_feedback le texte d’erreur et les indices retournés.
-- validate_palettes(palettes_json) : vérifie le JSON. Passe la chaîne EXACTE renvoyée par draft_palettes (un objet JSON avec palette_options).
-
-Enchaînement :
-1) draft_palettes("")
-2) validate_palettes avec la sortie brute de l’étape 1
-3) Si la validation échoue : draft_palettes(erreur + hints) puis validate_palettes à nouveau
-4) Répète jusqu’à ce que validate_palettes confirme le succès (ok: true), puis résume brièvement en français les 3 directions choisies.
-
-Règles :
-- Toujours valider immédiatement après chaque brouillon.
-- Ne pas appeler draft_palettes deux fois de suite sans validate_palettes entre les deux.
-- Chaque palette doit avoir palette_name, palette_description (argumentaire court), et swatches (4–6 couleurs avec hex valides).
-"""
-
-
-def build_palette_react_user_message(brand_name: str, *, target: int = PALETTE_TARGET_COUNT) -> str:
-    return (
-        f"Génère et fais valider exactement {target} palettes de couleurs distinctes pour la marque « {brand_name} ». "
-        "Le contexte projet est intégré dans l’outil draft_palettes — enchaîne draft puis validate jusqu’à succès."
-    )
 
 
 def build_palette_user_prompt(

@@ -17,8 +17,8 @@ from config.branding_config import (
     LOGO_POLLINATIONS_FALLBACK,
 )
 from prompts.branding.logo_prompt import LOGO_IMAGE_PROMPT_SYSTEM, build_logo_user_message
+from shared.branding.validators import parse_llm_json_object
 from tools.branding.logo_image_client import fetch_logo_image_hf_with_pollinations_fallback
-from tools.branding.palette_tools import parse_llm_json_object
 
 LOGO_IMAGE_PROMPT_MIN_LEN = 32
 LOGO_IMAGE_PROMPT_MAX_LEN = 12000
