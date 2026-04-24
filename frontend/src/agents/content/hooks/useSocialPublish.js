@@ -1,5 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { usePipeline } from "@/context/PipelineContext";
+import {
+  deleteLinkedInSocialConnection,
+  deleteMetaSocialConnection,
+  fetchSocialConnections,
+  patchMetaSelectedPage,
+  putLinkedInSocialConnection,
+  putMetaSocialConnection,
+} from "@/services/socialConnectionsApi";
 import {
   AI_ORIGIN,
   fetchLinkedInOAuthUrl,
@@ -143,6 +152,12 @@ function loadJson(key, fallback) {
  * Connexion OAuth (popup) + publication par plateforme.
  */
 export function useSocialPublish() {
+  const { token } = usePipeline();
+  const tokenRef = useRef(token);
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+
   const [metaPages, setMetaPages] = useState(() => loadJson(SK_META_PAGES, []));
   const [metaUserToken, setMetaUserToken] = useState(
     () => sessionStorage.getItem(SK_META_USER) || "",
@@ -158,6 +173,48 @@ export function useSocialPublish() {
   );
   const [linkedinName, setLinkedinName] = useState("");
   const [connectBusy, setConnectBusy] = useState(null);
+  const [remoteLoaded, setRemoteLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!token) {
+      setRemoteLoaded(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchSocialConnections(token);
+        if (cancelled || !data) return;
+        if (data.meta?.pages?.length) {
+          setMetaPages(data.meta.pages);
+          setMetaUserToken(data.meta.user_access_token || "");
+          setSelectedPageId(
+            data.meta.selected_page_id ? String(data.meta.selected_page_id) : "",
+          );
+        } else {
+          setMetaPages([]);
+          setMetaUserToken("");
+          setSelectedPageId("");
+        }
+        if (data.linkedin?.access_token) {
+          setLinkedinToken(data.linkedin.access_token);
+          setLinkedinUrn(data.linkedin.person_urn || "");
+          setLinkedinName(data.linkedin.name ? String(data.linkedin.name) : "");
+        } else {
+          setLinkedinToken("");
+          setLinkedinUrn("");
+          setLinkedinName("");
+        }
+      } catch (e) {
+        console.warn("[social] chargement BDD:", e?.message || e);
+      } finally {
+        if (!cancelled) setRemoteLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   useEffect(() => {
     sessionStorage.setItem(SK_META_PAGES, JSON.stringify(metaPages));
@@ -180,10 +237,21 @@ export function useSocialPublish() {
   }, [linkedinUrn]);
 
   useEffect(() => {
+    if (!token || !remoteLoaded || !selectedPageId || !metaPages.length) return;
+    const t = setTimeout(() => {
+      patchMetaSelectedPage(token, selectedPageId).catch((e) => {
+        console.warn("[social] sync page sélectionnée:", e?.message || e);
+      });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [selectedPageId, token, remoteLoaded, metaPages.length]);
+
+  useEffect(() => {
     function onMessage(ev) {
       if (!isTrustedSocialOAuthOrigin(ev.origin)) return;
       const p = ev.data;
       if (!p || typeof p !== "object") return;
+      const t = tokenRef.current;
       if (p.type === "brandai-meta-oauth") {
         setConnectBusy(null);
         if (!p.ok && p.error) {
@@ -195,7 +263,25 @@ export function useSocialPublish() {
         if (p.ok && Array.isArray(p.pages)) {
           setMetaPages(p.pages);
           if (p.user_access_token) setMetaUserToken(p.user_access_token);
-          if (p.pages.length === 1) setSelectedPageId(String(p.pages[0].id));
+          let nextPageId = "";
+          if (p.pages.length === 1) nextPageId = String(p.pages[0].id);
+          if (nextPageId) setSelectedPageId(nextPageId);
+          if (t && p.user_access_token) {
+            putMetaSocialConnection(t, {
+              user_access_token: p.user_access_token,
+              pages: p.pages,
+              selected_page_id: nextPageId || null,
+            })
+              .then((out) => {
+                if (out?.meta?.selected_page_id) {
+                  setSelectedPageId(String(out.meta.selected_page_id));
+                }
+              })
+              .catch((e) => {
+                console.warn("[social] enregistrement Meta BDD:", e?.message || e);
+                toast.warning("Connexion Meta OK, mais la sauvegarde serveur a échoué.");
+              });
+          }
         }
       }
       if (p.type === "brandai-linkedin-oauth") {
@@ -210,6 +296,16 @@ export function useSocialPublish() {
           setLinkedinToken(p.access_token);
           if (p.person_urn) setLinkedinUrn(p.person_urn);
           if (p.name) setLinkedinName(String(p.name));
+          if (t && p.person_urn) {
+            putLinkedInSocialConnection(t, {
+              access_token: p.access_token,
+              person_urn: p.person_urn,
+              name: p.name || null,
+            }).catch((e) => {
+              console.warn("[social] enregistrement LinkedIn BDD:", e?.message || e);
+              toast.warning("Connexion LinkedIn OK, mais la sauvegarde serveur a échoué.");
+            });
+          }
         }
       }
     }
@@ -339,6 +435,13 @@ export function useSocialPublish() {
     openLinkedInConnect,
     publishToPlatform,
     disconnectMeta: useCallback(() => {
+      const t = tokenRef.current;
+      if (t) {
+        deleteMetaSocialConnection(t).catch((e) => {
+          console.warn("[social] suppression Meta BDD:", e?.message || e);
+          toast.warning("Déconnexion locale ; la suppression serveur a échoué.");
+        });
+      }
       setMetaPages([]);
       setMetaUserToken("");
       setSelectedPageId("");
@@ -347,6 +450,13 @@ export function useSocialPublish() {
       sessionStorage.removeItem(SK_META_PAGE_ID);
     }, []),
     disconnectLinkedIn: useCallback(() => {
+      const t = tokenRef.current;
+      if (t) {
+        deleteLinkedInSocialConnection(t).catch((e) => {
+          console.warn("[social] suppression LinkedIn BDD:", e?.message || e);
+          toast.warning("Déconnexion locale ; la suppression serveur a échoué.");
+        });
+      }
       setLinkedinToken("");
       setLinkedinUrn("");
       setLinkedinName("");

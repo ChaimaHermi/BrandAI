@@ -98,16 +98,25 @@ async def _tool_image_client_body(
             {"error": "Cloudinary non configuré (CONTENT_CLOUDINARY_* ou CLOUDINARY_*)"},
             ensure_ascii=False,
         )
-    data, mime, src = await fetch_content_image_hf_then_pollinations(
-        str(state["image_prompt"]),
-        str(state.get("negative_prompt") or ""),
-    )
-    url = upload_image_bytes(data, mime=mime)
-    if not is_brandai_cloudinary_url(url):
-        logger.error("[image_client] URL inattendue (pas le compte Cloudinary projet) : %s", url[:120])
-    state["image_url"] = url
-    state["image_source"] = src
-    return url
+    try:
+        data, mime, src = await fetch_content_image_hf_then_pollinations(
+            str(state["image_prompt"]),
+            str(state.get("negative_prompt") or ""),
+        )
+        url = upload_image_bytes(data, mime=mime)
+        if not is_brandai_cloudinary_url(url):
+            logger.error("[image_client] URL inattendue (pas le compte Cloudinary projet) : %s", url[:120])
+        state["image_url"] = url
+        state["image_source"] = src
+        state["image_error"] = None
+        return url
+    except Exception as e:
+        # Ne casse pas toute la génération de post en cas de timeout fournisseur image.
+        err = f"image_generation_failed: {str(e)[:220]}"
+        logger.warning("[image_client] échec image, post texte conservé : %s", err)
+        state["image_error"] = err
+        state["image_url"] = None
+        return json.dumps({"warning": err}, ensure_ascii=False)
 
 
 async def _ensure_image_pipeline_when_brief_requires(
@@ -168,6 +177,8 @@ def build_content_react_tools(
     access_token: str | None,
     state: ContentPipelineState,
     runner: ContentLLMRunner,
+    previous_caption: str | None = None,
+    regeneration_instruction: str | None = None,
 ) -> list:
     """
     Construit les 5 tools @tool. Ils partagent le même `state` (dict mutable)
@@ -202,7 +213,12 @@ def build_content_react_tools(
         state.ensure_spec()
         merged_j = merged_json_for_llm(state)
         spec_j = spec_json_for_llm(state)
-        caption = await runner.draft_post(merged_j, spec_j)
+        caption = await runner.draft_post(
+            merged_j,
+            spec_j,
+            previous_caption=previous_caption,
+            regeneration_instruction=regeneration_instruction,
+        )
         state["caption"] = caption
         # Pas de troncature : l’état et l’observation doivent refléter la légende complète.
         return caption
@@ -252,17 +268,24 @@ def _build_generation_result(
     want_image = should_include_image_in_post(platform, brief)
     image_url = state.get("image_url")
 
-    if want_image:
-        if not image_url:
-            if not cloudinary_configured():
-                raise RuntimeError(
-                    "Image demandée : configurez Cloudinary (CONTENT_CLOUDINARY_* ou "
-                    "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) "
-                    "pour obtenir une URL publique."
-                )
+    if want_image and not image_url:
+        image_error = (state.get("image_error") or "").strip()
+        if image_error:
+            logger.warning(
+                "[content_react_agent] image indisponible, retour texte seul | reason=%s",
+                image_error[:180],
+            )
+        elif not cloudinary_configured():
             raise RuntimeError(
-                "Image demandée mais aucune URL produite : l'agent doit appeler "
-                "build_image_prompt puis image_client dans l'ordre. Réessayez ou augmentez recursion_limit."
+                "Image demandée : configurez Cloudinary (CONTENT_CLOUDINARY_* ou "
+                "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) "
+                "pour obtenir une URL publique."
+            )
+        else:
+            # Cas non déterministe côté provider image : on renvoie quand même la légende.
+            logger.warning(
+                "[content_react_agent] image demandée mais indisponible sans erreur explicite, "
+                "retour texte seul."
             )
 
     return {
@@ -286,6 +309,8 @@ async def run_content_generation(
     platform: str,
     brief: dict[str, Any],
     access_token: str | None = None,
+    previous_caption: str | None = None,
+    regeneration_instruction: str | None = None,
     recursion_limit: int = 40,
 ) -> dict[str, Any]:
     """
@@ -298,6 +323,8 @@ async def run_content_generation(
         platform=platform,
         brief=brief,
         access_token=access_token,
+        previous_caption=previous_caption,
+        regeneration_instruction=regeneration_instruction,
         recursion_limit=recursion_limit,
     )
     await _ensure_image_pipeline_when_brief_requires(
@@ -319,6 +346,8 @@ async def run_content_react_agent(
     platform: str,
     brief: dict[str, Any],
     access_token: str | None = None,
+    previous_caption: str | None = None,
+    regeneration_instruction: str | None = None,
     recursion_limit: int = 40,
 ) -> ContentPipelineState:
     """
@@ -346,6 +375,8 @@ async def run_content_react_agent(
         access_token=access_token,
         state=state,
         runner=runner,
+        previous_caption=previous_caption,
+        regeneration_instruction=regeneration_instruction,
     )
 
     llm = create_react_orchestrator_llm(
@@ -366,6 +397,11 @@ async def run_content_react_agent(
         f"Plateforme cible : {platform}. "
         "Respecte l'ordre des outils décrit dans les instructions système."
     )
+    if (regeneration_instruction or "").strip():
+        user_msg += (
+            " Il s'agit d'une régénération guidée : conserve l'intention du texte existant "
+            "et applique la consigne utilisateur."
+        )
 
     initial = {"messages": [HumanMessage(content=user_msg)]}
     result = await invoke_react_with_optional_terminal_trace(
@@ -403,6 +439,8 @@ async def stream_content_generation(
     platform: str,
     brief: dict[str, Any],
     access_token: str | None = None,
+    previous_caption: str | None = None,
+    regeneration_instruction: str | None = None,
     recursion_limit: int = 40,
 ) -> AsyncGenerator[str, None]:
     """
@@ -425,6 +463,8 @@ async def stream_content_generation(
         access_token=access_token,
         state=state,
         runner=runner,
+        previous_caption=previous_caption,
+        regeneration_instruction=regeneration_instruction,
     )
 
     llm = create_react_orchestrator_llm(
@@ -445,6 +485,11 @@ async def stream_content_generation(
         f"Plateforme cible : {platform}. "
         "Respecte l'ordre des outils décrit dans les instructions système."
     )
+    if (regeneration_instruction or "").strip():
+        user_msg += (
+            " Il s'agit d'une régénération guidée : conserve l'intention du texte existant "
+            "et applique la consigne utilisateur."
+        )
 
     initial = {"messages": [HumanMessage(content=user_msg)]}
     cfg = {"recursion_limit": recursion_limit}

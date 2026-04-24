@@ -17,6 +17,8 @@ import MarketPage from "@/agents/market/pages/MarketPage";
 import MarketingPage from "@/agents/Marketing/pages/MarketingPage";
 import BrandPage from "@/agents/brand/pages/BrandPage";
 import ContentPage from "@/agents/content/pages/ContentPage";
+import ContentConnectPage from "@/agents/content/pages/ContentConnectPage";
+import ContentSchedulePage from "@/agents/content/pages/ContentSchedulePage";
 import PrivacyPage from "@/pages/PrivacyPage";
 
 function PlaceholderPage({ name }) {
@@ -131,7 +133,12 @@ export default function App() {
               element={<MarketingPage />}
             />
             <Route path="brand" element={<BrandPage />} />
-            <Route path="content" element={<ContentPage />} />
+            <Route path="content">
+              <Route index element={<Navigate to="schedule" replace />} />
+              <Route path="connect" element={<ContentConnectPage />} />
+              <Route path="publish" element={<ContentPage />} />
+              <Route path="schedule" element={<ContentSchedulePage />} />
+            </Route>
             <Route
               path="website"
               element={<PlaceholderPage name="Website Builder" />}

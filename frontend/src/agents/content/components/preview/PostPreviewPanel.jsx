@@ -5,7 +5,6 @@ import {
   FiCopy, FiCheck, FiImage, FiChevronDown, FiChevronUp,
 } from "react-icons/fi";
 import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
-import { PLATFORM_LABELS } from "../../constants";
 import { CharacterCount } from "./CharacterCount";
 
 /* ── Seuil "Voir plus" (en caractères) ────────────────────────────────────── */
@@ -148,7 +147,6 @@ export function PostPreviewPanel({ platform, caption, imageUrl, emptyHint }) {
   const [copied, setCopied] = useState(false);
   const hasCaption = (caption || "").trim().length > 0;
   const meta  = PLATFORM_META[platform] || PLATFORM_META.instagram;
-  const label = PLATFORM_LABELS[platform] || platform;
 
   function handleCopy() {
     if (!caption) return;
@@ -160,13 +158,10 @@ export function PostPreviewPanel({ platform, caption, imageUrl, emptyHint }) {
 
   return (
     <div className="flex h-full min-h-[320px] flex-col gap-3">
+      {/* Titre « Aperçu — … » géré par le parent (carte / modal) pour éviter le doublon */}
 
-      {/* Label + bouton copier */}
-      <div className="flex items-center justify-between">
-        <p className="text-2xs font-bold uppercase tracking-widest text-ink-subtle">
-          Aperçu — {label}
-        </p>
-        {hasCaption && (
+      {hasCaption && (
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={handleCopy}
@@ -177,8 +172,8 @@ export function PostPreviewPanel({ platform, caption, imageUrl, emptyHint }) {
               : <><FiCopy className="h-3 w-3" /> Copier</>
             }
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Contenu */}
       {!hasCaption && !imageUrl ? (

@@ -204,7 +204,7 @@ function IdeaRow({ idea, onNavigate, onDelete }) {
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            onNavigate(`/ideas/${idea.id}/content`, {
+            onNavigate(`/ideas/${idea.id}/content/schedule`, {
               state: { openGeneratedHistory: true },
             });
           }}

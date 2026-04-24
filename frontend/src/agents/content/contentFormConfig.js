@@ -48,7 +48,7 @@ export function getInitialFormForPlatform(platform) {
 /**
  * Payload unifié pour l’API content generation (backend-ai).
  * Champs absents selon plateforme → null ou omis.
- * @param {{ alignWithProject?: boolean }} [options]
+ * @param {{ alignWithProject?: boolean, previousCaption?: string, regenerationInstruction?: string }} [options]
  */
 export function buildGenerationPayload(ideaId, platform, formValues, options = {}) {
   const alignWithProject =
@@ -74,5 +74,18 @@ export function buildGenerationPayload(ideaId, platform, formValues, options = {
     brief.call_to_action = formValues.callToAction;
   }
 
-  return { idea_id: ideaId, platform, brief };
+  const previousCaption = (options.previousCaption || "").trim();
+  const regenerationInstruction = (options.regenerationInstruction || "").trim();
+
+  return {
+    idea_id: ideaId,
+    platform,
+    brief,
+    ...(previousCaption
+      ? { previous_caption: previousCaption }
+      : {}),
+    ...(regenerationInstruction
+      ? { regeneration_instruction: regenerationInstruction }
+      : {}),
+  };
 }

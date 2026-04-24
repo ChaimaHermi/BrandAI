@@ -44,13 +44,30 @@ class ContentLLMRunner(BaseAgent):
     async def run(self, state: PipelineState) -> dict[str, Any]:
         return {}
 
-    async def draft_post(self, merged_json: str, spec_json: str) -> str:
+    async def draft_post(
+        self,
+        merged_json: str,
+        spec_json: str,
+        *,
+        previous_caption: str | None = None,
+        regeneration_instruction: str | None = None,
+    ) -> str:
         user = (
             "Contexte fusionné (merged_context) :\n"
             f"{merged_json}\n\n"
             "Spécifications plateforme (spec) :\n"
             f"{spec_json}\n"
         )
+        prev = (previous_caption or "").strip()
+        instruction = (regeneration_instruction or "").strip()
+        if prev and instruction:
+            user += (
+                "\n\nMode régénération guidée :\n"
+                "Texte généré précédent (à améliorer, pas à ignorer) :\n"
+                f"{prev}\n\n"
+                "Consigne utilisateur à appliquer :\n"
+                f"{instruction}\n"
+            )
         raw = await self._call_llm(PROMPT_DRAFT_POST_SYSTEM, user)
         caption = (raw or "").strip()
         if not caption:

@@ -21,6 +21,9 @@ import app.models.market_analysis  # noqa
 import app.models.marketing_plan  # noqa
 import app.models.brand_identity  # noqa
 import app.models.branding_results  # noqa
+import app.models.generated_content  # noqa
+import app.models.user_social_connection  # noqa
+import app.models.scheduled_publication  # noqa
 
 config = context.config
 

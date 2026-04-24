@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import clarifier, content_generation, market_analysis, pipeline, social_publish
+from app.routes import clarifier, content_generation, market_analysis, market_strategy, social_publish
 from app.routes.branding import logo, naming, palette, slogan
 from config.social_publish_config import BRANDAI_AI_BASE, LINKEDIN_REDIRECT_URI
 from tools.social_publishing.linkedin_callback_proxy import (
@@ -62,7 +62,7 @@ app.add_middleware(
 
 app.include_router(clarifier.router, prefix="/api/ai")
 app.include_router(market_analysis.router, prefix="/api/ai")
-app.include_router(pipeline.router, prefix="/api/ai")
+app.include_router(market_strategy.router, prefix="/api/ai")
 app.include_router(naming.router, prefix="/api/ai")
 app.include_router(slogan.router, prefix="/api/ai")
 app.include_router(palette.router, prefix="/api/ai")

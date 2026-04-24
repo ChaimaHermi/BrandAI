@@ -22,6 +22,9 @@ export default function PipelineLayout() {
   const activeAgent =
     AGENTS.find((a) => location.pathname.includes("/" + a.id)) || AGENTS[0];
   const activeIndex = AGENTS.findIndex((a) => a.id === activeAgent.id);
+  const contentSubRoute = location.pathname.includes("/content/connect")
+    ? "connect"
+    : "schedule";
 
   const {
     getStatus,
@@ -85,8 +88,18 @@ export default function PipelineLayout() {
             pipelineEnabled={pipelineEnabled}
             pipelineCompleted={pipelineCompleted}
             idea={idea}
+            activeContentSubRoute={contentSubRoute}
             onNavigateDashboard={() => navigate("/dashboard")}
-            onNavigateAgent={(agentId) => navigate(`/ideas/${id}/${agentId}`)}
+            onNavigateAgent={(agentId) =>
+              navigate(
+                agentId === "content"
+                  ? `/ideas/${id}/content/schedule`
+                  : `/ideas/${id}/${agentId}`
+              )
+            }
+            onNavigateContentSubRoute={(subRoute) =>
+              navigate(`/ideas/${id}/content/${subRoute}`)
+            }
             onLaunchPipeline={handleLaunchPipeline}
           />
 

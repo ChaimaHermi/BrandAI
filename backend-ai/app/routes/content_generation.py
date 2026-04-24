@@ -58,6 +58,14 @@ class ContentGenerateRequest(BaseModel):
         None,
         description="JWT utilisateur (backend-api FastAPI) pour enrichir le merge avec GET /ideas/{id}",
     )
+    previous_caption: str | None = Field(
+        None,
+        description="Texte précédemment généré pour mode régénération guidée.",
+    )
+    regeneration_instruction: str | None = Field(
+        None,
+        description="Consigne de modification fournie par l'utilisateur.",
+    )
 
     @model_validator(mode="after")
     def validate_brief_vs_platform(self) -> ContentGenerateRequest:
@@ -88,6 +96,9 @@ class ContentGenerateRequest(BaseModel):
             if not (b.call_to_action or "").strip():
                 raise ValueError("linkedin requires brief.call_to_action")
 
+        if self.regeneration_instruction and not (self.previous_caption or "").strip():
+            raise ValueError("regeneration_instruction requires previous_caption")
+
         return self
 
 
@@ -108,6 +119,8 @@ async def content_generate_stream(body: ContentGenerateRequest) -> StreamingResp
             platform=body.platform,
             brief=body.brief.model_dump(),
             access_token=body.access_token,
+            previous_caption=body.previous_caption,
+            regeneration_instruction=body.regeneration_instruction,
         ):
             yield chunk
 
@@ -130,6 +143,8 @@ async def content_generate(body: ContentGenerateRequest) -> ContentGenerateRespo
             platform=body.platform,
             brief=body.brief.model_dump(),
             access_token=body.access_token,
+            previous_caption=body.previous_caption,
+            regeneration_instruction=body.regeneration_instruction,
         )
     except Exception as e:
         logger.exception("content_generate failure")

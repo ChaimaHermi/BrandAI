@@ -7,20 +7,18 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.services.step_runner_service import StepRunnerService
 from app.services.persistence.market_marketing_persistence_service import (
     persist_market_result,
 )
-from pipeline.market_graph import build_market_graph
 
 
 router = APIRouter(tags=["Market Analysis"])
-market_graph = build_market_graph()
+step_runner = StepRunnerService()
 
 
 def sse_event(event: str, data: dict) -> str:
-    payload = json.dumps(data, ensure_ascii=False, indent=2)
-    data_lines = "\n".join(f"data: {line}" for line in payload.splitlines())
-    return f"event: {event}\n{data_lines}\n\n"
+    return step_runner.sse_event(event, data)
 
 
 class MarketAnalysisStreamRequest(BaseModel):
@@ -47,24 +45,25 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
     t0 = time.time()
 
     try:
-        yield sse_event("step", {"status": "loading", "stage": "build_state", "message": "Préparation de l'analyse..."})
-
-        yield sse_event("step", {"status": "loading", "stage": "run_market_analysis", "message": "Analyse de marché en cours..."})
-        graph_input = {
-            "idea_id": body.idea_id,
-            "clarified_idea": {
-                "short_pitch": body.short_pitch or body.name,
-                "solution_description": body.solution_description or body.description,
-                "target_users": body.target_users or body.target_audience or "",
-                "problem": body.problem or body.description,
-                "sector": body.sector,
-                "country_code": body.country_code or "TN",
-                "language": body.language or "fr",
-            },
-            "market_analysis": {},
+        clarified_idea = {
+            "short_pitch": body.short_pitch or body.name,
+            "solution_description": body.solution_description or body.description,
+            "target_users": body.target_users or body.target_audience or "",
+            "problem": body.problem or body.description,
+            "sector": body.sector,
+            "country_code": body.country_code or "TN",
+            "language": body.language or "fr",
         }
-        graph_result = await market_graph.ainvoke(graph_input)
-        market_analysis = graph_result.get("market_analysis") or {}
+
+        market_analysis: dict = {}
+        async for event, data in step_runner.run_market_step(
+            idea_id=body.idea_id,
+            clarified_idea=clarified_idea,
+        ):
+            if event == "result":
+                market_analysis = data or {}
+            else:
+                yield sse_event(event, data or {})
 
         if not market_analysis:
             raise RuntimeError("Aucun résultat market_analysis produit")
@@ -72,7 +71,7 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
         if not body.access_token:
             raise RuntimeError("access_token requis pour persister le résultat dans backend-api")
 
-        yield sse_event("step", {"status": "loading", "stage": "persist_result", "message": "Sauvegarde du résultat..."})
+        yield sse_event("step", {"status": "loading", "stage": "persist_result", "message": "Sauvegarde de l'analyse de marché en base…"})
         completed_at = datetime.now(timezone.utc)
         persisted = await persist_market_result(
             idea_id=body.idea_id,
@@ -81,6 +80,7 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
             completed_at=completed_at,
             access_token=body.access_token,
         )
+        yield sse_event("step", {"status": "done", "stage": "persist_result", "message": "Analyse de marché sauvegardée"})
 
         elapsed_ms = int((time.time() - t0) * 1000)
         yield sse_event(
@@ -88,8 +88,10 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
             {
                 "success": True,
                 "idea_id": body.idea_id,
+                "status": "done",
                 "elapsed_ms": elapsed_ms,
                 "persisted_id": persisted.get("id"),
+                "persisted_marketing_id": None,
             },
         )
     except Exception as e:

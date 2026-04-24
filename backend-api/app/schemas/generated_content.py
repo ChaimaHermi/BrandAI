@@ -12,7 +12,10 @@ class GeneratedContentCreate(BaseModel):
 
 
 class GeneratedContentPatch(BaseModel):
-    status: Optional[Literal["generated", "published", "publish_failed"]] = None
+    status: Optional[Literal["generated", "edited", "published", "publish_failed"]] = None
+    caption: Optional[str] = Field(None, min_length=1)
+    image_url: Optional[str] = None
+    char_count: Optional[int] = Field(None, ge=0)
     publish_error: Optional[str] = None
 
 

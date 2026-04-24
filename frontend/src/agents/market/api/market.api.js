@@ -2,7 +2,7 @@ const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 export const marketApi = {
-  streamUrl: () => `${AI_URL}/pipeline/stream`,
+  streamUrl: () => `${AI_URL}/market-strategy/stream`,
   marketOnlyStreamUrl: () => `${AI_URL}/market-analysis/stream`,
   latestUrl: (ideaId) => `${API_URL}/market-analysis/${ideaId}/latest`,
 };
