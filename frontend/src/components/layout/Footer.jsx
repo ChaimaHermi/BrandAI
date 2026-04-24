@@ -18,10 +18,10 @@ export function Footer() {
           {/* Nav links */}
           <nav className="flex flex-wrap items-center justify-center gap-1 text-sm text-ink-muted">
             {[
-              { to: "/",      label: "Produit"  },
-              { to: "/",      label: "Agents"   },
-              { to: "/login", label: "Connexion"},
-              { to: "/",      label: "Contact"  },
+              { to: "/",         label: "Produit"  },
+              { to: "/",         label: "Agents"   },
+              { to: "/login",    label: "Connexion"},
+              { to: "/privacy",  label: "Confidentialité" },
             ].map(({ to, label }, i, arr) => (
               <span key={label} className="flex items-center gap-1">
                 <Link to={to} className="px-1 transition-colors hover:text-brand">

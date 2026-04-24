@@ -1,0 +1,2 @@
+"""Tests social optimizer."""
+

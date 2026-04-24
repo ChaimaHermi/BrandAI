@@ -30,11 +30,105 @@ function isTrustedSocialOAuthOrigin(origin) {
 /** Sans noopener : le callback OAuth doit pouvoir utiliser window.opener.postMessage. */
 const OAUTH_POPUP_FEATURES = "width=600,height=720,scrollbars=yes";
 
+/** Messages Meta / LinkedIn quand l'utilisateur annule, choisit « plus tard » ou ferme la fenêtre. */
+function metaOAuthFeedback(rawError, oauthError) {
+  const errCode = String(oauthError || "").toLowerCase();
+  if (errCode === "access_denied") {
+    return {
+      level: "warning",
+      message:
+        "Connexion interrompue (vous avez choisi « plus tard », refusé l’accès ou fermé la fenêtre). Réessayez avec « Continuer avec Facebook » lorsque vous voulez associer Brand AI à votre compte.",
+    };
+  }
+  const s = String(rawError || "").toLowerCase();
+  if (
+    s.includes("access_denied") ||
+    s.includes("access denied") ||
+    s.includes("user denied") ||
+    s.includes("cancelled") ||
+    s.includes("canceled")
+  ) {
+    return {
+      level: "warning",
+      message:
+        "Connexion interrompue (vous avez choisi « plus tard », refusé l’accès ou fermé la fenêtre). Réessayez avec « Continuer avec Facebook » lorsque vous voulez associer Brand AI à votre compte.",
+    };
+  }
+  if (
+    s.includes("state invalide") ||
+    s.includes("expiré") ||
+    (s.includes("invalid") && s.includes("state"))
+  ) {
+    return {
+      level: "warning",
+      message:
+        "Session OAuth expirée. Cliquez de nouveau sur « Continuer avec Facebook ».",
+    };
+  }
+  if (s.includes("code ou state manquant")) {
+    return {
+      level: "warning",
+      message:
+        "Connexion incomplète. Réessayez avec « Continuer avec Facebook ».",
+    };
+  }
+  return { level: "error", message: String(rawError || "Erreur inconnue") };
+}
+
+function linkedinOAuthFeedback(rawError, oauthError) {
+  if (String(oauthError || "").toLowerCase() === "access_denied") {
+    return {
+      level: "warning",
+      message:
+        "Connexion LinkedIn interrompue. Réessayez avec « Continuer avec LinkedIn » quand vous êtes prêt.",
+    };
+  }
+  const s = String(rawError || "").toLowerCase();
+  if (
+    s.includes("access_denied") ||
+    s.includes("user_cancelled") ||
+    s.includes("user canceled") ||
+    s.includes("cancelled")
+  ) {
+    return {
+      level: "warning",
+      message:
+        "Connexion LinkedIn interrompue. Réessayez avec « Continuer avec LinkedIn » quand vous êtes prêt.",
+    };
+  }
+  if (s.includes("state invalide") || s.includes("expiré")) {
+    return {
+      level: "warning",
+      message: "Session expirée. Relancez « Continuer avec LinkedIn ».",
+    };
+  }
+  return { level: "error", message: String(rawError || "Erreur inconnue") };
+}
+
 const SK_META_PAGES = "brandai_content_meta_pages";
 const SK_META_USER = "brandai_content_meta_user_token";
 const SK_LI_TOKEN = "brandai_content_linkedin_token";
 const SK_LI_URN = "brandai_content_linkedin_urn";
 const SK_META_PAGE_ID = "brandai_content_selected_page_id";
+
+const SOCIAL_PUBLISH_SESSION_KEYS = [
+  SK_META_PAGES,
+  SK_META_USER,
+  SK_LI_TOKEN,
+  SK_LI_URN,
+  SK_META_PAGE_ID,
+];
+
+/** À appeler à la déconnexion utilisateur : évite de réutiliser Meta/LinkedIn d’une session précédente. */
+export function clearSocialPublishSessionStorage() {
+  try {
+    for (const k of SOCIAL_PUBLISH_SESSION_KEYS) {
+      sessionStorage.removeItem(k);
+    }
+  } catch {
+    /* ignore (navigation privée stricte, etc.) */
+  }
+}
 
 function loadJson(key, fallback) {
   try {
@@ -93,7 +187,9 @@ export function useSocialPublish() {
       if (p.type === "brandai-meta-oauth") {
         setConnectBusy(null);
         if (!p.ok && p.error) {
-          toast.error(`Connexion Meta échouée : ${p.error}`);
+          const fb = metaOAuthFeedback(p.error, p.oauth_error);
+          if (fb.level === "warning") toast.warning(fb.message);
+          else toast.error(`Connexion Meta échouée : ${fb.message}`);
           return;
         }
         if (p.ok && Array.isArray(p.pages)) {
@@ -105,7 +201,9 @@ export function useSocialPublish() {
       if (p.type === "brandai-linkedin-oauth") {
         setConnectBusy(null);
         if (!p.ok && p.error) {
-          toast.error(`Connexion LinkedIn échouée : ${p.error}`);
+          const fb = linkedinOAuthFeedback(p.error, p.oauth_error);
+          if (fb.level === "warning") toast.warning(fb.message);
+          else toast.error(`Connexion LinkedIn échouée : ${fb.message}`);
           return;
         }
         if (p.ok && p.access_token) {
@@ -121,14 +219,28 @@ export function useSocialPublish() {
 
   const openMetaConnect = useCallback(async () => {
     setConnectBusy("meta");
+    let poll;
     try {
       const { url } = await fetchMetaOAuthUrl();
-      const w = window.open(url, "brandai_meta_oauth", OAUTH_POPUP_FEATURES);
+      // Nom unique : évite une popup réutilisée bloquée sur un ancien écran Facebook.
+      const w = window.open(
+        url,
+        `brandai_meta_oauth_${Date.now()}`,
+        OAUTH_POPUP_FEATURES,
+      );
       if (!w) {
         setConnectBusy(null);
         toast.warning("Popup bloquée — autorisez les fenêtres popup pour vous connecter à Meta.");
+        return;
       }
+      poll = setInterval(() => {
+        if (w.closed) {
+          clearInterval(poll);
+          setConnectBusy(null);
+        }
+      }, 400);
     } catch (e) {
+      if (poll) clearInterval(poll);
       setConnectBusy(null);
       toast.error(e?.message || "OAuth Meta indisponible.");
     }
@@ -136,14 +248,27 @@ export function useSocialPublish() {
 
   const openLinkedInConnect = useCallback(async () => {
     setConnectBusy("linkedin");
+    let poll;
     try {
       const { url } = await fetchLinkedInOAuthUrl();
-      const w = window.open(url, "brandai_li_oauth", OAUTH_POPUP_FEATURES);
+      const w = window.open(
+        url,
+        `brandai_li_oauth_${Date.now()}`,
+        OAUTH_POPUP_FEATURES,
+      );
       if (!w) {
         setConnectBusy(null);
         toast.warning("Popup bloquée — autorisez les fenêtres popup pour vous connecter à LinkedIn.");
+        return;
       }
+      poll = setInterval(() => {
+        if (w.closed) {
+          clearInterval(poll);
+          setConnectBusy(null);
+        }
+      }, 400);
     } catch (e) {
+      if (poll) clearInterval(poll);
       setConnectBusy(null);
       toast.error(e?.message || "OAuth LinkedIn indisponible.");
     }

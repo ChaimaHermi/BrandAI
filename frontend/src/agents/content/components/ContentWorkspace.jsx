@@ -92,17 +92,22 @@ export function ContentWorkspace({
 
           {/* Publish — secondary, full width, shown only when there's something to publish */}
           {hasGenerated && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              className="w-full"
-              disabled={!canPublish || publishLoading}
-              onClick={onOpenPublishModal}
-            >
-              <FiSend className="h-3.5 w-3.5 shrink-0" />
-              {publishLoading ? "Publication…" : "Publier"}
-            </Button>
+            <div className="flex flex-col gap-1.5">
+              <Button
+                type="button"
+                variant="secondary"
+                size="md"
+                className="w-full"
+                disabled={!canPublish || publishLoading}
+                onClick={onOpenPublishModal}
+              >
+                <FiSend className="h-3.5 w-3.5 shrink-0" />
+                {publishLoading ? "Publication…" : "Publier depuis la plateforme"}
+              </Button>
+              <p className="text-center text-2xs leading-snug text-ink-muted">
+                Connexion Facebook ou LinkedIn si besoin, choix de votre Page ou compte, puis envoi du post.
+              </p>
+            </div>
           )}
         </div>
       </Card>

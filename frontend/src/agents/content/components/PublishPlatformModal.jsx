@@ -1,6 +1,6 @@
 import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import {
-  FiCheck, FiAlertTriangle, FiLink, FiSend, FiX, FiImage,
+  FiCheck, FiAlertTriangle, FiLink, FiSend, FiX, FiImage, FiRefreshCw, FiLogOut,
 } from "react-icons/fi";
 import { PLATFORMS, PLATFORM_LABELS } from "../constants";
 import { Button } from "@/shared/ui/Button";
@@ -130,7 +130,7 @@ export default function PublishPlatformModal({
                 Publier sur {label}
               </h2>
               <p className="text-xs text-white/75">
-                Connectez-vous puis validez la publication
+                Depuis Brand AI : connexion → votre Page ou compte → envoi du post
               </p>
             </div>
           </div>
@@ -160,20 +160,33 @@ export default function PublishPlatformModal({
             </div>
           )}
 
+          {(needsMeta || needsLinkedIn) && (
+            <div className="rounded-xl border border-brand-border/80 bg-brand-light/30 px-3 py-2.5">
+              <p className="text-2xs leading-relaxed text-ink-muted">
+                <span className="font-semibold text-ink">Comment ça marche :</span>{" "}
+                {needsMeta
+                  ? "vous restez dans Brand AI. Une fenêtre Facebook s’ouvre pour vous connecter et autoriser l’application Brand AI à accéder à vos Pages. Nous affichons ensuite les Pages dont vous êtes gestionnaire — choisissez celle sur laquelle publier."
+                  : "une fenêtre LinkedIn s’ouvre pour autoriser la publication sur votre compte. Tout se fait depuis cette plateforme."}
+              </p>
+            </div>
+          )}
+
           {/* ── Étape 1 : Connexion ─────────────────────────────────────── */}
           <div className="rounded-xl border border-brand-border bg-white shadow-sm">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-brand-border">
               <StepBadge n={1} done={isConnected} active={!isConnected} />
               <div className="flex-1">
                 <p className="text-xs font-semibold text-ink">
-                  {needsLinkedIn ? "Connecter LinkedIn" : "Connecter Meta"}
+                  {needsLinkedIn
+                    ? "Connecter votre compte LinkedIn"
+                    : "Connecter Facebook et choisir votre Page"}
                 </p>
                 <p className="text-2xs text-ink-muted">
                   {needsLinkedIn
-                    ? "Autorisation w_member_social"
+                    ? "Autorisation de publication (w_member_social)"
                     : platform === PLATFORMS.instagram
-                      ? "Via une Page Facebook liée"
-                      : "Page Facebook de votre marque"}
+                      ? "Instagram professionnel : sélectionnez la Page Facebook liée au compte"
+                      : "Sélectionnez la Page Facebook sur laquelle publier ce post"}
                 </p>
               </div>
               {isConnected && (
@@ -195,13 +208,37 @@ export default function PublishPlatformModal({
                       className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-60 ${connectColor} ${connectHover}`}
                     >
                       <FiLink className="h-4 w-4" />
-                      {social.connectBusy === "linkedin" ? "Ouverture…" : "Se connecter à LinkedIn"}
+                      {social.connectBusy === "linkedin" ? "Ouverture…" : "Continuer avec LinkedIn"}
                     </button>
                   ) : (
-                    <p className="flex items-center gap-2 text-sm text-success">
-                      <FiCheck className="h-4 w-4 shrink-0" />
-                      {social.linkedinName ? `${social.linkedinName}` : "Compte LinkedIn connecté"}
-                    </p>
+                    <div className="space-y-3">
+                      <p className="flex items-center gap-2 text-sm text-success">
+                        <FiCheck className="h-4 w-4 shrink-0" />
+                        {social.linkedinName ? `${social.linkedinName}` : "Compte LinkedIn connecté"}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => social.disconnectLinkedIn()}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-2xs font-semibold text-ink-muted transition-colors hover:border-ink-muted hover:text-ink"
+                        >
+                          <FiLogOut className="h-3.5 w-3.5" />
+                          Se déconnecter
+                        </button>
+                        <button
+                          type="button"
+                          disabled={social.connectBusy === "linkedin"}
+                          onClick={() => {
+                            social.disconnectLinkedIn();
+                            window.setTimeout(() => social.openLinkedInConnect(), 0);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-2xs font-semibold text-brand transition-colors hover:bg-brand-light/40 disabled:opacity-50"
+                        >
+                          <FiRefreshCw className="h-3.5 w-3.5" />
+                          Reconnecter LinkedIn
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </>
               )}
@@ -216,26 +253,49 @@ export default function PublishPlatformModal({
                       className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-60 ${connectColor} ${connectHover}`}
                     >
                       <FiLink className="h-4 w-4" />
-                      {social.connectBusy === "meta" ? "Ouverture…" : "Se connecter avec Facebook (Meta)"}
+                      {social.connectBusy === "meta" ? "Ouverture…" : "Continuer avec Facebook"}
                     </button>
                   ) : (
                     <div className="space-y-2">
                       <p className="flex items-center gap-2 text-sm text-success">
                         <FiCheck className="h-4 w-4 shrink-0" />
-                        Meta connecté — choisissez une page
+                        Compte relié — choisissez la Page cible
                       </p>
                       <select
                         className="w-full rounded-lg border border-brand-border bg-white px-3 py-2 text-sm text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand/30"
                         value={social.selectedPageId}
                         onChange={(e) => social.setSelectedPageId(e.target.value)}
+                        aria-label="Page Facebook pour la publication"
                       >
-                        <option value="">Sélectionner une page…</option>
+                        <option value="">Choisir une Page Facebook…</option>
                         {social.metaPages.map((p) => (
                           <option key={p.id} value={String(p.id)}>
                             {p.name || p.id}
                           </option>
                         ))}
                       </select>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => social.disconnectMeta()}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-2xs font-semibold text-ink-muted transition-colors hover:border-ink-muted hover:text-ink"
+                        >
+                          <FiLogOut className="h-3.5 w-3.5" />
+                          Se déconnecter
+                        </button>
+                        <button
+                          type="button"
+                          disabled={social.connectBusy === "meta"}
+                          onClick={() => {
+                            social.disconnectMeta();
+                            window.setTimeout(() => social.openMetaConnect(), 0);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-2xs font-semibold text-brand transition-colors hover:bg-brand-light/40 disabled:opacity-50"
+                        >
+                          <FiRefreshCw className="h-3.5 w-3.5" />
+                          Reconnecter Facebook
+                        </button>
+                      </div>
                     </div>
                   )}
                 </>
@@ -248,8 +308,14 @@ export default function PublishPlatformModal({
             <div className="flex items-center gap-3 px-4 py-3">
               <StepBadge n={2} done={false} active={isConnected} />
               <div>
-                <p className="text-xs font-semibold text-ink">Publier maintenant</p>
-                <p className="text-2xs text-ink-muted">Le post sera envoyé immédiatement</p>
+                <p className="text-xs font-semibold text-ink">Publier depuis Brand AI</p>
+                <p className="text-2xs text-ink-muted">
+                  {needsMeta
+                    ? "Envoi sur la Page sélectionnée (via l’API Meta depuis cette plateforme)"
+                    : needsLinkedIn
+                      ? "Envoi sur votre profil LinkedIn depuis cette plateforme"
+                      : "Le post sera envoyé immédiatement"}
+                </p>
               </div>
             </div>
           </div>
