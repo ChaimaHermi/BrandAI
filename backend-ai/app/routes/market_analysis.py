@@ -7,20 +7,18 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.services.step_runner_service import StepRunnerService
 from app.services.persistence.market_marketing_persistence_service import (
     persist_market_result,
 )
-from pipeline.market_graph import build_market_graph
 
 
 router = APIRouter(tags=["Market Analysis"])
-market_graph = build_market_graph()
+step_runner = StepRunnerService()
 
 
 def sse_event(event: str, data: dict) -> str:
-    payload = json.dumps(data, ensure_ascii=False, indent=2)
-    data_lines = "\n".join(f"data: {line}" for line in payload.splitlines())
-    return f"event: {event}\n{data_lines}\n\n"
+    return step_runner.sse_event(event, data)
 
 
 class MarketAnalysisStreamRequest(BaseModel):
@@ -49,22 +47,26 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
     try:
         yield sse_event("step", {"status": "loading", "stage": "build_state", "message": "Préparation de l'analyse..."})
 
-        yield sse_event("step", {"status": "loading", "stage": "run_market_analysis", "message": "Analyse de marché en cours..."})
-        graph_input = {
-            "idea_id": body.idea_id,
-            "clarified_idea": {
-                "short_pitch": body.short_pitch or body.name,
-                "solution_description": body.solution_description or body.description,
-                "target_users": body.target_users or body.target_audience or "",
-                "problem": body.problem or body.description,
-                "sector": body.sector,
-                "country_code": body.country_code or "TN",
-                "language": body.language or "fr",
-            },
-            "market_analysis": {},
+        clarified_idea = {
+            "short_pitch": body.short_pitch or body.name,
+            "solution_description": body.solution_description or body.description,
+            "target_users": body.target_users or body.target_audience or "",
+            "problem": body.problem or body.description,
+            "sector": body.sector,
+            "country_code": body.country_code or "TN",
+            "language": body.language or "fr",
         }
-        graph_result = await market_graph.ainvoke(graph_input)
-        market_analysis = graph_result.get("market_analysis") or {}
+
+        yield sse_event("step", {"status": "loading", "stage": "run_market_analysis", "message": "Analyse de marché en cours..."})
+        market_analysis: dict = {}
+        async for event, data in step_runner.run_market_step(
+            idea_id=body.idea_id,
+            clarified_idea=clarified_idea,
+        ):
+            if event == "result":
+                market_analysis = data or {}
+            else:
+                yield sse_event(event, data or {})
 
         if not market_analysis:
             raise RuntimeError("Aucun résultat market_analysis produit")
