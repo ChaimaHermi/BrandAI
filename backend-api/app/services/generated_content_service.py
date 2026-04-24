@@ -96,8 +96,26 @@ def patch_generated_content(
         elif patch.status == "generated":
             row.published_at = None
             row.publish_error = None
+        elif patch.status == "edited":
+            row.published_at = None
+            row.publish_error = None
     elif patch.publish_error is not None:
         row.publish_error = patch.publish_error
+
+    if patch.caption is not None:
+        row.caption = patch.caption.strip()
+        row.char_count = (
+            patch.char_count if patch.char_count is not None else len(row.caption)
+        )
+        if row.status in ("generated", "edited"):
+            row.status = "edited"
+            row.published_at = None
+
+    if patch.image_url is not None:
+        row.image_url = patch.image_url.strip() or None
+
+    if patch.char_count is not None and patch.caption is None:
+        row.char_count = patch.char_count
 
     db.commit()
     db.refresh(row)

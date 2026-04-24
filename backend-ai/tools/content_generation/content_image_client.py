@@ -124,11 +124,40 @@ async def fetch_content_image_pollinations(
 
     url = _pollinations_url(full)
     timeout = float(os.getenv("CONTENT_POLLINATIONS_TIMEOUT_S", "120"))
-    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-        r = await client.get(url)
-        r.raise_for_status()
-        body = r.content
-        ct = (r.headers.get("content-type") or "").split(";")[0].strip().lower()
+    retries = int(os.getenv("CONTENT_POLLINATIONS_RETRIES", "2"))
+    last_err: Exception | None = None
+    body = b""
+    ct = ""
+    for attempt in range(1, retries + 1):
+        try:
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+                r = await client.get(url)
+                r.raise_for_status()
+                body = r.content
+                ct = (r.headers.get("content-type") or "").split(";")[0].strip().lower()
+            break
+        except (httpx.ReadTimeout, httpx.TimeoutException) as e:
+            last_err = e
+            _log.warning(
+                "[content_image_client] Pollinations timeout (attempt %d/%d, timeout=%.0fs)",
+                attempt,
+                retries,
+                timeout,
+            )
+            if attempt < retries:
+                await asyncio.sleep(1.2 * attempt)
+        except Exception as e:
+            last_err = e
+            _log.warning(
+                "[content_image_client] Pollinations erreur (attempt %d/%d): %s",
+                attempt,
+                retries,
+                str(e)[:180],
+            )
+            if attempt < retries:
+                await asyncio.sleep(1.2 * attempt)
+    if not body and last_err is not None:
+        raise RuntimeError(f"Pollinations indisponible: {last_err}") from last_err
 
     if not body:
         raise RuntimeError("Pollinations réponse vide")

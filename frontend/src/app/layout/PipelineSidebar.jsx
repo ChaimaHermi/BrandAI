@@ -3,8 +3,14 @@
  * Purely presentational. Zero inline styles except dynamic agent.doneBg/doneBorder/doneColor
  * (runtime values from AGENTS registry — not expressible as static Tailwind).
  */
+import { FiLink, FiCalendar } from "react-icons/fi";
 import { AGENTS } from "@/agents";
 import { CLARITY_SCORE_MIN_PIPELINE } from "@/agents/clarifier/constants";
+
+const CONTENT_SUBMENU_ITEMS = [
+  { key: "connect", label: "Connect Social Media", Icon: FiLink },
+  { key: "schedule", label: "Schedule Posts", Icon: FiCalendar },
+];
 
 /* ── Lock icon (pipeline CTA) ────────────────────────────────────────────── */
 function LockIcon() {
@@ -45,8 +51,10 @@ export default function PipelineSidebar({
   pipelineEnabled,
   pipelineCompleted,
   idea,
+  activeContentSubRoute,
   onNavigateDashboard,
   onNavigateAgent,
+  onNavigateContentSubRoute,
   onLaunchPipeline,
 }) {
   return (
@@ -102,73 +110,98 @@ export default function PipelineSidebar({
           const isActive  = agent.id === activeAgent.id;
           const isDone    = status === "done";
           const isPending = status === "pending";
+          const isContent = agent.id === "content";
 
           return (
-            <div
-              key={agent.id}
-              onClick={() => onNavigateAgent(agent.id)}
-              title={!sidebarOpen ? agent.label : undefined}
-              className={`flex cursor-pointer items-center rounded-[10px] transition-all duration-150 ${
-                sidebarOpen
-                  ? `gap-2.5 px-2.5 py-[9px] ${
-                      isDone
-                        ? "border"
-                        : isActive
-                          ? "border border-brand-muted bg-gradient-to-br from-brand-light to-brand-50"
-                          : "border border-transparent bg-transparent"
-                    }`
-                  : "justify-center py-1.5"
-              } ${isPending ? "opacity-45" : "opacity-100"}`}
-              /* dynamic done bg/border from AGENTS registry — not static Tailwind */
-              style={sidebarOpen && isDone ? { background: agent.doneBg, borderColor: agent.doneBorder } : undefined}
-            >
-              {/* Icon bubble */}
+            <div key={agent.id} className="flex flex-col">
               <div
-                className={`flex shrink-0 items-center justify-center rounded-full transition-all duration-150 ${
-                  sidebarOpen ? "h-7 w-7" : "h-8 w-8"
-                } ${isPending ? "border border-gray-200 bg-gray-50" : "border-0"}`}
-                style={
-                  isDone
-                    ? { background: "#1D9E75" }
-                    : isActive
-                      ? { background: agent.gradient, boxShadow: `0 2px 8px ${agent.color}44` }
-                      : { background: "#f5f5f5" }
-                }
+                onClick={() => onNavigateAgent(agent.id)}
+                title={!sidebarOpen ? agent.label : undefined}
+                className={`flex cursor-pointer items-center rounded-[10px] transition-all duration-150 ${
+                  sidebarOpen
+                    ? `gap-2.5 px-2.5 py-[9px] ${
+                        isDone
+                          ? "border"
+                          : isActive
+                            ? "border border-brand-muted bg-gradient-to-br from-brand-light to-brand-50"
+                            : "border border-transparent bg-transparent"
+                      }`
+                    : "justify-center py-1.5"
+                } ${isPending ? "opacity-45" : "opacity-100"}`}
+                /* dynamic done bg/border from AGENTS registry — not static Tailwind */
+                style={sidebarOpen && isDone ? { background: agent.doneBg, borderColor: agent.doneBorder } : undefined}
               >
-                {agent.icon ? (
-                  <agent.icon
-                    size={sidebarOpen ? (isDone || isActive ? 14 : 13) : 15}
-                    className={isDone || isActive ? "text-white" : "text-ink-subtle"}
-                  />
-                ) : (
-                  <span className={`text-[9px] font-bold ${isDone || isActive ? "text-white" : "text-ink-subtle"}`}>
-                    {agent.short}
-                  </span>
-                )}
+                {/* Icon bubble */}
+                <div
+                  className={`flex shrink-0 items-center justify-center rounded-full transition-all duration-150 ${
+                    sidebarOpen ? "h-7 w-7" : "h-8 w-8"
+                  } ${isPending ? "border border-gray-200 bg-gray-50" : "border-0"}`}
+                  style={
+                    isDone
+                      ? { background: "#1D9E75" }
+                      : isActive
+                        ? { background: agent.gradient, boxShadow: `0 2px 8px ${agent.color}44` }
+                        : { background: "#f5f5f5" }
+                  }
+                >
+                  {agent.icon ? (
+                    <agent.icon
+                      size={sidebarOpen ? (isDone || isActive ? 14 : 13) : 15}
+                      className={isDone || isActive ? "text-white" : "text-ink-subtle"}
+                    />
+                  ) : (
+                    <span className={`text-[9px] font-bold ${isDone || isActive ? "text-white" : "text-ink-subtle"}`}>
+                      {agent.short}
+                    </span>
+                  )}
+                </div>
+
+                {/* Label + status text */}
+                <div className={`min-w-0 flex-1 ${sidebarOpen ? "block" : "hidden"}`}>
+                  <p
+                    className={`truncate text-xs ${isDone || isActive ? "font-bold" : "font-medium"} ${
+                      isActive ? "text-brand-darker" : "text-ink-muted"
+                    }`}
+                    /* dynamic done color from AGENTS registry */
+                    style={isDone ? { color: agent.doneColor } : undefined}
+                  >
+                    {agent.label}
+                  </p>
+                  <p
+                    className={`mt-0.5 flex items-center gap-[3px] text-[9px] ${
+                      isDone ? "text-success" : isActive ? "text-brand" : "text-ink-subtle"
+                    }`}
+                  >
+                    {isActive && (
+                      <span className="inline-block animate-[pulse_1.2s_infinite]">●</span>
+                    )}
+                    {isDone ? "Terminé ✓" : isActive ? "En cours" : "En attente"}
+                  </p>
+                </div>
               </div>
 
-              {/* Label + status text */}
-              <div className={`min-w-0 flex-1 ${sidebarOpen ? "block" : "hidden"}`}>
-                <p
-                  className={`truncate text-xs ${isDone || isActive ? "font-bold" : "font-medium"} ${
-                    isActive ? "text-brand-darker" : "text-ink-muted"
-                  }`}
-                  /* dynamic done color from AGENTS registry */
-                  style={isDone ? { color: agent.doneColor } : undefined}
-                >
-                  {agent.label}
-                </p>
-                <p
-                  className={`mt-0.5 flex items-center gap-[3px] text-[9px] ${
-                    isDone ? "text-success" : isActive ? "text-brand" : "text-ink-subtle"
-                  }`}
-                >
-                  {isActive && (
-                    <span className="inline-block animate-[pulse_1.2s_infinite]">●</span>
-                  )}
-                  {isDone ? "Terminé ✓" : isActive ? "En cours" : "En attente"}
-                </p>
-              </div>
+              {isContent && sidebarOpen && isActive && (
+                <div className="ml-10 mt-1 flex flex-col gap-1">
+                  {CONTENT_SUBMENU_ITEMS.map((item) => {
+                    const isSubActive = activeContentSubRoute === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => onNavigateContentSubRoute(item.key)}
+                        className={`flex items-center rounded-lg px-2.5 py-1.5 text-left text-2xs font-semibold transition-colors ${
+                          isSubActive
+                            ? "bg-brand-light text-brand-dark"
+                            : "text-ink-muted hover:bg-brand-light/60 hover:text-brand-dark"
+                        }`}
+                      >
+                        <item.Icon className="mr-1.5 h-3 w-3 shrink-0" />
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}

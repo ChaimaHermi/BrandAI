@@ -21,6 +21,7 @@ const PLATFORM_COLOR = {
 /* ── Méta statut ─────────────────────────────────────────────────────────── */
 const STATUS_META = {
   generated:     { label: "Non publié",  className: "bg-slate-100 text-slate-700",   dot: "bg-slate-400" },
+  edited:        { label: "Modifié",     className: "bg-amber-50 text-amber-800",    dot: "bg-amber-500"  },
   published:     { label: "Publié",      className: "bg-emerald-50 text-emerald-800", dot: "bg-success"   },
   publish_failed:{ label: "Échec envoi", className: "bg-red-50 text-red-700",         dot: "bg-red-500"   },
 };
@@ -54,7 +55,7 @@ function formatDate(iso) {
 function matchesPublicationFilter(row, f) {
   if (f === "all")         return true;
   if (f === "published")   return row.status === "published";
-  if (f === "unpublished") return row.status === "generated";
+  if (f === "unpublished") return row.status === "generated" || row.status === "edited";
   if (f === "failed")      return row.status === "publish_failed";
   return true;
 }
