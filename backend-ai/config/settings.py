@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+import re
 
 # ─────────────────────────────────────────────
 # LOAD .ENV FROM ROOT PROJECT
@@ -41,13 +42,29 @@ GROQ_KEYS = clean([
 # Hugging Face (logo image : InferenceClient + Replicate) — HF_TOKEN_1 / HF_TOKEN_2 prioritaires
 _seen_hf: set[str] = set()
 HF_KEYS: list[str] = []
+_hf_numbered: list[tuple[int, str]] = []
+_hfa_numbered: list[tuple[int, str]] = []
+for _name, _val in os.environ.items():
+    _v = (_val or "").strip()
+    if not _v:
+        continue
+    _m_hf = re.fullmatch(r"HF_TOKEN_(\d+)", _name)
+    if _m_hf:
+        _hf_numbered.append((int(_m_hf.group(1)), _v))
+        continue
+    _m_hfa = re.fullmatch(r"HUGGINGFACE_API_KEY_(\d+)", _name)
+    if _m_hfa:
+        _hfa_numbered.append((int(_m_hfa.group(1)), _v))
+
+_hf_numbered.sort(key=lambda x: x[0])
+_hfa_numbered.sort(key=lambda x: x[0])
+
 for _k in (
-    os.getenv("HF_TOKEN_1"),
-    os.getenv("HF_TOKEN_2"),
+    *(v for _, v in _hf_numbered),
+    *(v for _, v in _hfa_numbered),
     os.getenv("HF_TOKEN"),
     os.getenv("HUGGINGFACE_HUB_TOKEN"),
     os.getenv("HUGGINGFACE_API_KEY"),
-    os.getenv("HUGGINGFACE_API_KEY_2"),
 ):
     if _k and _k.strip() and _k.strip() not in _seen_hf:
         _seen_hf.add(_k.strip())
