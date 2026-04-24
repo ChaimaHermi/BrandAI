@@ -1,7 +1,7 @@
 /**
  * PipelineLaunchModal
- * Full-screen overlay with backdrop blur showing real-time SSE pipeline progress.
- * Appears when the user launches the market analysis pipeline.
+ * Full-screen overlay with backdrop blur showing real-time SSE progress.
+ * Appears when the user launches market strategy generation.
  */
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -127,14 +127,14 @@ export default function PipelineLaunchModal({ isOpen, isDone, xaiSteps, error, o
             {/* Title + subtitle */}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-extrabold text-white">
-                Pipeline d'analyse de marché
+                Market Strategy
               </p>
               <p className="mt-0.5 text-xs text-white/70">
                 {headerState === "error"
                   ? "Une erreur est survenue"
                   : headerState === "done"
-                    ? "Analyse terminée avec succès"
-                    : "Analyse en cours…"}
+                    ? "Stratégie terminée avec succès"
+                    : "Génération en cours…"}
               </p>
             </div>
 
@@ -244,7 +244,7 @@ export default function PipelineLaunchModal({ isOpen, isDone, xaiSteps, error, o
             <div className="flex items-center justify-between gap-3">
               <p className={`text-xs font-bold ${isDone ? "text-success" : "text-red-600"}`}>
                 {isDone
-                  ? "Rapport prêt — les résultats sont disponibles"
+                  ? "Rapport stratégique prêt — les résultats sont disponibles"
                   : error}
               </p>
               <button
@@ -265,7 +265,7 @@ export default function PipelineLaunchModal({ isOpen, isDone, xaiSteps, error, o
         {!isDone && !error && (
           <div className="border-t border-brand-border px-5 py-3">
             <p className="text-center text-[10px] text-ink-subtle">
-              L'analyse peut prendre quelques minutes — ne fermez pas cette fenêtre
+              La génération de la stratégie peut prendre quelques minutes — ne fermez pas cette fenêtre
             </p>
           </div>
         )}

@@ -45,8 +45,6 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
     t0 = time.time()
 
     try:
-        yield sse_event("step", {"status": "loading", "stage": "build_state", "message": "Préparation de l'analyse..."})
-
         clarified_idea = {
             "short_pitch": body.short_pitch or body.name,
             "solution_description": body.solution_description or body.description,
@@ -57,7 +55,6 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
             "language": body.language or "fr",
         }
 
-        yield sse_event("step", {"status": "loading", "stage": "run_market_analysis", "message": "Analyse de marché en cours..."})
         market_analysis: dict = {}
         async for event, data in step_runner.run_market_step(
             idea_id=body.idea_id,
@@ -74,7 +71,7 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
         if not body.access_token:
             raise RuntimeError("access_token requis pour persister le résultat dans backend-api")
 
-        yield sse_event("step", {"status": "loading", "stage": "persist_result", "message": "Sauvegarde du résultat..."})
+        yield sse_event("step", {"status": "loading", "stage": "persist_result", "message": "Sauvegarde de l'analyse de marché en base…"})
         completed_at = datetime.now(timezone.utc)
         persisted = await persist_market_result(
             idea_id=body.idea_id,
@@ -83,6 +80,7 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
             completed_at=completed_at,
             access_token=body.access_token,
         )
+        yield sse_event("step", {"status": "done", "stage": "persist_result", "message": "Analyse de marché sauvegardée"})
 
         elapsed_ms = int((time.time() - t0) * 1000)
         yield sse_event(
@@ -90,8 +88,10 @@ async def _stream_market_analysis(body: MarketAnalysisStreamRequest):
             {
                 "success": True,
                 "idea_id": body.idea_id,
+                "status": "done",
                 "elapsed_ms": elapsed_ms,
                 "persisted_id": persisted.get("id"),
+                "persisted_marketing_id": None,
             },
         )
     except Exception as e:

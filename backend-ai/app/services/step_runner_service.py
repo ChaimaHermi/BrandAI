@@ -17,6 +17,7 @@ from app.services.persistence.market_marketing_persistence_service import (
     persist_marketing_result,
 )
 from pipeline.market_graph import build_market_graph
+from pipeline.market_strategy_graph import build_market_strategy_graph
 
 _MIN_CLARITY_SCORE = 80
 
@@ -40,6 +41,7 @@ class StepRunnerService:
 
     def __init__(self) -> None:
         self.market_graph = build_market_graph()
+        self.market_strategy_graph = build_market_strategy_graph()
         self.marketing_agent = MarketingAgent()
 
     @staticmethod
@@ -191,6 +193,86 @@ class StepRunnerService:
         persisted_marketing = None
         if marketing_plan:
             yield self.sse_event("step", {"status": "done", "stage": "marketing_plan", "message": "Plan marketing généré"})
+            yield self.sse_event("step", {"status": "loading", "stage": "persist_marketing_result", "message": "Sauvegarde du plan marketing en base…"})
+            persisted_marketing = await persist_marketing_result(
+                idea_id=idea_id,
+                result_json=marketing_plan,
+                access_token=access_token,
+            )
+            yield self.sse_event("step", {"status": "done", "stage": "persist_marketing_result", "message": "Plan marketing sauvegardé"})
+
+        yield self.sse_event(
+            "done",
+            {
+                "success": True,
+                "idea_id": idea_id,
+                "status": "done",
+                "persisted_id": persisted_market.get("id"),
+                "persisted_marketing_id": persisted_marketing.get("id") if persisted_marketing else None,
+                "elapsed_ms": int((time.time() - t0) * 1000),
+            },
+        )
+
+    async def stream_market_strategy(self, *, idea_id: int, access_token: str) -> AsyncIterator[str]:
+        started_at = datetime.now(timezone.utc)
+        t0 = time.time()
+
+        yield self.sse_event("step", {"status": "loading", "stage": "fetch_idea_context", "message": "Chargement de l'idée depuis la base…"})
+        idea_row = await self._fetch_idea_row(idea_id, access_token)
+        error_payload = self._validate_clarifier_state(idea_row)
+        if error_payload is not None:
+            yield self.sse_event("done", {"idea_id": idea_id, **error_payload})
+            return
+        clarified_idea = self._build_clarified_context(idea_row)
+        yield self.sse_event("step", {"status": "done", "stage": "fetch_idea_context", "message": "Clarifier validé — démarrage de l'analyse de marché"})
+
+        graph_input = {
+            "idea_id": idea_id,
+            "clarified_idea": clarified_idea,
+            "market_analysis": {},
+            "marketing_plan": {},
+        }
+        market_analysis: dict[str, Any] = {}
+        marketing_plan: dict[str, Any] = {}
+
+        # same market phase progress messages, then marketing phase.
+        first_name, first_msg, _ = MARKET_NODE_SEQUENCE[0]
+        yield self.sse_event("step", {"status": "loading", "stage": first_name, "message": first_msg})
+
+        async for chunk in self.market_strategy_graph.astream(graph_input, stream_mode="updates"):
+            for node_name, node_output in chunk.items():
+                if node_name in _NODE_IDX:
+                    idx = _NODE_IDX[node_name]
+                    yield self.sse_event("step", {"status": "done", "stage": node_name, "message": _NODE_DONE[node_name]})
+                    if idx + 1 < len(MARKET_NODE_SEQUENCE):
+                        next_name, next_msg, _ = MARKET_NODE_SEQUENCE[idx + 1]
+                        yield self.sse_event("step", {"status": "loading", "stage": next_name, "message": next_msg})
+                elif node_name == "marketing_plan":
+                    yield self.sse_event("step", {"status": "loading", "stage": "marketing_plan", "message": "Génération du plan marketing…"})
+                    yield self.sse_event("step", {"status": "done", "stage": "marketing_plan", "message": "Plan marketing généré"})
+
+                if isinstance(node_output, dict):
+                    if "market_analysis" in node_output:
+                        market_analysis = node_output.get("market_analysis") or market_analysis
+                    if "marketing_plan" in node_output:
+                        marketing_plan = node_output.get("marketing_plan") or marketing_plan
+
+        if not market_analysis:
+            raise RuntimeError("Le graph market strategy n'a produit aucun résultat market.")
+
+        yield self.sse_event("step", {"status": "loading", "stage": "persist_result", "message": "Sauvegarde de l'analyse de marché en base…"})
+        completed_at = datetime.now(timezone.utc)
+        persisted_market = await persist_market_result(
+            idea_id=idea_id,
+            result_json=market_analysis,
+            started_at=started_at,
+            completed_at=completed_at,
+            access_token=access_token,
+        )
+        yield self.sse_event("step", {"status": "done", "stage": "persist_result", "message": "Analyse de marché sauvegardée"})
+
+        persisted_marketing = None
+        if marketing_plan:
             yield self.sse_event("step", {"status": "loading", "stage": "persist_marketing_result", "message": "Sauvegarde du plan marketing en base…"})
             persisted_marketing = await persist_marketing_result(
                 idea_id=idea_id,
