@@ -1,9 +1,11 @@
 import os
+import logging
 import requests
 
 from config.market_analysis_config import MARKET_ANALYSIS_CONFIG
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+logger = logging.getLogger("brandai.market_api")
 
 
 def tavily_search(query: str):
@@ -13,6 +15,7 @@ def tavily_search(query: str):
         max_results = 5
 
     if not TAVILY_API_KEY:
+        logger.error("[API_KO] provider=TAVILY status=missing_key query=%r", (query or "")[:120])
         return []
 
     url = "https://api.tavily.com/search"
@@ -28,7 +31,28 @@ def tavily_search(query: str):
         res = requests.post(url, json=payload, timeout=30)
         res.raise_for_status()
         data = res.json()
-    except Exception:
+    except requests.HTTPError as e:
+        status = e.response.status_code if e.response is not None else "?"
+        logger.error(
+            "[API_KO] provider=TAVILY status=%s query=%r err=%s",
+            status,
+            (query or "")[:120],
+            str(e)[:200],
+        )
+        return []
+    except requests.RequestException as e:
+        logger.error(
+            "[API_KO] provider=TAVILY status=network query=%r err=%s",
+            (query or "")[:120],
+            str(e)[:200],
+        )
+        return []
+    except Exception as e:
+        logger.error(
+            "[API_KO] provider=TAVILY status=unknown query=%r err=%s",
+            (query or "")[:120],
+            str(e)[:200],
+        )
         return []
 
     results = []

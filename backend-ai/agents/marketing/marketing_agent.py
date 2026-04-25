@@ -141,7 +141,8 @@ class MarketingAgent(BaseAgent):
             "- Keep original meaning/content; do not add new business claims.\n"
             "- If a field is missing, use empty string/empty array/object according to schema.\n"
             "- Ensure these top-level keys exist exactly:\n"
-            '  "positioning", "messaging", "channels", "content_strategy", "go_to_market", "action_plan".\n'
+            '  "positioning", "messaging", "channels", "content_strategy", "budget_allocation", "go_to_market", "action_plan".\n'
+            '- "budget_allocation.breakdown" must be a non-empty array.\n'
         )
 
         repair_user_prompt = (
@@ -169,7 +170,26 @@ class MarketingAgent(BaseAgent):
             "messaging",
             "channels",
             "content_strategy",
+            "budget_allocation",
             "go_to_market",
             "action_plan",
         ]
-        return not all(k in result for k in required_top_level)
+        if not all(k in result for k in required_top_level):
+            return True
+
+        budget_allocation = result.get("budget_allocation")
+        if not isinstance(budget_allocation, dict):
+            return True
+
+        breakdown = budget_allocation.get("breakdown")
+        if not isinstance(breakdown, list) or len(breakdown) == 0:
+            return True
+
+        required_breakdown_keys = {"poste", "percent", "amount", "justification"}
+        for row in breakdown:
+            if not isinstance(row, dict):
+                return True
+            if not required_breakdown_keys.issubset(set(row.keys())):
+                return True
+
+        return False

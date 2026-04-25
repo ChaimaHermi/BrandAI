@@ -62,6 +62,16 @@ For EVERY metric :
   + WHICH geography if specified
 - Be specific — never generic
 
+For "adoption_rate" specifically:
+- Add a short French title in "title"
+- The title must summarize the market evolution found
+  (example: "Évolution du marché de la livraison en ligne")
+- The title MUST strictly reflect extracted data
+  (metric + sector + geography/year if available)
+- Do not use generic wording disconnected from evidence
+- If no explicit adoption/evolution signal is present,
+  set "title" to ""
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FLEXIBLE METRICS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -137,6 +147,7 @@ OUTPUT FORMAT (STRICT JSON)
     "source": ""
   },
   "adoption_rate": {
+    "title": "",
     "value": null,
     "unit": "%",
     "year": "",

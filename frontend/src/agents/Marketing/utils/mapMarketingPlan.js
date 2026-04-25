@@ -6,20 +6,22 @@ export function mapMarketingPlan(payload) {
   if (!payload) return null;
 
   const plan = payload.result_json || payload;
-  const positioning = plan.positioning;
-  const messaging = plan.messaging;
-  const channels = plan.channels;
-  const contentStrategy = plan.content_strategy;
-  const budgetAllocation = plan.budget_allocation;
-  const actionPlan = plan.action_plan;
-  const goToMarket = plan.go_to_market;
+  const positioning = plan?.positioning ?? {};
+  const messaging = plan?.messaging ?? {};
+  const channels = plan?.channels ?? {};
+  const contentStrategy = plan?.content_strategy ?? {};
+  const budgetAllocation = plan?.budget_allocation ?? {};
+  const actionPlan = plan?.action_plan ?? {};
+  const goToMarket = plan?.go_to_market ?? {};
 
-  const fixedPlatformChannels = ["facebook", "instagram", "linkedin"]
-    .map((platformName) => {
-      const node = channels?.[platformName];
+  const primaryChannelsDetailed = Object.entries(channels)
+    .map(([channelName, node]) => {
       if (!node || typeof node !== "object" || Array.isArray(node)) return null;
+      const displayName = String(channelName || "").trim();
       return {
-        name: platformName.charAt(0).toUpperCase() + platformName.slice(1),
+        name: displayName
+          ? displayName.charAt(0).toUpperCase() + displayName.slice(1)
+          : "",
         role: node.role,
         justification: node.justification,
       };
@@ -54,7 +56,7 @@ export function mapMarketingPlan(payload) {
 
     /* ── Channels ────────────────────────────────────────────────── */
     channels: {
-      primaryChannelsDetailed: fixedPlatformChannels,
+      primaryChannelsDetailed,
     },
 
     /* ── Budget ──────────────────────────────────────────────────── */
@@ -86,9 +88,9 @@ export function mapMarketingPlan(payload) {
 
     /* ── Action Plan ─────────────────────────────────────────────── */
     actionPlan: {
-      shortTerm:         asActions(actionPlan.short_term),
-      midTerm:           asActions(actionPlan.mid_term),
-      longTerm:          asActions(actionPlan.long_term),
+      shortTerm:         asActions(actionPlan?.short_term),
+      midTerm:           asActions(actionPlan?.mid_term),
+      longTerm:          asActions(actionPlan?.long_term),
       shortTermMilestone: actionPlan?.short_term?.milestone,
       midTermMilestone:   actionPlan?.mid_term?.milestone,
       longTermMilestone:  actionPlan?.long_term?.milestone,

@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import {
   FiUsers, FiGlobe, FiZap, FiThumbsUp, FiAlertTriangle,
   FiExternalLink, FiTarget,
@@ -60,12 +61,18 @@ function BulletList({ items, dotClass }) {
 }
 
 export default function MarketCompetitors({ competitors }) {
+  const [showSources, setShowSources] = useState(false);
   const list     = Array.isArray(competitors) ? competitors : [];
   const total    = list.length;
   const direct   = list.filter((c) => c?.type === "direct").length;
   const indirect = list.filter((c) => c?.type === "indirect").length;
   const local    = list.filter((c) => c?.scope === "local").length;
   const global   = list.filter((c) => c?.scope === "global").length;
+  const competitorSources = useMemo(() => (
+    list
+      .map((c) => ({ name: c?.name || "source", url: normalizeExternalUrl(c?.website) }))
+      .filter((x) => x.url)
+  ), [list]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -207,6 +214,40 @@ export default function MarketCompetitors({ competitors }) {
           </div>
         );
       })}
+
+      {competitorSources.length > 0 && (
+        <div className="rounded-xl border border-brand-border bg-white p-4 shadow-card">
+          <p className="mb-3 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
+            Sources concurrents
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowSources((v) => !v)}
+            className="rounded-lg border border-brand-border px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand-light"
+          >
+            {showSources ? "Masquer sources" : "Voir sources"}
+          </button>
+          {showSources && (
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              {competitorSources.map((src, idx) => (
+                <a
+                  key={`${src.url}-${idx}`}
+                  href={src.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-lg border border-brand-border px-3 py-2 text-sm transition-colors hover:bg-brand-light"
+                >
+                  <span className="flex items-center gap-2 font-medium text-ink-muted">
+                    <FiExternalLink size={12} className="text-brand-muted" />
+                    {src.name}
+                  </span>
+                  <span className="ml-4 truncate text-brand">{src.url}</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

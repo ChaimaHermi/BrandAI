@@ -5,12 +5,10 @@ import { TabBar } from "@/shared/ui/TabBar";
 const marketingAgent = AGENTS.find((a) => a.id === "marketing");
 
 const SECTION_TABS = [
-  { id: "positioning", label: "Positionnement" },
-  { id: "targets",     label: "Cibles" },
-  { id: "channels",    label: "Canaux & Budget" },
-  { id: "content",     label: "Contenu" },
-  { id: "gtm",         label: "Go-to-Market" },
-  { id: "action",      label: "Plan d'action" },
+  { id: "positioning", label: "Positionnement & Cibles" },
+  { id: "budget",      label: "Budget lancement" },
+  { id: "channels_content", label: "Canaux & Stratégie de contenu" },
+  { id: "gtm_action",  label: "Go-to-Market & Plan d'action" },
 ];
 
 /**

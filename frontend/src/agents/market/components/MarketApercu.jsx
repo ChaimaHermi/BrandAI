@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   FiBarChart2, FiDollarSign, FiTrendingUp,
   FiActivity, FiUsers, FiPercent, FiExternalLink, FiZap, FiCalendar,
@@ -85,7 +86,7 @@ function SectorGrowthChart({ sectorName, chartPoints, unitLabel, sectorGrowth })
         Croissance sectorielle
       </p>
 
-      <div className="rounded-xl border border-emerald-100 bg-white p-5 shadow-card">
+      <div className="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm">
         {/* Header: Sector name + unit (from backend only) */}
         <div className="mb-4">
           {sectorName ? (
@@ -164,7 +165,7 @@ function SectorGrowthChart({ sectorName, chartPoints, unitLabel, sectorGrowth })
             </div>
 
             {/* Table — donnees brutes backend uniquement */}
-            <div className="mt-4 overflow-x-auto">
+            <div className="mt-3 overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-emerald-100">
@@ -295,6 +296,7 @@ function getMarketSignalIconConfig(signal) {
 }
 
 export default function MarketApercu({ market }) {
+  const [showSources, setShowSources] = useState(false);
   const marketSources = Array.isArray(market?.sources) ? market.sources : [];
   const marketSignals = Array.isArray(market?.market_signals) ? market.market_signals : [];
   const sectorGrowth = Array.isArray(market?.sector_growth) ? market.sector_growth : [];
@@ -303,7 +305,7 @@ export default function MarketApercu({ market }) {
   const unitLabel = chartPoints[0]?.unit || "";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {/* ── Metric cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {FIELD_CONFIG.map(({ key, label, Icon, accent }) => {
@@ -318,7 +320,7 @@ export default function MarketApercu({ market }) {
           return (
             <div
               key={key}
-              className="flex flex-col gap-3 rounded-xl border border-brand-border bg-white p-4 shadow-card transition-shadow hover:shadow-card-md"
+              className="flex flex-col gap-2 rounded-xl border border-brand-border bg-white p-3 shadow-sm"
             >
               {/* Icon bubble + label */}
               <div className="flex items-center gap-2">
@@ -336,10 +338,10 @@ export default function MarketApercu({ market }) {
                 {isMissing ? (
                   <span className="text-sm font-medium italic text-ink-subtle">N'existe pas</span>
                 ) : (
-                  <span className="text-2xl font-bold text-ink">
+                    <span className="text-xl font-bold text-ink">
                     {value}
                     {unit && (
-                      <span className="ml-1 text-sm font-normal text-ink-muted">{unit}</span>
+                      <span className="ml-1 text-xs font-normal text-ink-muted">{unit}</span>
                     )}
                   </span>
                 )}
@@ -380,9 +382,19 @@ export default function MarketApercu({ market }) {
         })}
       </div>
 
+      {/* ── Sector growth (year/value extracted points) ─────────────────── */}
+      {sectorGrowth.length > 0 && (
+        <SectorGrowthChart
+          sectorName={sectorName}
+          chartPoints={chartPoints}
+          unitLabel={unitLabel}
+          sectorGrowth={sectorGrowth}
+        />
+      )}
+
       {/* ── Market signals ───────────────────────────────────────────────── */}
       {marketSignals.length > 0 && (
-        <div>
+        <div className="rounded-xl border border-brand-border bg-white p-3 shadow-sm">
           <p className="mb-3 flex items-center gap-2 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
               <FiZap size={12} />
@@ -398,7 +410,7 @@ export default function MarketApercu({ market }) {
               return (
                 <div
                   key={idx}
-                  className="flex flex-col gap-3 rounded-xl border border-brand-border bg-white p-4 shadow-card transition-shadow hover:shadow-card-md"
+                  className="flex flex-col gap-2 rounded-xl border border-brand-border bg-white p-3 shadow-sm"
                 >
                   {/* Icône % = couleur Taux d'adoption ; revenu = couleur Revenus (FIELD_CONFIG) */}
                   <div className="flex items-start gap-2">
@@ -412,11 +424,11 @@ export default function MarketApercu({ market }) {
 
                   {/* Value + unit + year */}
                   <div className="flex flex-wrap items-baseline gap-1">
-                    <span className="text-2xl font-bold text-brand-dark">
+                    <span className="text-xl font-bold text-brand-dark">
                       {signal.value ?? "N'existe pas"}
                     </span>
                     {signal.unit && (
-                      <span className="text-sm font-normal text-ink-muted">{signal.unit}</span>
+                      <span className="text-xs font-normal text-ink-muted">{signal.unit}</span>
                     )}
                     {signal.year && (
                       <span className="ml-1 rounded-full bg-brand-light px-2 py-0.5 text-2xs font-semibold text-brand">
@@ -451,44 +463,43 @@ export default function MarketApercu({ market }) {
         </div>
       )}
 
-      {/* ── Sector growth (year/value extracted points) ─────────────────── */}
-      {sectorGrowth.length > 0 && (
-        <SectorGrowthChart
-          sectorName={sectorName}
-          chartPoints={chartPoints}
-          unitLabel={unitLabel}
-          sectorGrowth={sectorGrowth}
-        />
-      )}
-
       {/* ── Market sources ────────────────────────────────────────────────── */}
       {marketSources.length > 0 && (
-        <div className="rounded-xl border border-brand-border bg-white p-4 shadow-card">
+        <div className="rounded-xl border border-brand-border bg-white p-4 shadow-sm">
           <p className="mb-3 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
             Sources du marché
           </p>
-          <div className="grid grid-cols-1 gap-2">
-            {marketSources.map((src, idx) => {
-              const url    = typeof src?.url    === "string" ? src.url    : "";
-              const domain = typeof src?.domain === "string" ? src.domain : "";
-              if (!url) return null;
-              return (
-                <a
-                  key={`${url}-${idx}`}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-lg border border-brand-border px-3 py-2 text-sm transition-colors hover:bg-brand-light"
-                >
-                  <span className="flex items-center gap-2 font-medium text-ink-muted">
-                    <FiExternalLink size={12} className="text-brand-muted" />
-                    {domain || "Source non disponible"}
-                  </span>
-                  <span className="ml-4 truncate text-brand">{url}</span>
-                </a>
-              );
-            })}
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowSources((v) => !v)}
+            className="rounded-lg border border-brand-border px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand-light"
+          >
+            {showSources ? "Masquer sources" : "Voir sources"}
+          </button>
+          {showSources && (
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              {marketSources.map((src, idx) => {
+                const url    = typeof src?.url    === "string" ? src.url    : "";
+                const domain = typeof src?.domain === "string" ? src.domain : "";
+                if (!url) return null;
+                return (
+                  <a
+                    key={`${url}-${idx}`}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-lg border border-brand-border px-3 py-2 text-sm transition-colors hover:bg-brand-light"
+                  >
+                    <span className="flex items-center gap-2 font-medium text-ink-muted">
+                      <FiExternalLink size={12} className="text-brand-muted" />
+                      {domain || "Source non disponible"}
+                    </span>
+                    <span className="ml-4 truncate text-brand">{url}</span>
+                  </a>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

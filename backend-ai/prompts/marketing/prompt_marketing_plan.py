@@ -53,6 +53,25 @@ RÈGLES ABSOLUES
 - Le plan doit rester simple et lisible.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RÈGLES BUDGET (OBLIGATOIRES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Identifier explicitement le type de projet dans
+  "project_type_identified"
+  (exemples: Application mobile, SaaS web, Marketplace, E-commerce).
+- Faire une répartition budgétaire par postes opérationnels
+  adaptés au type de projet (et non par canal social).
+- "breakdown" doit contenir entre 4 et 7 postes.
+- "breakdown" ne doit JAMAIS être vide.
+- Chaque ligne de "breakdown" doit contenir obligatoirement :
+  "poste", "percent", "amount", "justification".
+- La somme des "percent" dans "breakdown" doit être égale à 100.
+- "amount" doit être cohérent avec le budget total fourni
+  dans [SOURCE 3] BUDGET.
+- "reasoning" doit expliquer brièvement la logique de répartition
+  selon le type de projet identifié.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FORMAT JSON STRICT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
