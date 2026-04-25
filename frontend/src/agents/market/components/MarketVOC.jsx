@@ -36,12 +36,34 @@ function ItemCard({ icon: Icon, title, count, children }) {
   );
 }
 
+function normalizeInsightItem(item) {
+  if (typeof item === "string") return { text: item, source: "" };
+  if (item && typeof item === "object") {
+    return {
+      text: typeof item.insight === "string" ? item.insight : "",
+      source: typeof item.source === "string" ? item.source : "",
+    };
+  }
+  return { text: "", source: "" };
+}
+
+function normalizeQuoteItem(item) {
+  if (typeof item === "string") return { quote: item, source: "" };
+  if (item && typeof item === "object") {
+    return {
+      quote: typeof item.quote === "string" ? item.quote : "",
+      source: typeof item.source === "string" ? item.source : "",
+    };
+  }
+  return { quote: "", source: "" };
+}
+
 export default function MarketVOC({ voc }) {
-  const painPoints      = voc?.pain_points      ?? [];
-  const frustrations    = voc?.frustrations     ?? [];
-  const desiredFeatures = voc?.desired_features ?? [];
-  const userQuotes      = voc?.user_quotes      ?? [];
-  const marketInsights  = voc?.market_insights  ?? [];
+  const painPoints      = (voc?.pain_points      ?? []).map(normalizeInsightItem).filter((x) => x.text);
+  const frustrations    = (voc?.frustrations     ?? []).map(normalizeInsightItem).filter((x) => x.text);
+  const desiredFeatures = (voc?.desired_features ?? []).map(normalizeInsightItem).filter((x) => x.text);
+  const userQuotes      = (voc?.user_quotes      ?? []).map(normalizeQuoteItem).filter((x) => x.quote);
+  const marketInsights  = (voc?.market_insights  ?? []).map(normalizeInsightItem).filter((x) => x.text);
   const sources         = voc?.sources          ?? [];
 
   const hasSummary = countItems(painPoints) > 0 || countItems(frustrations) > 0 ||
@@ -71,7 +93,12 @@ export default function MarketVOC({ voc }) {
               {painPoints.map((item, idx) => (
                 <div key={`pp-${idx}`} className="flex gap-3 border-b border-gray-50 py-3 last:border-0">
                   <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-red-400" />
-                  <p className="text-sm leading-relaxed text-ink-body">{item}</p>
+                  <div>
+                    <p className="text-sm leading-relaxed text-ink-body">{item.text}</p>
+                    {item.source && (
+                      <p className="mt-1 text-2xs text-brand">{item.source}</p>
+                    )}
+                  </div>
                 </div>
               ))}
             </ItemCard>
@@ -81,7 +108,12 @@ export default function MarketVOC({ voc }) {
               {frustrations.map((item, idx) => (
                 <div key={`fr-${idx}`} className="flex gap-3 border-b border-gray-50 py-3 last:border-0">
                   <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
-                  <p className="text-sm leading-relaxed text-ink-body">{item}</p>
+                  <div>
+                    <p className="text-sm leading-relaxed text-ink-body">{item.text}</p>
+                    {item.source && (
+                      <p className="mt-1 text-2xs text-brand">{item.source}</p>
+                    )}
+                  </div>
                 </div>
               ))}
             </ItemCard>
@@ -96,7 +128,12 @@ export default function MarketVOC({ voc }) {
             {desiredFeatures.map((feature, idx) => (
               <div key={`feat-${idx}`} className="flex items-start gap-2 rounded-xl border border-brand-border bg-brand-light px-4 py-3">
                 <FiCheckCircle size={14} className="mt-0.5 shrink-0 text-brand" />
-                <span className="text-sm text-ink-body">{feature}</span>
+                <div>
+                  <span className="text-sm text-ink-body">{feature.text}</span>
+                  {feature.source && (
+                    <p className="mt-1 text-2xs text-brand">{feature.source}</p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -111,7 +148,10 @@ export default function MarketVOC({ voc }) {
               {userQuotes.map((quote, idx) => (
                 <div key={`q-${idx}`} className="mb-4 border-l-4 border-brand-muted py-2 pl-4">
                   <FiMessageSquare size={22} className="mb-1 text-brand-border" />
-                  <p className="text-sm italic leading-relaxed text-ink-body">{quote}</p>
+                  <p className="text-sm italic leading-relaxed text-ink-body">{quote.quote}</p>
+                  {quote.source && (
+                    <p className="mt-1 text-2xs not-italic text-brand">{quote.source}</p>
+                  )}
                 </div>
               ))}
             </ItemCard>
@@ -123,7 +163,12 @@ export default function MarketVOC({ voc }) {
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-light text-xs font-bold text-brand">
                     {idx + 1}
                   </span>
-                  <p className="text-sm text-ink-body">{insight}</p>
+                  <div>
+                    <p className="text-sm text-ink-body">{insight.text}</p>
+                    {insight.source && (
+                      <p className="mt-1 text-2xs text-brand">{insight.source}</p>
+                    )}
+                  </div>
                 </div>
               ))}
             </ItemCard>

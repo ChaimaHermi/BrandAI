@@ -12,7 +12,7 @@ export default function QuestionsBlock({
 
   const hasQuestions = Array.isArray(questions) && questions.length > 0;
 
-  const keys = ["problem", "target", "solution", "geography"];
+  const keys = ["problem", "target", "solution", "geography", "budget"];
 
   const getAxis = (q, i) => {
     if (typeof q === "string") return keys[i] || null;
@@ -32,9 +32,17 @@ export default function QuestionsBlock({
     )
   );
 
-  const axesToValidate = requiredAxes.length ? requiredAxes : keys;
+  const axesToValidate = requiredAxes.length ? requiredAxes : [...keys];
+  if (!axesToValidate.includes("budget")) axesToValidate.push("budget");
 
-  const isAxisValid = (axis) => (answers[axis] || "").trim().length > 3;
+  const isBudgetValid =
+    Number(answers.budget_min) > 0 &&
+    Number(answers.budget_max) >= Number(answers.budget_min) &&
+    (answers.budget_currency || "").trim().length >= 3;
+  const isAxisValid = (axis) => {
+    if (axis === "budget") return isBudgetValid;
+    return (answers[axis] || "").trim().length > 3;
+  };
   const isValid = axesToValidate.every(isAxisValid);
 
   const answeredCount = axesToValidate.filter(isAxisValid).length;
@@ -68,8 +76,8 @@ export default function QuestionsBlock({
         </div>
       </div>
 
-      {/* Scrollable questions area — max-height prevents page overflow */}
-      <div className="flex flex-col gap-3 overflow-y-auto p-[14px]" style={{ maxHeight: "55vh" }}>
+      {/* Questions area — full height on desktop, scroll only on small screens */}
+      <div className="flex flex-col gap-2.5 px-[14px] pb-3 pt-[12px] overflow-y-auto max-h-[72vh] lg:max-h-none lg:overflow-visible">
         {agentMessage && (
           <div className="flex items-start gap-2 rounded-xl border border-[#e8e4ff] bg-[#f8f7ff] px-3 py-2.5">
             <div className="mt-0.5 h-[6px] w-[6px] shrink-0 rounded-full bg-[#7F77DD]" />
@@ -84,6 +92,7 @@ export default function QuestionsBlock({
             const axis = getAxis(question, i) || `q${i}`;
             const text = getText(question);
             if (!text) return null;
+            if (axis === "budget") return null;
 
             const isGeo = axis === "geography";
             const isFilled = isAxisValid(axis);
@@ -126,9 +135,9 @@ export default function QuestionsBlock({
                       ? "Ex: Tunisie, France, Maroc, Algérie..."
                       : "Votre réponse (min. 4 caractères)..."
                   }
-                  rows={3}
+                  rows={2}
                   disabled={isLoading}
-                  className={`box-border w-full resize-y border-0 border-t bg-[color:var(--color-background-primary,#fff)] px-3 py-2.5 font-[var(--font-sans)] text-[13px] leading-[1.5] text-[color:var(--color-text-primary,#1a1040)] transition-colors focus:outline-none focus:ring-1 ${
+                  className={`box-border w-full resize-y border-0 border-t bg-[color:var(--color-background-primary,#fff)] px-3 py-2 font-[var(--font-sans)] text-[13px] leading-[1.5] text-[color:var(--color-text-primary,#1a1040)] transition-colors focus:outline-none focus:ring-1 ${
                     showError
                       ? "border-rose-300 focus:ring-rose-300"
                       : "border-[#AFA9EC] focus:ring-[#7F77DD]"
@@ -144,6 +153,81 @@ export default function QuestionsBlock({
               </div>
             );
           })}
+
+        <div
+          className={`overflow-hidden rounded-[var(--border-radius-md,10px)] border transition-colors ${
+            submitted && !isBudgetValid
+              ? "border-rose-400 shadow-[0_0_0_2px_rgba(225,29,72,0.08)]"
+              : isBudgetValid
+              ? "border-[#9FE1CB]"
+              : "border-[#AFA9EC]"
+          }`}
+        >
+          <div
+            className={`flex items-start gap-2 px-3 py-2 text-xs font-medium ${
+              isBudgetValid
+                ? "bg-[#f0fdf4] text-[#085041]"
+                : "bg-[#EEEDFE] text-[#3C3489]"
+            }`}
+          >
+            <span
+              className={`mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                isBudgetValid ? "bg-[#1D9E75] text-white" : "bg-[#7F77DD] text-white"
+              }`}
+            >
+              {isBudgetValid ? "✓" : "$"}
+            </span>
+            <span className="leading-[1.5]">
+              Budget de départ * — Minimum / Maximum / Devise
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 border-t border-[#AFA9EC] bg-white p-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={answers.budget_min ?? ""}
+              onChange={(e) =>
+                setAnswers((prev) => ({ ...prev, budget_min: e.target.value }))
+              }
+              disabled={isLoading}
+              placeholder="Minimum"
+              className="box-border w-full min-w-0 rounded-md border border-[#AFA9EC] px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-[#7F77DD]"
+            />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={answers.budget_max ?? ""}
+              onChange={(e) =>
+                setAnswers((prev) => ({ ...prev, budget_max: e.target.value }))
+              }
+              disabled={isLoading}
+              placeholder="Maximum"
+              className="box-border w-full min-w-0 rounded-md border border-[#AFA9EC] px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-[#7F77DD]"
+            />
+            <input
+              type="text"
+              maxLength={6}
+              value={answers.budget_currency || ""}
+              onChange={(e) =>
+                setAnswers((prev) => ({
+                  ...prev,
+                  budget_currency: e.target.value.toUpperCase(),
+                }))
+              }
+              disabled={isLoading}
+              placeholder="Devise (ex: EUR)"
+              className="box-border w-full min-w-0 rounded-md border border-[#AFA9EC] px-3 py-2 text-[13px] uppercase focus:outline-none focus:ring-1 focus:ring-[#7F77DD]"
+            />
+          </div>
+          {submitted && !isBudgetValid && (
+            <div className="bg-rose-50 px-3 py-1.5 text-[11px] text-rose-600">
+              Budget requis: minimum &gt; 0, maximum ≥ minimum, devise requise (ex: EUR).
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Submit button — always pinned at bottom */}

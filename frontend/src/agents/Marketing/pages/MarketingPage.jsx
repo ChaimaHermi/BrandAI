@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  FiTarget, FiUsers, FiRadio, FiDollarSign, FiFlag, FiCalendar,
+  FiTarget, FiUsers, FiRadio, FiLayout, FiFlag, FiCalendar,
 } from "react-icons/fi";
 import { usePipeline } from "@/context/PipelineContext";
 import { useMarketingAgent } from "@/agents/Marketing/hooks/useMarketingAgent";
@@ -9,29 +9,53 @@ import { ErrorBanner } from "@/shared/ui/ErrorBanner";
 import { Loader } from "@/shared/ui/Loader";
 import { SectionIntro } from "@/shared/ui/SectionIntro";
 import { MarketingHeader, SECTION_TABS } from "@/agents/Marketing/components/MarketingHeader";
-import { PositioningSection } from "@/agents/Marketing/components/sections/PositioningSection";
-import { TargetsSection }     from "@/agents/Marketing/components/sections/TargetsSection";
-import { ChannelsSection }    from "@/agents/Marketing/components/sections/ChannelsSection";
-import { PricingSection }     from "@/agents/Marketing/components/sections/PricingSection";
-import { GtmSection }         from "@/agents/Marketing/components/sections/GtmSection";
-import { ActionSection }      from "@/agents/Marketing/components/sections/ActionSection";
+import { PositioningSection }     from "@/agents/Marketing/components/sections/PositioningSection";
+import { TargetsSection }          from "@/agents/Marketing/components/sections/TargetsSection";
+import { ChannelsSection }         from "@/agents/Marketing/components/sections/ChannelsSection";
+import { ContentStrategySection }  from "@/agents/Marketing/components/sections/ContentStrategySection";
+import { GtmSection }              from "@/agents/Marketing/components/sections/GtmSection";
+import { ActionSection }           from "@/agents/Marketing/components/sections/ActionSection";
 
 const SECTION_MAP = {
   positioning: PositioningSection,
   targets:     TargetsSection,
   channels:    ChannelsSection,
-  pricing:     PricingSection,
+  content:     ContentStrategySection,
   gtm:         GtmSection,
   action:      ActionSection,
 };
 
 const SECTION_INTROS = {
-  positioning: { icon: FiTarget,    title: "Positionnement",        description: "Segment cible, différenciation, proposition de valeur et message principal." },
-  targets:     { icon: FiUsers,     title: "Cibles",                description: "Persona principal, focus segment et personas secondaires." },
-  channels:    { icon: FiRadio,     title: "Canaux de distribution", description: "Canaux prioritaires, secondaires, justification et ton éditorial." },
-  pricing:     { icon: FiDollarSign,title: "Stratégie Pricing",      description: "Modèle tarifaire, logique de pricing et hypothèses clés." },
-  gtm:         { icon: FiFlag,      title: "Go-to-Market",           description: "Premiers utilisateurs, stratégie de lancement, partenariats et tactiques de croissance." },
-  action:      { icon: FiCalendar,  title: "Plan d'action",          description: "Actions court terme, moyen terme et long terme pour le lancement." },
+  positioning: {
+    icon: FiTarget,
+    title: "Positionnement & Message",
+    description: "Segment cible, différenciation, proposition de valeur, tagline et message marketing.",
+  },
+  targets: {
+    icon: FiUsers,
+    title: "Cibles & Personas",
+    description: "Persona principal, segments secondaires et focus marché.",
+  },
+  channels: {
+    icon: FiRadio,
+    title: "Canaux & Budget",
+    description: "Canaux prioritaires et secondaires avec répartition budgétaire et justifications.",
+  },
+  content: {
+    icon: FiLayout,
+    title: "Stratégie de contenu",
+    description: "Piliers, formats, fréquence et CTA pour Facebook, Instagram et LinkedIn.",
+  },
+  gtm: {
+    icon: FiFlag,
+    title: "Go-to-Market",
+    description: "Premiers utilisateurs, stratégie de lancement, partenariats et tactiques de croissance.",
+  },
+  action: {
+    icon: FiCalendar,
+    title: "Plan d'action",
+    description: "Horizons court, moyen et long terme avec milestones mesurables.",
+  },
 };
 
 export default function MarketingPage() {
@@ -83,7 +107,6 @@ export default function MarketingPage() {
 
       {hasData && (
         <div className="flex flex-col gap-3">
-          {/* Section intro card */}
           {intro && (
             <SectionIntro
               icon={intro.icon}
@@ -91,12 +114,10 @@ export default function MarketingPage() {
               description={intro.description}
             />
           )}
-
           {ActiveSection && <ActiveSection plan={plan} />}
         </div>
       )}
 
-      {/* Section navigation */}
       {hasData && (
         <div className="flex items-center justify-between rounded-2xl border border-brand-border bg-white px-5 py-3 shadow-card">
           <button

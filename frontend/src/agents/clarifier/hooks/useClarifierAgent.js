@@ -21,6 +21,9 @@ function mapIdeaToClarifiedBlock(idea) {
     country: idea.clarity_country || "Non précisé",
     country_code: idea.clarity_country_code || "",
     language: idea.clarity_language || "fr",
+    budget_min: idea.clarity_answers?.budget_min ?? null,
+    budget_max: idea.clarity_answers?.budget_max ?? null,
+    budget_currency: idea.clarity_answers?.budget_currency || "",
   };
 }
 
@@ -36,6 +39,9 @@ export function useClarifierAgent(idea, token, options = {}) {
     target: "",
     solution: "",
     geography: "",
+    budget_min: "",
+    budget_max: "",
+    budget_currency: "",
   });
   const [clarifiedIdea, setClarifiedIdea] = useState(null);
   const [clarityScore, setClarityScore] = useState(0);
@@ -238,7 +244,7 @@ export function useClarifierAgent(idea, token, options = {}) {
   const submitAnswers = useCallback(async () => {
     if (!idea || currentStep !== "questions") return;
 
-    const keys = ["problem", "target", "solution", "geography"];
+    const keys = ["problem", "target", "solution", "geography", "budget"];
     const getAxis = (q, i) => {
       if (typeof q === "string") return keys[i] || null;
       return q?.axis || keys[i] || null;
@@ -251,10 +257,17 @@ export function useClarifierAgent(idea, token, options = {}) {
       )
     );
     const axesToValidate = requiredAxes.length ? requiredAxes : keys;
+    if (!axesToValidate.includes("budget")) axesToValidate.push("budget");
 
-    const isValid = axesToValidate.every(
-      (axis) => answers[axis]?.trim().length > 3
-    );
+    const isValid = axesToValidate.every((axis) => {
+      if (axis === "budget") {
+        const min = Number(answers.budget_min);
+        const max = Number(answers.budget_max);
+        const currency = (answers.budget_currency || "").trim();
+        return min > 0 && max >= min && currency.length >= 3;
+      }
+      return answers[axis]?.trim().length > 3;
+    });
     if (!isValid) return;
 
     setCurrentStep("answering");
@@ -285,6 +298,9 @@ export function useClarifierAgent(idea, token, options = {}) {
           answer_target: answers.target.trim(),
           answer_solution: answers.solution.trim(),
           answer_geography: (answers.geography || "").trim(),
+          answer_budget_min: Number(answers.budget_min),
+          answer_budget_max: Number(answers.budget_max),
+          answer_budget_currency: (answers.budget_currency || "").trim().toUpperCase(),
         },
         (eventType, data) => {
           if (eventType === "step") {
@@ -329,6 +345,9 @@ export function useClarifierAgent(idea, token, options = {}) {
                     target: answers.target || "",
                     solution: answers.solution || "",
                     geography: answers.geography || "",
+                    budget_min: Number(answers.budget_min),
+                    budget_max: Number(answers.budget_max),
+                    budget_currency: (answers.budget_currency || "").trim().toUpperCase(),
                   },
                 },
                 "clarified",

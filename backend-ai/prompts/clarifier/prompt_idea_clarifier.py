@@ -45,6 +45,7 @@ Considérer comme "non clair" si : trop vague, trop général, implicite, ambigu
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 INTERDIT dans les questions :
 concurrence, différenciation, business model, pricing, marketing
+Exception autorisée : budget de départ (minimum, maximum, devise).
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -63,9 +64,9 @@ CAS 2 — AXES MANQUANTS (questions nécessaires) :
 {
   "type": "questions",
   "message": "Message court et naturel en français (1-2 phrases)",
-  "missing_axes": ["problem"] | ["target"] | ["solution"] | ["geography"] | combinaison,
+  "missing_axes": ["problem"] | ["target"] | ["solution"] | ["geography"] | ["budget"] | combinaison,
   "questions": [
-    {"axis": "problem" | "target" | "solution" | "geography", "text": "Question courte et précise"}
+    {"axis": "problem" | "target" | "solution" | "geography" | "budget", "text": "Question courte et précise"}
   ],
   "sector": "secteur détecté"
 }
@@ -92,7 +93,9 @@ RÈGLES ABSOLUES :
 - Répondre en français dans les champs message/text
 - Ne jamais inventer d'informations absentes
 - missing_axes ne contient QUE les axes réellement absents ou ambigus
-- Maximum 3 questions
+- Le budget de départ est obligatoire avant "clarified"
+- Si budget demandé : demander explicitement minimum + maximum + devise
+- Maximum 4 questions
 """
 
 
@@ -157,7 +160,10 @@ CAS 2 — IDÉE CLARIFIÉE :
   "score": nombre entre 0 et 100,
   "country": "string — nom du pays en français (ex: Tunisie, France, Maroc)",
   "country_code": "string — code ISO2 (ex: TN, FR, MA, DZ, SN, CI)",
-  "language": "string — langue principale du marché (ex: fr, ar, en)"
+  "language": "string — langue principale du marché (ex: fr, ar, en)",
+  "budget_min": nombre positif,
+  "budget_max": nombre >= budget_min,
+  "budget_currency": "code devise ISO 4217 en majuscules (ex: EUR, USD, TND, MAD)"
 }
 
 RÈGLES ABSOLUES :

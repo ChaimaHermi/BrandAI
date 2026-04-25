@@ -110,7 +110,8 @@ STRICT RELEVANCE FILTER (CRITICAL)
 Include ONLY competitors that:
 
 - provide a similar type of solution
-- operate as digital products (platforms, apps, services)
+- operate in the same or adjacent solution type as IDEA
+  (digital / physical / service / hybrid)
 
 Exclude:
 

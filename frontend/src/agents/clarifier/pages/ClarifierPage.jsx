@@ -82,6 +82,9 @@ export default function ClarifierPage() {
         country: idea.clarity_country || "Non précisé",
         country_code: idea.clarity_country_code || "",
         language: idea.clarity_language || "fr",
+        budget_min: idea.clarity_answers?.budget_min ?? null,
+        budget_max: idea.clarity_answers?.budget_max ?? null,
+        budget_currency: idea.clarity_answers?.budget_currency || "",
       };
       setClarifiedIdea(restored);
       setClarityScore(idea.clarity_score ?? 0);

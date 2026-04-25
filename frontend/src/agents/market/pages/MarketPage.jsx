@@ -50,7 +50,7 @@ export default function MarketPage() {
   const { idea, token } = usePipeline();
   const location = useLocation();
   const lastAutoStartKeyRef = useRef("");
-  const { rawReport, xaiSteps, isLoading, error, loadLatest, startMarketAnalysis } =
+  const { report, rawReport, xaiSteps, isLoading, error, loadLatest, startMarketAnalysis } =
     useMarketAgent({ idea, token });
   const [activeTab, setActiveTab] = useState("apercu");
   const [showModal, setShowModal] = useState(false);
@@ -95,7 +95,8 @@ export default function MarketPage() {
     }
   }, [isLoading, error]);
 
-  const clarifiedIdea = rawReport?.clarified_idea ?? {
+  const normalizedReport = report?.raw ?? rawReport ?? {};
+  const clarifiedIdea = normalizedReport?.clarified_idea ?? {
     short_pitch:          idea?.clarity_short_pitch ?? "",
     problem:              idea?.clarity_problem ?? "",
     sector:               idea?.clarity_sector ?? "",
@@ -106,8 +107,8 @@ export default function MarketPage() {
   };
 
   const competitorsCount =
-    rawReport?.competitor?.top_competitors?.length ??
-    rawReport?.competitor?.competitors?.length ??
+    normalizedReport?.competitor?.top_competitors?.length ??
+    normalizedReport?.competitor?.competitors?.length ??
     0;
 
   const canRelaunch =
@@ -138,24 +139,29 @@ export default function MarketPage() {
       <SectionIntro icon={intro.icon} title={intro.title} description={intro.description} />
     ) : null;
 
-    if (activeTab === "raw")          return <>{introNode}<MarketRawDataViewer data={rawReport} /></>;
-    if (activeTab === "apercu")       return <>{introNode}<MarketApercu market={rawReport?.market} /></>;
+    if (activeTab === "raw")          return <>{introNode}<MarketRawDataViewer data={normalizedReport} /></>;
+    if (activeTab === "apercu")       return <>{introNode}<MarketApercu market={normalizedReport?.market} /></>;
     if (activeTab === "competiteurs") return (
       <>
         {introNode}
         <MarketCompetitors
           competitors={
-            rawReport?.competitor?.top_competitors ??
-            rawReport?.competitor?.competitors ??
+            normalizedReport?.competitor?.top_competitors ??
+            normalizedReport?.competitor?.competitors ??
             []
           }
         />
       </>
     );
-    if (activeTab === "voc")       return <>{introNode}<MarketVOC voc={rawReport?.voc} /></>;
-    if (activeTab === "tendances") return <>{introNode}<MarketTrendsRisks trends={rawReport?.trends} /></>;
-    if (activeTab === "strategie") return <>{introNode}<MarketStrategy strategy={rawReport?.strategy} /></>;
-    if (activeTab === "mots-cles") return <>{introNode}<MarketKeywords keywords={rawReport?.keywords} /></>;
+    if (activeTab === "voc")       return <>{introNode}<MarketVOC voc={normalizedReport?.voc} /></>;
+    if (activeTab === "tendances") return <>{introNode}<MarketTrendsRisks trends={normalizedReport?.trends} /></>;
+    if (activeTab === "strategie") return (
+      <>
+        {introNode}
+        <MarketStrategy strategy={report?.strategy} />
+      </>
+    );
+    if (activeTab === "mots-cles") return <>{introNode}<MarketKeywords keywords={normalizedReport?.keywords} /></>;
     const label = MARKET_TABS.find((t) => t.id === activeTab)?.label ?? "Section";
     return <MarketTabEmpty label={label} />;
   }
@@ -179,7 +185,7 @@ export default function MarketPage() {
 
       <MarketDashboardHeader
         clarified_idea={clarifiedIdea}
-        idea_id={rawReport?.idea_id ?? idea?.id}
+        idea_id={normalizedReport?.idea_id ?? rawReport?.idea_id ?? idea?.id}
         competitorsCount={competitorsCount}
       />
 
@@ -192,7 +198,7 @@ export default function MarketPage() {
 
       {error && <ErrorBanner message={error} />}
 
-      {!isLoading && rawReport && (
+      {!isLoading && normalizedReport && (
         <>
           <TabBar tabs={MARKET_TABS} activeId={activeTab} onChange={setActiveTab} />
           <div className="flex flex-col gap-3">

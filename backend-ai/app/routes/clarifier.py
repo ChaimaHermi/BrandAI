@@ -50,6 +50,9 @@ class ClarifierAnswerRequest(BaseModel):
     answer_target:   Optional[str] = ""
     answer_solution: Optional[str] = ""
     answer_geography: Optional[str] = ""
+    answer_budget_min: Optional[float] = None
+    answer_budget_max: Optional[float] = None
+    answer_budget_currency: Optional[str] = ""
 
 
 # ══════════════════════════════════════════════════════════════
@@ -158,13 +161,14 @@ async def clarifier_start_stream(body: ClarifierStartRequest):
 async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
     start_time = time.time()
     logger.info(
-        "[clarifier/stream-answer] request idea_id=%s desc_len=%s answers_len={problem:%s,target:%s,solution:%s,geo:%s}",
+        "[clarifier/stream-answer] request idea_id=%s desc_len=%s answers_len={problem:%s,target:%s,solution:%s,geo:%s,budget_currency:%s}",
         body.idea_id,
         len((body.description or "").strip()),
         len((body.answer_problem or "").strip()),
         len((body.answer_target or "").strip()),
         len((body.answer_solution or "").strip()),
         len((body.answer_geography or "").strip()),
+        len((body.answer_budget_currency or "").strip()),
     )
 
     state = PipelineState(
@@ -188,6 +192,9 @@ async def _stream_clarifier_answer(body: ClarifierAnswerRequest):
             "target":   (body.answer_target   or "").strip(),
             "solution": (body.answer_solution or "").strip(),
             "geography": (body.answer_geography or "").strip(),
+            "budget_min": body.answer_budget_min,
+            "budget_max": body.answer_budget_max,
+            "budget_currency": (body.answer_budget_currency or "").strip().upper(),
         }
 
         # 1 seul appel — sécurité sur réponses + structuration
@@ -285,6 +292,9 @@ async def clarifier_answer(body: ClarifierAnswerRequest):
         "target":   (body.answer_target   or "").strip(),
         "solution": (body.answer_solution or "").strip(),
         "geography": (body.answer_geography or "").strip(),
+        "budget_min": body.answer_budget_min,
+        "budget_max": body.answer_budget_max,
+        "budget_currency": (body.answer_budget_currency or "").strip().upper(),
     }
     agent = IdeaClarifierAgent()
     return await agent.run_answer(state, answers)

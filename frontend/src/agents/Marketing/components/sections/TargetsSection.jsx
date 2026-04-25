@@ -1,45 +1,47 @@
-import { FiUser, FiUsers, FiCompass } from "react-icons/fi";
-import { AgentSection } from "@/agents/shared/components/AgentSection";
-
-function BulletList({ items }) {
-  if (!Array.isArray(items) || items.length === 0)
-    return <p className="text-sm text-ink-subtle">-</p>;
-  return (
-    <ul className="space-y-1.5">
-      {items.map((item, i) => (
-        <li key={i} className="flex items-start gap-2 text-sm text-ink">
-          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-muted" />
-          {item}
-        </li>
-      ))}
-    </ul>
-  );
-}
+import { FiUser, FiCompass, FiAward } from "react-icons/fi";
 
 export function TargetsSection({ plan }) {
   const t = plan?.targeting ?? {};
+
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      <AgentSection label="Persona principal">
-        <div className="flex items-start gap-2">
-          <FiUser size={14} className="mt-0.5 shrink-0 text-brand" />
-          <p className="text-sm leading-relaxed text-ink">{t.primary_persona || "-"}</p>
-        </div>
-      </AgentSection>
+    <div className="flex flex-col gap-4">
 
-      <AgentSection label="Focus segment">
-        <div className="flex items-start gap-2">
-          <FiCompass size={14} className="mt-0.5 shrink-0 text-amber-500" />
-          <p className="text-sm leading-relaxed text-ink">{t.market_segment_focus || "-"}</p>
+      {/* Primary persona — hero card */}
+      {t.primary_persona && (
+        <div className="overflow-hidden rounded-2xl border border-brand-border bg-gradient-to-br from-brand-light to-[#f3f0ff] shadow-card">
+          <div className="px-5 py-4">
+            <div className="mb-1 flex items-center gap-1.5">
+              <FiUser size={12} className="text-brand" />
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-brand">
+                Persona principal
+              </p>
+            </div>
+            <p className="mt-1 text-sm font-semibold leading-relaxed text-ink">
+              {t.primary_persona}
+            </p>
+          </div>
         </div>
-      </AgentSection>
+      )}
 
-      <AgentSection label="Personas secondaires" colSpan={2}>
-        <div className="flex items-start gap-2">
-          <FiUsers size={14} className="mt-0.5 shrink-0 text-ink-muted" />
-          <BulletList items={t.secondary_personas} />
+      {/* Segment focus */}
+      {t.market_segment_focus && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-card">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+            <FiCompass size={14} className="text-amber-600" />
+          </span>
+          <div>
+            <p className="mb-0.5 text-[10px] font-extrabold uppercase tracking-widest text-amber-500">
+              Focus segment
+            </p>
+            <p className="text-[13px] leading-relaxed text-ink">{t.market_segment_focus}</p>
+          </div>
         </div>
-      </AgentSection>
+      )}
+
+      {/* Empty fallback */}
+      {!t.primary_persona && !t.market_segment_focus && (
+        <p className="text-sm text-ink-subtle">N'existe pas</p>
+      )}
     </div>
   );
 }

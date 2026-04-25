@@ -85,6 +85,7 @@ class StepRunnerService:
 
     @staticmethod
     def _build_clarified_context(idea_row: dict[str, Any]) -> dict[str, Any]:
+        clarity_answers = idea_row.get("clarity_answers") or {}
         return {
             "short_pitch": idea_row.get("clarity_short_pitch") or idea_row.get("name") or "",
             "solution_description": idea_row.get("clarity_solution") or idea_row.get("description") or "",
@@ -94,6 +95,9 @@ class StepRunnerService:
             "country": (idea_row.get("clarity_country") or "").strip() or "Non précisé",
             "country_code": idea_row.get("clarity_country_code") or "TN",
             "language": idea_row.get("clarity_language") or "fr",
+            "budget_min": clarity_answers.get("budget_min"),
+            "budget_max": clarity_answers.get("budget_max"),
+            "budget_currency": (clarity_answers.get("budget_currency") or "").strip().upper(),
         }
 
     async def run_market_step(
@@ -191,7 +195,7 @@ class StepRunnerService:
             yield self.sse_event("step", {"status": "error", "stage": "marketing_plan", "message": f"Plan marketing non généré : {e}"})
 
         persisted_marketing = None
-        if marketing_plan:
+        if marketing_plan and not marketing_plan.get("error"):
             yield self.sse_event("step", {"status": "done", "stage": "marketing_plan", "message": "Plan marketing généré"})
             yield self.sse_event("step", {"status": "loading", "stage": "persist_marketing_result", "message": "Sauvegarde du plan marketing en base…"})
             persisted_marketing = await persist_marketing_result(
@@ -200,6 +204,15 @@ class StepRunnerService:
                 access_token=access_token,
             )
             yield self.sse_event("step", {"status": "done", "stage": "persist_marketing_result", "message": "Plan marketing sauvegardé"})
+        elif marketing_plan and marketing_plan.get("error"):
+            yield self.sse_event(
+                "step",
+                {
+                    "status": "error",
+                    "stage": "marketing_plan",
+                    "message": "Plan marketing invalide (JSON/schema). Non sauvegardé.",
+                },
+            )
 
         yield self.sse_event(
             "done",
@@ -272,7 +285,7 @@ class StepRunnerService:
         yield self.sse_event("step", {"status": "done", "stage": "persist_result", "message": "Analyse de marché sauvegardée"})
 
         persisted_marketing = None
-        if marketing_plan:
+        if marketing_plan and not marketing_plan.get("error"):
             yield self.sse_event("step", {"status": "loading", "stage": "persist_marketing_result", "message": "Sauvegarde du plan marketing en base…"})
             persisted_marketing = await persist_marketing_result(
                 idea_id=idea_id,
@@ -280,6 +293,15 @@ class StepRunnerService:
                 access_token=access_token,
             )
             yield self.sse_event("step", {"status": "done", "stage": "persist_marketing_result", "message": "Plan marketing sauvegardé"})
+        elif marketing_plan and marketing_plan.get("error"):
+            yield self.sse_event(
+                "step",
+                {
+                    "status": "error",
+                    "stage": "marketing_plan",
+                    "message": "Plan marketing invalide (JSON/schema). Non sauvegardé.",
+                },
+            )
 
         yield self.sse_event(
             "done",

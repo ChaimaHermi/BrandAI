@@ -37,16 +37,20 @@ class KeywordBundle:
 
       primary_keywords   → trend_queries (merge) / sizing contexte
       market_keywords    → market_sizing_agent
+      sector_growth_keywords → market_sizing_agent
       competitor_queries → competitor_agent
       voc_keywords       → voc_agent
       trend_keywords     → trend_queries (merge) / trends_agent
+      risk_keywords      → risk_queries / trends_agent
     """
 
     primary_keywords:   list[str] = field(default_factory=list)
     market_keywords:    list[str] = field(default_factory=list)
+    sector_growth_keywords: list[str] = field(default_factory=list)
     competitor_queries: list[str] = field(default_factory=list)
     voc_keywords:       list[str] = field(default_factory=list)
     trend_keywords:     list[str] = field(default_factory=list)
+    risk_keywords:      list[str] = field(default_factory=list)
 
     # ── Accesseurs par agent ──────────────────────────────────
 
@@ -55,7 +59,7 @@ class KeywordBundle:
         return {
             "primary_keywords": self.primary_keywords,
             "market_keywords":  self.market_keywords,
-            "trend_keywords":   self.trend_keywords,
+            "sector_growth_keywords": self.sector_growth_keywords,
         }
 
     def for_competitor(self) -> list[str]:
@@ -74,6 +78,7 @@ class KeywordBundle:
         return {
             "primary_keywords": self.primary_keywords,
             "trend_keywords":   self.trend_keywords,
+            "risk_keywords":    self.risk_keywords,
         }
 
     def to_dict(self) -> dict:
@@ -83,8 +88,10 @@ class KeywordBundle:
         return not any([
             self.primary_keywords,
             self.market_keywords,
+            self.sector_growth_keywords,
             self.voc_keywords,
             self.trend_keywords,
+            self.risk_keywords,
         ])
 
 
@@ -219,14 +226,18 @@ class KeywordExtractor(BaseAgent):
         return KeywordBundle(
             primary_keywords   = _clean(data.get("primary_keywords"),   6),
             market_keywords    = _clean(data.get("market_keywords"),    6),
+            sector_growth_keywords = _clean(data.get("sector_growth_keywords"), 3),
             competitor_queries = _clean(data.get("competitor_queries"), 10),
             voc_keywords       = _clean(data.get("voc_keywords"),       6),
-            trend_keywords     = _clean(data.get("trend_keywords"),     5),
+            trend_keywords     = _clean(data.get("trend_keywords"),     4),
+            risk_keywords      = _clean(data.get("risk_keywords"),      4),
         )
 
     def _log_bundle(self, b: KeywordBundle) -> None:
         logger.info(f"  primary_keywords   → {b.primary_keywords}")
         logger.info(f"  market_keywords    → {b.market_keywords}")
+        logger.info(f"  sector_growth_keywords → {b.sector_growth_keywords}")
         logger.info(f"  competitor_queries → {b.competitor_queries}")
         logger.info(f"  voc_keywords       → {b.voc_keywords}")
         logger.info(f"  trend_keywords     → {b.trend_keywords}")
+        logger.info(f"  risk_keywords      → {b.risk_keywords}")
