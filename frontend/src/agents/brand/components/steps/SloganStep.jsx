@@ -1,16 +1,12 @@
 import { useState } from "react";
 import SectionHeader from "../SectionHeader";
-import SloganSectionCard from "../SloganSectionCard";
 import RegenerateDialog from "../RegenerateDialog";
 import PillMultiGroup from "../PillMultiGroup";
 import PillSingleGroup from "../PillSingleGroup";
 import {
-  SLOGAN_FORMAT_OPTIONS,
   SLOGAN_LANGUE_OPTIONS,
   SLOGAN_LONGUEUR_OPTIONS,
-  SLOGAN_MESSAGE_USP_OPTIONS,
   SLOGAN_POSITIONNEMENT_OPTIONS,
-  SLOGAN_STYLE_LING_OPTIONS,
   SLOGAN_STYLE_TON_OPTIONS,
 } from "../../constants/brandFormOptions";
 
@@ -31,12 +27,12 @@ export default function SloganStep({
 }) {
   const [regenOpen, setRegenOpen] = useState(false);
   const [draftRemarks, setDraftRemarks] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const activeSlogan = selectedSlogan?.trim() || "";
 
   const canGenerate =
     Boolean(sloganForm.positionnement) &&
-    Boolean(sloganForm.longueur) &&
     Boolean(sloganForm.langue);
 
   const canClickPrimary =
@@ -120,126 +116,83 @@ export default function SloganStep({
 
       {!hasSloganResults && (
         <>
-          <SloganSectionCard
-            num="1"
-            title="Positionnement"
-            sub="Un seul choix — l'axe principal de votre marque"
-          >
-            <PillSingleGroup
-              label={null}
-              options={SLOGAN_POSITIONNEMENT_OPTIONS}
-              value={sloganForm.positionnement}
-              onChange={(v) =>
-                setSloganForm((s) => ({ ...s, positionnement: v }))
-              }
-            />
-          </SloganSectionCard>
+          <div className="bi-card mb-3">
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.08em] text-brand">
+              Préférences essentielles
+            </p>
+            <p className="mb-3 text-xs text-ink-subtle">
+              Renseignez seulement ces champs pour générer rapidement des slogans.
+            </p>
 
-          <SloganSectionCard
-            num="2"
-            title="Style & ton"
-            sub="Comment votre slogan doit sonner (plusieurs choix)"
-          >
-            <PillMultiGroup
-              label={null}
-              options={SLOGAN_STYLE_TON_OPTIONS}
-              selected={sloganForm.sloganStyleTones}
-              onChange={(v) =>
-                setSloganForm((s) => ({ ...s, sloganStyleTones: v }))
-              }
-            />
-          </SloganSectionCard>
-
-          <SloganSectionCard
-            num="3"
-            title="Message à transmettre"
-            sub="Ce que votre slogan doit communiquer (plusieurs choix)"
-          >
-            <PillMultiGroup
-              label={null}
-              options={SLOGAN_MESSAGE_USP_OPTIONS}
-              selected={sloganForm.messageUsp}
-              onChange={(v) =>
-                setSloganForm((s) => ({ ...s, messageUsp: v }))
-              }
-            />
-          </SloganSectionCard>
-
-          <SloganSectionCard
-            num="4"
-            title="Format du slogan"
-            sub="Structure grammaticale souhaitée (plusieurs choix)"
-          >
-            <PillMultiGroup
-              label={null}
-              options={SLOGAN_FORMAT_OPTIONS}
-              selected={sloganForm.sloganFormats}
-              onChange={(v) =>
-                setSloganForm((s) => ({ ...s, sloganFormats: v }))
-              }
-            />
-          </SloganSectionCard>
-
-          <SloganSectionCard
-            num="5"
-            title="Style linguistique"
-            sub="Effets de langage pour la mémorisation (plusieurs choix)"
-          >
-            <PillMultiGroup
-              label={null}
-              options={SLOGAN_STYLE_LING_OPTIONS}
-              selected={sloganForm.styleLinguistique}
-              onChange={(v) =>
-                setSloganForm((s) => ({ ...s, styleLinguistique: v }))
-              }
-            />
-          </SloganSectionCard>
-
-          <div className="mb-2.5 grid gap-2.5 sm:grid-cols-2">
-            <SloganSectionCard
-              num="6"
-              title="Longueur"
-              sub="Taille cible du slogan"
-            >
+            <div className="mb-3">
               <PillSingleGroup
-                label={null}
-                options={SLOGAN_LONGUEUR_OPTIONS}
-                value={sloganForm.longueur}
+                label="Positionnement"
+                options={SLOGAN_POSITIONNEMENT_OPTIONS}
+                value={sloganForm.positionnement}
                 onChange={(v) =>
-                  setSloganForm((s) => ({ ...s, longueur: v }))
+                  setSloganForm((s) => ({ ...s, positionnement: v }))
                 }
               />
-            </SloganSectionCard>
-            <SloganSectionCard
-              num="7"
-              title="Langue"
-              sub="Langue de rédaction"
-            >
+            </div>
+
+            <div className="mb-3">
               <PillSingleGroup
-                label={null}
+                label="Langue"
                 options={SLOGAN_LANGUE_OPTIONS}
                 value={sloganForm.langue}
                 onChange={(v) =>
                   setSloganForm((s) => ({ ...s, langue: v }))
                 }
               />
-            </SloganSectionCard>
+            </div>
+
+            <PillMultiGroup
+              label="Style & ton"
+              options={SLOGAN_STYLE_TON_OPTIONS}
+              selected={sloganForm.sloganStyleTones}
+              onChange={(v) =>
+                setSloganForm((s) => ({ ...s, sloganStyleTones: v }))
+              }
+            />
           </div>
 
-          <SloganSectionCard
-            num="8"
-            title="Mots à éviter"
-            sub="Termes à exclure de la génération"
-          >
-            <input
-              className="bi-inp"
-              value={sloganForm.motsEviter}
-              onChange={(e) =>
-                setSloganForm((s) => ({ ...s, motsEviter: e.target.value }))
-              }
-              placeholder="Ex: facile, simple, révolutionnaire…"
-            />
-          </SloganSectionCard>
+          <div className="bi-card">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="flex w-full items-center justify-between rounded-lg border border-brand-border bg-brand-light/40 px-3 py-2 text-left text-[12px] font-semibold text-brand-darker"
+            >
+              <span>Options avancées (optionnel)</span>
+              <span>{showAdvanced ? "−" : "+"}</span>
+            </button>
+
+            {showAdvanced && (
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+              <PillSingleGroup
+                label="Longueur"
+                options={SLOGAN_LONGUEUR_OPTIONS}
+                value={sloganForm.longueur}
+                onChange={(v) =>
+                  setSloganForm((s) => ({ ...s, longueur: v }))
+                }
+              />
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-ink" htmlFor="slogan-avoid-words">
+                  Mots à éviter
+                </label>
+                <input
+                  id="slogan-avoid-words"
+                  className="bi-inp"
+                  value={sloganForm.motsEviter}
+                  onChange={(e) =>
+                    setSloganForm((s) => ({ ...s, motsEviter: e.target.value }))
+                  }
+                  placeholder="Ex: facile, simple, révolutionnaire…"
+                />
+              </div>
+            </div>
+            )}
+          </div>
         </>
       )}
 
@@ -286,7 +239,7 @@ export default function SloganStep({
         {barShowsSloganGeneration
           ? "Génération…"
           : !hasSloganResults && !canGenerate
-            ? "Complétez Positionnement, Longueur et Langue pour continuer"
+            ? "Complétez Positionnement et Langue pour continuer"
             : hasSloganResults
               ? "Régénérer mes slogans →"
               : "Générer mes slogans →"}
@@ -294,7 +247,7 @@ export default function SloganStep({
 
       {canClickPrimary && !hasSloganResults && (
         <p className="mt-2 text-center text-[11px] text-ink-subtle">
-          Cinq propositions sont générées à partir du contexte projet et de vos
+          Trois propositions sont générées à partir du contexte projet et de vos
           choix.
         </p>
       )}

@@ -17,6 +17,7 @@ import {
   patchNamingResult,
   patchPaletteResult,
   patchSloganResult,
+  patchIdeaPipelineProgress,
 } from "../api/brandIdentity.api";
 import AboutProjectCard from "../components/AboutProjectCard";
 import SectionHeader from "../components/SectionHeader";
@@ -574,9 +575,20 @@ export default function BrandPage() {
       palette_id: b.palette?.id ?? null,
       logo_id: b.logo?.id ?? null,
     });
+    await patchIdeaPipelineProgress(idea.id, token, {
+      brand_identity: {
+        status: "completed",
+        completed: true,
+        completed_at: chosenAt,
+        chosen_name: namePick,
+        chosen_slogan: selectedSlogan || null,
+        logo_preview_url: logoPreviewUrl || null,
+      },
+    });
     const wKey = brandWizardStorageKey(idea.id);
     if (wKey) sessionStorage.removeItem(wKey);
     await refetchBrandRecord();
+    await refetchIdea?.();
     toast.success("Kit de marque enregistré avec succès !");
   }, [
     idea?.id,
@@ -588,7 +600,9 @@ export default function BrandPage() {
     paletteListDisplayed,
     selectedPaletteId,
     logoConceptsDisplayed,
+    logoPreviewUrl,
     refetchBrandRecord,
+    refetchIdea,
   ]);
 
   const canAdvance = useMemo(() => {

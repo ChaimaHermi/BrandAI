@@ -78,39 +78,62 @@ class MarketSizingAgent(BaseAgent):
         data["sources"] = sources
         return data
 
-    def _market_keywords_from_state(self, state: PipelineState) -> list[str]:
+    def _market_keywords_from_state(self, state: PipelineState, cap: int) -> list[str]:
         ma = state.market_analysis or {}
         if not isinstance(ma, dict):
             return []
         market_kws = ma.get("market_keywords")
         growth_kws = ma.get("sector_growth_keywords")
+        market_list = market_kws if isinstance(market_kws, list) else []
+        growth_list = growth_kws if isinstance(growth_kws, list) else []
+
+        if cap <= 0:
+            return []
+
+        # Option 2: guaranteed mix for market sizing queries.
+        # Keep a fixed split under the current cap (default 5): 3 market + 2 growth.
+        target_market = min(3, cap)
+        target_growth = min(2, max(cap - target_market, 0))
+
         out = []
         seen = set()
-        for raw in (
-            market_kws if isinstance(market_kws, list) else []
-        ) + (
-            growth_kws if isinstance(growth_kws, list) else []
-        ):
-            s = str(raw).strip()
-            if not s:
-                continue
-            k = s.lower()
-            if k in seen:
-                continue
-            seen.add(k)
-            out.append(s)
+
+        def push(items, take):
+            added = 0
+            for raw in items:
+                if added >= take or len(out) >= cap:
+                    break
+                s = str(raw).strip()
+                if not s:
+                    continue
+                k = s.lower()
+                if k in seen:
+                    continue
+                seen.add(k)
+                out.append(s)
+                added += 1
+
+        # First pass: guaranteed split
+        push(market_list, target_market)
+        push(growth_list, target_growth)
+
+        # Second pass: backfill remaining slots from both pools if needed
+        if len(out) < cap:
+            push(market_list, cap - len(out))
+        if len(out) < cap:
+            push(growth_list, cap - len(out))
+
         return out
 
     async def run(self, state: PipelineState) -> dict:
         self._log_start(state)
 
-        market_keywords = self._market_keywords_from_state(state)
         cap = int(
             MARKET_ANALYSIS_CONFIG.get("agents", {})
             .get("market_sizing", {})
             .get("max_keywords", 5)
         )
-        market_keywords = market_keywords[:cap]
+        market_keywords = self._market_keywords_from_state(state, cap)
 
         if not market_keywords:
             self._log_error("no market_keywords in state.market_analysis")

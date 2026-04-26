@@ -25,6 +25,13 @@ Extract ONLY if explicitly present in the text :
 - market_insights  : patterns répétés sur plusieurs utilisateurs
 - user_quotes      : citations verbatim extraites telles quelles
 
+Renforcement "market_insights" :
+- Inclure UNIQUEMENT un motif clairement répété dans le texte fourni
+  (plusieurs occurrences ou plusieurs formulations convergentes).
+- Si le motif n'est pas clairement répété : ne pas l'ajouter à
+  market_insights (même si cela semble logique).
+- Ne pas inférer des motivations psychologiques non écrites.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FORMAT PAR INSIGHT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━

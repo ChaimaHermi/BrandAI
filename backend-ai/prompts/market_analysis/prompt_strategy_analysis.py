@@ -75,6 +75,28 @@ INTERDIT dans tous les cas :
   → Transformer IDEA en un produit différent
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLARIFICATION « HYPOTHÈSE SECTEUR »
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Une hypothèse sectorielle est autorisée UNIQUEMENT pour expliquer
+  des dynamiques générales (ex. pression concurrentielle, besoin de confiance,
+  adoption digitale) SANS ajouter de faits précis absents des inputs.
+- INTERDIT dans une hypothèse sectorielle :
+  chiffres, pourcentages, volumes, dates, noms d'entreprises, lois précises,
+  citations, ou détails « comme si » issus d'une source non fournie.
+- Si tu ne peux pas formuler une hypothèse sans inventer un fait précis :
+  retourner [] pour ce point, ou une formulation ultra générale
+  sans entité nommée et sans chiffre.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PESTEL / SWOT — STYLE DES HYPOTHÈSES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Préférer des formulations prudentes pour type "hypothèse secteur" :
+  « en général », « souvent », « risque typique », « à valider ».
+- Ne jamais mélanger dans la même phrase un extrait sourcé et une invention.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RÈGLES SUR LE PESTEL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

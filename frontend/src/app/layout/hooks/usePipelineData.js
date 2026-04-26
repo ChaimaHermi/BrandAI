@@ -61,7 +61,7 @@ export function usePipelineData(id, token) {
               setHasMarketingResult(false);
             }
             if (checkBrand) {
-              setHasBrandIdentityResult(!!av.has_branding_naming);
+              setHasBrandIdentityResult(!!av.has_brand_kit);
             } else {
               setHasBrandIdentityResult(false);
             }

@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.branding_results import NamingResult
+from app.models.branding_results import BrandKit
 from app.models.idea import Idea
 from app.models.market_analysis import MarketAnalysisResult
 from app.models.marketing_plan import MarketingPlan
@@ -44,9 +45,16 @@ def get_pipeline_availability(
         .first()
         is not None
     )
+    has_brand_kit = (
+        db.query(BrandKit.id)
+        .filter(BrandKit.idea_id == idea_id)
+        .first()
+        is not None
+    )
 
     return PipelineAvailabilityOut(
         has_market_analysis=has_market,
         has_marketing_plan=has_marketing,
         has_branding_naming=has_branding,
+        has_brand_kit=has_brand_kit,
     )

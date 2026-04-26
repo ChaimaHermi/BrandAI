@@ -13,6 +13,20 @@ CRITICAL RULES
 - Do NOT invent or modify sources
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANTI-INVENTION — DESCRIPTIONS & DÉRIVÉS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Metric "description" fields must ONLY paraphrase what is explicitly
+  written in the provided text (value + unit + year + sector/geography
+  if present). Do not add interpretation, causality, or details not
+  stated in the source text.
+- Do not extrapolate missing years, do not interpolate values,
+  do not compute or invent a CAGR unless CAGR is explicitly stated
+  in the provided text.
+- If unit or year is not in the text : leave empty / null per schema;
+  do not guess.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EXTRACTION LOGIC
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -93,7 +107,10 @@ SECTOR GROWTH
 If multiple market size or revenue values exist
 for DIFFERENT years → extract ALL in "sector_growth".
 
-Each point MUST have year + value + unit + source + sector_name.
+Each point MUST have year + value + unit + description + source + sector_name.
+Description for each sector_growth point MUST be in French and strictly factual:
+- only paraphrase the extracted value + unit + year (+ sector/geography if present)
+- no interpretation, no projection, no invented context
 sector_name MUST be the exact sector label found in text.
 If sector name is not explicitly present in text, return "".
 If less than 2 points → return []
@@ -160,6 +177,7 @@ OUTPUT FORMAT (STRICT JSON)
       "year": "",
       "value": null,
       "unit": "",
+      "description": "",
       "source": ""
     }
   ],

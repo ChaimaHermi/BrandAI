@@ -41,10 +41,10 @@ export function mapMarketingPlan(payload) {
     },
 
     messaging: {
-      main_message:       messaging.main_message,
-      pain_point_focus:   messaging.pain_point_focus,
-      emotional_hook:     messaging.emotional_hook,
-      vocabulary_to_use:  normalizeArray(messaging.vocabulary_to_use),
+      main_message: messaging.main_message,
+      pain_point_focus: messaging.pain_point_focus,
+      emotional_hook: messaging.emotional_hook,
+      vocabulary_to_use: normalizeArray(messaging.vocabulary_to_use),
       vocabulary_to_avoid: normalizeArray(messaging.vocabulary_to_avoid),
     },
 
@@ -80,23 +80,23 @@ export function mapMarketingPlan(payload) {
 
     /* ── Go-to-Market ────────────────────────────────────────────── */
     goToMarket: {
-      targetFirstUsers:   goToMarket.target_first_users,
-      launchStrategy:     goToMarket.launch_strategy,
-      partnerships:       normalizeArray(goToMarket.partnerships),
+      targetFirstUsers: goToMarket.target_first_users,
+      launchStrategy: goToMarket.launch_strategy,
+      partnerships: normalizeArray(goToMarket.partnerships),
       earlyGrowthTactics: normalizeArray(goToMarket.early_growth_tactics),
     },
 
     /* ── Action Plan ─────────────────────────────────────────────── */
     actionPlan: {
-      shortTerm:         asActions(actionPlan?.short_term),
-      midTerm:           asActions(actionPlan?.mid_term),
-      longTerm:          asActions(actionPlan?.long_term),
+      shortTerm: asActions(actionPlan?.short_term),
+      midTerm: asActions(actionPlan?.mid_term),
+      longTerm: asActions(actionPlan?.long_term),
       shortTermMilestone: actionPlan?.short_term?.milestone,
-      midTermMilestone:   actionPlan?.mid_term?.milestone,
-      longTermMilestone:  actionPlan?.long_term?.milestone,
-      shortTermDuration:  actionPlan?.short_term?.duration,
-      midTermDuration:    actionPlan?.mid_term?.duration,
-      longTermDuration:   actionPlan?.long_term?.duration,
+      midTermMilestone: actionPlan?.mid_term?.milestone,
+      longTermMilestone: actionPlan?.long_term?.milestone,
+      shortTermDuration: actionPlan?.short_term?.duration,
+      midTermDuration: actionPlan?.mid_term?.duration,
+      longTermDuration: actionPlan?.long_term?.duration,
     },
 
     /* ── Misc ────────────────────────────────────────────────────── */

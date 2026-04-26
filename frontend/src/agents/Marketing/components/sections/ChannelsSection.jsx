@@ -58,49 +58,77 @@ function BudgetSummaryCard({ budget }) {
     : [total, currency].filter(Boolean).join(" ");
 
   return (
-    <div className="rounded-2xl border border-brand-border bg-gradient-to-br from-brand-light via-white to-[#f3f0ff] shadow-card overflow-hidden">
-      <div className="flex items-center gap-3 px-5 py-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-dark text-white shadow-pill">
-          <FiBarChart2 size={16} />
-        </span>
-        <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-brand">
-            Répartition du budget de lancement
-          </p>
-          {hasTop && <p className="mt-0.5 text-sm font-bold text-ink">{totalLabel || ""}</p>}
+    <div className="overflow-hidden rounded-2xl border border-brand-border bg-gradient-to-br from-brand-light via-white to-[#f5f3ff] shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-dark text-white shadow-pill">
+            <FiBarChart2 size={16} />
+          </span>
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-brand">
+              Répartition du budget de lancement
+            </p>
+            {hasTop && <p className="mt-0.5 text-sm font-bold text-ink">{totalLabel || ""}</p>}
+          </div>
         </div>
+        {!!currency && (
+          <span className="rounded-full border border-brand-border bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-dark">
+            Devise {currency}
+          </span>
+        )}
       </div>
-      <div className="border-t border-brand-border/50 bg-white/60 px-5 py-3 space-y-2">
-        {project_type_identified && (
-          <p className="text-[12px] leading-relaxed text-ink-body">
-            <span className="font-semibold text-ink">Type de projet :</span>{" "}
-            {project_type_identified}
-          </p>
-        )}
+
+      <div className="border-t border-brand-border/60 bg-white/80 px-5 py-4">
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {project_type_identified && (
+            <div className="rounded-lg border border-[color:var(--color-border,#ebebf5)] bg-[color:var(--color-surface,#fcfcff)] px-3 py-2.5">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
+                Type de projet
+              </p>
+              <p className="text-[12px] font-semibold leading-relaxed text-ink">
+                {project_type_identified}
+              </p>
+            </div>
+          )}
+          {totalLabel && (
+            <div className="rounded-lg border border-brand/20 bg-brand-light/35 px-3 py-2.5">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-brand">
+                Budget total estimé
+              </p>
+              <p className="text-[13px] font-bold leading-relaxed text-brand-darker">
+                {totalLabel}
+              </p>
+            </div>
+          )}
+        </div>
+
         {reasoning && (
-          <p className="text-[12px] leading-relaxed text-ink-body">
-            <span className="font-semibold text-ink">Justification :</span>{" "}
-            {reasoning}
-          </p>
+          <div className="mt-2.5 rounded-lg border border-[color:var(--color-border,#ebebf5)] bg-[color:var(--color-surface,#fcfcff)] px-3 py-2.5">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
+              Justification
+            </p>
+            <p className="text-[12px] leading-relaxed text-ink-body">{reasoning}</p>
+          </div>
         )}
+
         {rows.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="mt-3 overflow-x-auto rounded-xl border border-brand-border/60 bg-white">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-brand-border/60">
-                  <th className="py-2 pr-3 text-left font-semibold text-ink-muted">Poste</th>
-                  <th className="py-2 pr-3 text-right font-semibold text-ink-muted">%</th>
-                  <th className="py-2 pr-3 text-right font-semibold text-ink-muted">Montant</th>
-                  <th className="py-2 text-left font-semibold text-ink-muted">Justification</th>
+                <tr className="border-b border-brand-border/60 bg-[color:var(--color-surface,#f8f7ff)]">
+                  <th className="px-3 py-2.5 text-left font-semibold text-ink-muted">Poste</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-ink-muted">%</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-ink-muted">Montant</th>
+                  <th className="px-3 py-2.5 text-left font-semibold text-ink-muted">Justification</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, idx) => (
-                  <tr key={`budget-row-${idx}`} className="border-b border-brand-border/30">
-                    <td className="py-2 pr-3 text-ink">{r?.poste || ""}</td>
-                    <td className="py-2 pr-3 text-right text-ink">{r?.percent ?? ""}</td>
-                    <td className="py-2 pr-3 text-right text-ink">{r?.amount || ""}</td>
-                    <td className="py-2 text-ink-body">{r?.justification || ""}</td>
+                  <tr key={`budget-row-${idx}`} className="border-b border-brand-border/30 last:border-b-0">
+                    <td className="px-3 py-2.5 text-ink">{r?.poste || ""}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold text-ink">{r?.percent ?? ""}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold text-ink">{r?.amount || ""}</td>
+                    <td className="px-3 py-2.5 text-ink-body">{r?.justification || ""}</td>
                   </tr>
                 ))}
               </tbody>

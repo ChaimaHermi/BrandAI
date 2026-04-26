@@ -9,6 +9,17 @@ from tools.idea_tools import validate_idea_input
 logger = logging.getLogger(__name__)
 
 
+def _answer_value_nonempty(value) -> bool:
+    """True if the user provided a non-empty answer (text or numeric budget field)."""
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (int, float)):
+        return True
+    return bool(value)
+
+
 # ══════════════════════════════════════════════════════════════
 # UTILITAIRE — Détection texte incohérent SANS LLM
 # ══════════════════════════════════════════════════════════════
@@ -173,16 +184,6 @@ class IdeaClarifierAgent(BaseAgent):
                 and q.get("text", "").strip()
             ]
             missing_axes = [a for a in missing_axes if a in valid_axes]
-            # Budget de départ toujours obligatoire dans le formulaire de questions.
-            if not any(q.get("axis") == "budget" for q in questions):
-                questions.append(
-                    {
-                        "axis": "budget",
-                        "text": "Quel est votre budget de départ (minimum, maximum et devise) ?",
-                    }
-                )
-            if "budget" not in missing_axes:
-                missing_axes.append("budget")
             return {
                 "type": "questions",
                 "message": (raw_result.get("message") or "").strip(),
@@ -441,7 +442,7 @@ class IdeaClarifierAgent(BaseAgent):
 
         Retourne un dict avec type = "refused" | "clarified"
         """
-        if not answers or not any(v and v.strip() for v in answers.values()):
+        if not answers or not any(_answer_value_nonempty(v) for v in answers.values()):
             raise ValueError("Aucune réponse fournie.")
 
         safety_block = await self._run_safety_gate(
@@ -486,7 +487,7 @@ class IdeaClarifierAgent(BaseAgent):
         Délègue vers run_start() ou run_answer() selon le contexte.
         Conservé pour ne pas modifier la route.
         """
-        if answers and any(v and v.strip() for v in answers.values()):
+        if answers and any(_answer_value_nonempty(v) for v in answers.values()):
             return await self.run_answer(state, answers)
         return await self.run_start(state)
 

@@ -30,10 +30,11 @@ export function usePipelineStatus({
     const marketingDone =
       hasMarketingResult || idea?.status === "done";
 
+    const brandProgress = idea?.pipeline_progress?.brand_identity || {};
     const brandIdentityDone =
-      hasBrandIdentityResult ||
-      (Array.isArray(idea?.pipeline_progress?.brand_identity?.name_options) &&
-        idea.pipeline_progress.brand_identity.name_options.length > 0);
+      brandProgress?.completed === true ||
+      brandProgress?.status === "completed" ||
+      brandProgress?.status === "validated";
 
     const pipelineCompleted = marketDone || marketingDone;
 
@@ -58,7 +59,8 @@ export function usePipelineStatus({
       }
       if (agentId === "brand") {
         if (brandIdentityDone) return "done";
-        return activeAgentId === "brand" ? "active" : "pending";
+        if (activeAgentId === "brand" || hasBrandIdentityResult) return "active";
+        return "pending";
       }
       // Placeholder agents (content, website, optimizer)
       if (pipelineCompleted) return "pending";

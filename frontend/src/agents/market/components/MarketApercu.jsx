@@ -172,6 +172,7 @@ function SectorGrowthChart({ sectorName, chartPoints, unitLabel, sectorGrowth })
                     <th className="py-2 pr-4 text-left font-semibold text-ink-muted">Annee</th>
                     <th className="py-2 pr-4 text-right font-semibold text-ink-muted">Valeur</th>
                     <th className="py-2 pr-4 text-right font-semibold text-ink-muted">Unite</th>
+                    <th className="py-2 pr-4 text-left font-semibold text-ink-muted">Description</th>
                     <th className="py-2 text-left font-semibold text-ink-muted">Source</th>
                   </tr>
                 </thead>
@@ -181,6 +182,11 @@ function SectorGrowthChart({ sectorName, chartPoints, unitLabel, sectorGrowth })
                       <td className="py-2 pr-4 font-medium text-ink">{pt?.year ?? "N/A"}</td>
                       <td className="py-2 pr-4 text-right text-ink">{pt?.value ?? "N/A"}</td>
                       <td className="py-2 pr-4 text-right text-ink-muted">{pt?.unit || "—"}</td>
+                      <td className="py-2 pr-4 text-left text-ink-muted">
+                        {typeof pt?.description === "string" && pt.description.trim()
+                          ? pt.description
+                          : "—"}
+                      </td>
                       <td className="py-2 text-left">
                         {pt?.source && typeof pt.source === "string" && pt.source.startsWith("http") ? (
                           <a
@@ -317,6 +323,8 @@ export default function MarketApercu({ market }) {
           const description = metric.description?.trim?.() || "";
           const isMissing = value === null || value === undefined || value === "";
 
+          if (isMissing) return null;
+
           return (
             <div
               key={key}
@@ -335,16 +343,12 @@ export default function MarketApercu({ market }) {
 
               {/* Value */}
               <div>
-                {isMissing ? (
-                  <span className="text-sm font-medium italic text-ink-subtle">N'existe pas</span>
-                ) : (
-                    <span className="text-xl font-bold text-ink">
-                    {value}
-                    {unit && (
-                      <span className="ml-1 text-xs font-normal text-ink-muted">{unit}</span>
-                    )}
-                  </span>
-                )}
+                <span className="text-xl font-bold text-ink">
+                  {value}
+                  {unit && (
+                    <span className="ml-1 text-xs font-normal text-ink-muted">{unit}</span>
+                  )}
+                </span>
                 {!!year && (
                   <span className="ml-2 inline-block rounded-full bg-brand-light px-2 py-0.5 text-2xs font-semibold text-brand">
                     {year}
@@ -403,6 +407,11 @@ export default function MarketApercu({ market }) {
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {marketSignals.map((signal, idx) => {
+              const signalValue = signal?.value;
+              const isSignalMissing =
+                signalValue === null || signalValue === undefined || signalValue === "";
+              if (isSignalMissing) return null;
+
               const hasSource = typeof signal?.source === "string" && signal.source.trim();
               const desc = typeof signal?.description === "string" ? signal.description.trim() : "";
               const titleFr = desc || formatMetricFallback(signal.metric);
@@ -425,7 +434,7 @@ export default function MarketApercu({ market }) {
                   {/* Value + unit + year */}
                   <div className="flex flex-wrap items-baseline gap-1">
                     <span className="text-xl font-bold text-brand-dark">
-                      {signal.value ?? "N'existe pas"}
+                      {signal.value}
                     </span>
                     {signal.unit && (
                       <span className="text-xs font-normal text-ink-muted">{signal.unit}</span>

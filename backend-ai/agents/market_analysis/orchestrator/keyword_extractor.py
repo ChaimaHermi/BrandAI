@@ -129,14 +129,17 @@ class KeywordExtractor(BaseAgent):
 
         country = (idea.get("country") or "").strip() or (idea.get("country_code") or "US")
 
+        clarified_idea_json = json.dumps(idea or {}, ensure_ascii=False)
+
         user_prompt = USER_PROMPT.format(
-            short_pitch          = idea.get("short_pitch",          "")[:100],
-            solution_description = idea.get("solution_description", "")[:150],
-            problem              = idea.get("problem",              "")[:100],
-            target_users         = idea.get("target_users",         "")[:80],
-            sector               = idea.get("sector",               "")[:50],
-            country              = country[:80],
-            country_code         = idea.get("country_code",         "US"),
+            short_pitch=idea.get("short_pitch", ""),
+            solution_description=idea.get("solution_description", ""),
+            problem=idea.get("problem", ""),
+            target_users=idea.get("target_users", ""),
+            sector=idea.get("sector", ""),
+            country=country,
+            country_code=idea.get("country_code", "US"),
+            clarified_idea_json=clarified_idea_json,
         )
 
         for attempt in range(3):

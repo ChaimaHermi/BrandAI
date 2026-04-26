@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePipeline } from "@/context/PipelineContext";
 import { useClarifierAgent } from "../hooks/useClarifierAgent";
 import { CLARITY_SCORE_MIN_PIPELINE } from "../constants";
@@ -9,6 +10,7 @@ import ClarifiedBlock from "../components/ClarifiedBlock";
 import RefusedBlock from "../components/RefusedBlock";
 
 export default function ClarifierPage() {
+  const navigate = useNavigate();
   const { idea, token, refetch: refetchIdea, onLaunchPipeline, pipelineEnabled, pipelineCompleted } = usePipeline();
   const xaiHideTimerRef = useRef(null);
   const {
@@ -145,7 +147,7 @@ export default function ClarifierPage() {
 
         {/* Title + subtitle */}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-extrabold text-ink">Idea Clarifier Agent</p>
+          <p className="text-sm font-extrabold text-ink">Idea clarifier</p>
           <p className="text-xs text-ink-subtle">Analyse et structure votre idée · Étape 1 sur 6</p>
         </div>
 
@@ -220,6 +222,7 @@ export default function ClarifierPage() {
           setAnswers={setAnswers}
           onSubmit={submitAnswers}
           isLoading={currentStep === "answering"}
+          onRewriteIdea={() => navigate("/ideas/new")}
         />
       )}
 

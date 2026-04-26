@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { apiGetIdeas, apiDeleteIdea, getErrorMessage } from "@/services/ideaApi";
+import { fetchBrandingBundle, mergeGeneratedFromBundle } from "@/agents/brand/api/brandIdentity.api";
 import { toast } from "react-toastify";
 import { useAuth } from "@/shared/hooks/useAuth";
 
@@ -26,6 +27,10 @@ const SECTOR_STYLES = {
 
 function getSectorStyle(sector) {
   return SECTOR_STYLES[sector?.toLowerCase()] ?? SECTOR_STYLES.default;
+}
+
+function getDisplaySector(idea) {
+  return String(idea?.clarity_sector || idea?.sector || "").trim();
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -64,14 +69,58 @@ function getStatusMeta(idea) {
   return map[idea?.status] ?? { cls: "text-ink-subtle", label: `En attente · ${pct}%` };
 }
 
-function getInitials(idea) {
-  return (idea.name || idea.description || "?").trim().slice(0, 2).toUpperCase();
+function getInitials(idea, brandPreview) {
+  return (getDisplayName(idea, brandPreview) || "?").trim().slice(0, 2).toUpperCase();
 }
 
-function getDisplayName(idea) {
+function getBrandChosenName(idea, brandPreview) {
+  const previewName = String(brandPreview?.chosenName || "").trim();
+  if (previewName) return previewName;
+  return String(idea?.pipeline_progress?.brand_identity?.chosen_name || "").trim();
+}
+
+function getBrandLogoUrl(idea, brandPreview) {
+  const previewLogo = String(brandPreview?.logoUrl || "").trim();
+  if (previewLogo) return previewLogo;
+
+  const bi = idea?.pipeline_progress?.brand_identity || {};
+  const direct = String(bi?.logo_preview_url || "").trim();
+  if (direct) return direct;
+
+  const concepts = Array.isArray(bi?.logo_concepts) ? bi.logo_concepts : [];
+  const c0 = concepts[0] || {};
+
+  const b64 = String(c0?.image_base64 || "").trim();
+  const mime = String(c0?.image_mime || "").trim();
+  if (b64 && mime) return `data:${mime};base64,${b64}`;
+
+  const imageUrl = String(c0?.image_url || c0?.url || "").trim();
+  if (imageUrl) return imageUrl;
+
+  return "";
+}
+
+function isBrandIdentityCompleted(idea) {
+  const bi = idea?.pipeline_progress?.brand_identity || {};
+  return (
+    bi?.completed === true ||
+    bi?.status === "completed" ||
+    bi?.status === "validated"
+  );
+}
+
+function getDisplayName(idea, brandPreview) {
+  const chosenBrandName = getBrandChosenName(idea, brandPreview);
+  if (isBrandIdentityCompleted(idea) && chosenBrandName) return chosenBrandName;
   if (idea.name?.trim()) return idea.name;
   const desc = idea.description || "";
   return desc.length > 48 ? `${desc.slice(0, 48)}…` : desc || "Idée sans nom";
+}
+
+function getProjectDescription(idea) {
+  const desc = String(idea?.description || "").trim();
+  if (!desc) return "Description non renseignée.";
+  return desc.length > 120 ? `${desc.slice(0, 120)}…` : desc;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -144,8 +193,9 @@ function EmptyIdeas({ onNew }) {
 }
 
 /** Single idea row */
-function IdeaRow({ idea, onNavigate, onDelete }) {
-  const { bg, text, avatarFrom, avatarTo } = getSectorStyle(idea.sector);
+function IdeaRow({ idea, brandPreview, onNavigate, onDelete }) {
+  const displaySector = getDisplaySector(idea);
+  const { bg, text, avatarFrom, avatarTo } = getSectorStyle(displaySector);
   const { cls: statusCls, label: statusLabel } = getStatusMeta(idea);
   const progress  = getProgress(idea);
   const isDone    = idea.status === "done";
@@ -157,21 +207,41 @@ function IdeaRow({ idea, onNavigate, onDelete }) {
     >
       {/* Avatar */}
       <div
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold"
+        className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-xs font-extrabold"
         style={{ background: `linear-gradient(135deg, ${avatarFrom}, ${avatarTo})` }}
       >
-        <span className={text}>{getInitials(idea)}</span>
+        {getBrandLogoUrl(idea, brandPreview) ? (
+          <img
+            src={getBrandLogoUrl(idea, brandPreview)}
+            alt={`Logo ${getDisplayName(idea, brandPreview)}`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className={text}>{getInitials(idea, brandPreview)}</span>
+        )}
       </div>
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="mb-1 truncate text-base font-bold text-ink">
-          {getDisplayName(idea)}
+        <div className="mb-1 flex items-center gap-2">
+          {getBrandLogoUrl(idea, brandPreview) && (
+            <img
+              src={getBrandLogoUrl(idea, brandPreview)}
+              alt={`Logo ${getDisplayName(idea, brandPreview)}`}
+              className="h-5 w-5 shrink-0 rounded-md border border-brand-border object-cover"
+            />
+          )}
+          <p className="min-w-0 truncate text-base font-bold text-ink">
+            {getDisplayName(idea, brandPreview)}
+          </p>
+        </div>
+        <p className="mb-1.5 line-clamp-1 text-xs text-ink-subtle">
+          {getProjectDescription(idea)}
         </p>
         <div className="flex items-center gap-2">
-          {idea.sector && (
+          {displaySector && (
             <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${bg} ${text}`}>
-              {idea.sector}
+              {displaySector}
             </span>
           )}
           <span className="text-xs text-ink-subtle">
@@ -309,6 +379,7 @@ export default function DashboardPage() {
   const [totalFromApi,setTotalFromApi]= useState(0);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState("");
+  const [brandingPreviewByIdea, setBrandingPreviewByIdea] = useState({});
   const [search,      setSearch]      = useState("");
   const [statusFilter,setStatusFilter]= useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -340,7 +411,9 @@ export default function DashboardPage() {
     const q  = search.trim().toLowerCase();
     if (q) list = list.filter((i) =>
       (i.name || "").toLowerCase().includes(q) ||
-      (i.sector || "").toLowerCase().includes(q),
+      (i.description || "").toLowerCase().includes(q) ||
+      getBrandChosenName(i).toLowerCase().includes(q) ||
+      getDisplaySector(i).toLowerCase().includes(q)
     );
     if (statusFilter) list = list.filter((i) => i.status === statusFilter);
     return list;
@@ -351,6 +424,45 @@ export default function DashboardPage() {
     const start = (currentPage - 1) * IDEAS_PER_PAGE;
     return filteredIdeas.slice(start, start + IDEAS_PER_PAGE);
   }, [filteredIdeas, currentPage]);
+
+  useEffect(() => {
+    if (!token || pageIdeas.length === 0) return;
+    let cancelled = false;
+    const missingIdeas = pageIdeas.filter((idea) => !brandingPreviewByIdea[idea.id]);
+    if (missingIdeas.length === 0) return;
+
+    (async () => {
+      const entries = await Promise.all(
+        missingIdeas.map(async (idea) => {
+          try {
+            const bundle = await fetchBrandingBundle(idea.id, token);
+            const merged = mergeGeneratedFromBundle(bundle);
+            const chosenName = String(bundle?.naming?.chosen_name || "").trim();
+            const concepts = Array.isArray(merged?.logo_concepts) ? merged.logo_concepts : [];
+            const c0 = concepts[0] || {};
+            let logoUrl = "";
+            const b64 = String(c0?.image_base64 || "").trim();
+            const mime = String(c0?.image_mime || "").trim();
+            if (b64 && mime) logoUrl = `data:${mime};base64,${b64}`;
+            if (!logoUrl) logoUrl = String(c0?.image_url || c0?.url || "").trim();
+            return [idea.id, { chosenName, logoUrl }];
+          } catch {
+            return [idea.id, { chosenName: "", logoUrl: "" }];
+          }
+        }),
+      );
+      if (cancelled) return;
+      setBrandingPreviewByIdea((prev) => {
+        const next = { ...prev };
+        for (const [id, value] of entries) next[id] = value;
+        return next;
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pageIdeas, token, brandingPreviewByIdea]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(1);
@@ -503,6 +615,7 @@ export default function DashboardPage() {
                 <IdeaRow
                   key={idea.id}
                   idea={idea}
+                  brandPreview={brandingPreviewByIdea[idea.id]}
                   onNavigate={navigate}
                   onDelete={handleDelete}
                 />

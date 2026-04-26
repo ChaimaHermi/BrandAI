@@ -256,8 +256,8 @@ export function useClarifierAgent(idea, token, options = {}) {
           .filter((a) => typeof a === "string" && a.length > 0)
       )
     );
-    const axesToValidate = requiredAxes.length ? requiredAxes : keys;
-    if (!axesToValidate.includes("budget")) axesToValidate.push("budget");
+    const axesToValidate = requiredAxes;
+    const asksBudget = axesToValidate.includes("budget");
 
     const isValid = axesToValidate.every((axis) => {
       if (axis === "budget") {
@@ -298,9 +298,11 @@ export function useClarifierAgent(idea, token, options = {}) {
           answer_target: answers.target.trim(),
           answer_solution: answers.solution.trim(),
           answer_geography: (answers.geography || "").trim(),
-          answer_budget_min: Number(answers.budget_min),
-          answer_budget_max: Number(answers.budget_max),
-          answer_budget_currency: (answers.budget_currency || "").trim().toUpperCase(),
+          answer_budget_min: asksBudget ? Number(answers.budget_min) : null,
+          answer_budget_max: asksBudget ? Number(answers.budget_max) : null,
+          answer_budget_currency: asksBudget
+            ? (answers.budget_currency || "").trim().toUpperCase()
+            : "",
         },
         (eventType, data) => {
           if (eventType === "step") {
@@ -345,9 +347,11 @@ export function useClarifierAgent(idea, token, options = {}) {
                     target: answers.target || "",
                     solution: answers.solution || "",
                     geography: answers.geography || "",
-                    budget_min: Number(answers.budget_min),
-                    budget_max: Number(answers.budget_max),
-                    budget_currency: (answers.budget_currency || "").trim().toUpperCase(),
+                    budget_min: asksBudget ? Number(answers.budget_min) : null,
+                    budget_max: asksBudget ? Number(answers.budget_max) : null,
+                    budget_currency: asksBudget
+                      ? (answers.budget_currency || "").trim().toUpperCase()
+                      : "",
                   },
                 },
                 "clarified",

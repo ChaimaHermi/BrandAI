@@ -41,6 +41,7 @@ CRITICAL RULES
 - Queries MUST be adapted to the idea dynamically
 - Queries MUST reflect real user search behavior
 - Queries MUST be specific (not generic)
+- Each query MUST preserve idea fidelity and contain at least one business anchor from the startup idea context
 - ALL keywords and queries MUST be in English only
 - Return ONLY valid JSON
 
@@ -141,6 +142,7 @@ Startup idea to analyze:
 - Sector          : {sector}
 - Country         : {country}
 - Country/Market  : {country_code}
+- Full clarified idea JSON: {clarified_idea_json}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TASK
@@ -164,6 +166,8 @@ First, understand :
   - what sector-specific data sources exist
 
 Then generate queries aligned with that understanding.
+
+Each generated query must keep strong alignment with the startup idea and include at least one business anchor present in the provided idea context.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MARKET KEYWORDS (CRITICAL)
