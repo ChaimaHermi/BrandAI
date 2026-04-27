@@ -42,6 +42,7 @@ import app.models.generated_content  # noqa
 import app.models.user_social_connection  # noqa
 import app.models.scheduled_publication  # noqa
 import app.models.notification  # noqa
+import app.models.website_project  # noqa
 from app.api.routes import (
     auth,
     ideas,
@@ -52,6 +53,7 @@ from app.api.routes import (
     social_connections,
     idea_scheduled_publications,
     notifications,
+    website_projects,
 )
 
 app = FastAPI(
@@ -123,6 +125,7 @@ app.include_router(branding_results.router, prefix="/api")
 app.include_router(social_connections.router, prefix="/api")
 app.include_router(idea_scheduled_publications.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(website_projects.router, prefix="/api")
 
 # ── Route de santé ────────────────────────────────────────────
 # GET /health → vérifie que l'API est en ligne

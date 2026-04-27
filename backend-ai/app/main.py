@@ -12,6 +12,7 @@ from app.routes import (
     market_analysis,
     market_strategy,
     social_publish,
+    website_builder,
 )
 from app.routes.branding import logo, naming, palette, slogan
 from config.social_publish_config import BRANDAI_AI_BASE, LINKEDIN_REDIRECT_URI
@@ -77,6 +78,7 @@ app.include_router(logo.router, prefix="/api/ai")
 app.include_router(content_generation.router, prefix="/api/ai")
 app.include_router(content_weekly_plan.router, prefix="/api/ai")
 app.include_router(social_publish.router, prefix="/api/ai")
+app.include_router(website_builder.router, prefix="/api/ai")
 
 
 @app.get("/health")
