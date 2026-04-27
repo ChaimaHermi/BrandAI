@@ -58,6 +58,48 @@ def _trim_to_html_bounds(text: str) -> str:
     return text.strip()
 
 
+def repair_html_document(html: str) -> str:
+    """
+    Répare un HTML tronqué par une limite de tokens.
+    Ferme les balises manquantes dans l'ordre inverse logique.
+    Appelé avant validate_html_document.
+    """
+    if not html:
+        return html
+    lower = html.lower()
+
+    # Ferme les balises ouvertes les plus courantes si elles manquent
+    # Ordre important : du plus profond au plus haut dans l'arbre
+    repairs = [
+        ("</section>",  "<section"),
+        ("</main>",     "<main"),
+        ("</nav>",      "<nav"),
+        ("</header>",   "<header"),
+        ("</footer>",   "<footer"),
+        ("</div>",      None),   # trop générique, on skip le count ici
+        ("</body>",     "<body"),
+        ("</html>",     "<html"),
+    ]
+
+    appended: list[str] = []
+    for closing_tag, opening_tag in repairs:
+        if closing_tag == "</div>":
+            continue  # skip les div (trop nombreuses, fausserait la réparation)
+        if opening_tag and opening_tag in lower and closing_tag.lower() not in lower:
+            appended.append(closing_tag)
+            lower += closing_tag  # mise à jour pour les vérifications suivantes
+
+    if appended:
+        import logging
+        logging.getLogger("brandai.website_builder.renderer").warning(
+            "[website_renderer] HTML tronqué détecté — balises ajoutées : %s",
+            ", ".join(appended),
+        )
+        html = html.rstrip() + "\n" + "\n".join(appended)
+
+    return html
+
+
 def validate_html_document(html: str) -> None:
     if not html or len(html) < HTML_MIN_LENGTH:
         raise RuntimeError(

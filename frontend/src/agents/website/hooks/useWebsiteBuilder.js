@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "@/shared/hooks/useAuth";
 import {
   apiFetchWebsiteContext,
+  apiFetchWebsiteProject,
   apiGenerateWebsiteDescription,
   apiGenerateWebsite,
   apiReviseWebsite,
@@ -59,6 +60,52 @@ function makeSystemMessage(content, kind = "info") {
   };
 }
 
+function toUiMessage(savedMsg) {
+  if (!savedMsg || typeof savedMsg !== "object") return null;
+  const role = savedMsg.role === "assistant" ? "bot" : savedMsg.role;
+  const createdAtRaw = Date.parse(String(savedMsg.created_at || ""));
+  const createdAt = Number.isFinite(createdAtRaw) ? createdAtRaw : Date.now();
+  const msgType = String(savedMsg.type || "");
+  const meta = savedMsg.meta && typeof savedMsg.meta === "object" ? savedMsg.meta : null;
+  const deploymentFromMeta = meta && (meta.full_url || meta.url) ? meta : null;
+
+  const base = {
+    id: savedMsg.id || newId(role === "bot" ? "bot" : role === "user" ? "user" : "sys"),
+    role,
+    content: String(savedMsg.content || ""),
+    createdAt,
+  };
+
+  if (role === "system") {
+    return {
+      ...base,
+      kind: msgType.includes("error") ? "error" : "info",
+    };
+  }
+
+  if (role === "bot") {
+    return {
+      ...base,
+      ...(msgType === "description_result" ? { title: "Phase 2 — Concept créatif" } : {}),
+      ...(msgType === "generation_result" ? { title: "Phase 3 — Site généré" } : {}),
+      ...(msgType === "deploy_result" ? { title: "Phase 5 — Site en ligne" } : {}),
+      ...(msgType === "deploy_result" && deploymentFromMeta ? { deployment: deploymentFromMeta } : {}),
+    };
+  }
+
+  return base;
+}
+
+function derivePhaseFromProject(project) {
+  if (!project || typeof project !== "object") return "context_ready";
+  if (project.status === "deployed" || project.status === "approved" || project.last_deployment_url) {
+    return "deployed";
+  }
+  if (project.current_html) return "ready";
+  if (project.description_json) return "description_ready";
+  return "context_ready";
+}
+
 export function useWebsiteBuilder() {
   const { id: routeId } = useParams();
   const { token } = useAuth();
@@ -76,6 +123,8 @@ export function useWebsiteBuilder() {
   const [deployment, setDeployment] = useState(null);
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
+  const [approved, setApproved] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState(0);
 
   const bootstrappedRef = useRef(false);
 
@@ -90,7 +139,7 @@ export function useWebsiteBuilder() {
   }, []);
 
   // ── PHASE 1 : Context ─────────────────────────────────────────────────────
-  const loadContext = useCallback(async () => {
+  const loadContext = useCallback(async ({ silent = false } = {}) => {
     if (!ideaId || !token) return;
     setPhase("loading_context");
     setError(null);
@@ -122,21 +171,27 @@ export function useWebsiteBuilder() {
         : null;
 
       setContext(flatContext);
-      pushBot("Contexte projet et identité de marque chargés.", {
-        phase: "context",
-        title: "Phase 1 — Contexte chargé",
-        context: flatContext,
-      });
-      pushBot(
-        "Prêt à imaginer votre site ? Je peux te proposer un **concept créatif** (sections, animations, ambiance) avant de coder.",
-        {
+      if (!silent) {
+        pushBot("Contexte projet et identité de marque chargés.", {
           phase: "context",
-          actions: [
-            { id: "describe", label: "Générer la description" },
-          ],
-        }
-      );
-      setPhase("context_ready");
+          title: "Phase 1 — Contexte chargé",
+          context: flatContext,
+        });
+        pushBot(
+          "Prêt à imaginer votre site ? Je peux te proposer un **concept créatif** (sections, animations, ambiance) avant de coder.",
+          {
+            phase: "context",
+            actions: [
+              { id: "describe", label: "Générer la description" },
+            ],
+          }
+        );
+      }
+      setPhase((prev) => {
+        // If a persisted editable/deployed state was restored, keep it.
+        if (silent && (prev === "ready" || prev === "deployed")) return prev;
+        return "context_ready";
+      });
     } catch (err) {
       setError(err?.message || "Impossible de charger le contexte.");
       pushSystem(
@@ -224,7 +279,7 @@ export function useWebsiteBuilder() {
   const reviseWebsite = useCallback(
     async (instruction) => {
       const trimmed = String(instruction || "").trim();
-      if (!trimmed || !ideaId || !token || !html) return;
+      if (!trimmed || !ideaId || !token || !html || approved) return;
       pushUser(trimmed);
       setPhase("revising");
       setError(null);
@@ -236,6 +291,7 @@ export function useWebsiteBuilder() {
         });
         setHtml(data?.html || html);
         setHtmlStats(data?.html_stats || null);
+        setCurrentVersion((v) => Math.max(1, v + 1));
         pushBot(
           "✅ Modification appliquée. Le preview est à jour.",
           { phase: "revision" }
@@ -247,7 +303,7 @@ export function useWebsiteBuilder() {
         setPhase("ready");
       }
     },
-    [ideaId, token, html, pushUser, pushBot, pushSystem]
+    [ideaId, token, html, approved, pushUser, pushBot, pushSystem]
   );
 
   // ── PHASE 5 : Deployment ──────────────────────────────────────────────────
@@ -293,13 +349,69 @@ export function useWebsiteBuilder() {
     [generateDescription, generateWebsite, deployWebsite]
   );
 
-  // Auto bootstrap : load context on mount
+  const bootstrapFromPersistence = useCallback(async () => {
+    if (!ideaId || !token) return false;
+    try {
+      const project = await apiFetchWebsiteProject(token, ideaId);
+      if (!project || typeof project !== "object") return false;
+      setApproved(Boolean(project.approved));
+      setCurrentVersion(Number(project.current_version) || 0);
+
+      let hasRestoredState = false;
+      if (
+        project.description_json &&
+        typeof project.description_json === "object" &&
+        Object.keys(project.description_json).length > 0
+      ) {
+        setDescription(project.description_json);
+        hasRestoredState = true;
+      }
+      if (typeof project.current_html === "string") {
+        setHtml(project.current_html);
+        if (project.current_html.trim().length > 0) {
+          hasRestoredState = true;
+        }
+      }
+
+      const hasDeploy = Boolean(project.last_deployment_url || project.last_deployment_id);
+      if (hasDeploy) {
+        setDeployment({
+          deployment_id: project.last_deployment_id || null,
+          full_url: project.last_deployment_url || null,
+          state: project.last_deployment_state || null,
+        });
+        hasRestoredState = true;
+      }
+
+      const savedConversation = Array.isArray(project.conversation_json)
+        ? project.conversation_json
+            .map((m) => toUiMessage(m))
+            .filter(Boolean)
+            .sort((a, b) => a.createdAt - b.createdAt)
+        : [];
+
+      if (savedConversation.length > 0) {
+        setMessages(savedConversation);
+        hasRestoredState = true;
+      }
+
+      setPhase(derivePhaseFromProject(project));
+      return hasRestoredState;
+    } catch {
+      return false;
+    }
+  }, [ideaId, token]);
+
+  // Auto bootstrap : restore persisted project + context
   useEffect(() => {
     if (bootstrappedRef.current) return;
     if (!ideaId || !token) return;
     bootstrappedRef.current = true;
-    loadContext();
-  }, [ideaId, token, loadContext]);
+    (async () => {
+      const restored = await bootstrapFromPersistence();
+      await loadContext({ silent: restored });
+    })();
+  }, [ideaId, token, loadContext, bootstrapFromPersistence]);
 
   const isBusy =
     phase === "loading_context" ||
@@ -308,7 +420,7 @@ export function useWebsiteBuilder() {
     phase === "revising" ||
     phase === "deploying";
 
-  const canChatRevise = phase === "ready" || phase === "deployed";
+  const canChatRevise = !approved && !isBusy && Boolean(html);
 
   return {
     ideaId,
@@ -322,6 +434,8 @@ export function useWebsiteBuilder() {
     deployment,
     messages,
     error,
+    approved,
+    currentVersion,
     loadContext,
     generateDescription,
     generateWebsite,

@@ -8,6 +8,7 @@
  */
 
 const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 async function handleResponse(res) {
   let data = null;
@@ -36,6 +37,12 @@ function authHeaders(token) {
 
 export async function apiFetchWebsiteContext(token, ideaId) {
   const url = `${AI_URL}/website/context?idea_id=${encodeURIComponent(ideaId)}`;
+  const res = await fetch(url, { headers: authHeaders(token) });
+  return handleResponse(res);
+}
+
+export async function apiFetchWebsiteProject(token, ideaId) {
+  const url = `${API_URL}/website/ideas/${encodeURIComponent(ideaId)}`;
   const res = await fetch(url, { headers: authHeaders(token) });
   return handleResponse(res);
 }

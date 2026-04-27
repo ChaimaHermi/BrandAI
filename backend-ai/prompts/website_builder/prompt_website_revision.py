@@ -59,6 +59,7 @@ BRAND KIT (rappel — toute modification doit le respecter) :
 - Couleur secondaire  : {ctx.secondary_color}
 - Couleur accent      : {ctx.accent_color}
 - Couleur fond        : {ctx.background_color}
+- Couleur surface     : {ctx.surface_color}
 - Couleur texte       : {ctx.text_color}
 - Police titres       : {ctx.title_font}
 - Police corps        : {ctx.body_font}

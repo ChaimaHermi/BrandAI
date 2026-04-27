@@ -9,7 +9,7 @@ LLM_CONFIG = {
     #           "groq"  → ChatGroq (openai/gpt-oss-120b via Groq)
     "provider": "azure",
     "model": "gpt-4o",
-    "temperature": 0.7,
+    "temperature": 0.85,
     "max_tokens": 1200,
 }
 

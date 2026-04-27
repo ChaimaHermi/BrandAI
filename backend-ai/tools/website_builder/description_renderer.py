@@ -26,7 +26,7 @@ def render_context_summary(ctx: BrandContext) -> str:
         f"🎨 **Couleurs** : `{ctx.primary_color}` · `{ctx.secondary_color}` · `{ctx.accent_color}`",
         f"🖼️ **Fond** : `{ctx.background_color}`",
         f"🔤 **Fonts** : {ctx.title_font} · {ctx.body_font}",
-        f"✨ **Style** : {ctx.visual_style}",
+        f"✨ **Palette** : {ctx.palette_direction}",
     ]
     if ctx.logo_url:
         lines.append(f"🎯 **Logo** : {ctx.logo_url}")

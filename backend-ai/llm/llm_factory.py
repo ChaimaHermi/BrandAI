@@ -95,6 +95,7 @@ def create_azure_openai_client(
     max_tokens: int = 1200,
     *,
     azure_deployment: str | None = None,
+    max_retries: int = 2,
 ) -> AzureChatOpenAI:
     if not AZURE_OPENAI_KEY or not AZURE_OPENAI_ENDPOINT:
         raise RuntimeError(
@@ -109,6 +110,7 @@ def create_azure_openai_client(
         api_version=AZURE_OPENAI_API_VERSION,
         temperature=temperature,
         max_tokens=max_tokens,
+        max_retries=max_retries,
     )
 
 

@@ -27,12 +27,19 @@ const TYPE_META = {
     bg: "bg-amber-50",
     border: "border-amber-200",
   },
+  website_deployed: {
+    icon: FiCheckCircle,
+    color: "text-emerald-500",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+  },
 };
 
 const PLATFORM_COLOR = {
   linkedin: "#0A66C2",
   facebook: "#1877F2",
   instagram: "#E4405F",
+  website: "#7C3AED",
 };
 
 function timeAgo(iso) {

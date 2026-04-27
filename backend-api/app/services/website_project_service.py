@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.idea import Idea
 from app.models.website_project import WebsiteProject
 from app.schemas.website_project import WebsiteMessageIn, WebsiteProjectPatch
+from app.services.notification_service import create_notification
 
 
 def _require_idea_for_user(db: Session, idea_id: int, user_id: int) -> Idea:
@@ -47,11 +48,34 @@ def patch_website_project(
     payload: WebsiteProjectPatch,
 ) -> WebsiteProject:
     row = get_or_create_website_project(db, idea_id, user_id)
+    previous_status = row.status
+    previous_deployment_url = row.last_deployment_url
     data = payload.model_dump(exclude_unset=True)
     for key, value in data.items():
         setattr(row, key, value)
     db.commit()
     db.refresh(row)
+
+    became_deployed = (
+        data.get("status") == "deployed"
+        and previous_status != "deployed"
+    )
+    deployment_url_changed = (
+        isinstance(data.get("last_deployment_url"), str)
+        and data.get("last_deployment_url")
+        and data.get("last_deployment_url") != previous_deployment_url
+    )
+    if became_deployed or deployment_url_changed:
+        create_notification(
+            db,
+            user_id=user_id,
+            type="website_deployed",
+            title="Site web déployé",
+            message="Votre site est en ligne avec succès.",
+            idea_id=idea_id,
+            platform="website",
+        )
+
     return row
 
 

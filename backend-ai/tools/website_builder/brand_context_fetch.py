@@ -54,14 +54,15 @@ class BrandContext:
     secondary_color: str
     accent_color: str
     background_color: str
+    surface_color: str
     text_color: str
 
     # Typography (peut venir du palette ou défaut)
     title_font: str
     body_font: str
 
-    # Texte libre, ex. "moderne, minimaliste, chaleureux"
-    visual_style: str
+    # Direction colorimétrique de la palette (ambiance des couleurs, PAS le style du site)
+    palette_direction: str
 
     # Données brutes pour debug / fallback éventuel
     raw_palette: dict[str, Any] = field(default_factory=dict)
@@ -83,10 +84,11 @@ class BrandContext:
             "secondary_color": self.secondary_color,
             "accent_color": self.accent_color,
             "background_color": self.background_color,
+            "surface_color": self.surface_color,
             "text_color": self.text_color,
             "title_font": self.title_font,
             "body_font": self.body_font,
-            "visual_style": self.visual_style,
+            "palette_direction": self.palette_direction,
             "raw_logo": self.raw_logo,
         }
 
@@ -278,11 +280,12 @@ def _build_brand_context(idea: dict[str, Any], bundle: dict[str, Any]) -> BrandC
         primary_color=_pick_color(roles, "primary", default="#111827"),
         secondary_color=_pick_color(roles, "secondary", default="#6B7280"),
         accent_color=_pick_color(roles, "accent", default="#F59E0B"),
-        background_color=_pick_color(roles, "background", "neutral", default="#FFFFFF"),
+        background_color=_pick_color(roles, "background", default="#FFFFFF"),
+        surface_color=_pick_color(roles, "surface", "neutral", default="#F3F4F6"),
         text_color=_pick_color(roles, "text", default="#111827"),
         title_font=str(palette_chosen.get("title_font") or DEFAULT_TITLE_FONT).strip(),
         body_font=str(palette_chosen.get("body_font") or DEFAULT_BODY_FONT).strip(),
-        visual_style=_extract_visual_style(palette_chosen or {}),
+        palette_direction=_extract_visual_style(palette_chosen or {}),
         raw_palette=palette_chosen or {},
         raw_logo=logo_chosen or {},
     )

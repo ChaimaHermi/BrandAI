@@ -67,6 +67,7 @@ from tools.website_builder.vercel_deploy import (
 from tools.website_builder.website_renderer import (
     extract_html_document,
     html_stats,
+    repair_html_document,
     validate_html_document,
 )
 
@@ -120,6 +121,7 @@ class WebsiteBuilderAgent(BaseAgent):
             temperature=temperature,
             max_tokens=max_tokens,
             azure_deployment=WEBSITE_BUILDER_AZURE_DEPLOYMENT,
+            max_retries=1,
         )
         messages = [
             SystemMessage(content=system_prompt),
@@ -130,7 +132,7 @@ class WebsiteBuilderAgent(BaseAgent):
         for attempt in range(1 + max(0, WEBSITE_LLM_MAX_RETRIES)):
             started = time.monotonic()
             logger.info(
-                "[website_builder] AZURE CALL START phase=%s attempt=%d/%d deployment=%s temp=%.2f max_tokens=%d prompt_chars=%d timeout=%.1fs",
+                "[website_builder] AZURE CALL START phase=%s attempt=%d/%d deployment=%s temp=%.2f max_tokens=%d prompt_chars=%d timeout=%s",
                 phase,
                 attempt + 1,
                 1 + max(0, WEBSITE_LLM_MAX_RETRIES),
@@ -138,15 +140,18 @@ class WebsiteBuilderAgent(BaseAgent):
                 temperature,
                 max_tokens,
                 len(system_prompt) + len(user_prompt),
-                timeout_seconds,
+                f"{timeout_seconds:.1f}s" if timeout_seconds and timeout_seconds > 0 else "disabled",
             )
             try:
-                response = await asyncio.wait_for(
-                    client.ainvoke(messages),
-                    timeout=timeout_seconds,
-                )
+                if timeout_seconds and timeout_seconds > 0:
+                    response = await asyncio.wait_for(
+                        client.ainvoke(messages),
+                        timeout=timeout_seconds,
+                    )
+                else:
+                    response = await client.ainvoke(messages)
                 break
-            except TimeoutError as exc:
+            except (TimeoutError, asyncio.TimeoutError) as exc:
                 timeout_exc = exc
                 elapsed = time.monotonic() - started
                 logger.warning(
@@ -158,12 +163,32 @@ class WebsiteBuilderAgent(BaseAgent):
                 if attempt < WEBSITE_LLM_MAX_RETRIES:
                     await asyncio.sleep(1.2 * (attempt + 1))
                 continue
+            except Exception as exc:
+                elapsed = time.monotonic() - started
+                logger.error(
+                    "[website_builder] AZURE CALL ERROR phase=%s attempt=%d after %.2fs error=%s: %s",
+                    phase,
+                    attempt + 1,
+                    elapsed,
+                    type(exc).__name__,
+                    str(exc)[:300],
+                )
+                if attempt < WEBSITE_LLM_MAX_RETRIES:
+                    await asyncio.sleep(1.2 * (attempt + 1))
+                    continue
+                raise RuntimeError(
+                    f"Azure OpenAI erreur non-récupérable phase={phase}: {exc}"
+                ) from exc
 
         if response is None:
+            if timeout_exc is not None:
+                raise RuntimeError(
+                    f"Azure OpenAI timeout pendant la phase {phase} "
+                    f"(>{timeout_seconds:.0f}s, retries={WEBSITE_LLM_MAX_RETRIES})."
+                ) from timeout_exc
             raise RuntimeError(
-                f"Azure OpenAI timeout pendant la phase {phase} "
-                f"(>{timeout_seconds:.0f}s, retries={WEBSITE_LLM_MAX_RETRIES})."
-            ) from timeout_exc
+                f"Azure OpenAI n'a retourné aucune réponse exploitable (phase={phase})."
+            )
 
         elapsed = time.monotonic() - started
         content = (response.content or "").strip()
@@ -235,6 +260,7 @@ class WebsiteBuilderAgent(BaseAgent):
             timeout_seconds=WEBSITE_GENERATION_TIMEOUT_SECONDS,
         )
         html = extract_html_document(raw)
+        html = repair_html_document(html)
         validate_html_document(html)
         stats = html_stats(html)
         logger.info(
@@ -277,6 +303,7 @@ class WebsiteBuilderAgent(BaseAgent):
             timeout_seconds=WEBSITE_REVISION_TIMEOUT_SECONDS,
         )
         html = extract_html_document(raw)
+        html = repair_html_document(html)
         validate_html_document(html)
         stats = html_stats(html)
         logger.info(
