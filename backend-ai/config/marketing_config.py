@@ -11,9 +11,9 @@ MARKETING_LLM_CONFIG = {
     # output structuré mais long (JSON complet)
     "max_tokens": 3500,
 
-    # optionnel (si tu utilises reasoning param)
+    # optionnel (actuellement non branché dans MarketingAgent/BaseAgent)
     "reasoning": "medium",
 
-    # sécurité JSON
+    # optionnel (documentaire: le prompt force déjà du JSON strict)
     "response_format": "json"
 }

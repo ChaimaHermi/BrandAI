@@ -7,3 +7,4 @@ class PipelineAvailabilityOut(BaseModel):
     has_market_analysis: bool
     has_marketing_plan: bool
     has_branding_naming: bool
+    has_brand_kit: bool

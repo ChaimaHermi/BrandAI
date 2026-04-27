@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import {
-  FiX, FiEdit3, FiRefreshCw, FiSend, FiClock, FiCalendar, FiCheckCircle,
+  FiX, FiEdit3, FiRefreshCw, FiSend, FiClock, FiCalendar, FiCheckCircle, FiTrash2,
 } from "react-icons/fi";
 import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import { Button } from "@/shared/ui/Button";
@@ -14,6 +14,7 @@ import { buildGenerationPayload, getInitialFormForPlatform } from "../contentFor
 import { PLATFORMS, PLATFORM_LABELS } from "../constants";
 import {
   apiGetScheduledPublication,
+  apiDeleteScheduledPublication,
   apiPatchScheduledPublication,
 } from "@/services/scheduledPublicationsApi";
 import { apiPatchGeneratedContent } from "@/services/generatedContentApi";
@@ -275,6 +276,22 @@ export default function CalendarPostDetailModal({
     }
   }
 
+  async function handleDeleteSchedule() {
+    if (!row || !canMutate) return;
+    const ok = window.confirm(
+      "Supprimer cette post planifiée du calendrier ? Cette action est irréversible.",
+    );
+    if (!ok) return;
+    try {
+      await apiDeleteScheduledPublication(ideaId, scheduleId, token);
+      toast.success("Post supprimée du calendrier.");
+      onUpdated?.();
+      onClose();
+    } catch (e) {
+      toast.error(e?.message || "Suppression impossible.");
+    }
+  }
+
   return (
     <>
       <div
@@ -378,6 +395,16 @@ export default function CalendarPostDetailModal({
                     >
                       <FiSend className="h-3.5 w-3.5" />
                       Publier maintenant
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="md"
+                      disabled={!canMutate}
+                      onClick={handleDeleteSchedule}
+                    >
+                      <FiTrash2 className="h-3.5 w-3.5" />
+                      Supprimer du calendrier
                     </Button>
                   </div>
 

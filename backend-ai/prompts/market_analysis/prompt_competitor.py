@@ -19,6 +19,18 @@ CRITICAL RULES
 - Do NOT invent website domains
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRINCIPE DE PRUDENCE (ANTI-FAUX POSITIFS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- If the text does not clearly identify a real competitor
+  (ambiguous name, weak match with IDEA), EXCLUDE the entry
+  rather than guessing.
+- "website" must be "" if the URL is not explicitly present
+  in the provided content. Never reconstruct a plausible domain.
+- Do not fill strengths/weaknesses with generic sector platitudes :
+  only points explicitly supported by the provided text.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DEDUPLICATION RULE (VERY IMPORTANT)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -110,7 +122,8 @@ STRICT RELEVANCE FILTER (CRITICAL)
 Include ONLY competitors that:
 
 - provide a similar type of solution
-- operate as digital products (platforms, apps, services)
+- operate in the same or adjacent solution type as IDEA
+  (digital / physical / service / hybrid)
 
 Exclude:
 

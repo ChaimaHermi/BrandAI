@@ -1,4 +1,5 @@
 import { FiDownload, FiImage, FiMessageSquare, FiDroplet } from "react-icons/fi";
+import { useMemo, useState } from "react";
 import SectionHeader from "./SectionHeader";
 
 function swatchHexes(palette) {
@@ -52,11 +53,21 @@ export default function FinalBrandPreview({
   paletteOptions,
   selectedPaletteId,
   logoPreviewUrl,
+  logoPreviewTransparentUrl = null,
   /** Premier élément de logo_concepts (image_base64, svg_data, …) */
   logoConcept = null,
   /** Court texte issu du naming (description / rationale du nom choisi) */
   nameWhyText = "",
 }) {
+  const [variant, setVariant] = useState("with_bg");
+  const canShowTransparent = Boolean(logoPreviewTransparentUrl);
+  const activeLogoUrl = useMemo(() => {
+    if (variant === "without_bg" && logoPreviewTransparentUrl) {
+      return logoPreviewTransparentUrl;
+    }
+    return logoPreviewUrl;
+  }, [variant, logoPreviewTransparentUrl, logoPreviewUrl]);
+
   let palette = null;
   if (selectedPaletteId && String(selectedPaletteId).startsWith("p-")) {
     const idx = parseInt(String(selectedPaletteId).slice(2), 10);
@@ -69,21 +80,31 @@ export default function FinalBrandPreview({
   const paletteWhy = (palette?.palette_description || "").trim();
   const fileBase = slugifyFileBase(brandName);
 
-  async function handleDownloadPng() {
-    if (!logoPreviewUrl) return;
+  async function handleDownloadPng(target = "with_bg") {
+    const urlToUse =
+      target === "without_bg" ? (logoPreviewTransparentUrl || null) : (logoPreviewUrl || null);
+    if (!urlToUse) return;
     try {
-      const res = await fetch(logoPreviewUrl);
+      const res = await fetch(urlToUse);
       const blob = await res.blob();
       const ext = blob.type.includes("png") ? "png" : blob.type.includes("jpeg") || blob.type.includes("jpg") ? "jpg" : "png";
-      triggerBlobDownload(blob, `${fileBase}-logo.${ext}`);
+      const suffix = target === "without_bg" ? "-transparent" : "";
+      triggerBlobDownload(blob, `${fileBase}-logo${suffix}.${ext}`);
     } catch {
-      const b64 = logoConcept?.image_base64;
-      const mime = logoConcept?.image_mime || "image/png";
+      const b64 =
+        target === "without_bg"
+          ? logoConcept?.image_base64_transparent
+          : logoConcept?.image_base64;
+      const mime =
+        target === "without_bg"
+          ? logoConcept?.image_mime_transparent || "image/png"
+          : logoConcept?.image_mime || "image/png";
       if (!b64) return;
       const bin = atob(b64);
       const arr = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-      triggerBlobDownload(new Blob([arr], { type: mime }), `${fileBase}-logo.png`);
+      const suffix = target === "without_bg" ? "-transparent" : "";
+      triggerBlobDownload(new Blob([arr], { type: mime }), `${fileBase}-logo${suffix}.png`);
     }
   }
 
@@ -94,7 +115,10 @@ export default function FinalBrandPreview({
     triggerBlobDownload(blob, `${fileBase}-logo.svg`);
   }
 
-  const canDownloadLogo = Boolean(logoPreviewUrl || logoConcept?.image_base64);
+  const canDownloadLogoWithBg = Boolean(logoPreviewUrl || logoConcept?.image_base64);
+  const canDownloadLogoWithoutBg = Boolean(
+    logoPreviewTransparentUrl || logoConcept?.image_base64_transparent,
+  );
 
   return (
     <div className="bi-fade-up">
@@ -169,10 +193,35 @@ export default function FinalBrandPreview({
               <FiImage size={13} className="text-ink-muted" />
               <p className="text-2xs font-semibold uppercase tracking-widest text-ink-subtle">Logo</p>
             </div>
-            {logoPreviewUrl ? (
+            {activeLogoUrl ? (
               <>
+                <div className="mb-2 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVariant("with_bg")}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      variant === "with_bg"
+                        ? "bg-brand text-white"
+                        : "border border-brand-border bg-white text-ink-muted hover:bg-brand-light"
+                    }`}
+                  >
+                    Avec fond
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => canShowTransparent && setVariant("without_bg")}
+                    disabled={!canShowTransparent}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      variant === "without_bg"
+                        ? "bg-brand text-white"
+                        : "border border-brand-border bg-white text-ink-muted hover:bg-brand-light"
+                    } ${!canShowTransparent ? "cursor-not-allowed opacity-50" : ""}`}
+                  >
+                    Sans fond
+                  </button>
+                </div>
                 <img
-                  src={logoPreviewUrl}
+                  src={activeLogoUrl}
                   alt="Logo"
                   className="mx-auto max-h-48 w-auto rounded-xl border border-brand-border object-contain"
                 />
@@ -181,16 +230,28 @@ export default function FinalBrandPreview({
                     {logoConcept.image_attribution}
                   </p>
                 ) : null}
-                {canDownloadLogo && (
+                {(canDownloadLogoWithBg || canDownloadLogoWithoutBg) && (
                   <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleDownloadPng()}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-sm transition hover:bg-brand-light"
-                    >
-                      <FiDownload size={14} aria-hidden />
-                      Télécharger PNG
-                    </button>
+                    {canDownloadLogoWithBg && (
+                      <button
+                        type="button"
+                        onClick={() => void handleDownloadPng("with_bg")}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-sm transition hover:bg-brand-light"
+                      >
+                        <FiDownload size={14} aria-hidden />
+                        PNG avec fond
+                      </button>
+                    )}
+                    {canDownloadLogoWithoutBg && (
+                      <button
+                        type="button"
+                        onClick={() => void handleDownloadPng("without_bg")}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-sm transition hover:bg-brand-light"
+                      >
+                        <FiDownload size={14} aria-hidden />
+                        PNG sans fond
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={handleDownloadSvg}

@@ -1,11 +1,12 @@
 """
 Génération d’image logo : Hugging Face InferenceClient (Replicate) + Qwen Image.
-Fallback : Pollinations GET public (image.pollinations.ai), modèle par défaut zimage (Z-Image Turbo).
+Fallback chain: Hugging Face -> Azure OpenAI image generation -> Pollinations public API.
 """
 
 from __future__ import annotations
 
 import asyncio
+import base64
 import io
 import json
 import logging
@@ -55,6 +56,30 @@ def _hf_fatal_model_error(err: Exception) -> bool:
     ):
         return True
     return False
+
+
+def _azure_logo_image_config() -> tuple[str, str, str, str]:
+    """
+    Returns (endpoint, api_key, api_version, deployment).
+    Deployment is dedicated if provided, otherwise falls back to global deployment.
+    """
+    from config.settings import (
+        AZURE_OPENAI_API_VERSION,
+        AZURE_OPENAI_DEPLOYMENT,
+        AZURE_OPENAI_ENDPOINT,
+        AZURE_OPENAI_KEY,
+    )
+
+    endpoint = (AZURE_OPENAI_ENDPOINT or "").strip().rstrip("/")
+    api_key = (AZURE_OPENAI_KEY or "").strip()
+    api_version = (AZURE_OPENAI_API_VERSION or "2025-01-01-preview").strip()
+    deployment = (
+        (os.getenv("AZURE_OPENAI_LOGO_IMAGE_DEPLOYMENT") or "").strip()
+        or (os.getenv("AZURE_OPENAI_LOGO_DEPLOYMENT") or "").strip()
+        or (AZURE_OPENAI_DEPLOYMENT or "").strip()
+        or "gpt-image-1"
+    )
+    return endpoint, api_key, api_version, deployment
 
 
 def _text_to_image_sync(api_key: str, prompt: str, model: str) -> Any:
@@ -123,6 +148,97 @@ async def fetch_logo_image_huggingface(
             raise RuntimeError(
                 f"Génération image Hugging Face échouée (modèle={m}) : {e}"
             ) from e
+
+
+async def fetch_logo_image_azure(
+    image_prompt: str,
+    negative_prompt: str = "",
+) -> tuple[bytes, str]:
+    """
+    Azure OpenAI image generation fallback (expects Azure deployment for image model).
+    """
+    try:
+        import httpx
+    except ModuleNotFoundError as e:
+        raise RuntimeError("Package httpx manquant. pip install httpx.") from e
+
+    full = (image_prompt or "").strip()
+    if not full:
+        raise ValueError("image_prompt vide")
+    if negative_prompt:
+        full = f"{full}. Avoid: {negative_prompt.strip()}"
+
+    endpoint, api_key, api_version, deployment = _azure_logo_image_config()
+    if not endpoint or not api_key:
+        raise RuntimeError(
+            "Azure OpenAI non configuré pour fallback image "
+            "(AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_KEY manquants)."
+        )
+
+    timeout = float(os.getenv("LOGO_AZURE_TIMEOUT_S", "120"))
+    size = (os.getenv("LOGO_AZURE_IMAGE_SIZE") or "1024x1024").strip()
+    quality = (os.getenv("LOGO_AZURE_IMAGE_QUALITY") or "").strip()
+    style = (os.getenv("LOGO_AZURE_IMAGE_STYLE") or "").strip()
+
+    body: dict[str, Any] = {
+        "prompt": full,
+        "n": 1,
+        "size": size,
+        "response_format": "b64_json",
+    }
+    if quality:
+        body["quality"] = quality
+    if style:
+        body["style"] = style
+
+    url = (
+        f"{endpoint}/openai/deployments/{deployment}/images/generations"
+        f"?api-version={api_version}"
+    )
+
+    _log.info(
+        "[logo_image_client] Azure OpenAI image — deployment=%s (prompt %d car., timeout=%.0fs)",
+        deployment,
+        len(full),
+        timeout,
+    )
+
+    headers = {"api-key": api_key, "Content-Type": "application/json"}
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        r = await client.post(url, headers=headers, json=body)
+        if r.status_code >= 400:
+            msg = r.text[:400]
+            raise RuntimeError(f"Azure OpenAI image error HTTP {r.status_code}: {msg}")
+        payload = r.json()
+
+    data = payload.get("data") if isinstance(payload, dict) else None
+    if not isinstance(data, list) or not data:
+        raise RuntimeError("Azure OpenAI image: réponse sans data[].")
+
+    first = data[0] if isinstance(data[0], dict) else {}
+    b64 = first.get("b64_json")
+    if isinstance(b64, str) and b64.strip():
+        try:
+            raw = base64.b64decode(b64)
+            if raw:
+                return raw, "image/png"
+        except Exception as e:
+            raise RuntimeError(f"Azure OpenAI image: b64_json invalide: {e}") from e
+
+    url_img = first.get("url")
+    if isinstance(url_img, str) and url_img.strip():
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            rr = await client.get(url_img)
+            rr.raise_for_status()
+            ct = (rr.headers.get("content-type") or "").lower()
+            mime = "image/png"
+            if "jpeg" in ct or "jpg" in ct:
+                mime = "image/jpeg"
+            elif "webp" in ct:
+                mime = "image/webp"
+            return rr.content, mime
+
+    raise RuntimeError("Azure OpenAI image: ni b64_json ni url dans la réponse.")
 
 
 def _pollinations_norm_key(name: str) -> str:
@@ -244,36 +360,52 @@ async def fetch_logo_image_hf_with_pollinations_fallback(
 ) -> tuple[bytes, str, str]:
     from config.settings import HF_KEYS
 
-    if not HF_KEYS:
-        if not pollinations_fallback:
-            raise RuntimeError(
-                "Aucune clé Hugging Face et fallback Pollinations désactivé (LOGO_POLLINATIONS_FALLBACK=0)."
+    hf_err: Exception | None = None
+    azure_err: Exception | None = None
+
+    # 1) Hugging Face first (if keys available)
+    if HF_KEYS:
+        try:
+            data, mime = await fetch_logo_image_huggingface(
+                image_prompt,
+                negative_prompt,
+                model=model,
             )
-        _log.info("[logo_image_client] Pas de clé HF — Pollinations uniquement (défaut zimage / Z-Image Turbo).")
-        data, mime = await fetch_logo_image_pollinations(image_prompt, negative_prompt)
-        return data, mime, "pollinations"
+            return data, mime, "huggingface"
+        except Exception as e:
+            hf_err = e
+            _log.warning("[logo_image_client] HF indisponible -> Azure fallback: %s", str(e)[:280])
+    else:
+        _log.info("[logo_image_client] Aucune clé HF — passage direct au fallback Azure.")
+
+    # 2) Azure OpenAI image fallback
+    try:
+        data, mime = await fetch_logo_image_azure(image_prompt, negative_prompt)
+        return data, mime, "azure"
+    except Exception as e:
+        azure_err = e
+        _log.warning("[logo_image_client] Azure indisponible -> Pollinations fallback: %s", str(e)[:280])
+
+    # 3) Pollinations fallback (optional)
+    if not pollinations_fallback:
+        details = []
+        if hf_err:
+            details.append(f"HF: {hf_err}")
+        if azure_err:
+            details.append(f"Azure: {azure_err}")
+        raise RuntimeError(
+            "Fallback Pollinations désactivé et génération image indisponible. "
+            + " ; ".join(details)
+        )
 
     try:
-        data, mime = await fetch_logo_image_huggingface(
-            image_prompt,
-            negative_prompt,
-            model=model,
-        )
-        return data, mime, "huggingface"
-    except Exception as hf_err:
-        if _hf_fatal_model_error(hf_err):
-            raise RuntimeError(
-                f"Génération Hugging Face échouée (pas de fallback Pollinations) : {hf_err}"
-            ) from hf_err
-        if not pollinations_fallback:
-            raise RuntimeError(
-                f"Hugging Face échoué (fallback Pollinations désactivé) : {hf_err}"
-            ) from hf_err
-        _log.warning("[logo_image_client] HF indisponible → Pollinations : %s", str(hf_err)[:280])
-        try:
-            data, mime = await fetch_logo_image_pollinations(image_prompt, negative_prompt)
-            return data, mime, "pollinations"
-        except Exception as pol_err:
-            raise RuntimeError(
-                f"Hugging Face : {hf_err} ; Pollinations : {pol_err}"
-            ) from pol_err
+        data, mime = await fetch_logo_image_pollinations(image_prompt, negative_prompt)
+        return data, mime, "pollinations"
+    except Exception as pol_err:
+        details = []
+        if hf_err:
+            details.append(f"Hugging Face: {hf_err}")
+        if azure_err:
+            details.append(f"Azure: {azure_err}")
+        details.append(f"Pollinations: {pol_err}")
+        raise RuntimeError(" ; ".join(details)) from pol_err

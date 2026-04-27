@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  FiTarget, FiUsers, FiRadio, FiDollarSign, FiFlag, FiCalendar,
+  FiTarget, FiRadio, FiLayout, FiFlag,
 } from "react-icons/fi";
 import { usePipeline } from "@/context/PipelineContext";
 import { useMarketingAgent } from "@/agents/Marketing/hooks/useMarketingAgent";
@@ -9,29 +9,92 @@ import { ErrorBanner } from "@/shared/ui/ErrorBanner";
 import { Loader } from "@/shared/ui/Loader";
 import { SectionIntro } from "@/shared/ui/SectionIntro";
 import { MarketingHeader, SECTION_TABS } from "@/agents/Marketing/components/MarketingHeader";
-import { PositioningSection } from "@/agents/Marketing/components/sections/PositioningSection";
-import { TargetsSection }     from "@/agents/Marketing/components/sections/TargetsSection";
-import { ChannelsSection }    from "@/agents/Marketing/components/sections/ChannelsSection";
-import { PricingSection }     from "@/agents/Marketing/components/sections/PricingSection";
-import { GtmSection }         from "@/agents/Marketing/components/sections/GtmSection";
-import { ActionSection }      from "@/agents/Marketing/components/sections/ActionSection";
+import { PositioningSection }     from "@/agents/Marketing/components/sections/PositioningSection";
+import { ChannelsSection }         from "@/agents/Marketing/components/sections/ChannelsSection";
+import { ContentStrategySection }  from "@/agents/Marketing/components/sections/ContentStrategySection";
+import { GtmSection }              from "@/agents/Marketing/components/sections/GtmSection";
+import { ActionSection }           from "@/agents/Marketing/components/sections/ActionSection";
+
+function ChannelsContentSection({ plan }) {
+  const channelCount = Array.isArray(plan?.channels?.primaryChannelsDetailed)
+    ? plan.channels.primaryChannelsDetailed.length
+    : 0;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="rounded-2xl border border-brand-border bg-white p-4 shadow-card">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-[11px] font-extrabold uppercase tracking-widest text-ink-muted">
+            Canaux recommandés
+          </p>
+          <span className="rounded-full border border-brand-border bg-brand-light px-2.5 py-1 text-[10px] font-bold text-brand-dark">
+            {channelCount} canal{channelCount > 1 ? "x" : ""}
+          </span>
+        </div>
+        <ChannelsSection
+          plan={plan}
+          showBudget={false}
+          showChannels={true}
+          showChannelsTitle={false}
+        />
+      </div>
+      <div className="rounded-2xl border border-brand-border bg-white p-4 shadow-card">
+        <p className="mb-3 text-[11px] font-extrabold uppercase tracking-widest text-ink-muted">
+          Stratégie de contenu
+        </p>
+        <ContentStrategySection plan={plan} />
+      </div>
+    </div>
+  );
+}
+
+function GtmActionSection({ plan }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-brand-border bg-white p-4 shadow-card">
+        <p className="mb-3 text-[11px] font-extrabold uppercase tracking-widest text-ink-muted">
+          Go-to-Market
+        </p>
+        <GtmSection plan={plan} />
+      </div>
+      <div className="rounded-2xl border border-brand-border bg-white p-4 shadow-card">
+        <p className="mb-3 text-[11px] font-extrabold uppercase tracking-widest text-ink-muted">
+          Plan d'action
+        </p>
+        <ActionSection plan={plan} />
+      </div>
+    </div>
+  );
+}
 
 const SECTION_MAP = {
   positioning: PositioningSection,
-  targets:     TargetsSection,
-  channels:    ChannelsSection,
-  pricing:     PricingSection,
-  gtm:         GtmSection,
-  action:      ActionSection,
+  budget:      ({ plan }) => <ChannelsSection plan={plan} showBudget={true} showChannels={false} />,
+  channels_content: ChannelsContentSection,
+  gtm_action:  GtmActionSection,
 };
 
 const SECTION_INTROS = {
-  positioning: { icon: FiTarget,    title: "Positionnement",        description: "Segment cible, différenciation, proposition de valeur et message principal." },
-  targets:     { icon: FiUsers,     title: "Cibles",                description: "Persona principal, focus segment et personas secondaires." },
-  channels:    { icon: FiRadio,     title: "Canaux de distribution", description: "Canaux prioritaires, secondaires, justification et ton éditorial." },
-  pricing:     { icon: FiDollarSign,title: "Stratégie Pricing",      description: "Modèle tarifaire, logique de pricing et hypothèses clés." },
-  gtm:         { icon: FiFlag,      title: "Go-to-Market",           description: "Premiers utilisateurs, stratégie de lancement, partenariats et tactiques de croissance." },
-  action:      { icon: FiCalendar,  title: "Plan d'action",          description: "Actions court terme, moyen terme et long terme pour le lancement." },
+  positioning: {
+    icon: FiTarget,
+    title: "Positionnement & Cibles",
+    description: "Segment cible, persona principal, focus marché, différenciation, proposition de valeur et message.",
+  },
+  budget: {
+    icon: FiRadio,
+    title: "Budget lancement",
+    description: "Proposition de répartition du budget de lancement avec logique et justifications.",
+  },
+  channels_content: {
+    icon: FiLayout,
+    title: "Canaux & Stratégie de contenu",
+    description: "Canaux recommandés et proposition de stratégie de contenu par plateforme.",
+  },
+  gtm_action: {
+    icon: FiFlag,
+    title: "Go-to-Market & Plan d'action",
+    description: "Plan d'entrée dans le marché puis exécution opérationnelle court, moyen et long terme.",
+  },
 };
 
 export default function MarketingPage() {
@@ -83,7 +146,6 @@ export default function MarketingPage() {
 
       {hasData && (
         <div className="flex flex-col gap-3">
-          {/* Section intro card */}
           {intro && (
             <SectionIntro
               icon={intro.icon}
@@ -91,12 +153,10 @@ export default function MarketingPage() {
               description={intro.description}
             />
           )}
-
           {ActiveSection && <ActiveSection plan={plan} />}
         </div>
       )}
 
-      {/* Section navigation */}
       {hasData && (
         <div className="flex items-center justify-between rounded-2xl border border-brand-border bg-white px-5 py-3 shadow-card">
           <button

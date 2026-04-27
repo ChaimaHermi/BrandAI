@@ -15,9 +15,11 @@ function EmptySlot() {
 const GROUPS = [
   { key: "primary_keywords",  title: "Mots-clés primaires",    pillClass: "bg-brand-light text-brand-dark border border-brand-border" },
   { key: "market_keywords",   title: "Mots-clés marché",       pillClass: "bg-blue-50 text-blue-700 border border-blue-100" },
+  { key: "sector_growth_keywords", title: "Mots-clés croissance sectorielle", pillClass: "bg-emerald-50 text-emerald-700 border border-emerald-100" },
   { key: "competitor_queries",title: "Requêtes compétiteurs",  pillClass: "bg-rose-50 text-rose-700 border border-rose-100" },
   { key: "voc_keywords",      title: "Mots-clés VOC",          pillClass: "bg-orange-50 text-orange-700 border border-orange-100" },
   { key: "trend_keywords",    title: "Mots-clés tendances",    pillClass: "bg-gray-50 text-ink-muted border border-brand-border" },
+  { key: "risk_keywords",     title: "Mots-clés risques",      pillClass: "bg-red-50 text-red-700 border border-red-100" },
 ];
 
 export default function MarketKeywords({ keywords }) {

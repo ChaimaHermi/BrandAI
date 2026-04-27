@@ -4,6 +4,7 @@ const AI_URL =
   import.meta.env.VITE_AI_URL || "http://127.0.0.1:8001/api/ai";
 
 const brandingBase = (ideaId) => `${API_URL}/branding/ideas/${ideaId}`;
+const ideasBase = (ideaId) => `${API_URL}/ideas/${ideaId}`;
 
 /**
  * GET agrégé `/bundle` (une requête 200, champs absents → null).
@@ -134,6 +135,29 @@ export function patchLogoResult(ideaId, token, body) {
 
 export function patchBrandKit(ideaId, token, body) {
   return patchJson(ideaId, token, "brand-kit", body);
+}
+
+export async function patchIdeaPipelineProgress(ideaId, token, body) {
+  const res = await fetch(`${ideasBase(ideaId)}/pipeline-progress`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const d = err?.detail;
+    const msg =
+      typeof d === "string"
+        ? d
+        : Array.isArray(d)
+          ? d.map((x) => x?.msg || JSON.stringify(x)).join("; ")
+          : `Erreur ${res.status}`;
+    throw new Error(msg);
+  }
+  return res.json();
 }
 
 /**

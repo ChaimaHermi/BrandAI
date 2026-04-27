@@ -13,6 +13,7 @@ import { apiListScheduledPublications } from "@/services/scheduledPublicationsAp
 import CalendarPostDetailModal from "../components/CalendarPostDetailModal";
 import ContentCreationModal from "../components/ContentCreationModal";
 import GeneratedContentsHistoryModal from "../components/GeneratedContentsHistoryModal";
+import WeeklyPlanModal from "../components/WeeklyPlanModal";
 import { Button } from "@/shared/ui/Button";
 
 const contentAgent = AGENTS.find((a) => a.id === "content");
@@ -244,6 +245,7 @@ export default function ContentSchedulePage() {
   const [detailScheduleId, setDetailScheduleId] = useState(null);
   const [creationModalOpen, setCreationModalOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [weeklyPlanOpen, setWeeklyPlanOpen] = useState(false);
 
   const todayKey = isoDate(new Date());
 
@@ -261,8 +263,16 @@ export default function ContentSchedulePage() {
     }
     const y = monthCursor.getFullYear();
     const m = monthCursor.getMonth();
-    const from = new Date(y, m, 1, 0, 0, 0, 0);
-    const to = new Date(y, m + 1, 0, 23, 59, 59, 999);
+    // Important:
+    // The calendar UI renders a 6x7 grid (42 cells), including spillover days
+    // from previous/next months. We must fetch the full visible range,
+    // otherwise posts (e.g. 1st of next month) won't appear in current view.
+    const firstDay = new Date(y, m, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7; // Monday-based
+    const from = new Date(y, m, 1 - startOffset, 0, 0, 0, 0);
+    const to = new Date(from);
+    to.setDate(from.getDate() + 41);
+    to.setHours(23, 59, 59, 999);
     setLoading(true);
     setLoadError(null);
     try {
@@ -405,7 +415,7 @@ export default function ContentSchedulePage() {
               </button>
               <button
                 type="button"
-                onClick={() => {}}
+                onClick={() => setWeeklyPlanOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-brand-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-dark transition-colors hover:bg-brand-light/60"
               >
                 <FiLayers className="h-3.5 w-3.5 text-brand" />
@@ -558,6 +568,14 @@ export default function ContentSchedulePage() {
         onClose={() => setHistoryOpen(false)}
         ideaId={idea?.id}
         token={token}
+      />
+
+      <WeeklyPlanModal
+        open={weeklyPlanOpen}
+        onClose={() => setWeeklyPlanOpen(false)}
+        ideaId={idea?.id}
+        token={token}
+        onApproved={loadMonth}
       />
     </div>
   );

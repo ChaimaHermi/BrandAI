@@ -14,7 +14,7 @@ LLM_CONFIG = {
 }
 
 # NameAgent (ReAct): nombre de noms "libres" Brandfetch à livrer
-NAME_TARGET_COUNT = 5
+NAME_TARGET_COUNT = 3
 # Budget de pas LangGraph (plus élevé si NAME_TARGET_COUNT augmente)
 NAME_AGENT_RECURSION_LIMIT = 55
 # Afficher dans le terminal le déroulé type ReAct (Thought / Action / Observation)
@@ -28,7 +28,7 @@ NAME_SHORT_TERM_SQLITE_PATH = "data/memory/short_term/naming_short_term.db"
 NAME_EXISTS_MEMORY_MAX = 20
 
 # SloganAgent : nombre de slogans à proposer
-SLOGAN_TARGET_COUNT = 5
+SLOGAN_TARGET_COUNT = 3
 SLOGAN_AGENT_RECURSION_LIMIT = 45
 SLOGAN_AGENT_VERBOSE_REACT = True
 

@@ -9,6 +9,17 @@ from tools.idea_tools import validate_idea_input
 logger = logging.getLogger(__name__)
 
 
+def _answer_value_nonempty(value) -> bool:
+    """True if the user provided a non-empty answer (text or numeric budget field)."""
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (int, float)):
+        return True
+    return bool(value)
+
+
 # ══════════════════════════════════════════════════════════════
 # UTILITAIRE — Détection texte incohérent SANS LLM
 # ══════════════════════════════════════════════════════════════
@@ -125,6 +136,12 @@ class IdeaClarifierAgent(BaseAgent):
                 parts.append(f"Solution déclarée : {answers['solution']}")
             if answers.get("geography"):
                 parts.append(f"Géographie déclarée : {answers['geography']}")
+            if answers.get("budget_min"):
+                parts.append(f"Budget minimum déclaré : {answers['budget_min']}")
+            if answers.get("budget_max"):
+                parts.append(f"Budget maximum déclaré : {answers['budget_max']}")
+            if answers.get("budget_currency"):
+                parts.append(f"Devise déclarée : {answers['budget_currency']}")
             parts.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
         return "\n".join(parts)
@@ -133,7 +150,12 @@ class IdeaClarifierAgent(BaseAgent):
     # Normalisation et validation du résultat LLM
     # ─────────────────────────────────────────────────────────
 
-    def _normalize_result(self, raw_result: dict, state: PipelineState) -> dict:
+    def _normalize_result(
+        self,
+        raw_result: dict,
+        state: PipelineState,
+        answers: dict | None = None,
+    ) -> dict:
         """
         Normalise et valide le JSON retourné par le LLM.
         Garantit que tous les champs attendus sont présents et typés.
@@ -154,7 +176,7 @@ class IdeaClarifierAgent(BaseAgent):
             questions = raw_result.get("questions") or []
             missing_axes = raw_result.get("missing_axes") or []
             # Sécurité : garantir la cohérence questions / missing_axes
-            valid_axes = {"problem", "target", "solution", "geography"}
+            valid_axes = {"problem", "target", "solution", "geography", "budget"}
             questions = [
                 q for q in questions
                 if isinstance(q, dict)
@@ -191,7 +213,13 @@ class IdeaClarifierAgent(BaseAgent):
                 "country_code": (raw_result.get("country_code") or "").strip().upper(),
                 "language": (raw_result.get("language") or "fr").strip(),
             }
-            return self._ensure_geography_if_needed(clarified)
+            clarified = self._ensure_geography_if_needed(clarified)
+            if clarified.get("type") == "questions":
+                return clarified
+            clarified = self._apply_budget_from_answers_if_any(clarified, answers)
+            if answers is None:
+                return self._ensure_budget_if_needed(clarified)
+            return clarified
 
         # Type inattendu → erreur remontée à la route
         raise RuntimeError(f"[clarifier] type LLM inattendu : {result_type!r}")
@@ -222,6 +250,61 @@ class IdeaClarifierAgent(BaseAgent):
             "sector": clarified.get("sector", ""),
             "detected_sector": clarified.get("sector", ""),
         }
+
+    def _ensure_budget_if_needed(self, clarified: dict) -> dict:
+        """If budget is missing, convert clarified result into a budget question."""
+        budget_min = clarified.get("budget_min")
+        budget_max = clarified.get("budget_max")
+        budget_currency = str(clarified.get("budget_currency") or "").strip().upper()
+        has_budget = (
+            isinstance(budget_min, (int, float))
+            and isinstance(budget_max, (int, float))
+            and budget_min > 0
+            and budget_max >= budget_min
+            and len(budget_currency) >= 3
+        )
+        if has_budget:
+            return clarified
+
+        return {
+            "type": "questions",
+            "message": (
+                "Pour finaliser votre idée, j'ai besoin de votre budget de départ."
+            ),
+            "missing_axes": ["budget"],
+            "questions": [
+                {
+                    "axis": "budget",
+                    "text": "Quel est votre budget de départ (minimum, maximum et devise) ?",
+                }
+            ],
+            "sector": clarified.get("sector", ""),
+            "detected_sector": clarified.get("sector", ""),
+        }
+
+    def _apply_budget_from_answers_if_any(self, clarified: dict, answers: dict | None) -> dict:
+        """Attach normalized budget fields coming from explicit user answers."""
+        if not isinstance(answers, dict):
+            return clarified
+        out = dict(clarified)
+        min_raw = answers.get("budget_min")
+        max_raw = answers.get("budget_max")
+        currency_raw = (answers.get("budget_currency") or "").strip().upper()
+        try:
+            min_val = float(min_raw) if min_raw not in (None, "") else None
+            max_val = float(max_raw) if max_raw not in (None, "") else None
+        except (TypeError, ValueError):
+            return out
+        if min_val is None or max_val is None:
+            return out
+        if min_val <= 0 or max_val < min_val:
+            return out
+        if len(currency_raw) < 3:
+            return out
+        out["budget_min"] = min_val
+        out["budget_max"] = max_val
+        out["budget_currency"] = currency_raw
+        return out
 
     async def _run_safety_gate(self, payload: dict) -> dict | None:
         """
@@ -331,7 +414,7 @@ class IdeaClarifierAgent(BaseAgent):
             self.logger.error(f"[clarifier] run_start LLM error : {e}")
             raise RuntimeError("Service IA indisponible. Réessayez dans quelques instants.")
 
-        normalized = self._normalize_result(result, state)
+        normalized = self._normalize_result(result, state, answers=None)
 
         # Propager le secteur détecté dans le state pour le 2ème appel
         if normalized.get("sector") and not state.sector:
@@ -359,7 +442,7 @@ class IdeaClarifierAgent(BaseAgent):
 
         Retourne un dict avec type = "refused" | "clarified"
         """
-        if not answers or not any(v and v.strip() for v in answers.values()):
+        if not answers or not any(_answer_value_nonempty(v) for v in answers.values()):
             raise ValueError("Aucune réponse fournie.")
 
         safety_block = await self._run_safety_gate(
@@ -385,7 +468,7 @@ class IdeaClarifierAgent(BaseAgent):
             self.logger.error(f"[clarifier] run_answer LLM error : {e}")
             raise RuntimeError("Service IA indisponible. Réessayez dans quelques instants.")
 
-        normalized = self._normalize_result(result, state)
+        normalized = self._normalize_result(result, state, answers=answers)
 
         # Propager le secteur si enrichi
         if normalized.get("sector") and not state.sector:
@@ -404,7 +487,7 @@ class IdeaClarifierAgent(BaseAgent):
         Délègue vers run_start() ou run_answer() selon le contexte.
         Conservé pour ne pas modifier la route.
         """
-        if answers and any(v and v.strip() for v in answers.values()):
+        if answers and any(_answer_value_nonempty(v) for v in answers.values()):
             return await self.run_answer(state, answers)
         return await self.run_start(state)
 

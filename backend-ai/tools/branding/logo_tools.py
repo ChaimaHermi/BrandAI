@@ -5,6 +5,7 @@ Outils LangChain pour LogoAgent (ReAct) : brouillon prompt LLM, validation, rend
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from langchain.tools import tool
@@ -152,6 +153,45 @@ def make_validate_logo_prompt_tool(*, brand_name: str):
                     "ok": False,
                     "error": f"The brand name « {brand_name} » must appear in image_prompt (readable text in the logo).",
                     "validation_hints": "Include the exact brand name in the prompt as visible typography.",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+
+        # Prevent prompts that instruct rendering palette color codes in the logo text.
+        if re.search(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b", image_prompt):
+            return json.dumps(
+                {
+                    "ok": False,
+                    "error": "image_prompt must not contain hexadecimal color codes.",
+                    "validation_hints": "Keep palette for visual style only; never display #RRGGBB as text in the logo.",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+
+        if re.search(r"\b(hex(?:adecimal)?|rgb|rgba|cmyk|color\s*code|palette\s*code)\b", image_prompt, re.IGNORECASE):
+            return json.dumps(
+                {
+                    "ok": False,
+                    "error": "image_prompt must not request visible color codes in the logo text.",
+                    "validation_hints": "Use colors visually, but allow only the brand name as text.",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+
+        # Prevent prompts that request plate/badge/container backgrounds behind logo.
+        if re.search(
+            r"\b(badge|label|plate|sticker|rounded\s*rectangle|capsule|pill|card\s*background|panel\s*behind|container\s*behind)\b",
+            image_prompt,
+            re.IGNORECASE,
+        ):
+            return json.dumps(
+                {
+                    "ok": False,
+                    "error": "image_prompt must not request a badge/container background behind the logo.",
+                    "validation_hints": "Keep icon + brand name only on transparent/empty background, without plate/card/capsule.",
                 },
                 ensure_ascii=False,
                 indent=2,

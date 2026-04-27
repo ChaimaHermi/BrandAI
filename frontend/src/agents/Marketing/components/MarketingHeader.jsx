@@ -5,12 +5,10 @@ import { TabBar } from "@/shared/ui/TabBar";
 const marketingAgent = AGENTS.find((a) => a.id === "marketing");
 
 const SECTION_TABS = [
-  { id: "positioning", label: "Positionnement" },
-  { id: "targets",     label: "Cibles" },
-  { id: "channels",    label: "Canaux" },
-  { id: "pricing",     label: "Pricing" },
-  { id: "gtm",         label: "Go-to-Market" },
-  { id: "action",      label: "Plan d'action" },
+  { id: "positioning", label: "Positionnement & Cibles" },
+  { id: "budget",      label: "Budget lancement" },
+  { id: "channels_content", label: "Canaux & Stratégie de contenu" },
+  { id: "gtm_action",  label: "Go-to-Market & Plan d'action" },
 ];
 
 /**
@@ -25,10 +23,12 @@ export function MarketingHeader({ idea, plan, activeTab, onTabChange }) {
           {idea.clarity_sector || idea.sector}
         </span>
       )}
-      <span className="rounded-full bg-success-light px-2.5 py-1 text-xs font-semibold text-success">
-        {idea?.clarity_country_code || "TN"}
-      </span>
-      {plan?.confidenceLevel && plan.confidenceLevel !== "-" && (
+      {idea?.clarity_country_code && (
+        <span className="rounded-full bg-success-light px-2.5 py-1 text-xs font-semibold text-success">
+          {idea.clarity_country_code}
+        </span>
+      )}
+      {plan?.confidenceLevel && (
         <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
           Confiance {plan.confidenceLevel}
         </span>

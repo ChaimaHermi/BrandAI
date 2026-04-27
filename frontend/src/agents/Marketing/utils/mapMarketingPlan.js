@@ -6,35 +6,100 @@ export function mapMarketingPlan(payload) {
   if (!payload) return null;
 
   const plan = payload.result_json || payload;
+  const positioning = plan?.positioning ?? {};
+  const messaging = plan?.messaging ?? {};
+  const channels = plan?.channels ?? {};
+  const contentStrategy = plan?.content_strategy ?? {};
+  const budgetAllocation = plan?.budget_allocation ?? {};
+  const actionPlan = plan?.action_plan ?? {};
+  const goToMarket = plan?.go_to_market ?? {};
+
+  const primaryChannelsDetailed = Object.entries(channels)
+    .map(([channelName, node]) => {
+      if (!node || typeof node !== "object" || Array.isArray(node)) return null;
+      const displayName = String(channelName || "").trim();
+      return {
+        name: displayName
+          ? displayName.charAt(0).toUpperCase() + displayName.slice(1)
+          : "",
+        role: node.role,
+        justification: node.justification,
+      };
+    })
+    .filter(Boolean);
+
+  const asActions = (bucket) => normalizeArray(bucket?.actions);
 
   return {
-    positioning: plan.positioning || {},
-    targeting: plan.targeting || {},
-    messaging: plan.messaging || {},
+    /* ── Positioning & Messaging ─────────────────────────────────── */
+    positioning: {
+      target_segment: positioning.target_segment,
+      value_proposition: positioning.value_proposition,
+      differentiation: positioning.differentiation,
+      primary_persona: positioning.primary_persona,
+      tagline_suggestion: positioning.tagline_suggestion,
+    },
+
+    messaging: {
+      main_message: messaging.main_message,
+      pain_point_focus: messaging.pain_point_focus,
+      emotional_hook: messaging.emotional_hook,
+      vocabulary_to_use: normalizeArray(messaging.vocabulary_to_use),
+      vocabulary_to_avoid: normalizeArray(messaging.vocabulary_to_avoid),
+    },
+
+    /* ── Targeting (derived from positioning) ────────────────────── */
+    targeting: {
+      primary_persona: positioning.primary_persona,
+      market_segment_focus: positioning.target_segment,
+    },
+
+    /* ── Channels ────────────────────────────────────────────────── */
     channels: {
-      primaryChannels: normalizeArray(plan.channels?.primary_channels),
-      secondaryChannels: normalizeArray(plan.channels?.secondary_channels),
-      justification: plan.channels?.justification || "",
+      primaryChannelsDetailed,
     },
+
+    /* ── Budget ──────────────────────────────────────────────────── */
+    budgetAllocation: {
+      project_type_identified: budgetAllocation.project_type_identified,
+      reasoning: budgetAllocation.reasoning,
+      currency: budgetAllocation.currency,
+      total: budgetAllocation.total,
+      breakdown: normalizeArray(budgetAllocation.breakdown),
+    },
+
+    /* ── Content Strategy ────────────────────────────────────────── */
     contentDirection: {
-      angles: normalizeArray(plan.content_direction?.angles),
-      contentGoals: normalizeArray(plan.content_direction?.content_goals),
-      platformFocus: normalizeArray(plan.content_direction?.platform_focus),
-      tone: plan.content_direction?.tone || "",
+      platforms: {
+        facebook: contentStrategy?.facebook,
+        instagram: contentStrategy?.instagram,
+        linkedin: contentStrategy?.linkedin,
+        global_editorial: contentStrategy?.global_editorial,
+      },
     },
-    pricingStrategy: plan.pricing_strategy || {},
+
+    /* ── Go-to-Market ────────────────────────────────────────────── */
     goToMarket: {
-      targetFirstUsers: plan.go_to_market?.target_first_users || "",
-      launchStrategy: plan.go_to_market?.launch_strategy || "",
-      partnerships: normalizeArray(plan.go_to_market?.partnerships),
-      earlyGrowthTactics: normalizeArray(plan.go_to_market?.early_growth_tactics),
+      targetFirstUsers: goToMarket.target_first_users,
+      launchStrategy: goToMarket.launch_strategy,
+      partnerships: normalizeArray(goToMarket.partnerships),
+      earlyGrowthTactics: normalizeArray(goToMarket.early_growth_tactics),
     },
+
+    /* ── Action Plan ─────────────────────────────────────────────── */
     actionPlan: {
-      shortTerm: normalizeArray(plan.action_plan?.short_term),
-      midTerm: normalizeArray(plan.action_plan?.mid_term),
-      longTerm: normalizeArray(plan.action_plan?.long_term),
+      shortTerm: asActions(actionPlan?.short_term),
+      midTerm: asActions(actionPlan?.mid_term),
+      longTerm: asActions(actionPlan?.long_term),
+      shortTermMilestone: actionPlan?.short_term?.milestone,
+      midTermMilestone: actionPlan?.mid_term?.milestone,
+      longTermMilestone: actionPlan?.long_term?.milestone,
+      shortTermDuration: actionPlan?.short_term?.duration,
+      midTermDuration: actionPlan?.mid_term?.duration,
+      longTermDuration: actionPlan?.long_term?.duration,
     },
-    assumptions: normalizeArray(plan.assumptions),
-    confidenceLevel: plan.confidence_level || "-",
+
+    /* ── Misc ────────────────────────────────────────────────────── */
+    confidenceLevel: plan.confidence_level,
   };
 }

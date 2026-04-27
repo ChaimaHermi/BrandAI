@@ -73,18 +73,27 @@ export default function ResultsPage() {
 
   const marketData = useMemo(() => {
     const payload = marketLatest?.result_json || marketLatest || {};
-    const marketVoc = payload.market_voc || {};
-    const competitors = payload.competitor || {};
-    const demande = payload.overview?.demande || {};
+    const market = payload.market || {};
+    const competitor = payload.competitor || {};
+    const voc = payload.voc || {};
+    const marketSize = market?.market_size;
+    const topCompetitors = Array.isArray(competitor?.top_competitors)
+      ? competitor.top_competitors
+      : Array.isArray(competitor?.competitors)
+        ? competitor.competitors.map((c) => c?.name).filter(Boolean)
+        : [];
+    const growthValue = market?.growth_rate || market?.cagr || "";
+    const marketSizeLabel =
+      typeof marketSize === "string"
+        ? marketSize
+        : marketSize?.value || "";
     return {
-      market_size: demande.taille || payload.market_size || "-",
-      competitors: Array.isArray(competitors.top_competitors)
-        ? competitors.top_competitors.length
-        : payload.competitors || 0,
-      growth: demande.cagr || payload.growth || "-",
-      opportunity: competitors.opportunite_summary || payload.opportunity || "",
-      top_competitors: competitors.top_competitors || payload.top_competitors || [],
-      demand_summary: marketVoc.demand_summary || "",
+      market_size: marketSizeLabel,
+      competitors: topCompetitors.length,
+      growth: growthValue,
+      opportunity: competitor?.opportunite_summary || "",
+      top_competitors: topCompetitors,
+      demand_summary: voc?.demand_summary || "",
     };
   }, [marketLatest]);
 

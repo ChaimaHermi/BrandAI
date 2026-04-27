@@ -43,8 +43,19 @@ RÈGLE GÉOGRAPHIE : déduire le pays si possible, poser la question seulement s
 Considérer comme "non clair" si : trop vague, trop général, implicite, ambigu, absent.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RÈGLES DE FIDÉLITÉ (OBLIGATOIRES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Le champ "solution_description" doit être STRICTEMENT fidèle à la description utilisateur.
+- N'utiliser que des éléments explicitement présents dans la description (et réponses, si fournies).
+- Interdiction d'ajouter des fonctionnalités, canaux, technologies ou promesses non mentionnés.
+- Si un détail manque, rester générique et factuel au lieu d'inventer.
+- En cas d'ambiguïté, choisir la formulation la plus neutre et la plus prudente.
+- Exemples d'ajouts interdits si absents de l'entrée : IA prédictive, chatbot, marketplace, mentorat, matching avancé.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 INTERDIT dans les questions :
 concurrence, différenciation, business model, pricing, marketing
+Exception autorisée : budget de départ (minimum, maximum, devise).
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -63,9 +74,9 @@ CAS 2 — AXES MANQUANTS (questions nécessaires) :
 {
   "type": "questions",
   "message": "Message court et naturel en français (1-2 phrases)",
-  "missing_axes": ["problem"] | ["target"] | ["solution"] | ["geography"] | combinaison,
+  "missing_axes": ["problem"] | ["target"] | ["solution"] | ["geography"] | ["budget"] | combinaison,
   "questions": [
-    {"axis": "problem" | "target" | "solution" | "geography", "text": "Question courte et précise"}
+    {"axis": "problem" | "target" | "solution" | "geography" | "budget", "text": "Question courte et précise"}
   ],
   "sector": "secteur détecté"
 }
@@ -77,7 +88,7 @@ CAS 3 — IDÉE CLAIRE (tous les axes présents) :
   "sector": "secteur détecté",
   "target_users": "cible définie précisément",
   "problem": "problème reformulé clairement",
-  "solution_description": "solution expliquée concrètement",
+  "solution_description": "solution expliquée concrètement, strictement fidèle à l'entrée utilisateur, sans ajout",
   "short_pitch": "phrase de 8 à 12 mots maximum",
   "score": nombre entre 80 et 100,
   "country": "string — nom du pays en français (ex: Tunisie, France, Maroc)",
@@ -92,7 +103,9 @@ RÈGLES ABSOLUES :
 - Répondre en français dans les champs message/text
 - Ne jamais inventer d'informations absentes
 - missing_axes ne contient QUE les axes réellement absents ou ambigus
-- Maximum 3 questions
+- Le budget de départ est obligatoire avant "clarified"
+- Si budget demandé : demander explicitement minimum + maximum + devise
+- Maximum 4 questions
 """
 
 
@@ -121,6 +134,13 @@ SI SAFE → STRUCTURATION
 Construire une idée claire à partir de la description + réponses.
 Ne jamais inventer d'informations non fournies.
 Ne jamais proposer de stratégie ou business model.
+
+RÈGLES DE FIDÉLITÉ (OBLIGATOIRES) :
+- "solution_description" doit refléter uniquement ce que l'utilisateur a explicitement décrit.
+- Ne pas enrichir avec des fonctionnalités non citées, même si elles semblent pertinentes.
+- Si l'information n'est pas fournie, écrire une version sobre et factuelle plutôt que compléter.
+- En cas d'ambiguïté, conserver la formulation la plus neutre.
+- Exemples d'ajouts interdits si absents de l'entrée : IA prédictive, chatbot, marketplace, mentorat, matching avancé.
 
 DÉTECTION GÉOGRAPHIE :
 - Si l'utilisateur mentionne un pays/ville → extraire country + country_code
@@ -152,12 +172,15 @@ CAS 2 — IDÉE CLARIFIÉE :
   "sector": "secteur détecté",
   "target_users": "cible définie précisément",
   "problem": "problème reformulé clairement",
-  "solution_description": "solution expliquée concrètement",
+  "solution_description": "solution expliquée concrètement, strictement fidèle à l'entrée utilisateur, sans ajout",
   "short_pitch": "phrase de 8 à 12 mots maximum",
   "score": nombre entre 0 et 100,
   "country": "string — nom du pays en français (ex: Tunisie, France, Maroc)",
   "country_code": "string — code ISO2 (ex: TN, FR, MA, DZ, SN, CI)",
-  "language": "string — langue principale du marché (ex: fr, ar, en)"
+  "language": "string — langue principale du marché (ex: fr, ar, en)",
+  "budget_min": nombre positif,
+  "budget_max": nombre >= budget_min,
+  "budget_currency": "code devise ISO 4217 en majuscules (ex: EUR, USD, TND, MAD)"
 }
 
 RÈGLES ABSOLUES :

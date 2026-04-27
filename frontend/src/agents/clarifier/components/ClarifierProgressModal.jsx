@@ -187,7 +187,7 @@ export default function ClarifierProgressModal({ open, steps, currentStep }) {
 
           <div className="flex-1">
             <p className="text-sm font-bold text-white">{title}</p>
-            <p className="text-2xs text-white/70">Idea Clarifier Agent — XAI</p>
+            <p className="text-2xs text-white/70">Idea clarifier — XAI</p>
           </div>
 
           {/* Live dot + bouncing dots */}

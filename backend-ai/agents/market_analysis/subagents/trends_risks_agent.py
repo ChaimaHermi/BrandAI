@@ -71,7 +71,32 @@ CONTENT: {content}
     # ─────────────────────────
     async def run(self, state):
 
-        queries = (state.market_analysis or {}).get("trend_queries", [])
+        ma = (state.market_analysis or {})
+        trend_queries = ma.get("trend_queries", []) if isinstance(ma, dict) else []
+        risk_queries = ma.get("risk_queries", []) if isinstance(ma, dict) else []
+        trend_q = []
+        risk_q = []
+        seen = set()
+        for q in (trend_queries if isinstance(trend_queries, list) else []):
+            s = str(q).strip()
+            if not s:
+                continue
+            k = s.lower()
+            if k in seen:
+                continue
+            seen.add(k)
+            trend_q.append(s)
+        for q in (risk_queries if isinstance(risk_queries, list) else []):
+            s = str(q).strip()
+            if not s:
+                continue
+            k = s.lower()
+            if k in seen:
+                continue
+            seen.add(k)
+            risk_q.append(s)
+
+        queries = trend_q + risk_q
 
         if not queries:
             return {
@@ -83,11 +108,39 @@ CONTENT: {content}
 
         all_results = []
 
-        for q in queries:
-            results = tavily_search(q)
-            all_results.extend(results[:8])
+        # Balanced retrieval: reserve room for both trend and risk evidence.
+        # This prevents risk queries from being dropped by the global cap.
+        per_query_cap = 4
+        trend_budget = 20
+        risk_budget = 20
 
-        all_results = all_results[:40]
+        trend_results = []
+        for q in trend_q:
+            results = tavily_search(q)
+            trend_results.extend(results[:per_query_cap])
+            if len(trend_results) >= trend_budget:
+                break
+        trend_results = trend_results[:trend_budget]
+
+        risk_results = []
+        for q in risk_q:
+            results = tavily_search(q)
+            risk_results.extend(results[:per_query_cap])
+            if len(risk_results) >= risk_budget:
+                break
+        risk_results = risk_results[:risk_budget]
+
+        # Interleave trend/risk chunks to keep both signal types in context.
+        i = j = 0
+        while len(all_results) < 40 and (i < len(trend_results) or j < len(risk_results)):
+            if i < len(trend_results):
+                all_results.append(trend_results[i])
+                i += 1
+            if len(all_results) >= 40:
+                break
+            if j < len(risk_results):
+                all_results.append(risk_results[j])
+                j += 1
 
         print("[DEBUG TRENDS] total results:", len(all_results))
 

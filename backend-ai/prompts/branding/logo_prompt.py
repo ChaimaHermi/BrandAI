@@ -35,6 +35,8 @@ TEXT HANDLING (CRITICAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 - ALWAYS include the brand name in the logo if provided.
 - The brand name MUST be clearly visible and readable.
+- Display ONLY the brand name as readable text.
+- NEVER render palette hex codes or color codes as visible text (e.g. #2176AB, RGB, CMYK).
 - Use clean, modern sans-serif typography.
 - The text must be:
   → properly aligned with the icon
@@ -67,8 +69,12 @@ STYLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 BACKGROUND
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- white or very light background only
+- transparent background (PNG alpha) preferred
+- no solid/gradient background panel behind the logo
+- no badge/container/plate shape behind icon or text
+- no rounded rectangle card, no capsule, no sticker effect
 - no mockup, no environment
+- isolate logo on empty canvas only
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 COLOR
@@ -82,7 +88,10 @@ NEGATIVE PROMPT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 - photorealistic, 3D, complex details, clutter,
 - watermark, signature, distorted text,
-- extra words, unreadable typography
+- extra words, unreadable typography,
+- hex color codes, palette codes, RGB/CMYK values as text,
+- white background, colored background, gradient background, textured background, shadow backdrop,
+- badge, label plate, rounded rectangle panel, capsule background, card behind logo
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT EXAMPLE

@@ -13,6 +13,10 @@ export default function ClarifiedBlock({ data, score }) {
 
   const messageText = (data.message || "").trim();
   const hasCountry = !!data.country && data.country !== "Non précisé";
+  const hasBudget =
+    data.budget_min !== undefined ||
+    data.budget_max !== undefined ||
+    !!data.budget_currency;
 
   // ── Score insuffisant → bloc warning ────────────────
   if (score < CLARITY_SCORE_MIN_DISPLAY) {
@@ -117,6 +121,17 @@ export default function ClarifiedBlock({ data, score }) {
               </div>
             ))}
           </div>
+
+          {hasBudget && (
+            <div className="rounded-[10px] border border-[#bbf7d0] bg-[#f0fdf4] px-[14px] py-[10px] text-xs text-[#166534]">
+              <div className="mb-1 text-[9px] font-bold uppercase tracking-[0.07em]">
+                Budget de départ
+              </div>
+              <div>
+                Min: <strong>{data.budget_min ?? "—"}</strong> · Max: <strong>{data.budget_max ?? "—"}</strong> · Devise: <strong>{data.budget_currency || "—"}</strong>
+              </div>
+            </div>
+          )}
 
           <div className="rounded-[10px] border border-[#FAC775] bg-[#fff9f0] px-[14px] py-[10px] text-xs text-[#854F0B]">
             Le lancement du pipeline est désactivé. Score minimum requis :{" "}
@@ -230,6 +245,25 @@ export default function ClarifiedBlock({ data, score }) {
             </div>
           </div>
         </div>
+
+        {hasBudget && (
+          <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-[14px] py-3">
+            <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#15803d]">
+              Budget de départ
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700">
+              <span>
+                Min: <strong>{data.budget_min ?? "—"}</strong>
+              </span>
+              <span>
+                Max: <strong>{data.budget_max ?? "—"}</strong>
+              </span>
+              <span>
+                Devise: <strong>{data.budget_currency || "—"}</strong>
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Zone géographique */}
         {hasCountry && (

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FiCheck } from "react-icons/fi";
 import StyleAndToneSection from "../StyleAndToneSection";
 import ConstraintsSection from "../ConstraintsSection";
@@ -24,6 +25,7 @@ export default function NamingStep({
   onChooseBrandName,
   hasNamingResults = false,
 }) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const pipelineBadge = record?.status;
 
   const allNotExists =
@@ -48,41 +50,63 @@ export default function NamingStep({
       <div className="flex flex-col gap-4">
         {!hasNamingResults && (
           <>
-            <StyleAndToneSection
-              embedded
-              brandValues={styleTon.brandValues}
-              personality={styleTon.personality}
-              userFeelings={styleTon.userFeelings}
-              onBrandValuesChange={(v) =>
-                onStyleTon((s) => ({ ...s, brandValues: v }))
-              }
-              onPersonalityChange={(v) =>
-                onStyleTon((s) => ({ ...s, personality: v }))
-              }
-              onUserFeelingsChange={(v) =>
-                onStyleTon((s) => ({ ...s, userFeelings: v }))
-              }
-            />
+            <div className="bi-card">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.08em] text-brand">
+                Préférences principales
+              </p>
+              <p className="mb-3 text-xs text-ink-subtle">
+                Définissez le style de marque, puis générez rapidement 3 noms.
+              </p>
+              <StyleAndToneSection
+                embedded={false}
+                brandValues={styleTon.brandValues}
+                personality={styleTon.personality}
+                userFeelings={styleTon.userFeelings}
+                onBrandValuesChange={(v) =>
+                  onStyleTon((s) => ({ ...s, brandValues: v }))
+                }
+                onPersonalityChange={(v) =>
+                  onStyleTon((s) => ({ ...s, personality: v }))
+                }
+                onUserFeelingsChange={(v) =>
+                  onStyleTon((s) => ({ ...s, userFeelings: v }))
+                }
+              />
+            </div>
 
-            <ConstraintsSection
-              embedded
-              nameLanguage={constraints.nameLanguage}
-              nameLength={constraints.nameLength}
-              includeKeywords={constraints.includeKeywords}
-              excludeKeywords={constraints.excludeKeywords}
-              onNameLanguageChange={(v) =>
-                onConstraints((c) => ({ ...c, nameLanguage: v }))
-              }
-              onNameLengthChange={(v) =>
-                onConstraints((c) => ({ ...c, nameLength: v }))
-              }
-              onIncludeChange={(v) =>
-                onConstraints((c) => ({ ...c, includeKeywords: v }))
-              }
-              onExcludeChange={(v) =>
-                onConstraints((c) => ({ ...c, excludeKeywords: v }))
-              }
-            />
+            <div className="bi-card">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((v) => !v)}
+                className="flex w-full items-center justify-between rounded-lg border border-brand-border bg-brand-light/40 px-3 py-2 text-left text-[12px] font-semibold text-brand-darker"
+              >
+                <span>Contraintes avancées (optionnel)</span>
+                <span>{showAdvanced ? "−" : "+"}</span>
+              </button>
+              {showAdvanced && (
+                <div className="mt-3">
+                  <ConstraintsSection
+                    embedded={false}
+                    nameLanguage={constraints.nameLanguage}
+                    nameLength={constraints.nameLength}
+                    includeKeywords={constraints.includeKeywords}
+                    excludeKeywords={constraints.excludeKeywords}
+                    onNameLanguageChange={(v) =>
+                      onConstraints((c) => ({ ...c, nameLanguage: v }))
+                    }
+                    onNameLengthChange={(v) =>
+                      onConstraints((c) => ({ ...c, nameLength: v }))
+                    }
+                    onIncludeChange={(v) =>
+                      onConstraints((c) => ({ ...c, includeKeywords: v }))
+                    }
+                    onExcludeChange={(v) =>
+                      onConstraints((c) => ({ ...c, excludeKeywords: v }))
+                    }
+                  />
+                </div>
+              )}
+            </div>
           </>
         )}
 

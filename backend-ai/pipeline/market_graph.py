@@ -46,6 +46,20 @@ def _merge_trend_queries(bundle) -> list:
     return out[:12]
 
 
+def _merge_risk_queries(bundle) -> list:
+    ft = bundle.for_trends()
+    out = []
+    seen = set()
+    for x in (ft.get("risk_keywords") or []):
+        if not x:
+            continue
+        s = str(x).strip()
+        if s and s not in seen:
+            seen.add(s)
+            out.append(s)
+    return out[:12]
+
+
 def _store_agent_data(ma: dict, key: str, result: dict) -> None:
     if result.get("status") == "success":
         data = result.get("data")
@@ -77,9 +91,11 @@ async def node_keyword_extractor(state: MarketGraphState) -> dict:
     ma["trends"] = {}
     ma["strategy"] = {}
     ma["market_keywords"] = list(bundle.market_keywords or [])
+    ma["sector_growth_keywords"] = list(bundle.sector_growth_keywords or [])
     ma["competitor_queries"] = list(bundle.competitor_queries or [])
     ma["voc_queries"] = list(bundle.voc_keywords or [])
     ma["trend_queries"] = _merge_trend_queries(bundle)
+    ma["risk_queries"] = _merge_risk_queries(bundle)
     _debug_ma("keyword_extractor", ma)
     return {"market_analysis": ma}
 

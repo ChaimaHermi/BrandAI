@@ -1,9 +1,43 @@
+import { useState } from "react";
 import {
   FiBarChart2, FiUsers, FiCpu, FiShield, FiStar, FiAlertTriangle, FiExternalLink,
 } from "react-icons/fi";
 
 function isNonEmptyArray(v) {
   return Array.isArray(v) && v.length > 0;
+}
+
+function normalizeTrendItem(item) {
+  if (typeof item === "string") return { insight: item, maturity: "", source: "" };
+  if (item && typeof item === "object") {
+    return {
+      insight: typeof item.insight === "string" ? item.insight : "",
+      maturity: typeof item.maturity === "string" ? item.maturity : "",
+      source: typeof item.source === "string" ? item.source : "",
+    };
+  }
+  return { insight: "", maturity: "", source: "" };
+}
+
+function normalizeRiskItem(item) {
+  if (typeof item === "string") return { insight: item, level: "", source: "" };
+  if (item && typeof item === "object") {
+    return {
+      insight: typeof item.insight === "string" ? item.insight : "",
+      level: typeof item.level === "string" ? item.level : "",
+      source: typeof item.source === "string" ? item.source : "",
+    };
+  }
+  return { insight: "", level: "", source: "" };
+}
+
+function toUrlOrNull(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.toLowerCase() === "web") return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed)) return `https://${trimmed}`;
+  return null;
 }
 
 function EmptySlot() {
@@ -14,12 +48,22 @@ function EmptySlot() {
   );
 }
 
+function RiskLevelPill({ level }) {
+  const v = String(level || "").toLowerCase();
+  if (!v) return null;
+  let cls = "bg-gray-100 text-ink-muted";
+  if (v.includes("élev") || v.includes("eleve")) cls = "bg-red-100 text-red-700";
+  else if (v.includes("mod")) cls = "bg-amber-100 text-amber-700";
+  else if (v.includes("faible")) cls = "bg-emerald-100 text-emerald-700";
+  return <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${cls}`}>{level}</span>;
+}
+
 /* ── Trend card ──────────────────────────────────────────────────────────── */
 function TrendCard({ icon: Icon, iconClass, title, items, dotClass }) {
   const hasItems = isNonEmptyArray(items);
   return (
-    <div className="rounded-2xl border border-brand-border bg-white p-5 shadow-card">
-      <div className="mb-3 flex items-center gap-2">
+    <div className="rounded-xl border border-brand-border bg-white p-3.5 shadow-sm">
+      <div className="mb-2 flex items-center gap-2">
         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconClass}`}>
           <Icon size={14} />
         </span>
@@ -37,7 +81,32 @@ function TrendCard({ icon: Icon, iconClass, title, items, dotClass }) {
             className="flex items-start gap-2 border-b border-gray-50 py-2 last:border-0"
           >
             <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dotClass}`} />
-            <p className="text-sm leading-relaxed text-ink-body">{item}</p>
+            <div>
+              <p className="text-[12px] leading-relaxed text-ink-body">{item.insight}</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {item.maturity && (
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-2xs font-semibold text-ink-muted">
+                    {item.maturity}
+                  </span>
+                )}
+                {item.source && (
+                  toUrlOrNull(item.source) ? (
+                    <a
+                      href={toUrlOrNull(item.source)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-2xs text-brand hover:underline"
+                    >
+                      source
+                    </a>
+                  ) : (
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-2xs font-medium text-ink-muted">
+                      source: {item.source}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
           </div>
         ))
       ) : (
@@ -48,53 +117,37 @@ function TrendCard({ icon: Icon, iconClass, title, items, dotClass }) {
 }
 
 export default function MarketTrendsRisks({ trends }) {
-  const marketTrends       = trends?.market_trends;
-  const consumerTrends     = trends?.consumer_trends;
-  const technologyTrends   = trends?.technology_trends;
-  const regulatoryTrends   = trends?.regulatory_trends;
-  const emergingOpportunities = trends?.emerging_opportunities;
-  const marketRisks        = trends?.market_risks;
+  const [showSources, setShowSources] = useState(false);
+  const marketTrends       = (trends?.market_trends ?? []).map(normalizeTrendItem).filter((x) => x.insight);
+  const consumerTrends     = (trends?.consumer_trends ?? []).map(normalizeTrendItem).filter((x) => x.insight);
+  const technologyTrends   = (trends?.technology_trends ?? []).map(normalizeTrendItem).filter((x) => x.insight);
+  const regulatoryTrends   = (trends?.regulatory_trends ?? []).map(normalizeTrendItem).filter((x) => x.insight);
+  const emergingOpportunities = (trends?.opportunities ?? []).map(normalizeTrendItem).filter((x) => x.insight);
+  const marketRisks        = (trends?.risks ?? []).map(normalizeRiskItem).filter((x) => x.insight);
   const sources            = Array.isArray(trends?.sources) ? trends.sources : [];
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
-        {/* Left column */}
-        <div className="flex flex-col gap-4">
-          <TrendCard
-            icon={FiBarChart2} iconClass="bg-brand-light text-brand"
-            title="Tendances marché"      items={marketTrends}     dotClass="bg-brand-muted"
-          />
-          <TrendCard
-            icon={FiUsers}    iconClass="bg-blue-50 text-blue-600"
-            title="Tendances consommateurs" items={consumerTrends}  dotClass="bg-blue-500"
-          />
-          <TrendCard
-            icon={FiCpu}      iconClass="bg-amber-50 text-amber-600"
-            title="Tendances technologiques" items={technologyTrends} dotClass="bg-amber-500"
-          />
-        </div>
-
-        {/* Right column */}
-        <div className="flex flex-col gap-4">
-          <TrendCard
-            icon={FiShield}   iconClass="bg-orange-50 text-orange-600"
-            title="Tendances réglementaires" items={regulatoryTrends} dotClass="bg-orange-500"
-          />
-          <TrendCard
-            icon={FiStar}     iconClass="bg-success-light text-success"
-            title="Opportunités émergentes" items={emergingOpportunities} dotClass="bg-success"
-          />
+      <div className="rounded-2xl border border-brand-border bg-white p-4 shadow-card">
+        <p className="mb-3 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
+          Tendances
+        </p>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <TrendCard icon={FiBarChart2} iconClass="bg-brand-light text-brand" title="Marché" items={marketTrends} dotClass="bg-brand-muted" />
+          <TrendCard icon={FiUsers} iconClass="bg-blue-50 text-blue-600" title="Consommateurs" items={consumerTrends} dotClass="bg-blue-500" />
+          <TrendCard icon={FiCpu} iconClass="bg-amber-50 text-amber-600" title="Technologie" items={technologyTrends} dotClass="bg-amber-500" />
+          <TrendCard icon={FiShield} iconClass="bg-orange-50 text-orange-600" title="Réglementaire" items={regulatoryTrends} dotClass="bg-orange-500" />
+          <TrendCard icon={FiStar} iconClass="bg-success-light text-success" title="Opportunités" items={emergingOpportunities} dotClass="bg-success" />
         </div>
       </div>
 
-      {/* ── Risks ──────────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-        <div className="mb-3 flex items-center gap-2">
+      {/* ── Risks ─────────────────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+        <div className="mb-3 flex items-center gap-2 border-l-2 border-red-300 pl-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100">
             <FiAlertTriangle size={14} className="text-red-600" />
           </span>
-          <p className="text-sm font-bold text-ink">Risques marché</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.07em] text-red-700">Risques marché</p>
           {isNonEmptyArray(marketRisks) && (
             <span className="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
               {marketRisks.length}
@@ -103,12 +156,30 @@ export default function MarketTrendsRisks({ trends }) {
         </div>
         {isNonEmptyArray(marketRisks) ? (
           marketRisks.map((risk, idx) => (
-            <div
-              key={`risk-${idx}`}
-              className="mb-2 flex items-start gap-3 rounded-lg border-b border-red-100 bg-white px-3 py-2 last:border-0"
-            >
-              <FiAlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-500" />
-              <p className="text-sm leading-relaxed text-ink-body">{risk}</p>
+            <div key={`risk-${idx}`} className="mb-2 rounded-lg border border-red-100 bg-white px-3 py-2.5 last:mb-0">
+              <div className="mb-1 flex items-start justify-between gap-2">
+                <p className="text-sm leading-relaxed text-ink-body">{risk.insight}</p>
+                <RiskLevelPill level={risk.level} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {risk.source && (
+                  toUrlOrNull(risk.source) ? (
+                    <a
+                      href={toUrlOrNull(risk.source)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-2xs text-brand hover:underline"
+                    >
+                      <FiExternalLink size={10} />
+                      source
+                    </a>
+                  ) : (
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-2xs font-medium text-ink-muted">
+                      source: {risk.source}
+                    </span>
+                  )
+                )}
+              </div>
             </div>
           ))
         ) : (
@@ -122,28 +193,37 @@ export default function MarketTrendsRisks({ trends }) {
           <p className="mb-3 border-l-2 border-brand-muted pl-2 text-xs font-semibold uppercase tracking-[0.07em] text-brand">
             Sources tendances & risques
           </p>
-          <div className="grid grid-cols-1 gap-2">
-            {sources.map((src, idx) => {
-              const url = typeof src?.url === "string" ? src.url : "";
-              const domain = typeof src?.domain === "string" ? src.domain : "";
-              if (!url) return null;
-              return (
-                <a
-                  key={`${url}-${idx}`}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-lg border border-brand-border px-3 py-2 text-sm transition-colors hover:bg-brand-light"
-                >
-                  <span className="flex items-center gap-2 font-medium text-ink-muted">
-                    <FiExternalLink size={12} className="text-brand-muted" />
-                    {domain || "source"}
-                  </span>
-                  <span className="ml-4 truncate text-brand">{url}</span>
-                </a>
-              );
-            })}
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowSources((v) => !v)}
+            className="rounded-lg border border-brand-border px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand-light"
+          >
+            {showSources ? "Masquer sources" : "Voir sources"}
+          </button>
+          {showSources && (
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              {sources.map((src, idx) => {
+                const url = toUrlOrNull(src?.url);
+                const domain = typeof src?.domain === "string" ? src.domain : "";
+                if (!url) return null;
+                return (
+                  <a
+                    key={`${url}-${idx}`}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-lg border border-brand-border px-3 py-2 text-sm transition-colors hover:bg-brand-light"
+                  >
+                    <span className="flex items-center gap-2 font-medium text-ink-muted">
+                      <FiExternalLink size={12} className="text-brand-muted" />
+                      {domain || "source"}
+                    </span>
+                    <span className="ml-4 truncate text-brand">{url}</span>
+                  </a>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

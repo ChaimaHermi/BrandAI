@@ -28,7 +28,7 @@ class StrategyAnalysisAgent(BaseAgent):
                 break
         return out
 
-    def _compress_competitors(self, competitor_block, n=5):
+    def _compress_competitors(self, competitor_block, n=8):
         competitors = (competitor_block or {}).get("competitors", [])
         out = []
         for c in competitors[:n]:
@@ -43,7 +43,7 @@ class StrategyAnalysisAgent(BaseAgent):
             })
         return out
 
-    def _extract_voc_pains(self, voc_block, n=5):
+    def _extract_voc_pains(self, voc_block, n=8):
         vb = voc_block or {}
         pains = []
         pains.extend(vb.get("pain_points", []) or [])
@@ -58,9 +58,14 @@ class StrategyAnalysisAgent(BaseAgent):
             raise ValueError("missing_clarified_idea")
 
         trends = ma.get("trends", {}) or {}
+        market = ma.get("market", {}) or {}
+        competitor = ma.get("competitor", {}) or {}
+        voc = ma.get("voc", {}) or {}
+        keywords = ma.get("keywords", {}) or {}
 
         context_data = {
-            "user_business_idea": {
+            "source_1_idea": {
+                "idea_id": state.idea_id,
                 "short_pitch": idea.get("short_pitch"),
                 "problem": idea.get("problem"),
                 "solution_description": idea.get("solution_description"),
@@ -69,12 +74,27 @@ class StrategyAnalysisAgent(BaseAgent):
                 "country": idea.get("country"),
                 "country_code": idea.get("country_code"),
                 "language": idea.get("language"),
+                "budget_min": idea.get("budget_min"),
+                "budget_max": idea.get("budget_max"),
+                "budget_currency": idea.get("budget_currency"),
             },
-            "market_intelligence": {
-                "competitors_top5": self._compress_competitors(ma.get("competitor", {}), n=5),
-                "market_trends_top5": self._top_n(trends.get("market_trends", []), n=5),
-                "market_risks_top5": self._top_n(trends.get("market_risks", []), n=5),
-                "voc_pain_points_top5": self._extract_voc_pains(ma.get("voc", {}), n=5),
+            "source_2_market_intelligence": {
+                # Full raw outputs from subagents to preserve context fidelity.
+                "market_data_full": market,
+                "competitor_full": competitor,
+                "voc_full": voc,
+                "trends_risks_full": trends,
+                "keywords_full": keywords,
+                # Digest views to guide LLM attention.
+                "market_highlights": {
+                    "market_size": market.get("market_size"),
+                    "growth_rate": market.get("growth_rate"),
+                    "key_segments": self._top_n(market.get("segments", []), n=8),
+                },
+                "competitors_top": self._compress_competitors(competitor, n=8),
+                "voc_pains_top": self._extract_voc_pains(voc, n=8),
+                "trends_top": self._top_n(trends.get("market_trends", []), n=8),
+                "risks_top": self._top_n(trends.get("market_risks", []), n=8),
             },
         }
 
@@ -92,9 +112,6 @@ class StrategyAnalysisAgent(BaseAgent):
                 "error": str(e),
                 "data": {}
             }
-
-        print("[DEBUG STRATEGY] CONTEXT LENGTH:", len(context))
-        print("[DEBUG STRATEGY] APPROX TOKENS:", len(context) // 4)
 
         response = await self._call_llm(
             system_prompt=PROMPT_STRATEGY_ANALYSIS,

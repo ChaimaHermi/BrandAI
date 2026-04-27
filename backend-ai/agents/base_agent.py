@@ -220,6 +220,12 @@ class BaseAgent(ABC):
                     return content
                 except httpx.HTTPStatusError as e:
                     last_error = e
+                    status = e.response.status_code if e.response is not None else "?"
+                    self.logger.error(
+                        f"[API_KO] provider=NVIDIA status={status} "
+                        f"agent={self.agent_name} model={self.llm_model} "
+                        f"err={str(e)[:200]}"
+                    )
                     if e.response.status_code == 429:
                         # Rate limit → essayer la clé suivante immédiatement
                         self.logger.warning(
