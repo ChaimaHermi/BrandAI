@@ -5,6 +5,7 @@ import { AGENTS } from "@/agents";
 import { PipelineContext } from "@/context/PipelineContext";
 import { usePipelineData } from "./hooks/usePipelineData";
 import { usePipelineStatus } from "./hooks/usePipelineStatus";
+import { useNotifications } from "@/hooks/useNotificationsSSE";
 import PipelineTopBar from "./PipelineTopBar";
 import PipelineSidebar from "./PipelineSidebar";
 
@@ -38,6 +39,8 @@ export default function PipelineLayout() {
     hasBrandIdentityResult,
     activeAgentId: activeAgent.id,
   });
+
+  const notifications = useNotifications(token);
 
   const userInitials = (user?.name || user?.email || "U").slice(0, 2).toUpperCase();
   const ideaTitle = (idea?.description || "Votre projet").slice(0, 26);
@@ -75,6 +78,7 @@ export default function PipelineLayout() {
           onToggle={() => setSidebarOpen((v) => !v)}
           userInitials={userInitials}
           onNavigateDashboard={() => navigate("/dashboard")}
+          notifications={notifications}
         />
 
         <div className="app-shell-body">

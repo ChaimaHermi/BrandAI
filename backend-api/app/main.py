@@ -41,6 +41,7 @@ import app.models.branding_results  # noqa
 import app.models.generated_content  # noqa
 import app.models.user_social_connection  # noqa
 import app.models.scheduled_publication  # noqa
+import app.models.notification  # noqa
 from app.api.routes import (
     auth,
     ideas,
@@ -50,6 +51,7 @@ from app.api.routes import (
     branding_results,
     social_connections,
     idea_scheduled_publications,
+    notifications,
 )
 
 app = FastAPI(
@@ -89,8 +91,23 @@ app.add_middleware(
 # En production on utilisera Alembic pour les migrations.
 @app.on_event("startup")
 async def startup():
+    import asyncio
+    import threading
+    from app.workers.scheduled_publisher import run_publisher_loop
+
     Base.metadata.create_all(bind=engine)
-    print("✅ BrandAI API démarrée")
+
+    # Run publisher loop in a dedicated thread/event-loop to avoid
+    # blocking the FastAPI main event loop and HTTP responses.
+    def _publisher_thread_target():
+        asyncio.run(run_publisher_loop())
+
+    threading.Thread(
+        target=_publisher_thread_target,
+        name="scheduled-publisher",
+        daemon=True,
+    ).start()
+    print("✅ BrandAI API démarrée (+ publisher worker thread)")
 # ── Enregistrement des routers ────────────────────────────────
 # prefix="/api" → toutes les routes commencent par /api/...
 # Résultat :
@@ -105,6 +122,7 @@ app.include_router(marketing_plans.router, prefix="/api")
 app.include_router(branding_results.router, prefix="/api")
 app.include_router(social_connections.router, prefix="/api")
 app.include_router(idea_scheduled_publications.router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
 
 # ── Route de santé ────────────────────────────────────────────
 # GET /health → vérifie que l'API est en ligne
