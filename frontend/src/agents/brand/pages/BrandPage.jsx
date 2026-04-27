@@ -244,6 +244,14 @@ export default function BrandPage() {
     return null;
   }, [logoConceptsDisplayed]);
 
+  const logoPreviewTransparentUrl = useMemo(() => {
+    const c0 = logoConceptsDisplayed[0];
+    if (c0?.image_base64_transparent && c0?.image_mime_transparent) {
+      return `data:${c0.image_mime_transparent};base64,${c0.image_base64_transparent}`;
+    }
+    return null;
+  }, [logoConceptsDisplayed]);
+
   useEffect(() => {
     if (!idea?.id || !record?.result_json || record.idea_id !== idea.id) {
       return;
@@ -729,6 +737,7 @@ export default function BrandPage() {
             onGenerateLogo={handleGenerateLogo}
             logoGenMessage={logoGenMessage}
             logoPreviewUrl={logoPreviewUrl}
+            logoPreviewTransparentUrl={logoPreviewTransparentUrl}
             logoConcept={logoConceptsDisplayed[0] ?? null}
           />
         )}
@@ -740,6 +749,7 @@ export default function BrandPage() {
             paletteOptions={paletteListDisplayed}
             selectedPaletteId={selectedPaletteId}
             logoPreviewUrl={logoPreviewUrl}
+            logoPreviewTransparentUrl={logoPreviewTransparentUrl}
             logoConcept={logoConceptsDisplayed[0] ?? null}
             nameWhyText={selectedNameWhyText}
           />

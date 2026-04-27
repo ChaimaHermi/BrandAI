@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+import io
 from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
@@ -52,6 +53,60 @@ def _print_prompt_to_terminal(image_prompt: str, negative_prompt: str) -> None:
         lines.extend(["-------- negative_prompt --------", negative_prompt.strip()])
     lines.append("======== fin prompt image ========\n")
     print("\n".join(lines), file=sys.stderr, flush=True)
+
+
+def _remove_light_background_to_transparent(
+    image_bytes: bytes,
+) -> tuple[bytes | None, str | None]:
+    """
+    Convert near-white background to transparency.
+    Returns PNG bytes with alpha channel when successful.
+    """
+    try:
+        from PIL import Image
+    except Exception as e:
+        return None, f"Pillow indisponible pour remove background: {e}"
+
+    # 1) Best effort with rembg (robust segmentation), if available.
+    try:
+        from rembg import remove as rembg_remove
+
+        out_bytes = rembg_remove(image_bytes)
+        if isinstance(out_bytes, (bytes, bytearray)) and out_bytes:
+            return bytes(out_bytes), None
+    except Exception:
+        # fallback below
+        pass
+
+    # 2) Fallback: near-white threshold transparency.
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            rgba = img.convert("RGBA")
+            data = bytearray(rgba.tobytes())
+
+            # Since logo prompt enforces white/light background, make near-white pixels transparent.
+            # Keep non-white pixels opaque to preserve logo details.
+            threshold = 245
+            feather = 25
+            for i in range(0, len(data), 4):
+                r, g, b = data[i], data[i + 1], data[i + 2]
+                min_rgb = min(r, g, b)
+
+                if min_rgb >= threshold:
+                    alpha = 0
+                else:
+                    # Soft transition near threshold to avoid jagged edges.
+                    distance = threshold - min_rgb
+                    alpha = min(255, int((distance / feather) * 255)) if distance < feather else 255
+
+                data[i + 3] = alpha
+
+            out = Image.frombytes("RGBA", rgba.size, bytes(data))
+            buf = io.BytesIO()
+            out.save(buf, format="PNG")
+            return buf.getvalue(), None
+    except Exception as e:
+        return None, f"Remove background échoué (rembg indisponible + fallback Pillow): {e}"
 
 
 class LogoAgent(BaseAgent):
@@ -290,6 +345,7 @@ class LogoAgent(BaseAgent):
         *,
         b64: str | None,
         mime: str | None,
+        transparent_b64: str | None,
         image_source: str | None,
     ) -> dict[str, Any]:
         concept: dict[str, Any] = {
@@ -302,6 +358,9 @@ class LogoAgent(BaseAgent):
         if b64 and mime:
             concept["image_base64"] = b64
             concept["image_mime"] = mime
+            if transparent_b64:
+                concept["image_base64_transparent"] = transparent_b64
+                concept["image_mime_transparent"] = "image/png"
             if image_source == "pollinations":
                 concept["image_provider"] = "pollinations"
                 concept["image_model"] = LOGO_POLLINATIONS_IMAGE_MODEL
@@ -310,6 +369,12 @@ class LogoAgent(BaseAgent):
                 concept["image_attribution"] = (
                     f"Image générée avec Pollinations.AI — modèle {qwen_lbl} — "
                     "service tiers (fallback lorsque Hugging Face n’est pas disponible)."
+                )
+            elif image_source == "azure":
+                concept["image_provider"] = "azure"
+                concept["image_model"] = str(os.getenv("AZURE_OPENAI_LOGO_IMAGE_DEPLOYMENT") or "").strip() or "azure-image"
+                concept["image_attribution"] = (
+                    "Image générée via Azure OpenAI (fallback après Hugging Face)."
                 )
             elif image_source == "huggingface":
                 m = LOGO_HF_IMAGE_MODEL
@@ -479,6 +544,7 @@ class LogoAgent(BaseAgent):
         image_source = holder.get("image_source")
 
         b64: str | None = None
+        transparent_b64: str | None = None
         if image_bytes:
             b64 = base64.standard_b64encode(image_bytes).decode("ascii")
             logger.info(
@@ -487,6 +553,11 @@ class LogoAgent(BaseAgent):
                 mime or "image",
                 len(image_bytes),
             )
+            transparent_bytes, transparent_err = _remove_light_background_to_transparent(image_bytes)
+            if transparent_bytes:
+                transparent_b64 = base64.standard_b64encode(transparent_bytes).decode("ascii")
+            elif transparent_err:
+                logger.warning("[logo_agent] remove background non disponible: %s", transparent_err)
         elif not state.brand_identity.get("logo_image_error"):
             if provider == "none":
                 pass
@@ -502,6 +573,7 @@ class LogoAgent(BaseAgent):
             negative_prompt,
             b64=b64,
             mime=mime,
+            transparent_b64=transparent_b64,
             image_source=image_source,
         )
 
