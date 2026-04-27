@@ -3,6 +3,8 @@
  * Purely presentational. Zero inline styles. Zero hardcoded hex.
  */
 
+import NotificationBell from "@/components/NotificationBell";
+
 /* ── Chevron icon (breadcrumb separator) ─────────────────────────────────── */
 function Chevron() {
   return (
@@ -41,6 +43,7 @@ export default function PipelineTopBar({
   onToggle,
   userInitials,
   onNavigateDashboard,
+  notifications,
 }) {
   return (
     <div className="flex h-[52px] shrink-0 items-center gap-3 border-b border-brand-border bg-white px-5 shadow-topbar">
@@ -96,6 +99,16 @@ export default function PipelineTopBar({
           {activeIndex + 1}/{agentsCount}
         </span>
       </div>
+
+      {/* Notifications */}
+      {notifications && (
+        <NotificationBell
+          items={notifications.items}
+          unreadCount={notifications.unreadCount}
+          onMarkRead={notifications.markRead}
+          onMarkAllRead={notifications.markAllRead}
+        />
+      )}
 
       {/* Sidebar toggle */}
       <button

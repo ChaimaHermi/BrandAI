@@ -2,6 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { UserAvatar } from "../ui/UserAvatar";
 import { useAuth } from "@/shared/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotificationsSSE";
+import NotificationBell from "@/components/NotificationBell";
 
 /**
  * Navbar — shared top navigation bar.
@@ -10,7 +12,8 @@ import { useAuth } from "@/shared/hooks/useAuth";
  * variant="app"     → authenticated nav (new idea + user info + logout)
  */
 export function Navbar({ variant = "landing" }) {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
+  const notifications = useNotifications(variant === "app" ? token : null);
 
   return (
     <header className="fixed left-0 top-0 z-50 h-16 w-full border-b border-brand-border bg-white/90 shadow-topbar backdrop-blur-md">
@@ -67,6 +70,15 @@ export function Navbar({ variant = "landing" }) {
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-xs font-bold">+</span>
                 Nouvelle idée
               </Link>
+
+              {variant === "app" && (
+                <NotificationBell
+                  items={notifications.items}
+                  unreadCount={notifications.unreadCount}
+                  onMarkRead={notifications.markRead}
+                  onMarkAllRead={notifications.markAllRead}
+                />
+              )}
 
               <div className="flex items-center gap-2">
                 <div className="hidden md:flex flex-col items-end">
