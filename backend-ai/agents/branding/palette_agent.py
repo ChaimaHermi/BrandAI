@@ -33,7 +33,7 @@ class PaletteAgent(BaseAgent):
     """Palettes en appel LLM direct + validation minimale locale."""
 
     def __init__(self):
-        self._palette_max_tokens = min(max(LLM_CONFIG.get("max_tokens") or 1200, 1800), 2400)
+        self._palette_max_tokens = min(max(LLM_CONFIG.get("max_tokens") or 1200, 2400), 3200)
         super().__init__(
             agent_name="palette_agent",
             temperature=LLM_CONFIG["temperature"],
