@@ -21,6 +21,7 @@ export default function WebsiteBuilderPage() {
     submitChatMessage,
     saveManualEdits,
     deployWebsite,
+    clearDeployment,
     handleAction,
   } = useWebsiteBuilder();
 
@@ -83,6 +84,7 @@ export default function WebsiteBuilderPage() {
             htmlStats={htmlStats}
             deployment={deployment}
             onDeploy={deployWebsite}
+            onClearDeployment={clearDeployment}
             onRefresh={handleRefresh}
             onSaveEdits={saveManualEdits}
           />

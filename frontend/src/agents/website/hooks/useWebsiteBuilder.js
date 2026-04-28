@@ -11,6 +11,7 @@ import {
   apiStreamRefineWebsiteDescription,
   apiStreamGenerateWebsite,
   apiStreamReviseWebsite,
+  apiDeleteWebsiteDeployment,
 } from "../api/websiteBuilder.api";
 
 /**
@@ -171,15 +172,24 @@ function ensureResumeGuidance(messages, phase) {
     );
   }
 
-  if ((phase === "ready" || phase === "deployed") && !hasAction("deploy")) {
+  if (phase === "ready" && !hasAction("deploy")) {
     list.push(
       makeBotMessage(
-        phase === "deployed"
-          ? "Session reprise. Ton site est déjà en ligne ; tu peux encore demander des modifications puis re-déployer."
-          : "Session reprise. Ton site est prêt ; tu peux le modifier via le chat, l'éditer en place dans le preview, ou le déployer.",
+        "Session reprise. Ton site est prêt ; tu peux le modifier via le chat, l'éditer en place dans le preview, ou le déployer.",
         {
           phase: "generation",
           actions: [{ id: "deploy", label: "Déployer sur Vercel" }],
+        }
+      )
+    );
+  }
+
+  if (phase === "deployed") {
+    list.push(
+      makeBotMessage(
+        "Session reprise. Ton site est déjà en ligne ; tu peux demander des modifications dans le chat puis re-déployer quand tu veux.",
+        {
+          phase: "deployment",
         }
       )
     );
@@ -598,8 +608,6 @@ export function useWebsiteBuilder() {
       setPhase("revising");
       setError(null);
 
-      const streamId = pushStreamMessage("Phase 4 — Modification du site (live)");
-
       try {
         let result = null;
         await apiStreamReviseWebsite(token, {
@@ -607,7 +615,6 @@ export function useWebsiteBuilder() {
           currentHtml,
           instruction: trimmed,
           onEvent: (event) => {
-            handleStreamEvent(streamId)(event);
             if (event?.type === "result" && event.payload) {
               result = event.payload;
             }
@@ -615,23 +622,26 @@ export function useWebsiteBuilder() {
         });
 
         const finalHtml = result?.html || currentHtml;
+        const hasHtmlChanged = finalHtml !== currentHtml;
         setHtml(finalHtml);
         if (result?.html_stats) setHtmlStats(result.html_stats);
         setCurrentVersion((v) => Math.max(1, v + 1));
-        finalizeStream(streamId, { status: "done" });
 
-        pushBot("✅ Modification appliquée. Le preview est à jour.", {
-          phase: "revision",
-        });
+        if (hasHtmlChanged) {
+          pushBot("✅ Modification appliquée. Le preview est à jour.", {
+            phase: "revision",
+          });
+        } else {
+          pushSystem("ℹ️ Aucune modification visible à appliquer sur le preview.", "info");
+        }
         setPhase("ready");
       } catch (err) {
-        finalizeStream(streamId, { status: "error", error: err?.message });
         setError(err?.message || "Révision impossible.");
         pushSystem(`❌ ${err?.message || "Erreur"}`, "error");
         setPhase("ready");
       }
     },
-    [ideaId, token, pushUser, pushBot, pushSystem, pushStreamMessage, handleStreamEvent, finalizeStream]
+    [ideaId, token, pushUser, pushBot, pushSystem]
   );
 
   // ── EDIT MODE : sauvegarde HTML édité manuellement ────────────────────────
@@ -685,6 +695,31 @@ export function useWebsiteBuilder() {
     }
   }, [ideaId, token, pushUser, pushBot, pushSystem]);
 
+  const clearDeployment = useCallback(async () => {
+    if (!ideaId || !token) return false;
+    const depId = String(deployment?.deployment_id || "").trim();
+    if (!depId) {
+      setDeployment(null);
+      setPhase("ready");
+      pushSystem("ℹ️ Aucun déploiement actif à supprimer.", "info");
+      return true;
+    }
+    setPhase("deploying");
+    setError(null);
+    try {
+      await apiDeleteWebsiteDeployment(token, { ideaId, deploymentId: depId });
+      setDeployment(null);
+      setPhase("ready");
+      pushSystem("✅ Déploiement Vercel supprimé. Le lien n'est plus actif.", "info");
+      return true;
+    } catch (err) {
+      setError(err?.message || "Suppression du déploiement impossible.");
+      setPhase("deployed");
+      pushSystem(`❌ Suppression du déploiement échouée : ${err?.message || "erreur"}`, "error");
+      return false;
+    }
+  }, [ideaId, token, deployment, pushSystem]);
+
   // Action dispatch (for action buttons inside bot messages)
   const handleAction = useCallback(
     (actionId) => {
@@ -710,10 +745,11 @@ export function useWebsiteBuilder() {
     (instruction) => {
       const trimmed = String(instruction || "").trim();
       if (!trimmed) return;
-      if (phase === "description_ready" || phase === "refining") {
+      const hasGeneratedHtml = Boolean((htmlRef.current || "").trim());
+      if (!hasGeneratedHtml && (phase === "description_ready" || phase === "refining")) {
         return refineDescription(trimmed);
       }
-      if (phase === "ready" || phase === "deployed" || phase === "revising") {
+      if (hasGeneratedHtml) {
         return reviseWebsite(trimmed);
       }
       return undefined;
@@ -803,7 +839,8 @@ export function useWebsiteBuilder() {
     !isBusy && (
       phase === "description_ready" ||
       phase === "ready" ||
-      phase === "deployed"
+      phase === "deployed" ||
+      Boolean((html || "").trim())
     );
 
   return {
@@ -828,6 +865,7 @@ export function useWebsiteBuilder() {
     reviseWebsite,
     saveManualEdits,
     deployWebsite,
+    clearDeployment,
     handleAction,
     submitChatMessage,
   };

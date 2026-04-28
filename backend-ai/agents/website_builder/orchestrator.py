@@ -22,8 +22,12 @@ from tools.website_builder.step_streamer import (
     StepEmitter,
     run_with_progress,
 )
-from tools.website_builder.validator_tool import validate_brand_identity, validate_html_output
-from tools.website_builder.vercel_deploy import deploy_html_to_vercel
+from tools.website_builder.validator_tool import (
+    sanitize_navigation_html,
+    validate_brand_identity,
+    validate_html_output,
+)
+from tools.website_builder.vercel_deploy import delete_vercel_deployment, deploy_html_to_vercel
 from tools.website_builder.website_project_persistence import (
     append_website_message,
     build_message,
@@ -46,30 +50,33 @@ class WebsiteBuilderOrchestrator:
         Validate generated/revised HTML and attempt one automatic correction pass
         if QA fails.
         """
+        normalized_html = sanitize_navigation_html(html)
         try:
             validate_brand_identity(
-                html,
+                normalized_html,
                 brand_name=ctx.brand_name,
                 slogan=ctx.slogan,
             )
-            stats = validate_html_output(html)
-            return html, stats
+            stats = validate_html_output(normalized_html)
+            return normalized_html, stats
         except RuntimeError as exc:
             auto_fix_instruction = (
                 "Corrige automatiquement ce HTML pour qu'il passe la QA sans changer "
                 "l'identité de marque: "
                 "1) slogan du contexte présent tel quel, "
                 "2) navigation interne uniquement avec ancres #id valides, "
+                "2.1) interdit absolu: href=\"#\" et ancres orphelines (ex: #cgu sans section), "
                 "3) images robustes (src http/https/data, alt, fallback), "
                 "4) responsive complet (meta viewport, breakpoints sm/md/lg, nav mobile). "
                 f"Phase: {phase}. Erreur QA détectée: {exc}"
             )
             healed_html = await revise_website_html(
                 ctx=ctx,
-                current_html=html,
+                current_html=normalized_html,
                 instruction=auto_fix_instruction,
                 invoke_llm=self.llm_gateway.invoke_llm,
             )
+            healed_html = sanitize_navigation_html(healed_html)
             validate_brand_identity(
                 healed_html,
                 brand_name=ctx.brand_name,
@@ -735,4 +742,32 @@ class WebsiteBuilderOrchestrator:
             "deployment": deployment.as_dict(),
             "summary_md": summary_md,
         }
+
+    @traceable(name="website_builder.orchestrator.delete_deployment", tags=["website_builder", "orchestrator", "deployment"])
+    async def delete_deployment(self, *, idea_id: int, token: str, deployment_id: str) -> dict[str, Any]:
+        dep_id = str(deployment_id or "").strip()
+        if not dep_id:
+            raise ValueError("deployment_id manquant.")
+
+        await delete_vercel_deployment(deployment_id=dep_id)
+        await patch_website_project(
+            idea_id=idea_id,
+            access_token=token,
+            patch={
+                "status": "generated",
+                "last_deployment_id": None,
+                "last_deployment_url": None,
+                "last_deployment_state": None,
+            },
+        )
+        await append_website_message(
+            idea_id=idea_id,
+            access_token=token,
+            message=build_message(
+                role="assistant",
+                msg_type="deploy_deleted",
+                content=f"Deploiement supprime: {dep_id}",
+            ),
+        )
+        return {"idea_id": idea_id, "deployment_id": dep_id, "deleted": True}
 

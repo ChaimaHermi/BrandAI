@@ -21,6 +21,15 @@ from prompts.website_builder.prompt_common import (
 from tools.website_builder.brand_context_fetch import BrandContext
 
 
+def _safe_logo_line(raw_logo_url: str | None) -> str:
+    raw = (raw_logo_url or "").strip()
+    if raw.startswith(("http://", "https://")):
+        return raw
+    if raw.startswith("data:"):
+        return "(logo inline base64 masque pour prompt propre)"
+    return "(aucun logo URL)"
+
+
 WEBSITE_REVISION_SYSTEM = f"""Tu es un Senior Front-End Engineer charge d'appliquer une modification CIBLEE sur un site web existant.
 
 PRIORITES:
@@ -40,6 +49,7 @@ REGLES D'EDITION
 7) Interdit d'introduire des liens relatifs de l'app (/, /ideas, /dashboard, etc.) dans nav/CTA.
 8) Interdit d'utiliser window.location/location.href/location.assign/location.replace pour naviguer.
 9) Conserver le slogan de contexte tel quel (si present), sauf demande explicite contraire de l'utilisateur.
+10) Conserver ou introduire uniquement des icones de bibliotheques reconnues (Lucide recommande), coherentes avec le contexte metier.
 
 POLITIQUE COULEUR EN REVISION
 - Si la consigne impacte la direction visuelle, tu peux ajuster les couleurs de maniere creative.
@@ -57,6 +67,16 @@ POLITIQUE TYPO EN REVISION
 POLITIQUE IMAGES EN REVISION
 - Toute balise <img> doit avoir src valide (http/https/data), alt, et une strategie fallback si chargement impossible.
 - Si image non fiable: masquer l'image et utiliser un visuel de remplacement (bloc, gradient, SVG inline).
+- Interdit d'introduire des images hors thematique du projet (produit, secteur, cible).
+- Interdit de placer des visuels cartoon/anime non pertinents dans un contexte business.
+- En section temoignages, ne jamais utiliser des photos de personnes; preferer cartes textuelles, initiales, avatars abstraits ou icones neutres.
+- Interdit d'introduire le texte "Image indisponible" dans le HTML final.
+- Si une image est douteuse/inaccessible, supprimer l'element visuel concerne au lieu d'afficher un message d'erreur.
+
+POLITIQUE ANIMATIONS EN REVISION
+- Garder uniquement des animations sobres, professionnelles et utiles a l'UX.
+- Interdit: GIF en arriere-plan, effets kitsch/agressifs, mouvements constants distrayants.
+- Privilegier des micro-interactions discretes (hover/focus/reveal) avec durees moderees.
 
 REGRESSION-CHECK INTERNE
 - Le menu et les CTA existants continuent de fonctionner.
@@ -72,7 +92,7 @@ def build_website_revision_user_prompt(
     current_html: str,
     instruction: str,
 ) -> str:
-    logo_line = ctx.logo_url or "(aucun logo URL)"
+    logo_line = _safe_logo_line(ctx.logo_url)
     slogan_line = ctx.slogan or "(aucun slogan)"
 
     return f"""LANGUE DU SITE : {ctx.language}

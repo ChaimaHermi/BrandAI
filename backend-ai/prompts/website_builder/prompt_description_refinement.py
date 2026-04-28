@@ -40,6 +40,10 @@ REGLES :
    - Au moins 2 CTA boutons.
 7) Si le retour utilisateur est ambigu, prends la decision la plus utile pour
    un site vitrine premium et explique-la dans `user_summary`.
+8) Les animations restent toujours sobres/professionnelles (pas d'effets kitsch, cartoon ou agressifs).
+9) Toute image proposee doit etre strictement liee a la thematique du projet; si doute, supprimer l'image.
+10) En temoignages, ne jamais proposer de photo de personne (droits image): preferer texte, initiales, avatars abstraits.
+11) Les icones doivent provenir d'une bibliotheque reconnue (ex: Lucide Icons, Heroicons, Tabler).
 
 CONTRAT DE SORTIE — JSON STRICT UNIQUEMENT (memes champs que Phase 2) :
 {
@@ -75,6 +79,7 @@ AUTO-VERIFICATION INTERNE
 - ids tous uniques et en slug minuscule.
 - Si tu ajoutes/retires une section, met aussi a jour nav_links et CTA cibles.
 - user_summary explique brievement ce qui a change suite aux retours.
+- Aucun element hors thematique visuelle/business n'est introduit.
 """
 
 

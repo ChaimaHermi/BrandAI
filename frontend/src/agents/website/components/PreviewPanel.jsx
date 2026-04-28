@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiMonitor, FiTablet, FiSmartphone, FiExternalLink,
   FiDownload, FiRefreshCw, FiCpu, FiCloud, FiGlobe, FiCode,
-  FiMaximize2, FiX, FiEdit3, FiSave, FiCheck,
+  FiMaximize2, FiX, FiEdit3, FiSave, FiCheck, FiTrash2,
 } from "react-icons/fi";
 
 const VIEWPORTS = [
@@ -339,6 +339,7 @@ export function PreviewPanel({
   htmlStats,
   deployment,
   onDeploy,
+  onClearDeployment,
   onRefresh,
   onSaveEdits,
 }) {
@@ -567,6 +568,19 @@ export function PreviewPanel({
             >
               <FiExternalLink size={11} />
               <span className="hidden lg:inline">Voir en ligne</span>
+            </button>
+          )}
+
+          {deployment && !isEditMode && (
+            <button
+              type="button"
+              onClick={onClearDeployment}
+              disabled={isBusy}
+              className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-2xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+              title="Retirer l'état 'site en ligne' pour continuer les modifications"
+            >
+              <FiTrash2 size={11} />
+              <span className="hidden lg:inline">Supprimer déploiement</span>
             </button>
           )}
 

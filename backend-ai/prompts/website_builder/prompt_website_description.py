@@ -12,6 +12,15 @@ from __future__ import annotations
 from tools.website_builder.brand_context_fetch import BrandContext
 
 
+def _safe_logo_line(raw_logo_url: str | None) -> str:
+    raw = (raw_logo_url or "").strip()
+    if raw.startswith(("http://", "https://")):
+        return raw
+    if raw.startswith("data:"):
+        return "(logo inline base64 masque pour prompt propre)"
+    return "(aucun logo URL — utiliser un placeholder textuel propre)"
+
+
 WEBSITE_DESCRIPTION_SYSTEM = """Tu es Senior Web Designer & Creative Director.
 
 Mission: produire un PLAN de site vitrine (pas le code), moderne et coherent.
@@ -41,6 +50,15 @@ REGLES DE CONTENU
 - Les choix couleurs doivent rester alignes avec l'esprit de la palette choisie, sans obligation d'utiliser strictement chaque hex.
 - Au moins une interaction mentionnee par section (hover, scroll, click, reveal).
 - La proposition typographique doit viser un rendu premium: hierarchy claire, titres memorables, texte lisible, rythme editorial.
+- Les animations doivent rester sobres, professionnelles et utiles a l'UX (interdit: GIF decoratif, effets cartoon, blink, animations agressives, loops distrayantes).
+- Chaque animation doit etre simple, fluide, discrete et pertinente pour un site business moderne.
+- Interdit d'ajouter des visuels hors sujet: toute image/illustration doit etre directement liee au secteur, au produit et a l'idee du projet.
+- Interdit strict: images de style dessin anime pour des contextes business non ludiques.
+- Si la pertinence d'une image est incertaine, ne pas proposer d'image et preferer formes, gradients, patterns abstraits ou icones neutres.
+- Dans une section temoignages, ne jamais imposer de photo de personne/retrait portrait; utiliser avatars abstraits, initiales, ou cartes textuelles sans visage.
+- Objectif global: sections bien structurees, style premium, rendu professionnel.
+- Les icones doivent provenir d'une bibliotheque reconnue (ex: Lucide Icons, Heroicons, Tabler). Eviter les icones improvisees incoherentes.
+- Prevoir des usages d'icones coherents (features, steps, CTA secondaires) pour renforcer la clarte visuelle.
 
 CONTRAT DE SORTIE — JSON STRICT UNIQUEMENT :
 
@@ -87,12 +105,15 @@ EXIGENCES MINIMALES :
 - Au moins 2 CTA boutons dans les sections (hero + une autre section).
 - `nav_links` doit contenir au moins 3 liens pointant vers des sections réelles.
 - JSON strict, parsable, pas de virgules pendantes, pas de commentaires JS.
+- Les `nav_links` doivent etre coherents avec la structure reelle du site et orienter vers des sections business utiles.
 
 AUTO-VERIFICATION INTERNE AVANT REPONSE
 - Tous les target_id references existent vraiment dans sections.id.
 - Tous les ids sont uniques et en slug minuscule.
 - Le JSON est valide, sans texte autour.
 - La typographie proposee est concretement exploitable et visuellement professionnelle.
+- Les animations restent sobres/pro et sans effet kitsch.
+- Aucun visuel hors thematique, aucune photo de personne en temoignages.
 """
 
 
@@ -102,7 +123,7 @@ def build_website_description_user_prompt(ctx: BrandContext) -> str:
     sector = ctx.sector or "(non précisé)"
     audience = ctx.target_audience or "(non précisé)"
     slogan_line = f'« {ctx.slogan} »' if ctx.slogan else "(aucun slogan défini)"
-    logo_line = ctx.logo_url or "(aucun logo URL — utiliser un placeholder textuel propre)"
+    logo_line = _safe_logo_line(ctx.logo_url)
 
     return f"""LANGUE CIBLE : {ctx.language}
 

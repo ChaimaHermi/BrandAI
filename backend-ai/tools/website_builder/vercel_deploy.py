@@ -172,6 +172,20 @@ async def _get_deployment(client: httpx.AsyncClient, deployment_id: str) -> dict
     return resp.json() or {}
 
 
+async def _delete_deployment(client: httpx.AsyncClient, deployment_id: str) -> None:
+    url = f"{VERCEL_API_BASE}/v13/deployments/{deployment_id}"
+    resp = await client.delete(url, params=_query_params(), headers=_auth_headers())
+    if resp.status_code >= 400:
+        try:
+            err = resp.json()
+        except Exception:
+            err = {"raw": resp.text[:300]}
+        raise RuntimeError(
+            f"Vercel DELETE /v13/deployments/{deployment_id} {resp.status_code} : "
+            f"{err.get('error', err)}"
+        )
+
+
 async def _poll_until_ready(
     client: httpx.AsyncClient,
     deployment_id: str,
@@ -263,3 +277,13 @@ async def deploy_html_to_vercel(
         elapsed,
     )
     return result
+
+
+async def delete_vercel_deployment(*, deployment_id: str) -> None:
+    """Supprime un deploiement Vercel existant."""
+    dep_id = str(deployment_id or "").strip()
+    if not dep_id:
+        raise ValueError("deployment_id manquant pour suppression.")
+    timeout = httpx.Timeout(VERCEL_HTTP_TIMEOUT_SECONDS, connect=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        await _delete_deployment(client, dep_id)

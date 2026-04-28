@@ -160,6 +160,15 @@ export async function apiDeployWebsite(token, { ideaId, html }) {
   return handleResponse(res);
 }
 
+export async function apiDeleteWebsiteDeployment(token, { ideaId, deploymentId }) {
+  const res = await fetchWithTimeout(`${AI_URL}/website/deploy/delete`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ idea_id: ideaId, deployment_id: deploymentId }),
+  }, DEFAULT_TIMEOUT_MS);
+  return handleResponse(res);
+}
+
 // ── SSE helpers ─────────────────────────────────────────────────────────────
 
 /**

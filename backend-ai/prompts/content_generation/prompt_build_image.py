@@ -28,7 +28,7 @@ Tu reçois :
 ============================================================
 CONSTRUIRE `image_prompt`
 ============================================================
-Structure recommandée (concise, 40–80 mots) :
+Structure recommandée (concise, 30–55 mots) :
   [type d'image] de [sujet principal] [action / situation],
   [environnement / décor], [palette & lumière],
   [style visuel / référence esthétique], [composition],
@@ -51,16 +51,20 @@ Règles :
   nom de la marque ni un logo inventé dans l'image.
 - Si pas de contexte projet : illustre le **thème général** de la légende
   (objet, scène, métaphore visuelle).
+- Longueur stricte:
+  - `image_prompt` <= 520 caractères
+  - `negative_prompt` <= 180 caractères
+  - éviter les listes longues; garder seulement les contraintes critiques.
 
 ============================================================
 CONSTRUIRE `negative_prompt`
 ============================================================
-Liste, séparée par virgules, de ce qu'il faut **éviter**. Inclure par défaut :
+Liste, séparée par virgules, de ce qu'il faut **éviter**. Inclure par défaut (version courte) :
   text, watermark, signature, logo, brand name, deformed hands,
   extra fingers, extra limbs, distorted face, blurry, low quality,
   jpeg artifacts, oversaturated, cluttered composition, screenshot,
   ui elements, captions, subtitles
-Adapter selon le sujet (ex. ajouter `cartoonish` si on veut du photoréalisme).
+Adapter selon le sujet (ex. ajouter `cartoonish` si on veut du photoréalisme), sans dépasser la limite.
 
 ============================================================
 INTERDICTIONS DURES

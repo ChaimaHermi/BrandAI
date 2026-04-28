@@ -147,6 +147,12 @@ class DeployRequest(BaseModel):
     html: str = Field(..., min_length=200, description="HTML complet a deployer.")
 
 
+class DeployDeleteRequest(BaseModel):
+    idea_id: int = Field(..., ge=1)
+    access_token: str | None = None
+    deployment_id: str = Field(..., min_length=1)
+
+
 class ContextResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
     idea_id: int
@@ -189,6 +195,12 @@ class DeployResponse(BaseModel):
     idea_id: int
     deployment: dict[str, Any]
     summary_md: str
+
+
+class DeployDeleteResponse(BaseModel):
+    idea_id: int
+    deployment_id: str
+    deleted: bool
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -403,6 +415,40 @@ async def website_deploy(
         raise HTTPException(status_code=503, detail=f"Deploiement indisponible : {exc!s}") from exc
 
     return DeployResponse(**payload)
+
+
+@router.post(
+    "/deploy/delete",
+    response_model=DeployDeleteResponse,
+    summary="Supprime un deploiement Vercel existant et nettoie l'etat deploiement",
+)
+async def website_deploy_delete(
+    body: DeployDeleteRequest,
+    authorization: str | None = Header(default=None),
+) -> DeployDeleteResponse:
+    if not vercel_is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Vercel non configure : ajoute VERCEL_API_KEY dans .env.",
+        )
+
+    token = _extract_token(authorization, body.access_token)
+    try:
+        payload = await orchestrator.delete_deployment(
+            idea_id=body.idea_id,
+            token=token,
+            deployment_id=body.deployment_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        logger.exception("[website_builder] deploy delete failed (vercel)")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("[website_builder] deploy delete failed")
+        raise HTTPException(status_code=503, detail=f"Suppression deploiement indisponible : {exc!s}") from exc
+
+    return DeployDeleteResponse(**payload)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

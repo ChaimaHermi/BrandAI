@@ -32,7 +32,7 @@ PRIORITES (du plus important au moins important):
 1) Respect strict du contrat de sortie.
 2) Cohérence navigation/ancres/CTA avec la description fournie.
 3) Robustesse technique (responsive, accessibilité de base, script sans erreur).
-4) Qualité visuelle premium.
+4) Qualité visuelle premium, minimaliste et professionnelle.
 
 {HTML_OUTPUT_CONTRACT}
 
@@ -49,18 +49,30 @@ REGLES TECHNIQUES OBLIGATOIRES
 - Inclure au moins une animation reveal au scroll (IntersectionObserver).
 - Si section stats existe: animer les compteurs avec requestAnimationFrame.
 - Le slogan de contexte (s'il existe) doit apparaitre textuellement tel quel dans le rendu final (header, hero ou footer).
+- Charger et utiliser une bibliotheque d'icones professionnelle (Lucide recommande) pour les pictogrammes UI.
+- Les icones doivent etre coherentes avec la thematique metier et rester visuellement sobries/pro.
 
 POLITIQUE IMAGES
 - Si tu utilises <img>, ajoute toujours alt et loading="lazy".
 - Les src d'images doivent être http(s) ou data URI, jamais routes relatives de l'app.
 - Prévoir un fallback explicite en cas d'image cassée (ex: onerror qui masque l'image ou affiche un placeholder visuel).
 - Si tu ne trouves pas d'image fiable, n'affiche pas d'image et utilise un bloc visuel/gradient/SVG inline.
+- N'utiliser que des images strictement pertinentes au secteur, au produit et a l'idee du projet.
+- Interdit d'utiliser des images decoratives hors sujet (ex: cartoon, anime, fantasy non pertinente pour un contexte business).
+- Pour la section temoignages: ne jamais afficher de photos de personnes/retraits. Utiliser uniquement cartes textuelles, initiales, icones, avatars abstraits ou logos generiques non identifiants.
+- Interdit d'afficher le texte "Image indisponible" dans le HTML final.
+- Si une image est incertaine, la supprimer completement (ne pas rendre un fallback textuel de type erreur).
+- Limite stricte: maximum 3 balises <img> sur toute la page.
+- Interdit de generer des cartes geographiques (ex: map de la Tunisie ou autre) sauf si la description utilisateur le demande explicitement.
+- Privilegier des visuels produit/service reels, abstraits premium, ou illustrations neutres et professionnelles.
 
 REGLES DE CONTENU
 - Aucun lorem ipsum, aucun placeholder, aucun TODO.
 - Utiliser la langue cible et le ton de marque.
 - Respecter les sections du plan: ne pas inventer d'ids non justifiés.
 - Si un champ est ambigu, choisir l'option la plus cohérente avec le secteur/cible.
+- Le site doit viser un rendu premium: sections bien elaborees, hierarchy visuelle nette, typographie elegante et lisibilite exemplaire.
+- Style global obligatoire: minimaliste, epure, moderne, sans surcharge decorative.
 
 POLITIQUE COULEUR (CREATIVE-FIRST)
 - Traite la palette du brand kit comme une inspiration, pas une contrainte stricte.
@@ -68,6 +80,8 @@ POLITIQUE COULEUR (CREATIVE-FIRST)
 - Tu peux introduire des couleurs derivees si elles restent clairement coherentes avec l'ambiance de la palette choisie.
 - Priorise l'esthetique globale et la lisibilite reelle du site plutot qu'une copie exacte des hex.
 - Conserve tout de meme un lien perceptible avec les couleurs de marque (identite visuelle reconnaissable).
+- Limiter la palette active a 2-3 couleurs dominantes + 1 accent maximum pour conserver une esthetique minimaliste.
+- Contrastes lisibles obligatoires (texte/fond, CTA/fond, etats hover/focus).
 
 POLITIQUE TYPOGRAPHIE (PRO VISUEL)
 - Utilise les fonts du brand kit comme base, mais adapte intelligemment les poids, tailles, tracking et line-height pour un rendu premium.
@@ -76,11 +90,24 @@ POLITIQUE TYPOGRAPHIE (PRO VISUEL)
 - Evite les blocs denses: privilegie respiration visuelle (espaces verticaux, max-width de texte, rythme clair).
 - Assure une excellente lisibilite mobile et desktop (tailles fluides, contrastes, interlignage).
 - Les CTA doivent etre lisibles, bien contrastes et visuellement prioritaires.
+- Appliquer une echelle typographique claire (mobile puis desktop) :
+  - body: min 16px, line-height >= 1.6
+  - h1 hero: env. 40-56px desktop, 30-38px mobile
+  - h2 section: env. 28-36px desktop, 22-28px mobile
+  - labels/nav: env. 14-16px
+- Limiter a 1-2 familles de polices maximum sur tout le site.
+
+POLITIQUE ANIMATIONS (PRO-ONLY)
+- Autoriser uniquement des animations simples et professionnelles (fade, slide subtil, scale leger, reveal au scroll, micro-interactions hover/focus).
+- Interdit: GIF anime en fond, effet neon agressif, glitch, clignotement, bouncing excessif, parallax extreme, effets "fun" non business.
+- Les animations doivent etre discretes, fluides et ne jamais nuire a la lecture du contenu.
+- Respecter prefers-reduced-motion et garder des durees raisonnables.
 
 QUALITE VISUELLE (SHOULD)
 - Hero impactant, hiérarchie typographique claire, CTA visibles.
 - Rythme visuel avec alternance de surfaces et bonne lisibilité.
 - Micro-interactions discrètes mais réelles (hover/focus/reveal).
+- Le rendu doit rester sobre, pro, et orienté conversion/clarte (pas d'effets gadgets).
 
 {QUALITY_SELF_CHECK}
 """
@@ -143,6 +170,10 @@ CONSIGNE NAVIGATION (priorite absolue) :
 4. Les `cta.target_id` de chaque section → <a href="#target_id"> sur les boutons CTA
 5. Dans <style> : html {{ scroll-behavior: smooth; }}
 6. Header sticky : class="fixed top-0 left-0 right-0 z-50 ..."
+7. Interdit absolu: ne jamais produire href="#" (placeholder interdit).
+8. Si tu ajoutes des liens footer (cgu, politique, presse, etc.), cree les sections cibles avec l'id exact ou supprime ces liens.
+9. Verification finale obligatoire: chaque href interne #x pointe vers un id="x" reel dans le HTML final.
+10. Les elements de menu (desktop + mobile) doivent etre de vraies balises <a href="#..."> et non des <button> sans ancre.
 
 CONSIGNE FINALE :
 Construis MAINTENANT le site complet en un seul document HTML autonome.

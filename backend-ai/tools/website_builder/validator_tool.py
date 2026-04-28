@@ -58,11 +58,90 @@ def validate_brand_identity(html: str, *, brand_name: str, slogan: str | None = 
         )
 
 
+def sanitize_navigation_html(html: str) -> str:
+    """
+    Corrige automatiquement les ancres internes invalides les plus courantes:
+    - href="#"
+    - href="#missing-id"
+    - href="/..." (liens app internes non permis)
+    - href="javascript:..."
+    """
+    if not html or "href" not in html.lower():
+        return html
+
+    ids = re.findall(r'id\s*=\s*["\']([^"\']+)["\']', html, flags=re.IGNORECASE)
+    fallback_id = "hero" if "hero" in ids else (ids[0] if ids else None)
+    if not fallback_id:
+        return html
+
+    id_set = set(ids)
+
+    def _replace(match: re.Match[str]) -> str:
+        quote = match.group(1)
+        raw_target = (match.group(2) or "").strip()
+        lower_target = raw_target.lower()
+
+        if raw_target.startswith(("http://", "https://", "mailto:", "tel:")):
+            return match.group(0)
+
+        if (
+            raw_target == "#"
+            or raw_target.startswith("/")
+            or lower_target.startswith("javascript:")
+            or raw_target == ""
+        ):
+            return f'href={quote}#{fallback_id}{quote}'
+
+        if raw_target.startswith("#"):
+            anchor = raw_target[1:]
+            if not anchor:
+                return f'href={quote}#{fallback_id}{quote}'
+            return match.group(0)
+
+        return f'href={quote}#{fallback_id}{quote}'
+
+    sanitized = re.sub(r'href\s*=\s*(["\'])([^"\']*)\1', _replace, html, flags=re.IGNORECASE)
+
+    # Si des ancres internes existent sans id correspondant (ex: #cgu, #presse),
+    # on ajoute des cibles minimales avant </body> pour garder une navigation
+    # fonctionnelle au lieu de casser le menu.
+    all_ids = set(re.findall(r'id\s*=\s*["\']([^"\']+)["\']', sanitized, flags=re.IGNORECASE))
+    hrefs = _HREF_RE.findall(sanitized)
+    internal_anchors = [
+        h[1:].strip()
+        for h in hrefs
+        if h.startswith("#") and len(h) > 1
+    ]
+    missing_ids = []
+    for anchor in internal_anchors:
+        slug = re.sub(r"[^a-z0-9_-]+", "-", anchor.lower()).strip("-")
+        if not slug:
+            continue
+        if slug not in all_ids and slug not in missing_ids:
+            missing_ids.append(slug)
+
+    if missing_ids:
+        stubs = "".join(
+            f'\n<section id="{sid}" style="scroll-margin-top:80px;min-height:1px;" aria-hidden="true"></section>'
+            for sid in missing_ids
+        )
+        if "</body>" in sanitized.lower():
+            sanitized = re.sub(r"</body>", f"{stubs}\n</body>", sanitized, flags=re.IGNORECASE)
+        else:
+            sanitized = f"{sanitized}{stubs}"
+
+    return sanitized
+
+
 _HREF_RE = re.compile(r'href\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
 _IMG_TAG_RE = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
 _ATTR_RE = re.compile(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*["\']([^"\']*)["\']')
 _WINDOW_NAV_RE = re.compile(
     r"(window\.location\s*=|location\.href\s*=|location\.assign\s*\(|location\.replace\s*\()",
+    re.IGNORECASE,
+)
+_PLACEHOLDER_IMG_HOST_RE = re.compile(
+    r"(via\.placeholder\.com|placehold\.co|placeholder\.com|dummyimage\.com)",
     re.IGNORECASE,
 )
 
@@ -105,6 +184,13 @@ def _validate_navigation_integrity(html: str) -> None:
 
 
 def _validate_image_integrity(html: str) -> None:
+    lower = html.lower()
+    if "image indisponible" in lower:
+        raise RuntimeError(
+            "Image invalide : le HTML contient le texte interdit 'Image indisponible'. "
+            "Supprimer l'image incertaine au lieu d'afficher ce fallback."
+        )
+
     img_tags = _IMG_TAG_RE.findall(html)
     for idx, tag in enumerate(img_tags, start=1):
         attrs = {k.lower(): v for k, v in _ATTR_RE.findall(tag)}
@@ -116,6 +202,10 @@ def _validate_image_integrity(html: str) -> None:
             raise RuntimeError(
                 f"Image invalide : src non autorise sur <img> #{idx} ({src!r}). "
                 "Utiliser http(s) ou data URI."
+            )
+        if _PLACEHOLDER_IMG_HOST_RE.search(src):
+            raise RuntimeError(
+                f"Image invalide : src placeholder non autorise sur <img> #{idx} ({src!r})."
             )
         if not alt:
             raise RuntimeError(f"Image invalide : balise <img> #{idx} sans alt.")

@@ -22,8 +22,8 @@ from shared.branding.validators import parse_llm_json_object
 from tools.branding.logo_image_client import fetch_logo_image_hf_with_pollinations_fallback
 
 LOGO_IMAGE_PROMPT_MIN_LEN = 32
-LOGO_IMAGE_PROMPT_MAX_LEN = 12000
-LOGO_NEGATIVE_PROMPT_MAX_LEN = 6000
+LOGO_IMAGE_PROMPT_MAX_LEN = 520
+LOGO_NEGATIVE_PROMPT_MAX_LEN = 220
 
 
 def normalize_logo_prompt_dict(data: dict[str, Any]) -> tuple[str, str]:

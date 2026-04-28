@@ -1,6 +1,6 @@
 """
 Génération d’image logo : Hugging Face InferenceClient (Replicate) + Qwen Image.
-Fallback chain: Hugging Face -> Azure OpenAI image generation -> Pollinations public API.
+Fallback chain: Hugging Face -> NVIDIA image generation -> Pollinations public API.
 """
 
 from __future__ import annotations
@@ -56,6 +56,53 @@ def _hf_fatal_model_error(err: Exception) -> bool:
     ):
         return True
     return False
+
+
+def _nvidia_image_keys() -> list[str]:
+    keys: list[str] = []
+    seen: set[str] = set()
+    for raw in (
+        os.getenv("NVIDEA_IMAGE_API"),
+    ):
+        v = (raw or "").strip()
+        if v and v not in seen:
+            seen.add(v)
+            keys.append(v)
+    return keys
+
+
+def _nvidia_image_model(default: str = "flux.2-klein-4b") -> str:
+    return (
+        os.getenv("LOGO_NVIDIA_IMAGE_MODEL")
+        or os.getenv("NVIDIA_IMAGE_MODEL")
+        or default
+    ).strip()
+
+
+def _nvidia_image_base_url() -> str:
+    return (
+        os.getenv("NVIDIA_IMAGE_BASE_URL") or "https://ai.api.nvidia.com/v1"
+    ).rstrip("/")
+
+
+def _nvidia_image_model_path(model: str) -> str:
+    m = (model or "").strip()
+    if not m:
+        return "black-forest-labs/flux.2-klein-4b"
+    if "/" in m:
+        return m
+    return f"black-forest-labs/{m}"
+
+
+def _decode_b64_payload(value: str) -> bytes:
+    v = (value or "").strip()
+    if not v:
+        return b""
+    encoded = v.split(",", 1)[-1]
+    try:
+        return base64.b64decode(encoded)
+    except Exception:
+        return b""
 
 
 def _azure_logo_image_config() -> tuple[str, str, str, str]:
@@ -241,6 +288,121 @@ async def fetch_logo_image_azure(
     raise RuntimeError("Azure OpenAI image: ni b64_json ni url dans la réponse.")
 
 
+async def fetch_logo_image_nvidia(
+    image_prompt: str,
+    negative_prompt: str = "",
+    *,
+    model: str | None = None,
+) -> tuple[bytes, str]:
+    try:
+        import httpx
+    except ModuleNotFoundError as e:
+        raise RuntimeError("Package httpx manquant. pip install httpx.") from e
+
+    full = (image_prompt or "").strip()
+    if not full:
+        raise ValueError("image_prompt vide")
+    if negative_prompt:
+        full = f"{full}. Avoid: {negative_prompt.strip()}"
+
+    keys = _nvidia_image_keys()
+    if not keys:
+        raise RuntimeError("Aucune clé NVIDIA (NVIDEA_IMAGE_API)")
+
+    timeout = float(os.getenv("LOGO_NVIDIA_IMAGE_TIMEOUT_S", "90"))
+    size = (os.getenv("LOGO_NVIDIA_IMAGE_SIZE") or "1024x1024").strip()
+    model_path = _nvidia_image_model_path(model or _nvidia_image_model())
+    endpoint = f"{_nvidia_image_base_url()}/genai/{model_path}"
+    m = (model or _nvidia_image_model()).strip()
+    last_err: Exception | None = None
+
+    for i, key in enumerate(keys):
+        try:
+            _log.info(
+                "[logo_image_client] NVIDIA image — model=%s clé %d/%d (timeout=%.0fs)",
+                m,
+                i + 1,
+                len(keys),
+                timeout,
+            )
+            headers = {
+                "Authorization": f"Bearer {key}",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+            body: dict[str, Any] = {
+                "prompt": full,
+                "seed": 0,
+                "steps": int(os.getenv("LOGO_NVIDIA_IMAGE_STEPS", "4")),
+            }
+            if "x" in size:
+                sw, sh = size.lower().split("x", 1)
+                if sw.strip().isdigit() and sh.strip().isdigit():
+                    body["width"] = int(sw.strip())
+                    body["height"] = int(sh.strip())
+
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+                r = await client.post(endpoint, headers=headers, json=body)
+                if r.status_code >= 400:
+                    raise RuntimeError(f"HTTP {r.status_code}: {r.text[:300]}")
+                payload = r.json()
+
+                image_field = payload.get("image") if isinstance(payload, dict) else None
+                if isinstance(image_field, str) and image_field.strip():
+                    raw = _decode_b64_payload(image_field)
+                    if raw:
+                        return raw, "image/png"
+
+                artifacts = payload.get("artifacts") if isinstance(payload, dict) else None
+                if isinstance(artifacts, list):
+                    for item in artifacts:
+                        if not isinstance(item, dict):
+                            continue
+                        raw = _decode_b64_payload(str(item.get("base64") or ""))
+                        if raw:
+                            return raw, "image/png"
+                        raw = _decode_b64_payload(str(item.get("b64_json") or ""))
+                        if raw:
+                            return raw, "image/png"
+
+                data = payload.get("data") if isinstance(payload, dict) else None
+                first = data[0] if isinstance(data, list) and data and isinstance(data[0], dict) else {}
+                b64 = first.get("b64_json")
+                if isinstance(b64, str) and b64.strip():
+                    raw = _decode_b64_payload(b64)
+                    if raw:
+                        return raw, "image/png"
+
+                url_img = first.get("url")
+                if isinstance(url_img, str) and url_img.strip():
+                    rr = await client.get(url_img)
+                    rr.raise_for_status()
+                    ct = (rr.headers.get("content-type") or "").lower()
+                    if "jpeg" in ct or "jpg" in ct:
+                        return rr.content, "image/jpeg"
+                    if "webp" in ct:
+                        return rr.content, "image/webp"
+                    return rr.content, "image/png"
+
+                if isinstance(payload, dict):
+                    _log.warning(
+                        "[logo_image_client] NVIDIA reponse sans image decodable | keys=%s",
+                        ",".join(sorted(payload.keys()))[:180],
+                    )
+                raise RuntimeError("NVIDIA image: aucune image decodable (image/artifacts/data/url)")
+        except Exception as e:
+            last_err = e
+            _log.warning(
+                "[logo_image_client] NVIDIA clé #%d échouée : %s",
+                i + 1,
+                str(e)[:240],
+            )
+            if i + 1 < len(keys):
+                continue
+
+    raise RuntimeError(f"Génération image NVIDIA échouée : {last_err}")
+
+
 def _pollinations_norm_key(name: str) -> str:
     return " ".join(name.strip().lower().replace("-", " ").split())
 
@@ -361,7 +523,7 @@ async def fetch_logo_image_hf_with_pollinations_fallback(
     from config.settings import HF_KEYS
 
     hf_err: Exception | None = None
-    azure_err: Exception | None = None
+    nvidia_err: Exception | None = None
 
     # 1) Hugging Face first (if keys available)
     if HF_KEYS:
@@ -374,25 +536,25 @@ async def fetch_logo_image_hf_with_pollinations_fallback(
             return data, mime, "huggingface"
         except Exception as e:
             hf_err = e
-            _log.warning("[logo_image_client] HF indisponible -> Azure fallback: %s", str(e)[:280])
+            _log.warning("[logo_image_client] HF indisponible -> NVIDIA fallback: %s", str(e)[:280])
     else:
-        _log.info("[logo_image_client] Aucune clé HF — passage direct au fallback Azure.")
+        _log.info("[logo_image_client] Aucune clé HF — passage direct au fallback NVIDIA.")
 
-    # 2) Azure OpenAI image fallback
+    # 2) NVIDIA image fallback
     try:
-        data, mime = await fetch_logo_image_azure(image_prompt, negative_prompt)
-        return data, mime, "azure"
+        data, mime = await fetch_logo_image_nvidia(image_prompt, negative_prompt)
+        return data, mime, "nvidia"
     except Exception as e:
-        azure_err = e
-        _log.warning("[logo_image_client] Azure indisponible -> Pollinations fallback: %s", str(e)[:280])
+        nvidia_err = e
+        _log.warning("[logo_image_client] NVIDIA indisponible -> Pollinations fallback: %s", str(e)[:280])
 
     # 3) Pollinations fallback (optional)
     if not pollinations_fallback:
         details = []
         if hf_err:
             details.append(f"HF: {hf_err}")
-        if azure_err:
-            details.append(f"Azure: {azure_err}")
+        if nvidia_err:
+            details.append(f"NVIDIA: {nvidia_err}")
         raise RuntimeError(
             "Fallback Pollinations désactivé et génération image indisponible. "
             + " ; ".join(details)
@@ -405,7 +567,7 @@ async def fetch_logo_image_hf_with_pollinations_fallback(
         details = []
         if hf_err:
             details.append(f"Hugging Face: {hf_err}")
-        if azure_err:
-            details.append(f"Azure: {azure_err}")
+        if nvidia_err:
+            details.append(f"NVIDIA: {nvidia_err}")
         details.append(f"Pollinations: {pol_err}")
         raise RuntimeError(" ; ".join(details)) from pol_err
