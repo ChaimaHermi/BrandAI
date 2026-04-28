@@ -9,6 +9,10 @@ import {
   FiLayers,
   FiZap,
   FiMessageSquare,
+  FiCheck,
+  FiLoader,
+  FiClock,
+  FiXCircle,
 } from "react-icons/fi";
 import { MiniMarkdown } from "../utils/miniMarkdown";
 
@@ -18,6 +22,109 @@ function PhasePill({ label }) {
     <span className="self-start rounded-full bg-brand-light px-2 py-0.5 text-2xs font-bold uppercase tracking-wider text-brand-darker">
       {label}
     </span>
+  );
+}
+
+/**
+ * Carte "XAI" affichée pendant qu'une opération SSE tourne. Liste les étapes
+ * reçues et affiche un tick "live" sous l'étape en cours.
+ */
+function StreamCard({ msg }) {
+  const steps = Array.isArray(msg.streamSteps) ? msg.streamSteps : [];
+  const tick = msg.streamTick;
+  const status = msg.streamStatus || "running";
+  const errorMsg = msg.streamError;
+
+  const dotIcon = (s) => {
+    if (s.status === "done") {
+      return <FiCheck size={11} className="text-success" />;
+    }
+    return <FiLoader size={11} className="animate-spin text-brand" />;
+  };
+
+  return (
+    <div className="flex items-start gap-2 animate-[slideUp_0.25s_ease_forwards]">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-dark text-white shadow-pill">
+        <FiGlobe size={13} />
+      </span>
+      <div className="flex max-w-[90%] flex-col gap-2 rounded-2xl rounded-tl-md border border-brand-border bg-white px-4 py-3 shadow-card">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${
+              status === "done"
+                ? "bg-success/15 text-success"
+                : status === "error"
+                  ? "bg-red-100 text-red-600"
+                  : "bg-brand-light text-brand-dark"
+            }`}
+          >
+            {status === "done" ? (
+              <FiCheck size={12} />
+            ) : status === "error" ? (
+              <FiXCircle size={12} />
+            ) : (
+              <FiLoader size={12} className="animate-spin" />
+            )}
+          </span>
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-brand-darker">
+            {msg.streamTitle || "Opération en cours"}
+          </p>
+        </div>
+
+        {steps.length === 0 && status === "running" && (
+          <p className="text-xs text-ink-muted">
+            Initialisation de l'agent…
+          </p>
+        )}
+
+        {steps.length > 0 && (
+          <ol className="flex flex-col gap-1.5">
+            {steps.map((s) => (
+              <li
+                key={s.id}
+                className={`flex items-start gap-2 rounded-md px-2 py-1.5 text-xs ${
+                  s.status === "done"
+                    ? "bg-success/5 text-ink"
+                    : "bg-brand-light/40 text-ink"
+                }`}
+              >
+                <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                  {dotIcon(s)}
+                </span>
+                <span className="flex-1 leading-tight">
+                  <span className="font-semibold">{s.label}</span>
+                  {s.meta && typeof s.meta === "object" && (
+                    <span className="ml-2 text-2xs text-ink-subtle">
+                      {Object.entries(s.meta)
+                        .filter(([, v]) => typeof v === "string" || typeof v === "number")
+                        .slice(0, 4)
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join(" · ")}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {status === "running" && tick && tick.label && (
+          <div className="flex items-center gap-2 rounded-lg border border-brand-border bg-brand-light/20 px-2.5 py-1.5">
+            <FiClock size={11} className="shrink-0 animate-pulse text-brand" />
+            <span className="text-2xs italic text-ink-muted">
+              {tick.label}
+              {tick.elapsed > 0 ? ` · ${tick.elapsed}s` : ""}
+            </span>
+          </div>
+        )}
+
+        {status === "error" && errorMsg && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5">
+            <p className="text-2xs font-semibold text-red-700">{errorMsg}</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -204,12 +311,13 @@ function DescriptionStructuredCard({ data }) {
   );
 }
 
-function ContextItem({ Icon, label, value }) {
+// eslint-disable-next-line no-unused-vars
+function ContextItem({ icon: IconComp, label, value }) {
   if (!value) return null;
   return (
     <div className="flex items-start gap-2 rounded-lg border border-brand-border bg-brand-light/30 px-2.5 py-2">
       <span className="mt-0.5 text-brand">
-        <Icon size={12} />
+        <IconComp size={12} />
       </span>
       <div className="min-w-0">
         <p className="text-2xs font-semibold uppercase tracking-wider text-ink-subtle">{label}</p>
@@ -252,32 +360,32 @@ function ContextCard({ context }) {
       </p>
       <div className="grid gap-2 md:grid-cols-2">
         <ContextItem
-          Icon={FiBriefcase}
+          icon={FiBriefcase}
           label="Projet"
           value={context.project_name || context.brand_name}
         />
         <ContextItem
-          Icon={FiUsers}
+          icon={FiUsers}
           label="Cible"
           value={context.target_audience}
         />
         <ContextItem
-          Icon={FiType}
+          icon={FiType}
           label="Style visuel"
           value={context.visual_style}
         />
         <ContextItem
-          Icon={FiType}
+          icon={FiType}
           label="Polices"
           value={`${context.title_font || "Titre"} / ${context.body_font || "Corps"}`}
         />
         <ContextItem
-          Icon={FiType}
+          icon={FiType}
           label="Slogan"
           value={context.slogan}
         />
         <ContextItem
-          Icon={FiType}
+          icon={FiType}
           label="Pitch Clarifier"
           value={context.short_pitch}
         />
@@ -374,6 +482,10 @@ export function ChatMessage({ msg, onAction, busy }) {
         </span>
       </div>
     );
+  }
+
+  if (msg.kind === "stream") {
+    return <StreamCard msg={msg} />;
   }
 
   const isDescriptionJsonCard = msg.title === "Description complète (JSON)";

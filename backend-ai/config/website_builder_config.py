@@ -34,15 +34,17 @@ GENERATION_MAX_TOKENS: int = int(os.getenv("WEBSITE_GENERATION_MAX_TOKENS", "160
 REVISION_TEMPERATURE: float = float(os.getenv("WEBSITE_REVISION_TEMPERATURE", "0.3"))
 REVISION_MAX_TOKENS: int = int(os.getenv("WEBSITE_REVISION_MAX_TOKENS", "16000"))
 
-# Timeout hard par phase LLM Azure.
+# Timeout par phase LLM Azure.
+# 0 = timeout desactive (attente illimitee jusqu'a reponse finale du provider).
+# L'utilisateur a demande de ne jamais couper la generation pour delai d'attente.
 WEBSITE_DESCRIPTION_TIMEOUT_SECONDS: float = float(
-    os.getenv("WEBSITE_DESCRIPTION_TIMEOUT_SECONDS", "120")
+    os.getenv("WEBSITE_DESCRIPTION_TIMEOUT_SECONDS", "0")
 )
 WEBSITE_GENERATION_TIMEOUT_SECONDS: float = float(
-    os.getenv("WEBSITE_GENERATION_TIMEOUT_SECONDS", "300")
+    os.getenv("WEBSITE_GENERATION_TIMEOUT_SECONDS", "0")
 )
 WEBSITE_REVISION_TIMEOUT_SECONDS: float = float(
-    os.getenv("WEBSITE_REVISION_TIMEOUT_SECONDS", "300")
+    os.getenv("WEBSITE_REVISION_TIMEOUT_SECONDS", "0")
 )
 
 # 0 retry de notre côté : le SDK openai gère déjà ses propres retries (voir max_retries

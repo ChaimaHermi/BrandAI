@@ -43,7 +43,7 @@ LOGO_LLM_CONFIG = {
     "temperature": 0.4,
     "max_tokens": 900,
 }
-LOGO_AGENT_RECURSION_LIMIT = 35
+LOGO_AGENT_RECURSION_LIMIT = 10
 LOGO_AGENT_VERBOSE_REACT = True
 # none = pas de génération d’image ; sinon Hugging Face Inference (Replicate) + Qwen Image
 LOGO_IMAGE_PROVIDER = "huggingface"
@@ -58,6 +58,9 @@ def _env_flag(name: str, default: str = "1") -> bool:
 
 
 LOGO_POLLINATIONS_FALLBACK = _env_flag("LOGO_POLLINATIONS_FALLBACK", "1")
+LOGO_ORIGINALITY_CHECK_ENABLED = _env_flag("LOGO_ORIGINALITY_CHECK_ENABLED", "0")
+LOGO_ORIGINALITY_MAX_RETRIES = int((os.getenv("LOGO_ORIGINALITY_MAX_RETRIES") or "2").strip())
+LOGO_ORIGINALITY_MAX_SIMILAR = int((os.getenv("LOGO_ORIGINALITY_MAX_SIMILAR") or "2").strip())
 # Slug Pollinations par défaut = Z-Image Turbo (catalogue). Surcharge : LOGO_POLLINATIONS_MODEL dans .env (ex. Z-Image Turbo ou zimage)
 LOGO_POLLINATIONS_MODEL_DEFAULT = "zimage"
 # Libellé / valeur .env pour logo_concepts.image_model (source Pollinations). Si vide → nom lisible pour le défaut zimage.

@@ -27,6 +27,8 @@ from prompts.content_generation.prompt_build_image import PROMPT_BUILD_IMAGE_SYS
 from prompts.content_generation.prompt_draft_post import PROMPT_DRAFT_POST_SYSTEM
 
 logger = logging.getLogger("brandai.content_llm_runner")
+IMAGE_PROMPT_MAX_LEN = 520
+NEGATIVE_PROMPT_MAX_LEN = 180
 
 
 class ContentLLMRunner(BaseAgent):
@@ -88,6 +90,18 @@ class ContentLLMRunner(BaseAgent):
         data = self._parse_image_json(raw)
         ip = str(data.get("image_prompt") or "").strip()
         np = str(data.get("negative_prompt") or "").strip()
+        if len(ip) > IMAGE_PROMPT_MAX_LEN or len(np) > NEGATIVE_PROMPT_MAX_LEN:
+            compact_user = (
+                "Rewrite the following JSON to be shorter while preserving intent.\n"
+                f"Rules: image_prompt <= {IMAGE_PROMPT_MAX_LEN} chars, "
+                f"negative_prompt <= {NEGATIVE_PROMPT_MAX_LEN} chars.\n"
+                "Return JSON only with keys image_prompt and negative_prompt.\n\n"
+                f"{json.dumps({'image_prompt': ip, 'negative_prompt': np}, ensure_ascii=False)}"
+            )
+            compact_raw = await self._call_llm(PROMPT_BUILD_IMAGE_SYSTEM, compact_user)
+            compact_data = self._parse_image_json(compact_raw)
+            ip = str(compact_data.get("image_prompt") or "").strip()
+            np = str(compact_data.get("negative_prompt") or "").strip()
         if not ip:
             raise RuntimeError("build_image_prompt : image_prompt manquant.")
         logger.info("[build_image_prompt] image_prompt len=%d", len(ip))

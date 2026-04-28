@@ -12,14 +12,16 @@ export default function WebsiteBuilderPage() {
   const {
     phase,
     isBusy,
-    canChatRevise,
+    canChatSubmit,
     html,
     htmlStats,
     deployment,
     messages,
     error,
-    reviseWebsite,
+    submitChatMessage,
+    saveManualEdits,
     deployWebsite,
+    clearDeployment,
     handleAction,
   } = useWebsiteBuilder();
 
@@ -31,8 +33,10 @@ export default function WebsiteBuilderPage() {
     phase === "deployed"
       ? "Website Builder · Site en ligne"
       : phase === "ready"
-        ? "Website Builder · Itère via le chat à gauche"
-        : "Website Builder · Concept → Génération → Déploiement";
+        ? "Website Builder · Itère via le chat ou édite directement le site"
+        : phase === "description_ready"
+          ? "Website Builder · Discute le concept puis approuve pour générer"
+          : "Website Builder · Concept → Génération → Déploiement";
 
   return (
     <div className="app-content-scroll flex flex-1 flex-col gap-3">
@@ -60,16 +64,15 @@ export default function WebsiteBuilderPage() {
         </ErrorBanner>
       )}
 
-      {/* Split screen — prend toute la hauteur restante */}
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(360px,_2fr)_3fr]">
         <div className="min-h-0 lg:min-h-[640px]">
           <ChatPanel
             phase={phase}
             isBusy={isBusy}
-            canChatRevise={canChatRevise}
+            canChatSubmit={canChatSubmit}
             messages={messages}
             onAction={handleAction}
-            onSubmit={reviseWebsite}
+            onSubmit={submitChatMessage}
           />
         </div>
 
@@ -81,7 +84,9 @@ export default function WebsiteBuilderPage() {
             htmlStats={htmlStats}
             deployment={deployment}
             onDeploy={deployWebsite}
+            onClearDeployment={clearDeployment}
             onRefresh={handleRefresh}
+            onSaveEdits={saveManualEdits}
           />
         </div>
       </div>

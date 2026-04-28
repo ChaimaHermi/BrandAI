@@ -3,6 +3,7 @@ import base64
 import json
 import logging
 import os
+import re
 import sys
 import io
 from typing import Any
@@ -19,15 +20,24 @@ from config.branding_config import (
     LOGO_HF_IMAGE_MODEL,
     LOGO_IMAGE_PROVIDER,
     LOGO_LLM_CONFIG,
+    LOGO_ORIGINALITY_CHECK_ENABLED,
+    LOGO_ORIGINALITY_MAX_RETRIES,
+    LOGO_ORIGINALITY_MAX_SIMILAR,
     LOGO_POLLINATIONS_IMAGE_MODEL,
 )
 from llm.llm_factory import create_azure_openai_client
-from prompts.branding.logo_prompt import LOGO_REACT_SYSTEM_PROMPT, build_logo_react_user_message
+from prompts.branding.logo_prompt import (
+    LOGO_IMAGE_PROMPT_SYSTEM,
+    LOGO_REACT_SYSTEM_PROMPT,
+    build_logo_react_user_message,
+    build_logo_user_message,
+)
+from shared.branding.validators import parse_llm_json_object
 from tools.branding.logo_image_client import fetch_logo_image_hf_with_pollinations_fallback
+from tools.branding.logo_originality_checker import verifier_originalite_logo_bytes
 from tools.branding.logo_tools import (
     make_draft_logo_prompt_tool,
     make_render_logo_image_tool,
-    make_validate_logo_prompt_tool,
 )
 
 logger = logging.getLogger("brandai.logo_agent")
@@ -110,7 +120,7 @@ def _remove_light_background_to_transparent(
 
 
 class LogoAgent(BaseAgent):
-    """Prompt image via ReAct (draft → validate → render) puis kit logo (HF / Pollinations)."""
+    """Prompt image via ReAct (draft -> render) puis kit logo (HF / NVIDIA / Pollinations)."""
 
     def __init__(self):
         super().__init__(
@@ -123,11 +133,12 @@ class LogoAgent(BaseAgent):
         self._logo_max_tokens = min(LOGO_LLM_CONFIG.get("max_tokens") or 900, 1200)
 
     @staticmethod
-    def _extract_validated_logo_prompts(messages: list) -> tuple[str, str] | None:
+    def _extract_drafted_logo_prompts(messages: list, brand_name: str) -> tuple[str, str] | None:
+        brand_key = (brand_name or "").strip().lower()
         for msg in reversed(messages or []):
             if not isinstance(msg, ToolMessage):
                 continue
-            if getattr(msg, "name", None) != "validate_logo_prompt":
+            if getattr(msg, "name", None) != "draft_logo_prompt":
                 continue
             raw = msg.content
             if not isinstance(raw, str) or not raw.strip():
@@ -136,14 +147,65 @@ class LogoAgent(BaseAgent):
                 data = json.loads(raw)
             except Exception:
                 continue
-            if not isinstance(data, dict) or not data.get("ok"):
+            if not isinstance(data, dict):
                 continue
             ip = str(data.get("image_prompt") or "").strip()
             if not ip:
                 continue
             np = str(data.get("negative_prompt") or "").strip()
+            if brand_key and brand_key not in ip.lower():
+                continue
+            if re.search(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b", ip):
+                continue
             return ip, np
         return None
+
+    @staticmethod
+    def _parse_logo_prompt_json(raw: str, brand_name: str) -> tuple[str, str] | None:
+        try:
+            data = parse_llm_json_object(raw)
+        except Exception:
+            return None
+        ip = str(data.get("image_prompt") or "").strip()
+        np = str(data.get("negative_prompt") or "").strip()
+        if not ip:
+            return None
+        if (brand_name or "").strip().lower() not in ip.lower():
+            return None
+        if re.search(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b", ip):
+            return None
+        return ip, np
+
+    def _draft_logo_prompt_direct(
+        self,
+        *,
+        llm,
+        idea: dict,
+        brand_name: str,
+        slogan_hint: str,
+        palette_hint: str,
+        validation_feedback: str,
+    ) -> tuple[str, str] | None:
+        user_prompt = build_logo_user_message(
+            idea,
+            brand_name,
+            slogan_hint,
+            palette_hint,
+        )
+        fb = (validation_feedback or "").strip()
+        if fb:
+            user_prompt += (
+                "\n\n--- FEEDBACK (produce a new JSON prompt) ---\n"
+                + fb
+            )
+        messages = [
+            SystemMessage(content=LOGO_IMAGE_PROMPT_SYSTEM),
+            HumanMessage(content=user_prompt),
+        ]
+        response = llm.invoke(messages)
+        content = response.content if response and getattr(response, "content", None) else ""
+        raw = content if isinstance(content, str) else str(content)
+        return self._parse_logo_prompt_json(raw, brand_name)
 
     @staticmethod
     def _print(msg: str = "") -> None:
@@ -167,15 +229,6 @@ class LogoAgent(BaseAgent):
     def _summarize_tool_observation(cls, tool_name: str, raw: str) -> str:
         if not raw or not isinstance(raw, str):
             return str(raw)[:400]
-        if tool_name == "validate_logo_prompt":
-            try:
-                data = json.loads(raw)
-                if isinstance(data, dict):
-                    if data.get("ok"):
-                        return "ok=true (image_prompt présent)"
-                    return f"ok=false: {cls._truncate(str(data.get('error') or raw), 400)}"
-            except Exception:
-                pass
         if tool_name == "render_logo_image":
             try:
                 data = json.loads(raw)
@@ -293,9 +346,8 @@ class LogoAgent(BaseAgent):
             slogan_hint,
             palette_hint,
         )
-        validate_tool = make_validate_logo_prompt_tool(brand_name=brand_name)
         render_tool = make_render_logo_image_tool(holder)
-        tools = [draft_tool, validate_tool, render_tool]
+        tools = [draft_tool, render_tool]
 
         agent = create_react_agent(
             llm,
@@ -452,11 +504,11 @@ class LogoAgent(BaseAgent):
                     holder,
                     recursion_limit=LOGO_AGENT_RECURSION_LIMIT,
                 )
-                pair = self._extract_validated_logo_prompts(messages or [])
+                pair = self._extract_drafted_logo_prompts(messages or [], brand_name)
                 if pair:
                     break
                 last_error = RuntimeError(
-                    "Validation du prompt logo non confirmée (validate_logo_prompt ok: true introuvable)."
+                    "Prompt logo introuvable/invalide (draft_logo_prompt JSON sans image_prompt conforme)."
                 )
             except Exception as e:
                 last_error = e
@@ -498,9 +550,9 @@ class LogoAgent(BaseAgent):
             state.status = "logo_failed"
             return state
 
-        pair = self._extract_validated_logo_prompts(messages)
+        pair = self._extract_drafted_logo_prompts(messages, brand_name)
         if not pair:
-            msg = "Impossible d'extraire un prompt image validé (validate_logo_prompt)."
+            msg = "Impossible d'extraire un prompt image valide depuis draft_logo_prompt."
             self._log_error(msg)
             state.brand_identity["logo_error"] = msg
             state.brand_identity["branding_status"] = "logo_failed"
@@ -509,7 +561,7 @@ class LogoAgent(BaseAgent):
 
         image_prompt, negative_prompt = pair
         logger.info(
-            "[logo_agent] Prompt image validé — image_prompt:\n%s",
+            "[logo_agent] Prompt image extrait — image_prompt:\n%s",
             _trunc_log(image_prompt),
         )
         if negative_prompt:
@@ -535,6 +587,61 @@ class LogoAgent(BaseAgent):
             except Exception as e:
                 logger.error("logo image fetch (fallback): %s", e)
                 state.brand_identity["logo_image_error"] = str(e)
+
+        if (
+            LOGO_ORIGINALITY_CHECK_ENABLED
+            and provider != "none"
+            and holder.get("image_bytes") is not None
+        ):
+            originality_ok = verifier_originalite_logo_bytes(
+                holder["image_bytes"],
+                suffix=".png" if "png" in str(holder.get("mime") or "").lower() else ".jpg",
+                max_similar=LOGO_ORIGINALITY_MAX_SIMILAR,
+            )
+            if not originality_ok:
+                self.logger.warning(
+                    "[logo_agent] Originality check failed (Vision similar_images > %d) -> redraft",
+                    LOGO_ORIGINALITY_MAX_SIMILAR,
+                )
+            retries = max(0, int(LOGO_ORIGINALITY_MAX_RETRIES))
+            while not originality_ok and retries > 0:
+                retries -= 1
+                llm_retry = self._make_llm_for_logo()
+                redraft = self._draft_logo_prompt_direct(
+                    llm=llm_retry,
+                    idea=idea,
+                    brand_name=brand_name,
+                    slogan_hint=slogan_hint,
+                    palette_hint=palette_hint,
+                    validation_feedback=(
+                        "Previous logo appears visually similar to existing web logos. "
+                        "Generate a more unique symbol, avoid generic stock motifs, "
+                        "keep professional startup style, transparent background, and readable brand name."
+                    ),
+                )
+                if not redraft:
+                    break
+                image_prompt, negative_prompt = redraft
+                _print_prompt_to_terminal(image_prompt, negative_prompt)
+                try:
+                    data, mime, src = await self._maybe_fetch_image(image_prompt, negative_prompt)
+                    if not data:
+                        break
+                    holder["image_bytes"] = data
+                    holder["mime"] = mime
+                    holder["image_source"] = src
+                    originality_ok = verifier_originalite_logo_bytes(
+                        data,
+                        suffix=".png" if "png" in str(mime or "").lower() else ".jpg",
+                        max_similar=LOGO_ORIGINALITY_MAX_SIMILAR,
+                    )
+                except Exception as e:
+                    state.brand_identity["logo_image_error"] = str(e)
+                    break
+            if not originality_ok:
+                state.brand_identity["logo_originality_warning"] = (
+                    "Logo may be visually similar to existing web images (Google Vision web detection)."
+                )
 
         if holder.get("render_error") and not state.brand_identity.get("logo_image_error"):
             state.brand_identity["logo_image_error"] = str(holder["render_error"])
