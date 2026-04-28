@@ -64,6 +64,33 @@ def render_description_summary(data: dict[str, Any]) -> str:
     if pairing:
         lines.append(f"🔤 **Typographie** : {pairing}")
 
+    color_usage = data.get("color_usage")
+    if isinstance(color_usage, dict) and color_usage:
+        # Compat: supporte l'ancien format (primary/secondary/...) et le nouveau
+        # format créatif (dominant/supporting/highlight/...).
+        keys_priority = [
+            "dominant",
+            "supporting",
+            "highlight",
+            "surfaces",
+            "gradients_fx",
+            "primary",
+            "secondary",
+            "accent",
+            "surface",
+            "background",
+        ]
+        color_lines: list[str] = []
+        for key in keys_priority:
+            value = str(color_usage.get(key) or "").strip()
+            if value:
+                pretty_key = key.replace("_", " ")
+                color_lines.append(f"- **{pretty_key}** : {value}")
+        if color_lines:
+            lines.append("")
+            lines.append("🌈 **Stratégie couleur** :")
+            lines.extend(color_lines)
+
     sections = data.get("sections") or []
     if isinstance(sections, list) and sections:
         lines.append("")

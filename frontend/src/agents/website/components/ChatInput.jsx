@@ -5,10 +5,13 @@ const PLACEHOLDERS = {
   loading_context: "Chargement du projet…",
   context_ready: "Cliquez sur « Générer la description » au-dessus.",
   describing: "Génération du concept en cours…",
-  description_ready: "Cliquez sur « Générer le site » pour démarrer.",
+  description_ready:
+    "Discute du concept (ex: « ajoute une section pricing », « hero plus minimaliste »…) puis approuve.",
+  refining: "Application de tes retours sur le concept…",
   generating: "Génération du HTML en cours…",
   ready: "Décris une modification (ex: rends le hero plus sombre)",
   revising: "Application de la modification…",
+  saving_edits: "Sauvegarde des modifications manuelles…",
   deploying: "Déploiement Vercel en cours…",
   deployed: "Tu peux continuer à modifier le site, je redéploierai à la demande.",
   error: "Une erreur est survenue.",
@@ -19,7 +22,6 @@ export function ChatInput({ phase, isBusy, canSubmit, onSubmit }) {
   const [value, setValue] = useState("");
   const taRef = useRef(null);
 
-  // Auto resize textarea
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;

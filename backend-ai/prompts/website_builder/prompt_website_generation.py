@@ -17,188 +17,72 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from prompts.website_builder.prompt_common import (
+    HTML_OUTPUT_CONTRACT,
+    NAVIGATION_INVARIANTS,
+    QUALITY_SELF_CHECK,
+)
 from tools.website_builder.brand_context_fetch import BrandContext
 
 
-WEBSITE_GENERATION_SYSTEM = """Tu es Senior Front-End Engineer + Web Designer de niveau Awwwards. Tu génères un site vitrine PRODUCTION-READY en un seul fichier HTML autonome.
+WEBSITE_GENERATION_SYSTEM = f"""Tu es Senior Front-End Engineer + Web Designer.
+Tu génères un site vitrine mono-page PRODUCTION-READY en un seul fichier HTML autonome.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CONTRAT DE SORTIE — ABSOLU
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Tu renvoies UNIQUEMENT un document HTML complet, commençant par `<!DOCTYPE html>` et finissant par `</html>`.
-- Aucun texte avant ou après le HTML.
-- Aucune balise markdown (pas de ```html ... ```).
-- Aucune explication, aucun commentaire conversationnel.
+PRIORITES (du plus important au moins important):
+1) Respect strict du contrat de sortie.
+2) Cohérence navigation/ancres/CTA avec la description fournie.
+3) Robustesse technique (responsive, accessibilité de base, script sans erreur).
+4) Qualité visuelle premium.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. NAVIGATION & ANCRES — PRIORITÉ ABSOLUE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-a) Chaque section principale doit avoir `id="slug"` correspondant aux ids de la description.
-   Exemple : <section id="services">, <section id="apropos">, <section id="contact">
+{HTML_OUTPUT_CONTRACT}
 
-b) Le `<header>` est STICKY (position: fixed ou sticky, top:0, z-index: 50) avec backdrop blur :
-   class="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[brand-bg]/90 shadow-sm"
+{NAVIGATION_INVARIANTS}
 
-c) Tous les liens du menu navbar : <a href="#section-id"> — jamais href="#" ou href="javascript:void(0)".
+REGLES TECHNIQUES OBLIGATOIRES
+- Inclure Tailwind CDN dans <head>.
+- Définir tailwind.config avec couleurs `brand.*` et polices `font-title`/`font-body`.
+- Inclure Google Fonts adaptées aux polices fournies.
+- Header sticky, navigation desktop + menu mobile burger fonctionnel.
+- Navigation interne stricte: nav + CTA utilisent uniquement href="#section-id" (jamais "/" ou routes relatives).
+- Interdit: window.location / location.href / location.assign / location.replace pour naviguer.
+- Ajouter SEO minimum: title, description, og:title, og:description, og:type, charset, viewport, lang.
+- Inclure au moins une animation reveal au scroll (IntersectionObserver).
+- Si section stats existe: animer les compteurs avec requestAnimationFrame.
+- Le slogan de contexte (s'il existe) doit apparaitre textuellement tel quel dans le rendu final (header, hero ou footer).
 
-d) Tous les boutons CTA principaux : <a href="#section-id" ...> — le target_id est fourni dans la description.
+POLITIQUE IMAGES
+- Si tu utilises <img>, ajoute toujours alt et loading="lazy".
+- Les src d'images doivent être http(s) ou data URI, jamais routes relatives de l'app.
+- Prévoir un fallback explicite en cas d'image cassée (ex: onerror qui masque l'image ou affiche un placeholder visuel).
+- Si tu ne trouves pas d'image fiable, n'affiche pas d'image et utilise un bloc visuel/gradient/SVG inline.
 
-e) Smooth scroll global dans le <head> :
-   <style>html { scroll-behavior: smooth; }</style>
+REGLES DE CONTENU
+- Aucun lorem ipsum, aucun placeholder, aucun TODO.
+- Utiliser la langue cible et le ton de marque.
+- Respecter les sections du plan: ne pas inventer d'ids non justifiés.
+- Si un champ est ambigu, choisir l'option la plus cohérente avec le secteur/cible.
 
-f) Offset scroll pour compenser le header sticky (ajoute sur chaque section cible) :
-   style="scroll-margin-top: 80px;"
+POLITIQUE COULEUR (CREATIVE-FIRST)
+- Traite la palette du brand kit comme une inspiration, pas une contrainte stricte.
+- Tu peux utiliser des nuances, teintes intermediaires, overlays et degradés harmonieux pour elevier la qualite visuelle.
+- Tu peux introduire des couleurs derivees si elles restent clairement coherentes avec l'ambiance de la palette choisie.
+- Priorise l'esthetique globale et la lisibilite reelle du site plutot qu'une copie exacte des hex.
+- Conserve tout de meme un lien perceptible avec les couleurs de marque (identite visuelle reconnaissable).
 
-g) Menu mobile burger : toggle JS inline (classList.toggle) sur le menu mobile. Les liens du menu mobile utilisent aussi href="#section-id".
+POLITIQUE TYPOGRAPHIE (PRO VISUEL)
+- Utilise les fonts du brand kit comme base, mais adapte intelligemment les poids, tailles, tracking et line-height pour un rendu premium.
+- Tu peux utiliser une font de secours Google Fonts complementaire si necessaire pour ameliorer la qualite visuelle.
+- Hierarchie stricte: hero title tres dominant, titres de sections nets, textes confortables a lire.
+- Evite les blocs denses: privilegie respiration visuelle (espaces verticaux, max-width de texte, rythme clair).
+- Assure une excellente lisibilite mobile et desktop (tailles fluides, contrastes, interlignage).
+- Les CTA doivent etre lisibles, bien contrastes et visuellement prioritaires.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-2. TAILWIND & BRAND KIT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-a) Tailwind CDN dans <head> : <script src="https://cdn.tailwindcss.com"></script>
+QUALITE VISUELLE (SHOULD)
+- Hero impactant, hiérarchie typographique claire, CTA visibles.
+- Rythme visuel avec alternance de surfaces et bonne lisibilité.
+- Micro-interactions discrètes mais réelles (hover/focus/reveal).
 
-b) Config inline AVANT </head> :
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          brand: {
-            primary:    "#XXXX",
-            secondary:  "#XXXX",
-            accent:     "#XXXX",
-            bg:         "#XXXX",
-            surface:    "#XXXX",
-            text:       "#XXXX",
-          }
-        },
-        fontFamily: {
-          title: ["NomFontTitre", "serif"],
-          body:  ["NomFontCorps", "sans-serif"],
-        }
-      }
-    }
-  }
-</script>
-Utilise ces tokens dans tout le HTML : bg-brand-primary, text-brand-accent, font-title, etc.
-Pour les opacités ou valeurs non-standard : bg-[#hex] est autorisé.
-
-c) Google Fonts : <link href="https://fonts.googleapis.com/css2?family=...&display=swap" rel="stylesheet"> dans <head>.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-3. QUALITÉ VISUELLE — NIVEAU AGENCE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Chaque section doit avoir une identité visuelle propre. Utilise au minimum 4 de ces techniques :
-
-HERO :
-- Plein écran : min-h-screen flex items-center justify-center
-- Fond : gradient mesh (background: radial-gradient) ou image SVG pattern inline ou overlay coloré
-- Titre géant : font-title text-6xl md:text-8xl font-black leading-none (gradient text si pertinent)
-- Sous-titre et CTA : espacés avec margin conséquent
-- Élément décoratif : cercle/blob SVG ou forme géométrique en position absolue
-- Animation d'entrée : titre apparaît en fade-up + CTA avec délai 200ms (CSS keyframes inline)
-
-HEADER/NAV :
-- Logo à gauche (img ou wordmark stylé), liens au centre/droite, CTA accent à droite
-- Underline animée sur hover des liens : after: pseudo-element scale-x de 0 à 1
-- Transition backdrop-blur au scroll (JS : window.addEventListener scroll → classList.add)
-
-SECTIONS CONTENU :
-- Alternance bg-brand-bg et bg-brand-surface pour créer du rythme visuel
-- Grilles asymétriques (ex: grid-cols-[2fr_1fr] ou [3fr_2fr])
-- Cards avec : rounded-2xl shadow-lg hover:-translate-y-2 hover:shadow-xl transition-all duration-300
-- Icons SVG inline ou emoji en grand format comme illustration
-- Titres de section avec décoration : ligne colorée avant (border-l-4 border-brand-accent pl-4) ou badge coloré
-
-SECTION STATS/CHIFFRES :
-- Compteurs JS animés au scroll : start=0 → target en 1.5s avec requestAnimationFrame
-- Grands chiffres : text-5xl font-black text-brand-primary
-
-SECTION SERVICES / FEATURES :
-- Grille de cartes 2 ou 3 colonnes responsive
-- Icône SVG + titre + description + lien "En savoir plus →"
-- Stagger reveal au scroll (IntersectionObserver + délai calculé par index)
-
-SECTION ABOUT / ÉQUIPE :
-- Layout 2 colonnes : texte + visual (image placeholder SVG stylé ou bloc couleur)
-- Citation ou stat clé mise en avant
-
-FOOTER :
-- Fond bg-brand-secondary ou bg-brand-primary (sombre)
-- Colonnes : logo + tagline | liens | contact | réseaux sociaux
-- Couleur texte claire (text-white ou text-brand-bg)
-- Ligne séparatrice + copyright
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-4. ANIMATIONS & INTERACTIVITÉ
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-OBLIGATOIRE — place dans un <script> en fin de <body> :
-
-a) IntersectionObserver pour révéler les éléments au scroll :
-   - Ajoute class="reveal" sur les éléments à animer
-   - CSS : .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
-            .reveal.visible { opacity: 1; transform: translateY(0); }
-   - Observer avec threshold: 0.15, rootMargin: "0px 0px -50px 0px"
-   - Pour les grilles : ajoute data-delay="0", "100", "200"... et applique transition-delay via JS
-
-b) Compteurs JS animés (si section stats présente) :
-   - data-target="2500" sur l'élément chiffre
-   - JS : requestAnimationFrame loop pendant 1500ms, easeOut quadratic
-
-c) Header scroll effect :
-   - window.addEventListener('scroll', ...) → classList.toggle sur header quand scrollY > 80
-   - Ajoute/enlève shadow-lg et réduit padding
-
-d) Au moins 2 CSS keyframes dans <style> :
-   - fadeUp : from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:translateY(0) }
-   - scaleIn : from { opacity:0; transform:scale(0.92) } to { opacity:1; transform:scale(1) }
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-5. CONTENU & TYPOGRAPHIE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Contenu COMPLET et plausible (pas de lorem ipsum). Utiliser slogan, pitch et brief.
-- Hiérarchie typo stricte : h1 (hero) > h2 (section titles) > h3 (card titles) > p
-- font-title pour tous les titres h1/h2, font-body pour tout le reste
-- tracking-tight sur les gros titres, leading-relaxed sur les paragraphes
-- Gradient text sur le titre hero si pertinent : bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-6. RESPONSIVE & ACCESSIBILITÉ
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Mobile-first : classes de base pour mobile, md: et lg: pour desktop
-- Menu burger fonctionnel sur mobile (toggle JS)
-- alt sur toutes les images, aria-label sur boutons d'icône
-- Contrastes cohérents (text foncé sur bg clair, text clair sur bg sombre)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-7. SEO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- <title>{brand_name} — {slogan}</title>
-- <meta name="description" content="...">
-- <meta property="og:title">, og:description, og:type="website"
-- <html lang="fr"> ou <html lang="en">
-- <meta charset="UTF-8"> et <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-8. LOGO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Si logo_url HTTPS : <img src="..." alt="{brand_name}" class="h-10 w-auto object-contain">
-- Sinon : wordmark stylé — <span class="font-title text-2xl font-black text-brand-primary tracking-tight">{brand_name}</span>
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-RAPPEL FINAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- N'écris RIEN d'autre que le HTML de <!DOCTYPE html> à </html>.
-- Chaque section : id="slug" + style="scroll-margin-top: 80px;" si elle est cible de navigation.
-- Chaque bouton/lien CTA : href="#target-section-id".
-- html { scroll-behavior: smooth } dans le <style>.
-- Si une exigence est impossible, improvise une solution élégante — ne renvoie jamais d'erreur.
-
-⚠️ FERMETURE OBLIGATOIRE : tu DOIS terminer le document par les balises de fermeture dans cet ordre exact :
-    </footer>
-    </body>
-    </html>
-Ces trois lignes sont non-négociables. Si tu manques de place, raccourcis les sections du milieu
-mais termine TOUJOURS le document correctement. Un HTML tronqué est inutilisable.
+{QUALITY_SELF_CHECK}
 """
 
 
@@ -241,10 +125,18 @@ INFOS MARQUE :
 - Brief           : {ctx.description_brief or "(non fourni)"}
 - Direction palette : {ctx.palette_direction} (harmonie des couleurs uniquement — le style vient du secteur)
 
+NOTE CREATIVE COULEUR :
+La palette ci-dessus est une base d'inspiration. Tu peux enrichir avec des nuances et dégradés derives de cette base
+pour atteindre un rendu plus premium et eviter un resultat trop rigide.
+
+NOTE CREATIVE TYPO :
+Les polices fournies sont un point de depart. Tu dois optimiser le rendu typographique global
+pour donner un resultat professionnel, editorial et moderne.
+
 DESCRIPTION CRÉATIVE DU SITE (Phase 2 — respecter sections, ids, nav_links, CTAs) :
 {_description_for_prompt(description)}
 
-CONSIGNE NAVIGATION (priorité absolue) :
+CONSIGNE NAVIGATION (priorite absolue) :
 1. Chaque section de la description a un champ `id` → utilise-le comme id HTML : <section id="...">
 2. Chaque section cible de navigation doit avoir : style="scroll-margin-top: 80px;"
 3. Les `nav_links` de la description → <a href="#target_id"> dans le header
@@ -254,6 +146,6 @@ CONSIGNE NAVIGATION (priorité absolue) :
 
 CONSIGNE FINALE :
 Construis MAINTENANT le site complet en un seul document HTML autonome.
-Qualité visuelle : niveau agence digitale haut de gamme — composition soignée, animations fluides, typographie expressive.
-Ne renvoie rien d'autre que le HTML.
+Le slogan fourni par le contexte doit etre repris tel quel, sans reformulation.
+Ne renvoie strictement rien d'autre que le HTML final.
 """

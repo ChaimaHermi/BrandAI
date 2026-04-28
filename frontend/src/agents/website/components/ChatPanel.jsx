@@ -8,10 +8,12 @@ const PHASE_LABEL = {
   loading_context: "Chargement du contexte…",
   context_ready: "Contexte prêt",
   describing: "Création du concept…",
-  description_ready: "Concept prêt",
+  description_ready: "Concept prêt — discute ou approuve",
+  refining: "Affinage du concept…",
   generating: "Génération du HTML…",
   ready: "Site prêt",
   revising: "Modification en cours…",
+  saving_edits: "Sauvegarde des modifications…",
   deploying: "Déploiement Vercel…",
   deployed: "Site en ligne",
   error: "Erreur",
@@ -23,9 +25,11 @@ const PHASE_INDEX = {
   context_ready: 1,
   describing: 2,
   description_ready: 2,
+  refining: 2,
   generating: 3,
   ready: 3,
   revising: 3,
+  saving_edits: 3,
   deploying: 4,
   deployed: 5,
   error: 0,
@@ -84,7 +88,7 @@ function TypingBubble() {
 export function ChatPanel({
   phase,
   isBusy,
-  canChatRevise,
+  canChatSubmit,
   messages,
   onAction,
   onSubmit,
@@ -96,6 +100,13 @@ export function ChatPanel({
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [messages, isBusy]);
+
+  // On masque le typing bubble si le dernier message est une carte "stream"
+  // active : la carte affiche déjà la progression en temps réel.
+  const lastMsg = messages[messages.length - 1];
+  const showTyping =
+    isBusy &&
+    !(lastMsg && lastMsg.kind === "stream" && lastMsg.streamStatus === "running");
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-brand-border bg-white shadow-card">
@@ -114,14 +125,14 @@ export function ChatPanel({
               busy={isBusy}
             />
           ))}
-          {isBusy && <TypingBubble />}
+          {showTyping && <TypingBubble />}
         </div>
       </div>
 
       <ChatInput
         phase={phase}
         isBusy={isBusy}
-        canSubmit={canChatRevise}
+        canSubmit={canChatSubmit}
         onSubmit={onSubmit}
       />
     </div>
