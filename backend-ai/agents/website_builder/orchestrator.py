@@ -4,14 +4,15 @@ import logging
 from typing import Any
 
 from langsmith import traceable
-from tools.website_builder.build_tool import build_website_html
+from agents.base_agent import BaseAgent, PipelineState
+from tools.website_builder.architecture_tool import generate_website_architecture
+from tools.website_builder.coder_tool import build_website_html
+from tools.website_builder.content_tool import generate_website_content
 from tools.website_builder.context_tool import WebsiteContextTool
 from tools.website_builder.description_renderer import (
     render_context_summary,
     render_description_summary,
 )
-from tools.website_builder.llm_gateway import WebsiteBuilderLlmGateway
-from tools.website_builder.planning_tool import generate_website_plan
 from tools.website_builder.refinement_tool import refine_website_description
 from tools.website_builder.revision_tool import revise_website_html
 from tools.website_builder.step_streamer import (
@@ -38,12 +39,126 @@ from tools.website_builder.website_renderer import validate_html_document
 logger = logging.getLogger("brandai.website_builder.orchestrator")
 
 
-class WebsiteBuilderOrchestrator:
+def _section_title_from_content(section_content: Any, fallback_id: str) -> str:
+    """Extrait un titre lisible depuis le contenu d'une section pour l'affichage."""
+    if isinstance(section_content, dict):
+        for key in ("title", "headline", "name", "tagline"):
+            value = str(section_content.get(key) or "").strip()
+            if value:
+                return value
+    return fallback_id.replace("-", " ").replace("_", " ").title()
+
+
+def _merge_architecture_and_content(
+    architecture: dict[str, Any],
+    content: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Fusionne les sorties Phase 2A (architecture) et 2B (contenu) en une
+    description compatible avec le frontend (renderer) et le refinement.
+    """
+    arch_sections = architecture.get("sections") or []
+    content_sections = (content.get("sections") or {}) if isinstance(content, dict) else {}
+
+    merged_sections: list[dict[str, Any]] = []
+    for arch_sec in arch_sections:
+        if not isinstance(arch_sec, dict):
+            continue
+        sid = str(arch_sec.get("id") or "").strip()
+        if not sid:
+            continue
+        sec_content = content_sections.get(sid) or {}
+        title = _section_title_from_content(sec_content, sid)
+        purpose = str(arch_sec.get("purpose") or "").strip()
+        merged_sections.append({
+            "id": sid,
+            "type": str(arch_sec.get("type") or "").strip(),
+            "title": title,
+            "purpose": purpose,
+            "has_cta": bool(arch_sec.get("has_cta") or False),
+            "cta_target": arch_sec.get("cta_target") or None,
+            "creative_touch": purpose,
+        })
+
+    hero_content = content_sections.get("hero") or {}
+    hero_concept = str(
+        (hero_content.get("headline") or "")
+        if isinstance(hero_content, dict)
+        else ""
+    ).strip()
+
+    user_summary_lines = [
+        f"Voici ce que je vais te créer : un site vitrine en {len(merged_sections)} sections.",
+    ]
+    if hero_concept:
+        user_summary_lines.append(f"Hero : « {hero_concept} ».")
+    user_summary = " ".join(user_summary_lines)
+
+    return {
+        "language": architecture.get("language") or "fr",
+        "visual_style": architecture.get("visual_style") or "",
+        "tone_of_voice": architecture.get("tone") or "",
+        "hero_concept": hero_concept,
+        "user_summary": user_summary,
+        "nav_links": architecture.get("nav_links") or [],
+        "sections": merged_sections,
+        "animations": architecture.get("animations") or [],
+        "meta": (content.get("meta") or {}) if isinstance(content, dict) else {},
+        "architecture": architecture,
+        "content": content,
+    }
+
+
+class WebsiteBuilderOrchestrator(BaseAgent):
     """Application orchestrator for website builder phases."""
 
-    def __init__(self, llm_gateway: WebsiteBuilderLlmGateway | None = None) -> None:
-        self.llm_gateway = llm_gateway or WebsiteBuilderLlmGateway()
+    def __init__(self) -> None:
+        super().__init__(agent_name="website_builder", llm_model="openai/gpt-oss-120b")
         self.context_tool = WebsiteContextTool()
+
+    async def run(self, state: PipelineState) -> Any:
+        raise NotImplementedError("Use orchestrator methods directly.")
+
+    async def invoke_llm(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        temperature: float,
+        max_tokens: int,
+        phase: str = "unknown",
+        timeout_seconds: float = 0.0,
+    ) -> str:
+        old_temp, old_tokens, old_timeout = self.temperature, self.llm_max_tokens, getattr(self, '_override_timeout', None)
+        self.temperature, self.llm_max_tokens = temperature, max_tokens
+        if timeout_seconds > 0:
+            self._override_timeout = timeout_seconds
+        try:
+            return await self._call_nvidia_direct(system_prompt, user_prompt)
+        finally:
+            self.temperature, self.llm_max_tokens = old_temp, old_tokens
+            if old_timeout is None and hasattr(self, '_override_timeout'):
+                delattr(self, '_override_timeout')
+            elif old_timeout is not None:
+                self._override_timeout = old_timeout
+
+    def parse_json_output(self, raw: str) -> dict[str, Any]:
+        return self._parse_json(raw)
+
+    async def _generate_full_description(self, ctx) -> dict[str, Any]:
+        """Pipeline Phase 2 : architecture → contenu → description fusionnée."""
+        architecture = await generate_website_architecture(
+            ctx=ctx,
+            invoke_llm=self.invoke_llm,
+            parse_json=self.parse_json_output,
+        )
+        content = await generate_website_content(
+            ctx=ctx,
+            architecture=architecture,
+            invoke_llm=self.invoke_llm,
+            parse_json=self.parse_json_output,
+        )
+        return _merge_architecture_and_content(architecture, content)
 
     async def _ensure_valid_html(self, *, ctx, html: str, phase: str) -> tuple[str, dict[str, int]]:
         """
@@ -74,7 +189,7 @@ class WebsiteBuilderOrchestrator:
                 ctx=ctx,
                 current_html=normalized_html,
                 instruction=auto_fix_instruction,
-                invoke_llm=self.llm_gateway.invoke_llm,
+                invoke_llm=self.invoke_llm,
             )
             healed_html = sanitize_navigation_html(healed_html)
             validate_brand_identity(
@@ -96,11 +211,7 @@ class WebsiteBuilderOrchestrator:
     @traceable(name="website_builder.orchestrator.generate_description", tags=["website_builder", "orchestrator", "description"])
     async def generate_description(self, *, idea_id: int, token: str) -> dict[str, Any]:
         ctx = await self.context_tool.fetch(idea_id=idea_id, access_token=token)
-        description = await generate_website_plan(
-            ctx=ctx,
-            invoke_llm=self.llm_gateway.invoke_llm,
-            parse_json=self.llm_gateway.parse_json_output,
-        )
+        description = await self._generate_full_description(ctx)
 
         await patch_website_project(
             idea_id=idea_id,
@@ -139,15 +250,12 @@ class WebsiteBuilderOrchestrator:
         description: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         ctx = await self.context_tool.fetch(idea_id=idea_id, access_token=token)
-        used_description = description or await generate_website_plan(
-            ctx=ctx,
-            invoke_llm=self.llm_gateway.invoke_llm,
-            parse_json=self.llm_gateway.parse_json_output,
-        )
+        used_description = description or await self._generate_full_description(ctx)
         html = await build_website_html(
             ctx=ctx,
-            description=used_description,
-            invoke_llm=self.llm_gateway.invoke_llm,
+            architecture=used_description.get("architecture") or used_description,
+            content=used_description.get("content") or {},
+            invoke_llm=self.invoke_llm,
         )
         html, stats = await self._ensure_valid_html(ctx=ctx, html=html, phase="generation")
 
@@ -197,7 +305,7 @@ class WebsiteBuilderOrchestrator:
             ctx=ctx,
             current_html=current_html,
             instruction=instruction,
-            invoke_llm=self.llm_gateway.invoke_llm,
+            invoke_llm=self.invoke_llm,
         )
         html, stats = await self._ensure_valid_html(ctx=ctx, html=html, phase="revision")
 
@@ -246,8 +354,8 @@ class WebsiteBuilderOrchestrator:
             ctx=ctx,
             current_description=current_description,
             user_feedback=user_feedback,
-            invoke_llm=self.llm_gateway.invoke_llm,
-            parse_json=self.llm_gateway.parse_json_output,
+            invoke_llm=self.invoke_llm,
+            parse_json=self.parse_json_output,
         )
         await patch_website_project(
             idea_id=idea_id,
@@ -372,11 +480,7 @@ class WebsiteBuilderOrchestrator:
             description = await run_with_progress(
                 emitter,
                 step_id="design",
-                coro_factory=lambda: generate_website_plan(
-                    ctx=ctx,
-                    invoke_llm=self.llm_gateway.invoke_llm,
-                    parse_json=self.llm_gateway.parse_json_output,
-                ),
+                coro_factory=lambda: self._generate_full_description(ctx),
                 tick_messages=DESCRIPTION_TICKS,
             )
             await emitter.emit_step(
@@ -454,8 +558,8 @@ class WebsiteBuilderOrchestrator:
                     ctx=ctx,
                     current_description=current_description,
                     user_feedback=user_feedback,
-                    invoke_llm=self.llm_gateway.invoke_llm,
-                    parse_json=self.llm_gateway.parse_json_output,
+                    invoke_llm=self.invoke_llm,
+                    parse_json=self.parse_json_output,
                 ),
                 tick_messages=REFINEMENT_TICKS,
             )
@@ -540,11 +644,7 @@ class WebsiteBuilderOrchestrator:
                 used_description = await run_with_progress(
                     emitter,
                     step_id="design",
-                    coro_factory=lambda: generate_website_plan(
-                        ctx=ctx,
-                        invoke_llm=self.llm_gateway.invoke_llm,
-                        parse_json=self.llm_gateway.parse_json_output,
-                    ),
+                    coro_factory=lambda: self._generate_full_description(ctx),
                     tick_messages=DESCRIPTION_TICKS,
                 )
                 await emitter.emit_step("design", "Concept pret.", status="done")
@@ -558,8 +658,9 @@ class WebsiteBuilderOrchestrator:
                 step_id="build",
                 coro_factory=lambda: build_website_html(
                     ctx=ctx,
-                    description=used_description,  # type: ignore[arg-type]
-                    invoke_llm=self.llm_gateway.invoke_llm,
+                    architecture=used_description.get("architecture") or used_description,  # type: ignore[union-attr]
+                    content=used_description.get("content") or {},  # type: ignore[union-attr]
+                    invoke_llm=self.invoke_llm,
                 ),
                 tick_messages=GENERATION_TICKS,
                 tick_interval=3.0,
@@ -647,7 +748,7 @@ class WebsiteBuilderOrchestrator:
                     ctx=ctx,
                     current_html=current_html,
                     instruction=instruction,
-                    invoke_llm=self.llm_gateway.invoke_llm,
+                    invoke_llm=self.invoke_llm,
                 ),
                 tick_messages=REVISION_TICKS,
             )

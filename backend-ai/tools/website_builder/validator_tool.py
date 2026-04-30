@@ -7,7 +7,95 @@ from config.website_builder_config import REQUIRED_ANIMATIONS_MIN, REQUIRED_SECT
 from tools.website_builder.website_renderer import html_stats, validate_html_document
 
 
+def validate_architecture_payload(data: dict[str, Any]) -> None:
+    """Valide la structure produite par architecture_tool (Phase 2A)."""
+    if not isinstance(data, dict):
+        raise RuntimeError("Architecture invalide : payload non dict.")
+
+    sections = data.get("sections")
+    if not isinstance(sections, list) or len(sections) < REQUIRED_SECTIONS_MIN:
+        raise RuntimeError(
+            f"Architecture invalide : il faut au moins {REQUIRED_SECTIONS_MIN} sections "
+            f"(recu: {len(sections) if isinstance(sections, list) else 0})."
+        )
+
+    section_ids: list[str] = []
+    section_types: list[str] = []
+    for idx, section in enumerate(sections):
+        if not isinstance(section, dict):
+            raise RuntimeError(f"Architecture invalide : section #{idx} n'est pas un objet.")
+        sid = str(section.get("id") or "").strip()
+        stype = str(section.get("type") or "").strip()
+        if not sid:
+            raise RuntimeError(f"Architecture invalide : section #{idx} sans id.")
+        if not stype:
+            raise RuntimeError(f"Architecture invalide : section #{idx} sans type.")
+        if sid in section_ids:
+            raise RuntimeError(f"Architecture invalide : id de section dupliqué '{sid}'.")
+        section_ids.append(sid)
+        section_types.append(stype)
+
+    if section_types[0] != "hero":
+        raise RuntimeError("Architecture invalide : la première section doit être de type 'hero'.")
+    if section_types[-1] != "footer":
+        raise RuntimeError("Architecture invalide : la dernière section doit être de type 'footer'.")
+    if "contact" not in section_types:
+        raise RuntimeError("Architecture invalide : une section 'contact' est obligatoire.")
+
+    nav_links = data.get("nav_links") or []
+    if not isinstance(nav_links, list):
+        raise RuntimeError("Architecture invalide : nav_links doit être une liste.")
+    for idx, link in enumerate(nav_links):
+        target = str((link or {}).get("target_id") or "").strip()
+        if target and target not in section_ids:
+            raise RuntimeError(
+                f"Architecture invalide : nav_links[{idx}].target_id='{target}' "
+                f"ne correspond à aucune section."
+            )
+
+    animations = data.get("animations")
+    if not isinstance(animations, list) or len(animations) < REQUIRED_ANIMATIONS_MIN:
+        raise RuntimeError(
+            f"Architecture invalide : il faut au moins {REQUIRED_ANIMATIONS_MIN} animations "
+            f"(recu: {len(animations) if isinstance(animations, list) else 0})."
+        )
+
+
+def validate_content_payload(data: dict[str, Any], architecture: dict[str, Any]) -> None:
+    """Valide la cohérence du contenu avec l'architecture (Phase 2B)."""
+    if not isinstance(data, dict):
+        raise RuntimeError("Contenu invalide : payload non dict.")
+
+    sections = data.get("sections")
+    if not isinstance(sections, dict):
+        raise RuntimeError("Contenu invalide : sections doit être un dict id→contenu.")
+
+    arch_sections = architecture.get("sections") or []
+    expected_ids = [
+        str(s.get("id") or "").strip() for s in arch_sections if isinstance(s, dict)
+    ]
+    expected_ids = [sid for sid in expected_ids if sid]
+
+    missing = [sid for sid in expected_ids if sid not in sections]
+    if missing:
+        raise RuntimeError(
+            f"Contenu invalide : sections manquantes pour ids = {missing[:5]}."
+        )
+
+    meta = data.get("meta") or {}
+    if not isinstance(meta, dict):
+        raise RuntimeError("Contenu invalide : meta doit être un objet.")
+    if not str(meta.get("page_title") or "").strip():
+        raise RuntimeError("Contenu invalide : meta.page_title manquant.")
+    if not str(meta.get("meta_description") or "").strip():
+        raise RuntimeError("Contenu invalide : meta.meta_description manquant.")
+
+
 def validate_description_payload(data: dict[str, Any]) -> None:
+    """
+    Validation legacy pour la description combinée architecture+content.
+    Conservée pour compatibilité avec refinement_tool.
+    """
     if not isinstance(data, dict):
         raise RuntimeError("Description invalide : payload non dict.")
 
@@ -17,11 +105,6 @@ def validate_description_payload(data: dict[str, Any]) -> None:
             f"Description invalide : il faut au moins {REQUIRED_SECTIONS_MIN} sections "
             f"(recu: {len(sections) if isinstance(sections, list) else 0})."
         )
-    for idx, section in enumerate(sections):
-        if not isinstance(section, dict):
-            raise RuntimeError(f"Description invalide : section #{idx} n'est pas un objet.")
-        if not str(section.get("title") or "").strip():
-            raise RuntimeError(f"Description invalide : section #{idx} sans titre.")
 
     animations = data.get("animations")
     if not isinstance(animations, list) or len(animations) < REQUIRED_ANIMATIONS_MIN:
@@ -29,10 +112,6 @@ def validate_description_payload(data: dict[str, Any]) -> None:
             f"Description invalide : il faut au moins {REQUIRED_ANIMATIONS_MIN} animations "
             f"(recu: {len(animations) if isinstance(animations, list) else 0})."
         )
-
-    for required_key in ("hero_concept", "user_summary", "tone_of_voice"):
-        if not str(data.get(required_key) or "").strip():
-            raise RuntimeError(f"Description invalide : champ '{required_key}' manquant.")
 
 
 def validate_html_output(html: str) -> dict[str, int]:

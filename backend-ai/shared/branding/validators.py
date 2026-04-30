@@ -102,12 +102,27 @@ def validate_minimal_palettes(raw: str, *, target: int) -> list[dict[str, Any]]:
     if len(options) < target:
         raise ValueError(f"Attendu au moins {target} palettes exploitables, recu {len(options)}.")
 
+    REQUIRED_ROLES = {"primary", "secondary", "accent", "background", "surface", "text"}
+
     selected = options[:target]
     signatures: set[frozenset[str]] = set()
     for i, option in enumerate(selected):
         swatches = option.get("swatches") or []
-        if len(swatches) < 3:
-            raise ValueError(f"Palette {i + 1}: au moins 3 couleurs requises.")
+        if len(swatches) < 6:
+            raise ValueError(
+                f"Palette {i + 1}: exactement 6 swatches requis "
+                f"(primary, secondary, accent, background, surface, text) — recu {len(swatches)}."
+            )
+        roles_present = {
+            str(sw.get("role") or "").strip().lower()
+            for sw in swatches
+            if isinstance(sw, dict)
+        }
+        missing = REQUIRED_ROLES - roles_present
+        if missing:
+            raise ValueError(
+                f"Palette {i + 1}: roles manquants : {sorted(missing)}."
+            )
         sig = _palette_signature(option)
         if sig in signatures:
             raise ValueError("Palettes en doublon detectees.")

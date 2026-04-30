@@ -33,12 +33,11 @@ class PaletteAgent(BaseAgent):
     """Palettes en appel LLM direct + validation minimale locale."""
 
     def __init__(self):
-        self._palette_max_tokens = min(max(LLM_CONFIG.get("max_tokens") or 1200, 2400), 3200)
         super().__init__(
             agent_name="palette_agent",
             temperature=LLM_CONFIG["temperature"],
             llm_model=LLM_CONFIG["model"],
-            llm_max_tokens=self._palette_max_tokens,
+            llm_max_tokens=LLM_CONFIG.get("max_tokens") or 4000,
         )
         self._provider = LLM_CONFIG.get("provider", "groq")
 
@@ -54,7 +53,7 @@ class PaletteAgent(BaseAgent):
 
         llm = create_azure_openai_client(
             temperature=self.temperature,
-            max_tokens=self._palette_max_tokens,
+            max_tokens=self.llm_max_tokens,
         )
         messages = [
             SystemMessage(content=system_prompt),

@@ -9,8 +9,12 @@ LLM_CONFIG = {
     #           "groq"  → ChatGroq (openai/gpt-oss-120b via Groq)
     "provider": "azure",
     "model": "gpt-4o",
-    "temperature": 0.85,
-    "max_tokens": 1200,
+    # 0.65 : assez créatif pour des directions visuelles distinctes,
+    # assez précis pour produire des hex valides et des ratios de contraste corrects.
+    "temperature": 0.65,
+    # 4000 : 3 palettes × 6 swatches × (name+hex+role+rationale) + descriptions ≈ 3200 tokens.
+    # Marge suffisante pour éviter toute troncature JSON.
+    "max_tokens": 4000,
 }
 
 # NameAgent (ReAct): nombre de noms "libres" Brandfetch à livrer

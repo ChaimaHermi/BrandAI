@@ -25,6 +25,11 @@ from config.website_builder_config import (
     DEFAULT_BODY_FONT,
     DEFAULT_TITLE_FONT,
 )
+from tools.content_generation.cloudinary_upload import (
+    cloudinary_configured,
+    ensure_cloudinary_public_url,
+    upload_image_bytes,
+)
 
 logger = logging.getLogger("brandai.website_builder.context")
 
@@ -235,6 +240,45 @@ def _extract_logo_url(logo_row: dict[str, Any], logo_chosen: dict[str, Any]) -> 
     return None
 
 
+async def _ensure_logo_public_url(logo_url: str | None) -> str | None:
+    """
+    Garantit une URL HTTPS publique stable pour le logo (utilisée dans le site web).
+    Gère 3 cas :
+      1) HTTPS externe → upload vers Cloudinary (cache stable)
+      2) data URL base64 (svg/png) → décode + upload vers Cloudinary
+      3) URL non gérée → renvoie tel quel
+    """
+    if not logo_url:
+        return None
+    url = logo_url.strip()
+
+    if url.startswith("https://"):
+        try:
+            return await ensure_cloudinary_public_url(url)
+        except Exception as exc:
+            logger.warning("[website_builder] Logo HTTPS Cloudinary upload failed: %s", exc)
+            return url
+
+    if url.startswith("data:"):
+        if not cloudinary_configured():
+            logger.warning("[website_builder] Logo data URL : Cloudinary non configuré, fallback data URL")
+            return url
+        try:
+            header, b64_data = url.split(",", 1)
+            mime = header.split(";")[0].replace("data:", "").strip() or "image/png"
+            data = base64.b64decode(b64_data)
+            secure = await asyncio.to_thread(
+                upload_image_bytes, data, mime=mime, folder="brandai/logos"
+            )
+            logger.info("[website_builder] Logo data URL → Cloudinary | %s", secure[:80])
+            return secure
+        except Exception as exc:
+            logger.warning("[website_builder] Logo data URL upload failed: %s", exc)
+            return url
+
+    return url
+
+
 def _extract_visual_style(palette_chosen: dict[str, Any]) -> str:
     desc = str(palette_chosen.get("palette_description") or palette_chosen.get("palette_name") or "").strip()
     if not desc:
@@ -317,12 +361,14 @@ async def fetch_full_brand_context(idea_id: int, access_token: str) -> BrandCont
     )
     ctx = _build_brand_context(idea, bundle)
     validate_brand_context(ctx)
+    ctx.logo_url = await _ensure_logo_public_url(ctx.logo_url)
     logger.info(
-        "[website_builder] PHASE 1 (CONTEXT) SUCCESS idea_id=%s brand=%s palette=%s/%s/%s",
+        "[website_builder] PHASE 1 (CONTEXT) SUCCESS idea_id=%s brand=%s palette=%s/%s/%s logo=%s",
         idea_id,
         ctx.brand_name,
         ctx.primary_color,
         ctx.secondary_color,
         ctx.accent_color,
+        "ok" if ctx.logo_url else "none",
     )
     return ctx

@@ -284,11 +284,7 @@ export default function BrandPage() {
   }, [idea?.id, record?.idea_id, record?.result_json]);
 
   const displayBrandName = useMemo(
-    () =>
-      chosenBrandName ||
-      names[0]?.name ||
-      idea?.name ||
-      "Votre marque",
+    () => chosenBrandName || names[0]?.name || idea?.name || "Votre marque",
     [chosenBrandName, names, idea?.name],
   );
 
@@ -311,172 +307,183 @@ export default function BrandPage() {
 
   const canGenerate = Boolean(idea?.id && token);
 
-  const handleGenerate = useCallback(async (opts = {}) => {
-    if (!idea?.id || !token) return { ok: false };
-    const userRemarks =
-      typeof opts.userRemarks === "string" ? opts.userRemarks.trim() : "";
-    const fromRegeneratePopup = Boolean(opts.fromRegeneratePopup);
-    const payload = buildGeneratePayload(idea.id, styleTon, constraints);
-    setIsGenerating(true);
-    setLastMockMessage("");
-    try {
-      const result = await generateBrandNames(idea.id, token, {
-        style_ton: payload.style_ton,
-        constraints: payload.constraints,
-        user_remarks: userRemarks,
-      });
-      if (import.meta.env.DEV) {
-        console.info("[brand] naming result", result);
-      }
-      if (result.status !== "name_generated") {
-        const err =
-          result.name_error ||
-          (Array.isArray(result.errors) && result.errors.length
-            ? result.errors.join(" ")
-            : null) ||
-          "La génération de noms n'a pas abouti.";
-        setLastMockMessage(err);
-        toast.error(err);
-        return { ok: false };
-      }
-      if (fromRegeneratePopup) {
-        const msg = result.persisted
-          ? "Régénération réussie — nouveaux noms enregistrés."
-          : "Régénération réussie — vérifiez la sauvegarde si besoin.";
-        setLastMockMessage(msg);
-        toast.success(msg);
-      } else {
-        const msg = result.persisted
-          ? "Noms générés et enregistrés."
-          : "Noms générés (la sauvegarde a peut-être échoué).";
-        setLastMockMessage(msg);
-        toast.success(msg);
-      }
-      await refetchBrandRecord();
-      return { ok: true };
-    } catch (e) {
-      const errMsg = e?.message || "Erreur réseau ou serveur IA.";
-      setLastMockMessage(errMsg);
-      toast.error(errMsg);
-      return { ok: false };
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [idea?.id, token, styleTon, constraints, refetchBrandRecord]);
-
-  const handleGenerateSlogans = useCallback(async (opts = {}) => {
-    if (!idea?.id || !token) return { ok: false };
-    const userRemarks =
-      typeof opts.userRemarks === "string" ? opts.userRemarks.trim() : "";
-    const fromRegeneratePopup = Boolean(opts.fromRegeneratePopup);
-    const payload = buildSloganPayload(idea.id, displayBrandName, sloganForm);
-    setIsGeneratingSlogans(true);
-    setSloganGenMessage("");
-    try {
-      if (import.meta.env.DEV) {
-        console.info("[brand] slogan payload", payload);
-      }
-      const result = await generateSlogans(idea.id, token, {
-        brand_name: displayBrandName,
-        preferences: {
-          positionnement: sloganForm.positionnement,
-          style_ton_slogan: sloganForm.sloganStyleTones,
-          message_usp: sloganForm.messageUsp,
-          format: sloganForm.sloganFormats,
-          style_linguistique: sloganForm.styleLinguistique,
-          longueur: sloganForm.longueur,
-          langue: sloganForm.langue,
-          mots_eviter: sloganForm.motsEviter.trim(),
+  const handleGenerate = useCallback(
+    async (opts = {}) => {
+      if (!idea?.id || !token) return { ok: false };
+      const userRemarks =
+        typeof opts.userRemarks === "string" ? opts.userRemarks.trim() : "";
+      const fromRegeneratePopup = Boolean(opts.fromRegeneratePopup);
+      const payload = buildGeneratePayload(idea.id, styleTon, constraints);
+      setIsGenerating(true);
+      setLastMockMessage("");
+      try {
+        const result = await generateBrandNames(idea.id, token, {
+          style_ton: payload.style_ton,
+          constraints: payload.constraints,
           user_remarks: userRemarks,
-        },
-      });
-      const texts = (result.slogan_options || [])
-        .map((o) => (typeof o === "string" ? o : o?.text || ""))
-        .filter(Boolean);
-      setGeneratedSlogans(texts);
-      if (result.status !== "slogan_generated") {
-        const err = result.slogan_error ||
-          (Array.isArray(result.errors) && result.errors.length
-            ? result.errors.join(" ")
-            : null) ||
-          "La génération de slogans n'a pas abouti.";
-        setSloganGenMessage(err);
-        toast.error(err);
+        });
+        if (import.meta.env.DEV) {
+          console.info("[brand] naming result", result);
+        }
+        if (result.status !== "name_generated") {
+          const err =
+            result.name_error ||
+            (Array.isArray(result.errors) && result.errors.length
+              ? result.errors.join(" ")
+              : null) ||
+            "La génération de noms n'a pas abouti.";
+          setLastMockMessage(err);
+          toast.error(err);
+          return { ok: false };
+        }
+        if (fromRegeneratePopup) {
+          const msg = result.persisted
+            ? "Régénération réussie — nouveaux noms enregistrés."
+            : "Régénération réussie — vérifiez la sauvegarde si besoin.";
+          setLastMockMessage(msg);
+          toast.success(msg);
+        } else {
+          const msg = result.persisted
+            ? "Noms générés et enregistrés."
+            : "Noms générés (la sauvegarde a peut-être échoué).";
+          setLastMockMessage(msg);
+          toast.success(msg);
+        }
+        await refetchBrandRecord();
+        return { ok: true };
+      } catch (e) {
+        const errMsg = e?.message || "Erreur réseau ou serveur IA.";
+        setLastMockMessage(errMsg);
+        toast.error(errMsg);
         return { ok: false };
+      } finally {
+        setIsGenerating(false);
       }
-      if (fromRegeneratePopup) {
-        const msg = result.persisted
-          ? "Régénération réussie — nouveaux slogans enregistrés."
-          : "Régénération réussie — vérifiez la sauvegarde si besoin.";
-        setSloganGenMessage(msg);
-        toast.success(msg);
-      } else {
-        const msg = result.persisted
-          ? "Slogans générés et enregistrés."
-          : "Slogans générés (vérifiez la sauvegarde si besoin).";
-        setSloganGenMessage(msg);
-        toast.success(msg);
-      }
-      await refetchBrandRecord();
-      return { ok: true };
-    } catch (e) {
-      const errMsg = e?.message || "Erreur réseau ou serveur IA.";
-      setSloganGenMessage(errMsg);
-      toast.error(errMsg);
-      setGeneratedSlogans([]);
-      return { ok: false };
-    } finally {
-      setIsGeneratingSlogans(false);
-    }
-  }, [idea?.id, token, displayBrandName, sloganForm, refetchBrandRecord]);
+    },
+    [idea?.id, token, styleTon, constraints, refetchBrandRecord],
+  );
 
-  const handleGeneratePalettes = useCallback(async (opts = {}) => {
-    if (!idea?.id || !token) return { ok: false };
-    const fromRegeneratePopup = Boolean(opts.fromRegeneratePopup);
-    setIsGeneratingPalettes(true);
-    setPaletteGenMessage("");
-    try {
-      const result = await generatePalettes(idea.id, token, {
-        brand_name: displayBrandName,
-      });
-      const rawOpts = result.palette_options || [];
-      setGeneratedPaletteOptions(Array.isArray(rawOpts) ? rawOpts : []);
-      if (result.status !== "palette_generated") {
-        const err = result.palette_error ||
-          (Array.isArray(result.errors) && result.errors.length
-            ? result.errors.join(" ")
-            : null) ||
-          "La génération de palettes n'a pas abouti.";
-        setPaletteGenMessage(err);
-        toast.error(err);
+  const handleGenerateSlogans = useCallback(
+    async (opts = {}) => {
+      if (!idea?.id || !token) return { ok: false };
+      const userRemarks =
+        typeof opts.userRemarks === "string" ? opts.userRemarks.trim() : "";
+      const fromRegeneratePopup = Boolean(opts.fromRegeneratePopup);
+      const payload = buildSloganPayload(idea.id, displayBrandName, sloganForm);
+      setIsGeneratingSlogans(true);
+      setSloganGenMessage("");
+      try {
+        if (import.meta.env.DEV) {
+          console.info("[brand] slogan payload", payload);
+        }
+        const result = await generateSlogans(idea.id, token, {
+          brand_name: displayBrandName,
+          preferences: {
+            positionnement: sloganForm.positionnement,
+            style_ton_slogan: sloganForm.sloganStyleTones,
+            message_usp: sloganForm.messageUsp,
+            format: sloganForm.sloganFormats,
+            style_linguistique: sloganForm.styleLinguistique,
+            longueur: sloganForm.longueur,
+            langue: sloganForm.langue,
+            mots_eviter: sloganForm.motsEviter.trim(),
+            user_remarks: userRemarks,
+          },
+        });
+        const texts = (result.slogan_options || [])
+          .map((o) => (typeof o === "string" ? o : o?.text || ""))
+          .filter(Boolean);
+        setGeneratedSlogans(texts);
+        if (result.status !== "slogan_generated") {
+          const err =
+            result.slogan_error ||
+            (Array.isArray(result.errors) && result.errors.length
+              ? result.errors.join(" ")
+              : null) ||
+            "La génération de slogans n'a pas abouti.";
+          setSloganGenMessage(err);
+          toast.error(err);
+          return { ok: false };
+        }
+        if (fromRegeneratePopup) {
+          const msg = result.persisted
+            ? "Régénération réussie — nouveaux slogans enregistrés."
+            : "Régénération réussie — vérifiez la sauvegarde si besoin.";
+          setSloganGenMessage(msg);
+          toast.success(msg);
+        } else {
+          const msg = result.persisted
+            ? "Slogans générés et enregistrés."
+            : "Slogans générés (vérifiez la sauvegarde si besoin).";
+          setSloganGenMessage(msg);
+          toast.success(msg);
+        }
+        await refetchBrandRecord();
+        return { ok: true };
+      } catch (e) {
+        const errMsg = e?.message || "Erreur réseau ou serveur IA.";
+        setSloganGenMessage(errMsg);
+        toast.error(errMsg);
+        setGeneratedSlogans([]);
         return { ok: false };
+      } finally {
+        setIsGeneratingSlogans(false);
       }
-      setSelectedPaletteId("p-0");
-      if (fromRegeneratePopup) {
-        const msg = result.persisted
-          ? "Régénération réussie — nouvelles palettes enregistrées."
-          : "Régénération réussie — vérifiez la sauvegarde si besoin.";
-        setPaletteGenMessage(msg);
-        toast.success(msg);
-      } else {
-        const msg = result.persisted
-          ? "Palettes générées et enregistrées."
-          : "Palettes générées (vérifiez la sauvegarde si besoin).";
-        setPaletteGenMessage(msg);
-        toast.success(msg);
+    },
+    [idea?.id, token, displayBrandName, sloganForm, refetchBrandRecord],
+  );
+
+  const handleGeneratePalettes = useCallback(
+    async (opts = {}) => {
+      if (!idea?.id || !token) return { ok: false };
+      const fromRegeneratePopup = Boolean(opts.fromRegeneratePopup);
+      setIsGeneratingPalettes(true);
+      setPaletteGenMessage("");
+      try {
+        const result = await generatePalettes(idea.id, token, {
+          brand_name: displayBrandName,
+        });
+        const rawOpts = result.palette_options || [];
+        setGeneratedPaletteOptions(Array.isArray(rawOpts) ? rawOpts : []);
+        if (result.status !== "palette_generated") {
+          const err =
+            result.palette_error ||
+            (Array.isArray(result.errors) && result.errors.length
+              ? result.errors.join(" ")
+              : null) ||
+            "La génération de palettes n'a pas abouti.";
+          setPaletteGenMessage(err);
+          toast.error(err);
+          return { ok: false };
+        }
+        setSelectedPaletteId("p-0");
+        if (fromRegeneratePopup) {
+          const msg = result.persisted
+            ? "Régénération réussie — nouvelles palettes enregistrées."
+            : "Régénération réussie — vérifiez la sauvegarde si besoin.";
+          setPaletteGenMessage(msg);
+          toast.success(msg);
+        } else {
+          const msg = result.persisted
+            ? "Palettes générées et enregistrées."
+            : "Palettes générées (vérifiez la sauvegarde si besoin).";
+          setPaletteGenMessage(msg);
+          toast.success(msg);
+        }
+        await refetchBrandRecord();
+        return { ok: true };
+      } catch (e) {
+        const errMsg = e?.message || "Erreur réseau ou serveur IA.";
+        setPaletteGenMessage(errMsg);
+        toast.error(errMsg);
+        setGeneratedPaletteOptions([]);
+        return { ok: false };
+      } finally {
+        setIsGeneratingPalettes(false);
       }
-      await refetchBrandRecord();
-      return { ok: true };
-    } catch (e) {
-      const errMsg = e?.message || "Erreur réseau ou serveur IA.";
-      setPaletteGenMessage(errMsg);
-      toast.error(errMsg);
-      setGeneratedPaletteOptions([]);
-      return { ok: false };
-    } finally {
-      setIsGeneratingPalettes(false);
-    }
-  }, [idea?.id, token, displayBrandName, refetchBrandRecord]);
+    },
+    [idea?.id, token, displayBrandName, refetchBrandRecord],
+  );
 
   const handleGenerateLogo = useCallback(async () => {
     if (!idea?.id || !token) return { ok: false };
@@ -487,10 +494,27 @@ export default function BrandPage() {
     setIsGeneratingLogo(true);
     setLogoGenMessage("");
     try {
+      // Extraire les couleurs de la palette sélectionnée
+      const selectedPalette = selectedPaletteId
+        ? paletteListDisplayed.find(
+            (p) =>
+              p.id === selectedPaletteId ||
+              paletteListDisplayed.indexOf(p) ===
+                parseInt(selectedPaletteId.replace("p-", "")),
+          )
+        : paletteListDisplayed[0];
+      const paletteColors = selectedPalette
+        ? (selectedPalette.swatches || selectedPalette.colors || [])
+            .map((s) => s.hex || s.color)
+            .filter(Boolean)
+            .slice(0, 6)
+            .join("/")
+        : null;
+
       const result = await generateLogo(idea.id, token, {
         brand_name: displayBrandName,
         slogan_hint: selectedSlogan || null,
-        palette_color_hint: null,
+        palette_color_hint: paletteColors,
         persist: true,
         persist_image_base64: false,
       });
@@ -508,14 +532,22 @@ export default function BrandPage() {
       }
       const concepts = result.logo_concepts || [];
       setGeneratedLogoConcepts(concepts);
-      if (result.logo_image_error) {
-        const warnMsg = `Prompt enregistré, mais la génération d’image a échoué : ${result.logo_image_error}`;
+      const c0 = concepts[0];
+      const hasImage = Boolean(c0?.image_base64);
+
+      if (result.logo_image_error || !hasImage) {
+        const reason =
+          result.logo_image_error ||
+          "Aucune image reçue (HF, NVIDIA et Pollinations ont tous échoué).";
+        const warnMsg = `Prompt logo créé, mais l’image n’a pas pu être générée : ${reason}`;
         setLogoGenMessage(warnMsg);
         toast.warning(warnMsg);
       } else {
-        const c0 = concepts[0];
         const sourceHint = (() => {
-          if (c0?.image_provider === "pollinations") return " (Pollinations.AI)";
+          if (c0?.image_provider === "nvidia")
+            return " (NVIDIA flux.2-klein-4b)";
+          if (c0?.image_provider === "pollinations")
+            return " (Pollinations.AI)";
           if (c0?.image_provider === "huggingface") {
             const im = String(c0?.image_model || "").toLowerCase();
             if (im.includes("qwen")) return " (Qwen via Hugging Face)";
@@ -523,11 +555,10 @@ export default function BrandPage() {
           }
           return "";
         })();
-        const successMsg = concepts.length
-          ? `Logo généré${sourceHint}. Vous pouvez passer à l’aperçu final.`
-          : "Réponse reçue sans image.";
-        setLogoGenMessage(successMsg);
-        if (concepts.length) toast.success(`Logo généré${sourceHint} !`);
+        setLogoGenMessage(
+          `Logo généré${sourceHint}. Vous pouvez passer à l’aperçu final.`,
+        );
+        toast.success(`Logo généré${sourceHint} !`);
       }
       await refetchBrandRecord();
       return { ok: true };
@@ -539,7 +570,15 @@ export default function BrandPage() {
     } finally {
       setIsGeneratingLogo(false);
     }
-  }, [idea?.id, token, displayBrandName, selectedSlogan, refetchBrandRecord]);
+  }, [
+    idea?.id,
+    token,
+    displayBrandName,
+    selectedSlogan,
+    selectedPaletteId,
+    paletteListDisplayed,
+    refetchBrandRecord,
+  ]);
 
   const persistFinalChoices = useCallback(async () => {
     if (!idea?.id || !token) return;
@@ -552,7 +591,8 @@ export default function BrandPage() {
     const chosenPalette = palettes[pIdx] ?? null;
     const namePick =
       chosenBrandName ||
-      (names[0] && (typeof names[0].name === "string" ? names[0].name : null)) ||
+      (names[0] &&
+        (typeof names[0].name === "string" ? names[0].name : null)) ||
       null;
 
     await patchNamingResult(idea.id, token, {
@@ -572,7 +612,7 @@ export default function BrandPage() {
       status: "validated",
     });
     await patchLogoResult(idea.id, token, {
-      generated: { logo_concepts: logoConceptsDisplayed },
+      generated: { logo_concepts: [logoConceptsDisplayed[0]].filter(Boolean) },
       chosen_at: chosenAt,
       status: "validated",
     });
@@ -760,7 +800,6 @@ export default function BrandPage() {
 
   return (
     <div className="app-content-scroll flex flex-1 flex-col gap-3">
-
       {/* ── Pipeline step header — même pattern que MarketPage / MarketingPage ── */}
       <AgentPageHeader
         agent={brandAgent}
@@ -773,7 +812,6 @@ export default function BrandPage() {
 
       {/* ── Contenu centré ────────────────────────────────────────────────────── */}
       <div className="bi-studio mx-auto w-full max-w-[860px] flex flex-col gap-3">
-
         {/* ── Intro card : titre + description + aperçu marque ─────────────── */}
         <div className="rounded-2xl border border-brand-border bg-white px-5 py-4 shadow-card">
           <div className="flex items-start gap-3">
@@ -781,17 +819,20 @@ export default function BrandPage() {
               <FiLayers size={16} className="text-brand" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-extrabold text-ink">Identité de marque</p>
+              <p className="text-sm font-extrabold text-ink">
+                Identité de marque
+              </p>
               <p className="mt-0.5 text-xs text-ink-muted">
                 {step === 5 ? (
                   <>
-                    Aperçu de votre kit enregistré. Utilisez « Retour » pour modifier une étape, ou
-                    « Recommencer » pour relancer tout le parcours depuis le début.
+                    Aperçu de votre kit enregistré. Utilisez « Retour » pour
+                    modifier une étape, ou « Recommencer » pour relancer tout le
+                    parcours depuis le début.
                   </>
                 ) : (
                   <>
-                    Parcours en 6 étapes : projet, naming, slogan, palette, logo généré, puis aperçu
-                    final de votre kit.
+                    Parcours en 6 étapes : projet, naming, slogan, palette, logo
+                    généré, puis aperçu final de votre kit.
                   </>
                 )}
               </p>
@@ -846,7 +887,8 @@ export default function BrandPage() {
                   className="h-[3px] rounded-[3px] transition-all duration-300"
                   style={{
                     width: i === step ? 18 : 5,
-                    background: i <= step ? "var(--brand)" : "var(--brand-border)",
+                    background:
+                      i <= step ? "var(--brand)" : "var(--brand-border)",
                   }}
                 />
               ))}
@@ -872,7 +914,6 @@ export default function BrandPage() {
             </button>
           )}
         </div>
-
       </div>
     </div>
   );

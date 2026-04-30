@@ -29,8 +29,8 @@ Règles strictes :
 - La structure exacte est imposée dans le message utilisateur.
 - Chaque slogan doit être distinct (pas de variantes quasi identiques).
 - Ne reproduis ni n’imite de slogans déjà connus (grandes marques, concurrents directs, campagnes célèbres). Invente des formulations originales ; évite les tournures ou phrases quasi identiques à des accroches existantes ou déposées.
-- Évite les clichés vides (« leader », « innovation », « révolutionnaire », « simple », « facile ») sauf si le contexte l'exige vraiment.
-- Les champs « rationale » en français : une courte phrase professionnelle (pourquoi ce slogan convient).
+- Évite les clichés vides (« leader », « innovation », « révolutionnaire », « simple », « facile ») sauf si le contexte l’exige vraiment.
+- Le champ « rationale » doit être écrit dans la même langue que le slogan (langue de rédaction du projet).
 """
 
 
@@ -82,7 +82,7 @@ REMARQUES DU CLIENT (pour cette génération ou régénération — à intégrer
 - Solution / offre : {solution_description}
 - Pitch court (si dispo) : {pitch}
 - Pays : {country} ({country_code})
-- Langue clarifier : {language}
+- Langue du projet : {language}
 
 NOM DE MARQUE CHOISI (à utiliser dans les slogans si pertinent, ou à évoquer implicitement) :
 {brand_name}

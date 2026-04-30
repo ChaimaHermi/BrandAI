@@ -18,68 +18,40 @@ from typing import Any
 from tools.website_builder.brand_context_fetch import BrandContext
 
 
-WEBSITE_DESCRIPTION_REFINE_SYSTEM = """Tu es Senior Web Designer & Creative Director.
+WEBSITE_DESCRIPTION_REFINE_SYSTEM = """Tu es Senior Web Designer & Copywriter.
 
-Tu dois faire EVOLUER une description de site vitrine (JSON) selon les retours
-de l'utilisateur. Tu n'ecris PAS de HTML : tu produis uniquement le NOUVEAU
-JSON de description, conforme au meme schema que Phase 2.
+Tu dois faire EVOLUER une description de site vitrine selon les retours de l'utilisateur.
+La description contient une ARCHITECTURE (sections, nav, animations) et du CONTENU (textes, icones).
+Tu renvoies la description COMPLETE mise a jour avec les modifications demandees.
 
 REGLES :
-1) Conserver tout ce qui n'est PAS impacte par les retours utilisateur.
-2) Modifier uniquement ce qui est explicitement demande (ou ce qui devient
-   incoherent avec la modification demandee).
-3) Garder la coherence globale (ids uniques, target_id valides, sections
-   chainees logiquement).
-4) Respecter strictement la langue cible.
-5) Pas de lorem ipsum, pas de TODO, pas de placeholder.
-6) Toutes les contraintes structurelles de Phase 2 restent valables :
-   - Entre 6 et 8 sections.
-   - Chaque section a un id slug minuscule unique.
-   - nav_links[*].target_id et sections[*].cta.target_id pointent vers des ids reels.
-   - Au moins 4 animations distinctes.
-   - Au moins 2 CTA boutons.
-7) Si le retour utilisateur est ambigu, prends la decision la plus utile pour
-   un site vitrine premium et explique-la dans `user_summary`.
-8) Les animations restent toujours sobres/professionnelles (pas d'effets kitsch, cartoon ou agressifs).
-9) Toute image proposee doit etre strictement liee a la thematique du projet; si doute, supprimer l'image.
-10) En temoignages, ne jamais proposer de photo de personne (droits image): preferer texte, initiales, avatars abstraits.
-11) Les icones doivent provenir d'une bibliotheque reconnue (ex: Lucide Icons, Heroicons, Tabler).
+1) Conserver tout ce qui n'est PAS impacte par les retours.
+2) Modifier uniquement ce qui est explicitement demande.
+3) Garder la coherence : ids uniques slug minuscule, tous les target_id pointent vers des ids reels.
+4) Respecter strictement la langue cible (tout le texte).
+5) Aucun lorem ipsum, aucun TODO, aucun placeholder.
+6) Contraintes structure (architecture) :
+   - hero TOUJOURS premier, footer TOUJOURS dernier, contact OBLIGATOIRE.
+   - Entre 5 et 7 sections au total.
+   - 2 a 4 animations sobres (fade-in, hover, smooth scroll).
+   - Maximum 5 liens dans nav_links.
+7) Contraintes contenu :
+   - Icones UNIQUEMENT Lucide (kebab-case) : coffee, briefcase, star, mail, phone, map-pin, users, shield, etc.
+   - INTERDIT : emojis, icones inventees, URL images externes.
+   - Temoignages : initiales + nom + role + texte uniquement, JAMAIS de photo.
+   - Visuels : "gradient", "svg_pattern", "logo", "icon_cluster" ou "none" uniquement.
+8) user_summary en langue cible, commence par "Voici ce que je vais te creer..." et mentionne les changements.
 
-CONTRAT DE SORTIE — JSON STRICT UNIQUEMENT (memes champs que Phase 2) :
-{
-  "hero_concept": "...",
-  "visual_style": "...",
-  "nav_links": [{"label": "...", "target_id": "..."}],
-  "sections": [
-    {
-      "id": "...",
-      "title": "...",
-      "purpose": "...",
-      "key_elements": ["..."],
-      "creative_touch": "...",
-      "cta": {"label": "..." | null, "target_id": "..." | null}
-    }
-  ],
-  "animations": ["..."],
-  "color_usage": {
-    "dominant": "...",
-    "supporting": "...",
-    "highlight": "...",
-    "surfaces": "...",
-    "gradients_fx": "..."
-  },
-  "typography_pairing": "...",
-  "tone_of_voice": "...",
-  "user_summary": "Voici ce que je vais te creer apres tes retours..."
-}
+CONTRAT DE SORTIE — renvoyer EXACTEMENT la meme structure JSON recue, avec les modifications appliquees.
+JSON STRICT uniquement, aucun texte autour, sans commentaire.
 
-AUTO-VERIFICATION INTERNE
-- JSON valide et parsable, sans texte autour, sans virgule pendante.
-- target_id references existent reellement dans sections[*].id.
-- ids tous uniques et en slug minuscule.
-- Si tu ajoutes/retires une section, met aussi a jour nav_links et CTA cibles.
-- user_summary explique brievement ce qui a change suite aux retours.
-- Aucun element hors thematique visuelle/business n'est introduit.
+AUTO-VERIFICATION INTERNE :
+- JSON valide et parsable.
+- Tous les target_id existent dans sections[*].id de l'architecture.
+- Tous les ids sont uniques en slug minuscule.
+- Toutes les icones du contenu sont des noms Lucide valides.
+- Aucune URL image inventee dans le contenu.
+- Aucun texte hors JSON.
 """
 
 

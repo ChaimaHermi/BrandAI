@@ -17,24 +17,24 @@ def render_context_summary(ctx: BrandContext) -> str:
     lines = [
         "J'ai récupéré ton projet :",
         "",
-        f"📁 **Nom** : {ctx.project_name}",
-        f"🏷️ **Marque** : {ctx.brand_name}"
+        f"**Nom** : {ctx.project_name}",
+        f"**Marque** : {ctx.brand_name}"
         + (f' — *« {ctx.slogan} »*' if ctx.slogan else ""),
-        f"🎯 **Secteur** : {ctx.sector or '—'}",
-        f"👥 **Cible** : {ctx.target_audience or '—'}",
+        f"**Secteur** : {ctx.sector or '—'}",
+        f"**Cible** : {ctx.target_audience or '—'}",
         "",
-        f"🎨 **Couleurs** : `{ctx.primary_color}` · `{ctx.secondary_color}` · `{ctx.accent_color}`",
-        f"🖼️ **Fond** : `{ctx.background_color}`",
-        f"🔤 **Fonts** : {ctx.title_font} · {ctx.body_font}",
-        f"✨ **Palette** : {ctx.palette_direction}",
+        f"**Couleurs** : `{ctx.primary_color}` · `{ctx.secondary_color}` · `{ctx.accent_color}`",
+        f"**Fond** : `{ctx.background_color}`",
+        f"**Fonts** : {ctx.title_font} · {ctx.body_font}",
+        f"**Palette** : {ctx.palette_direction}",
     ]
     if ctx.logo_url:
-        lines.append(f"🎯 **Logo** : {ctx.logo_url}")
+        lines.append(f"**Logo** : {ctx.logo_url}")
 
     brief = ctx.short_pitch or ctx.description_brief
     if brief:
         snippet = brief if len(brief) <= 280 else brief[:277] + "…"
-        lines.extend(["", f"📄 **Brief** : {snippet}"])
+        lines.extend(["", f"**Brief** : {snippet}"])
 
     return "\n".join(lines)
 
@@ -50,19 +50,19 @@ def render_description_summary(data: dict[str, Any]) -> str:
 
     hero = str(data.get("hero_concept") or "").strip()
     if hero:
-        lines.append(f"💡 **Concept hero** : {hero}")
+        lines.append(f"**Concept hero** : {hero}")
 
     style = str(data.get("visual_style") or "").strip()
     if style:
-        lines.append(f"🎨 **Direction visuelle** : {style}")
+        lines.append(f"**Direction visuelle** : {style}")
 
     tone = str(data.get("tone_of_voice") or "").strip()
     if tone:
-        lines.append(f"🗣️ **Ton éditorial** : {tone}")
+        lines.append(f"**Ton éditorial** : {tone}")
 
     pairing = str(data.get("typography_pairing") or "").strip()
     if pairing:
-        lines.append(f"🔤 **Typographie** : {pairing}")
+        lines.append(f"**Typographie** : {pairing}")
 
     color_usage = data.get("color_usage")
     if isinstance(color_usage, dict) and color_usage:
@@ -88,13 +88,13 @@ def render_description_summary(data: dict[str, Any]) -> str:
                 color_lines.append(f"- **{pretty_key}** : {value}")
         if color_lines:
             lines.append("")
-            lines.append("🌈 **Stratégie couleur** :")
+            lines.append("**Stratégie couleur** :")
             lines.extend(color_lines)
 
     sections = data.get("sections") or []
     if isinstance(sections, list) and sections:
         lines.append("")
-        lines.append("📐 **Sections prévues** :")
+        lines.append("**Sections prévues** :")
         for s in sections:
             if not isinstance(s, dict):
                 continue
@@ -108,7 +108,7 @@ def render_description_summary(data: dict[str, Any]) -> str:
     animations = data.get("animations") or []
     if isinstance(animations, list) and animations:
         lines.append("")
-        lines.append("✨ **Animations** :")
+        lines.append("**Animations** :")
         for anim in animations:
             text = str(anim).strip()
             if text:
@@ -116,6 +116,6 @@ def render_description_summary(data: dict[str, Any]) -> str:
 
     lines.extend([
         "",
-        "👉 **Approuver** pour générer le site, ou **Modifier** pour ajuster cette description.",
+        "**Approuver** pour générer le site, ou **Modifier** pour ajuster cette description.",
     ])
     return "\n".join(lines)

@@ -24,7 +24,7 @@ export default function LogoStep({
       <SectionHeader
         step={5}
         title="Logo"
-        sub="Générez une proposition de logo à partir de votre nom, slogan et palette (IA + image)."
+        sub="Générez une proposition de logo à partir de votre nom, palette et contexte projet."
       />
 
       <div className="flex flex-col items-center gap-6 py-2">
@@ -49,7 +49,7 @@ export default function LogoStep({
           </p>
         ) : null}
 
-        {activeUrl ? (
+        {(logoPreviewUrl || logoPreviewTransparentUrl) ? (
           <div className="w-full max-w-sm rounded-2xl border border-brand-border bg-brand-light/30 p-4 shadow-card">
             <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-subtle">
               Aperçu
@@ -79,11 +79,13 @@ export default function LogoStep({
                 Sans fond
               </button>
             </div>
-            <img
-              src={activeUrl}
-              alt="Logo généré"
-              className="mx-auto max-h-56 w-auto rounded-lg object-contain"
-            />
+            {activeUrl ? (
+              <img
+                src={activeUrl}
+                alt="Logo généré"
+                className="mx-auto max-h-56 w-auto rounded-lg object-contain"
+              />
+            ) : null}
             {logoConcept?.image_attribution ? (
               <p className="mt-3 text-center text-[11px] leading-snug text-ink-subtle">
                 {logoConcept.image_attribution}

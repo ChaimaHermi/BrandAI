@@ -62,7 +62,7 @@ def _nvidia_image_keys() -> list[str]:
     keys: list[str] = []
     seen: set[str] = set()
     for raw in (
-        os.getenv("NVIDEA_IMAGE_API"),
+        os.getenv("NVIDIA_IMAGE_API") or os.getenv("NVIDEA_IMAGE_API"),
     ):
         v = (raw or "").strip()
         if v and v not in seen:

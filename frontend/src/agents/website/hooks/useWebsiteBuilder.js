@@ -164,7 +164,7 @@ function ensureResumeGuidance(messages, phase) {
         {
           phase: "description",
           actions: [
-            { id: "approve_description", label: "✓ J'approuve, générer le site" },
+            { id: "approve_description", label: "J'approuve, générer le site" },
             { id: "describe_again", label: "Re-générer la description" },
           ],
         }
@@ -385,7 +385,7 @@ export function useWebsiteBuilder() {
     } catch (err) {
       setError(err?.message || "Impossible de charger le contexte.");
       pushSystem(
-        `❌ Impossible de charger le contexte : ${err?.message || "erreur inconnue"}`,
+        `Impossible de charger le contexte : ${err?.message || "erreur inconnue"}`,
         "error"
       );
       setPhase("error");
@@ -441,7 +441,7 @@ export function useWebsiteBuilder() {
         {
           phase: "description",
           actions: [
-            { id: "approve_description", label: "✓ J'approuve, générer le site" },
+            { id: "approve_description", label: "J'approuve, générer le site" },
             { id: "describe_again", label: "Re-générer la description" },
           ],
         }
@@ -450,7 +450,7 @@ export function useWebsiteBuilder() {
     } catch (err) {
       finalizeStream(streamId, { status: "error", error: err?.message });
       setError(err?.message || "Impossible de générer la description.");
-      pushSystem(`❌ ${err?.message || "Erreur"}`, "error");
+      pushSystem(`${err?.message || "Erreur"}`, "error");
       setPhase("context_ready");
     }
   }, [ideaId, token, pushUser, pushBot, pushSystem, pushStreamMessage, handleStreamEvent, finalizeStream]);
@@ -463,7 +463,7 @@ export function useWebsiteBuilder() {
       const currentDescription = descriptionRef.current;
       if (!currentDescription || typeof currentDescription !== "object") {
         pushSystem(
-          "❌ Génère d'abord une description avant de demander des ajustements.",
+          "Génère d'abord une description avant de demander des ajustements.",
           "error"
         );
         return;
@@ -517,7 +517,7 @@ export function useWebsiteBuilder() {
           {
             phase: "description",
             actions: [
-              { id: "approve_description", label: "✓ J'approuve, générer le site" },
+              { id: "approve_description", label: "J'approuve, générer le site" },
             ],
           }
         );
@@ -525,7 +525,7 @@ export function useWebsiteBuilder() {
       } catch (err) {
         finalizeStream(streamId, { status: "error", error: err?.message });
         setError(err?.message || "Affinage impossible.");
-        pushSystem(`❌ ${err?.message || "Erreur"}`, "error");
+        pushSystem(`${err?.message || "Erreur"}`, "error");
         setPhase("description_ready");
       }
     },
@@ -564,7 +564,7 @@ export function useWebsiteBuilder() {
       finalizeStream(streamId, { status: "done" });
 
       pushBot(
-        "✅ **Ton site est prêt !** Tu peux le voir à droite. Pour le modifier :\n- Écris-moi une consigne dans le chat (ex: « rends le hero plus sombre »).\n- Ou clique sur **« Modifier le site »** dans le preview pour éditer le texte directement en place.",
+        "**Ton site est prêt !** Tu peux le voir à droite. Pour le modifier :\n- Écris-moi une consigne dans le chat (ex: « rends le hero plus sombre »).\n- Ou clique sur **« Modifier le site »** dans le preview pour éditer le texte directement en place.",
         {
           phase: "generation",
           title: "Phase 3 — Site généré",
@@ -577,7 +577,7 @@ export function useWebsiteBuilder() {
     } catch (err) {
       finalizeStream(streamId, { status: "error", error: err?.message });
       setError(err?.message || "Génération impossible.");
-      pushSystem(`❌ ${err?.message || "Erreur"}`, "error");
+      pushSystem(`${err?.message || "Erreur"}`, "error");
       setPhase("description_ready");
     }
   }, [ideaId, token, pushBot, pushSystem, pushStreamMessage, handleStreamEvent, finalizeStream]);
@@ -585,7 +585,7 @@ export function useWebsiteBuilder() {
   // ── PHASE 2.6 : Approval → bascule vers PHASE 3 ───────────────────────────
   const approveDescription = useCallback(async () => {
     if (!ideaId || !token) return;
-    pushUser("✓ J'approuve le concept, génère le site");
+    pushUser("J'approuve le concept, génère le site");
     try {
       await apiApproveWebsiteDescription(token, { ideaId });
       setDescriptionApproved(true);
@@ -628,16 +628,16 @@ export function useWebsiteBuilder() {
         setCurrentVersion((v) => Math.max(1, v + 1));
 
         if (hasHtmlChanged) {
-          pushBot("✅ Modification appliquée. Le preview est à jour.", {
+          pushBot("Modification appliquée. Le preview est à jour.", {
             phase: "revision",
           });
         } else {
-          pushSystem("ℹ️ Aucune modification visible à appliquer sur le preview.", "info");
+          pushSystem("Aucune modification visible à appliquer sur le preview.", "info");
         }
         setPhase("ready");
       } catch (err) {
         setError(err?.message || "Révision impossible.");
-        pushSystem(`❌ ${err?.message || "Erreur"}`, "error");
+        pushSystem(`${err?.message || "Erreur"}`, "error");
         setPhase("ready");
       }
     },
@@ -657,12 +657,12 @@ export function useWebsiteBuilder() {
         setHtml(data?.html || trimmed);
         if (data?.html_stats) setHtmlStats(data.html_stats);
         setCurrentVersion((v) => Math.max(1, v + 1));
-        pushSystem("✅ Modifications manuelles enregistrées.", "info");
+        pushSystem("Modifications manuelles enregistrées.", "info");
         setPhase("ready");
         return true;
       } catch (err) {
         setError(err?.message || "Sauvegarde impossible.");
-        pushSystem(`❌ Sauvegarde impossible : ${err?.message || "erreur"}`, "error");
+        pushSystem(`Sauvegarde impossible : ${err?.message || "erreur"}`, "error");
         setPhase("ready");
         return false;
       }
@@ -680,7 +680,7 @@ export function useWebsiteBuilder() {
       const data = await apiDeployWebsite(token, { ideaId, html: htmlRef.current });
       setDeployment(data?.deployment || null);
       pushBot(
-        data?.summary_md || "🎉 Site déployé.",
+        data?.summary_md || "Site déployé.",
         {
           phase: "deployment",
           title: "Phase 5 — Site en ligne",
@@ -690,7 +690,7 @@ export function useWebsiteBuilder() {
       setPhase("deployed");
     } catch (err) {
       setError(err?.message || "Déploiement impossible.");
-      pushSystem(`❌ Déploiement échoué : ${err?.message || "erreur"}`, "error");
+      pushSystem(`Déploiement échoué : ${err?.message || "erreur"}`, "error");
       setPhase("ready");
     }
   }, [ideaId, token, pushUser, pushBot, pushSystem]);
@@ -701,7 +701,7 @@ export function useWebsiteBuilder() {
     if (!depId) {
       setDeployment(null);
       setPhase("ready");
-      pushSystem("ℹ️ Aucun déploiement actif à supprimer.", "info");
+      pushSystem("Aucun déploiement actif à supprimer.", "info");
       return true;
     }
     setPhase("deploying");
@@ -710,12 +710,12 @@ export function useWebsiteBuilder() {
       await apiDeleteWebsiteDeployment(token, { ideaId, deploymentId: depId });
       setDeployment(null);
       setPhase("ready");
-      pushSystem("✅ Déploiement Vercel supprimé. Le lien n'est plus actif.", "info");
+      pushSystem("Déploiement Vercel supprimé. Le lien n'est plus actif.", "info");
       return true;
     } catch (err) {
       setError(err?.message || "Suppression du déploiement impossible.");
       setPhase("deployed");
-      pushSystem(`❌ Suppression du déploiement échouée : ${err?.message || "erreur"}`, "error");
+      pushSystem(`Suppression du déploiement échouée : ${err?.message || "erreur"}`, "error");
       return false;
     }
   }, [ideaId, token, deployment, pushSystem]);

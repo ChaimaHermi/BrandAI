@@ -23,14 +23,15 @@ from config.branding_config import (
     LOGO_ORIGINALITY_CHECK_ENABLED,
     LOGO_ORIGINALITY_MAX_RETRIES,
     LOGO_ORIGINALITY_MAX_SIMILAR,
+    LOGO_POLLINATIONS_FALLBACK,
     LOGO_POLLINATIONS_IMAGE_MODEL,
 )
 from llm.llm_factory import create_azure_openai_client
 from prompts.branding.logo_prompt import (
-    LOGO_IMAGE_PROMPT_SYSTEM,
+    LOGO_IMAGE_PROMPT_SYSTEM_WITH_NAME,
     LOGO_REACT_SYSTEM_PROMPT,
     build_logo_react_user_message,
-    build_logo_user_message,
+    build_logo_user_message_with_name,
 )
 from shared.branding.validators import parse_llm_json_object
 from tools.branding.logo_image_client import fetch_logo_image_hf_with_pollinations_fallback
@@ -182,30 +183,30 @@ class LogoAgent(BaseAgent):
         llm,
         idea: dict,
         brand_name: str,
-        slogan_hint: str,
         palette_hint: str,
         validation_feedback: str,
     ) -> tuple[str, str] | None:
-        user_prompt = build_logo_user_message(
-            idea,
-            brand_name,
-            slogan_hint,
-            palette_hint,
-        )
+        user_prompt = build_logo_user_message_with_name(idea, brand_name, palette_hint)
         fb = (validation_feedback or "").strip()
         if fb:
-            user_prompt += (
-                "\n\n--- FEEDBACK (produce a new JSON prompt) ---\n"
-                + fb
-            )
+            user_prompt += "\n\n--- FEEDBACK (produce a new JSON prompt) ---\n" + fb
         messages = [
-            SystemMessage(content=LOGO_IMAGE_PROMPT_SYSTEM),
+            SystemMessage(content=LOGO_IMAGE_PROMPT_SYSTEM_WITH_NAME),
             HumanMessage(content=user_prompt),
         ]
         response = llm.invoke(messages)
         content = response.content if response and getattr(response, "content", None) else ""
         raw = content if isinstance(content, str) else str(content)
-        return self._parse_logo_prompt_json(raw, brand_name)
+
+        result = self._parse_logo_prompt_json(raw, brand_name)
+        if not result:
+            self.logger.warning(
+                "[logo_agent] Parse échoué | brand=%r | palette_hint=%r | raw[:300]=%r",
+                brand_name,
+                palette_hint[:80] if palette_hint else "(empty)",
+                raw[:300],
+            )
+        return result
 
     @staticmethod
     def _print(msg: str = "") -> None:
@@ -377,11 +378,10 @@ class LogoAgent(BaseAgent):
         image_prompt: str,
         negative_prompt: str,
     ) -> tuple[bytes | None, str | None, str | None]:
-        from config.branding_config import LOGO_POLLINATIONS_FALLBACK
-
         provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
         if provider == "none":
             return None, None, None
+        # Chaîne : HF Qwen → NVIDIA flux.2-klein-4b → Pollinations
         data, mime, src = await fetch_logo_image_hf_with_pollinations_fallback(
             image_prompt,
             negative_prompt,
@@ -413,7 +413,14 @@ class LogoAgent(BaseAgent):
             if transparent_b64:
                 concept["image_base64_transparent"] = transparent_b64
                 concept["image_mime_transparent"] = "image/png"
-            if image_source == "pollinations":
+            if image_source == "nvidia":
+                concept["image_provider"] = "nvidia"
+                m = (os.getenv("LOGO_NVIDIA_IMAGE_MODEL") or os.getenv("NVIDIA_IMAGE_MODEL") or "flux.2-klein-4b").strip()
+                concept["image_model"] = m
+                concept["image_attribution"] = (
+                    f"Image générée avec le modèle NVIDIA {m} via NVIDIA NIM API."
+                )
+            elif image_source == "pollinations":
                 concept["image_provider"] = "pollinations"
                 concept["image_model"] = LOGO_POLLINATIONS_IMAGE_MODEL
                 pm = LOGO_POLLINATIONS_IMAGE_MODEL
@@ -440,6 +447,62 @@ class LogoAgent(BaseAgent):
                     )
         return concept
 
+    async def _generate_logo_concept(
+        self,
+        *,
+        llm,
+        idea: dict,
+        brand_name: str,
+        palette_hint: str,
+    ) -> dict[str, Any] | None:
+        """Génère un concept logo (avec nom de marque) via appel LLM direct."""
+        pair = self._draft_logo_prompt_direct(
+            llm=llm,
+            idea=idea,
+            brand_name=brand_name,
+            palette_hint=palette_hint,
+            validation_feedback="",
+        )
+        if not pair:
+            logger.warning("[logo_agent] Prompt logo : extraction échouée")
+            return None
+
+        image_prompt, negative_prompt = pair
+        _print_prompt_to_terminal(image_prompt, negative_prompt)
+
+        image_bytes: bytes | None = None
+        mime: str | None = None
+        image_source: str | None = None
+        image_fetch_error: str | None = None
+        try:
+            data, m, src = await self._maybe_fetch_image(image_prompt, negative_prompt)
+            if data:
+                image_bytes, mime, image_source = data, m, src
+        except Exception as exc:
+            image_fetch_error = str(exc)
+            logger.error("[logo_agent] image fetch failed: %s", exc)
+
+        b64: str | None = None
+        transparent_b64: str | None = None
+        if image_bytes:
+            b64 = base64.standard_b64encode(image_bytes).decode("ascii")
+            transparent_bytes, _ = _remove_light_background_to_transparent(image_bytes)
+            if transparent_bytes:
+                transparent_b64 = base64.standard_b64encode(transparent_bytes).decode("ascii")
+
+        concept = self._build_concept_dict(
+            image_prompt, negative_prompt,
+            b64=b64, mime=mime,
+            transparent_b64=transparent_b64,
+            image_source=image_source,
+        )
+        concept["title"] = "Generated mark"
+        # Attacher l'erreur image au concept pour que run() puisse l'exposer
+        if image_fetch_error and not b64:
+            concept["_image_fetch_error"] = image_fetch_error
+        logger.info("[logo_agent] Concept généré image=%s", "ok" if b64 else f"absent ({image_fetch_error or 'raison inconnue'})")
+        return concept
+
     @traceable(name="logo_agent.run", tags=["branding", "logo_agent"])
     async def run(self, state: PipelineState) -> PipelineState:
         self._log_start(state)
@@ -458,7 +521,6 @@ class LogoAgent(BaseAgent):
             return state
 
         idea = state.clarified_idea or {}
-        slogan_hint = str(getattr(state, "palette_slogan_hint", "") or "").strip()
         palette_hint = str(getattr(state, "logo_palette_hint", "") or "").strip()
 
         def _is_tpd_error(err: Exception) -> bool:
@@ -473,219 +535,51 @@ class LogoAgent(BaseAgent):
                 "request too large", "tpm", "tpd",
             ])
 
-        holder: dict[str, Any] = {}
-        messages: list | None = None
-        last_error: Exception | None = None
+        try:
+            llm = self._make_llm_for_logo()
+            rt = get_current_run_tree()
+            if rt:
+                rt.metadata.update({"provider": self._provider, "brand": brand_name})
 
-        for attempt in range(self.max_retries):
-            try:
-                llm = self._make_llm_for_logo()
+            concept = await self._generate_logo_concept(
+                llm=llm,
+                idea=idea,
+                brand_name=brand_name,
+                palette_hint=palette_hint,
+            )
+        except Exception as e:
+            self._log_error(e)
+            state.brand_identity["logo_error"] = str(e)
+            state.brand_identity["branding_status"] = "logo_failed"
+            state.status = "logo_failed"
+            state.errors.append(f"logo_agent: {e}")
+            return state
 
-                rt = get_current_run_tree()
-                if rt:
-                    rt.metadata.update({
-                        "provider": self._provider,
-                        "brand": brand_name,
-                    })
-
-                self.logger.info(
-                    "[logo_agent] ReAct attempt %s/%s (marque=%r)",
-                    attempt + 1,
-                    self.max_retries,
-                    brand_name,
-                )
-
-                messages = await self._run_react_logo_agent(
-                    llm,
-                    idea,
-                    brand_name,
-                    slogan_hint,
-                    palette_hint,
-                    holder,
-                    recursion_limit=LOGO_AGENT_RECURSION_LIMIT,
-                )
-                pair = self._extract_drafted_logo_prompts(messages or [], brand_name)
-                if pair:
-                    break
-                last_error = RuntimeError(
-                    "Prompt logo introuvable/invalide (draft_logo_prompt JSON sans image_prompt conforme)."
-                )
-            except Exception as e:
-                last_error = e
-                if self._provider == "groq":
-                    if _is_tpd_error(e):
-                        self.logger.error("[logo_agent] TPD quota | %s", str(e)[:200])
-                        msg = (
-                            "Quota journalier Groq (TPD) épuisé. "
-                            "Réessaie dans quelques heures ou change de modèle."
-                        )
-                        state.errors.append(f"logo_agent: {msg}")
-                        state.brand_identity["logo_error"] = msg
-                        state.brand_identity["branding_status"] = "logo_failed"
-                        state.status = "logo_failed"
-                        return state
-                    if _is_quota_error(e):
-                        rotated = self.llm_rotator.rotate()
-                        self.logger.warning(
-                            "[logo_agent] quota | rotated=%s | %s",
-                            rotated,
-                            str(e)[:180],
-                        )
-                        if rotated:
-                            continue
-                self._log_error(e)
-                msg = f"logo ReAct: {e}"
-                state.errors.append(f"logo_agent: {msg}")
-                state.brand_identity["logo_error"] = msg
-                state.brand_identity["branding_status"] = "logo_failed"
-                state.status = "logo_failed"
-                return state
-
-        if not messages:
-            err_detail = str(last_error) if last_error else "aucun message ReAct"
-            msg = f"Échec génération prompt logo : {err_detail}"
+        if not concept:
+            msg = "Aucun concept logo généré (prompt image introuvable)."
             self._log_error(msg)
             state.brand_identity["logo_error"] = msg
             state.brand_identity["branding_status"] = "logo_failed"
             state.status = "logo_failed"
             return state
 
-        pair = self._extract_drafted_logo_prompts(messages, brand_name)
-        if not pair:
-            msg = "Impossible d'extraire un prompt image valide depuis draft_logo_prompt."
-            self._log_error(msg)
-            state.brand_identity["logo_error"] = msg
-            state.brand_identity["branding_status"] = "logo_failed"
-            state.status = "logo_failed"
-            return state
-
-        image_prompt, negative_prompt = pair
-        logger.info(
-            "[logo_agent] Prompt image extrait — image_prompt:\n%s",
-            _trunc_log(image_prompt),
-        )
-        if negative_prompt:
-            logger.info(
-                "[logo_agent] negative_prompt:\n%s",
-                _trunc_log(negative_prompt, max_len=1200),
-            )
-        _print_prompt_to_terminal(image_prompt, negative_prompt)
-
-        provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
-        if (
-            provider != "none"
-            and not holder.get("skipped")
-            and holder.get("image_bytes") is None
-        ):
-            try:
-                logger.info("[logo_agent] Fallback image — render non présent ou incomplet")
-                data, mime, src = await self._maybe_fetch_image(image_prompt, negative_prompt)
-                if data:
-                    holder["image_bytes"] = data
-                    holder["mime"] = mime
-                    holder["image_source"] = src
-            except Exception as e:
-                logger.error("logo image fetch (fallback): %s", e)
-                state.brand_identity["logo_image_error"] = str(e)
-
-        if (
-            LOGO_ORIGINALITY_CHECK_ENABLED
-            and provider != "none"
-            and holder.get("image_bytes") is not None
-        ):
-            originality_ok = verifier_originalite_logo_bytes(
-                holder["image_bytes"],
-                suffix=".png" if "png" in str(holder.get("mime") or "").lower() else ".jpg",
-                max_similar=LOGO_ORIGINALITY_MAX_SIMILAR,
-            )
-            if not originality_ok:
-                self.logger.warning(
-                    "[logo_agent] Originality check failed (Vision similar_images > %d) -> redraft",
-                    LOGO_ORIGINALITY_MAX_SIMILAR,
-                )
-            retries = max(0, int(LOGO_ORIGINALITY_MAX_RETRIES))
-            while not originality_ok and retries > 0:
-                retries -= 1
-                llm_retry = self._make_llm_for_logo()
-                redraft = self._draft_logo_prompt_direct(
-                    llm=llm_retry,
-                    idea=idea,
-                    brand_name=brand_name,
-                    slogan_hint=slogan_hint,
-                    palette_hint=palette_hint,
-                    validation_feedback=(
-                        "Previous logo appears visually similar to existing web logos. "
-                        "Generate a more unique symbol, avoid generic stock motifs, "
-                        "keep professional startup style, transparent background, and readable brand name."
-                    ),
-                )
-                if not redraft:
-                    break
-                image_prompt, negative_prompt = redraft
-                _print_prompt_to_terminal(image_prompt, negative_prompt)
-                try:
-                    data, mime, src = await self._maybe_fetch_image(image_prompt, negative_prompt)
-                    if not data:
-                        break
-                    holder["image_bytes"] = data
-                    holder["mime"] = mime
-                    holder["image_source"] = src
-                    originality_ok = verifier_originalite_logo_bytes(
-                        data,
-                        suffix=".png" if "png" in str(mime or "").lower() else ".jpg",
-                        max_similar=LOGO_ORIGINALITY_MAX_SIMILAR,
-                    )
-                except Exception as e:
-                    state.brand_identity["logo_image_error"] = str(e)
-                    break
-            if not originality_ok:
-                state.brand_identity["logo_originality_warning"] = (
-                    "Logo may be visually similar to existing web images (Google Vision web detection)."
-                )
-
-        if holder.get("render_error") and not state.brand_identity.get("logo_image_error"):
-            state.brand_identity["logo_image_error"] = str(holder["render_error"])
-
-        image_bytes: bytes | None = holder.get("image_bytes")
-        mime = holder.get("mime")
-        image_source = holder.get("image_source")
-
-        b64: str | None = None
-        transparent_b64: str | None = None
-        if image_bytes:
-            b64 = base64.standard_b64encode(image_bytes).decode("ascii")
-            logger.info(
-                "[logo_agent] Image générée — source=%s, %s, %d octets",
-                image_source or "?",
-                mime or "image",
-                len(image_bytes),
-            )
-            transparent_bytes, transparent_err = _remove_light_background_to_transparent(image_bytes)
-            if transparent_bytes:
-                transparent_b64 = base64.standard_b64encode(transparent_bytes).decode("ascii")
-            elif transparent_err:
-                logger.warning("[logo_agent] remove background non disponible: %s", transparent_err)
-        elif not state.brand_identity.get("logo_image_error"):
-            if provider == "none":
-                pass
-            elif holder.get("skipped"):
-                pass
-            else:
-                logger.warning(
-                    "[logo_agent] Aucun octet image — voir logo_image_error si défini",
-                )
-
-        concept = self._build_concept_dict(
-            image_prompt,
-            negative_prompt,
-            b64=b64,
-            mime=mime,
-            transparent_b64=transparent_b64,
-            image_source=image_source,
-        )
+        # Extraire l'erreur image éventuelle et la nettoyer du concept
+        image_fetch_error = concept.pop("_image_fetch_error", None)
 
         state.brand_identity["logo_concepts"] = [concept]
-        state.brand_identity["branding_status"] = "logo_generated"
         state.brand_identity.pop("logo_error", None)
-        state.status = "logo_generated"
+
+        has_image = bool(concept.get("image_base64"))
+        if has_image:
+            state.brand_identity["branding_status"] = "logo_generated"
+            state.status = "logo_generated"
+            logger.info("[logo_agent] logo généré avec image pour brand=%r", brand_name)
+        else:
+            # Prompt créé mais image absente — on signale clairement
+            img_err = image_fetch_error or "Aucun octet image reçu (HF, NVIDIA et Pollinations ont tous échoué)."
+            state.brand_identity["logo_image_error"] = img_err
+            state.brand_identity["branding_status"] = "logo_generated"
+            state.status = "logo_generated"
+            logger.warning("[logo_agent] logo sans image pour brand=%r : %s", brand_name, img_err)
+
         return state
