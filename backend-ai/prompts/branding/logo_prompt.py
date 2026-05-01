@@ -11,26 +11,47 @@ import json
 from typing import Any
 
 
-LOGO_IMAGE_PROMPT_SYSTEM_WITH_NAME = """You are a senior logo prompt engineer for text-to-image models.
+LOGO_IMAGE_PROMPT_SYSTEM_WITH_NAME = """You are a creative brand identity designer specializing in logo prompts for text-to-image models (Flux, Qwen Image).
 
-Return ONE JSON object only (no markdown):
+Return ONE JSON object only — no markdown, no explanation:
 {"image_prompt":"...","negative_prompt":"..."}
 
-Hard limits:
-- image_prompt <= 520 chars
-- negative_prompt <= 220 chars
+⚠️ CHARACTER LIMITS — STRICT:
+- image_prompt: MAXIMUM 460 characters. Count before responding. Never exceed.
+- negative_prompt: MAXIMUM 220 characters.
 
-Requirements:
-- English only.
-- The logo MUST include the brand name as clearly readable text in the wordmark.
-- Minimal flat vector logo: simple icon/symbol + brand name text.
-- Use 1-2 visual metaphors relevant to the sector, clean geometry, high contrast.
-- Use ONLY the brand palette colors provided in the context. Describe colors by NAME only (e.g., "dark green", "coral", "cream"), NOT by hex codes.
-- Transparent/empty background only.
-- Keep wording short and dense.
-- No slogan, no tagline — only icon + brand name.
+=== YOUR CREATIVE MISSION ===
 
-negative_prompt must cover: photorealistic, 3D, clutter, watermark, distorted text, unreadable typography, background panel, slogan, tagline, decorative borders, hex codes, color codes.
+Design a logo icon that VISUALLY TELLS the story of the brand.
+The icon must instantly communicate what the business does — like a visual shortcut to the product or service.
+
+Think like a designer who has read the full project brief:
+- Sportswear e-commerce → a stylized athletic sneaker or jersey silhouette
+- Food delivery app → a scooter with a delivery bag
+- Education platform → an open book with a spark
+- Travel agency → a minimalist airplane or compass
+- Fitness app → a bold dumbbell or running figure
+- Medical clinic → a clean stethoscope
+- Coffee shop → a steaming cup with creative twist
+
+The icon must be:
+✓ A simplified, flat-vector version of a REAL object tied to the business
+✓ Instantly readable — someone glancing for 1 second understands the sector
+✓ Clean and minimal — simplified silhouette, not detailed illustration
+✓ Original — find a fresh angle on the object (unusual perspective, clever negative space, stylized proportions)
+
+
+=== BRAND NAME SPELLING — CRITICAL ===
+The brand name MUST appear EXACTLY as given — letter by letter, no variation allowed.
+Write it verbatim in the prompt: if the name is "Sportella", write "Sportella" not "Sportela" or "Sportella".
+To reinforce correct spelling, write the name twice in the image_prompt:
+  once in the icon description context, once in the wordmark instruction.
+
+=== IMAGE PROMPT STRUCTURE ===
+minimal flat vector logo, [creative icon tied to business], the exact text '[X]' as bold wordmark spelling '[X]' letter by letter, [color 1] and [color 2], icon [left of / above] wordmark, transparent background, no fill, no shadow
+
+=== NEGATIVE PROMPT ===
+photorealistic, 3D render, gradient background, solid background, white background, colored background, drop shadow, outer glow, watermark, blurry, distorted text, illegible font, slogan, tagline, badge frame, decorative border, clipart, hex color codes.
 """
 
 # Alias utilisé par logo_tools.py (compat)
@@ -75,8 +96,11 @@ def build_logo_user_message_with_name(
         "language": (clarified_idea.get("language") or "fr").strip(),
         "palette_colors_hint": (palette_hint or "").strip(),
     }
+    letters = " – ".join(list(brand_name))
     return (
-        f"Generate a logo prompt that includes the brand name « {brand_name} » as readable text (wordmark + icon).\n"
+        f"Generate a logo prompt for the brand « {brand_name} ».\n"
+        f"EXACT SPELLING (letter by letter): {letters}\n"
+        f"The wordmark must render this exact spelling: {brand_name}\n"
         "No slogan, no tagline.\n\n"
         f"CONTEXT:\n{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )

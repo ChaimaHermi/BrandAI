@@ -19,8 +19,13 @@ Endpoints SSE (Server-Sent Events) — temps reel "XAI" :
   POST /api/ai/website/generate/stream
   POST /api/ai/website/revise/stream
 
-Tous les endpoints exigent un access_token (JWT backend-api FastAPI) pour
-recuperer l'idee et le brand kit cote backend-api.
+Tous les endpoints ACTIFS exigent un access_token (JWT backend-api FastAPI)
+pour recuperer l'idee et le brand kit cote backend-api.
+
+Exception legacy (depreciee) :
+  POST /api/ai/website/contact-form
+  Cet endpoint ne requiert pas de token et renvoie 410 Gone, car le flux
+  officiel est desormais le formulaire `mailto:` direct (sans relay backend).
 """
 
 from __future__ import annotations
@@ -131,14 +136,14 @@ class GenerateRequest(BaseModel):
 class ReviseRequest(BaseModel):
     idea_id: int = Field(..., ge=1)
     access_token: str | None = None
-    current_html: str = Field(..., min_length=200)
+    current_html: str = Field(..., min_length=1)
     instruction: str = Field(..., min_length=1)
 
 
 class SaveHtmlRequest(BaseModel):
     idea_id: int = Field(..., ge=1)
     access_token: str | None = None
-    html: str = Field(..., min_length=200)
+    html: str = Field(..., min_length=1)
 
 
 class DeployRequest(BaseModel):
@@ -449,6 +454,33 @@ async def website_deploy_delete(
         raise HTTPException(status_code=503, detail=f"Suppression deploiement indisponible : {exc!s}") from exc
 
     return DeployDeleteResponse(**payload)
+
+
+@router.post(
+    "/contact-form",
+    summary="DÉSACTIVÉ — les sites générés utilisent désormais mailto: directement",
+    deprecated=True,
+)
+async def website_contact_form() -> None:
+    """
+    DÉSACTIVÉ — par décision produit, les messages des formulaires de contact
+    des sites vitrines générés ne transitent PLUS par Brand AI. Le formulaire
+    ouvre maintenant directement le client mail du visiteur via `mailto:` et
+    le mail part de son adresse vers celle du propriétaire du site.
+
+    Brand AI ne voit donc jamais le contenu de ces messages. Cet endpoint est
+    conservé temporairement (compat anciens sites déjà déployés) mais renvoie
+    410 Gone : aucun message n'est plus relayé.
+    """
+    logger.info("[website_builder] contact-form call ignored (endpoint deprecated, mailto-only)")
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "Le relais de messages via Brand AI est désactivé. "
+            "Le formulaire doit utiliser un lien mailto: pointant directement "
+            "vers le propriétaire du site."
+        ),
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -59,14 +59,28 @@ WEBSITE_LLM_MAX_RETRIES: int = int(os.getenv("WEBSITE_LLM_MAX_RETRIES", "0"))
 # URL du backend FastAPI (idea + branding bundle).
 BACKEND_API_BASE_URL: str = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
 BACKEND_API_TIMEOUT_SECONDS: float = float(os.getenv("BACKEND_API_TIMEOUT_SECONDS", "30"))
+# Timeout max alloué à la normalisation du logo pendant la phase contexte.
+# Si dépassé, on garde l'URL logo brute pour éviter de bloquer /website/context.
+WEBSITE_CONTEXT_LOGO_NORMALIZE_TIMEOUT_SECONDS: float = float(
+    os.getenv("WEBSITE_CONTEXT_LOGO_NORMALIZE_TIMEOUT_SECONDS", "8")
+)
 
 # Garde-fous de validation Phase 2.
 REQUIRED_SECTIONS_MIN: int = 4  # min 4, max 6 imposé par le prompt
 REQUIRED_ANIMATIONS_MIN: int = 1
 
 # Garde-fous Phase 3 / 4 : un site doit contenir ces marqueurs élémentaires.
-HTML_MIN_LENGTH: int = 1500
-HTML_REQUIRED_MARKERS: tuple[str, ...] = ("<html", "<body", "</body", "</html")
+HTML_STRICT_VALIDATION: bool = os.getenv("WEBSITE_HTML_STRICT_VALIDATION", "0").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+HTML_MIN_LENGTH: int = int(os.getenv("WEBSITE_HTML_MIN_LENGTH", "1"))
+_markers_raw = os.getenv("WEBSITE_HTML_REQUIRED_MARKERS", "<html,</html>").strip()
+HTML_REQUIRED_MARKERS: tuple[str, ...] = tuple(
+    marker.strip().lower() for marker in _markers_raw.split(",") if marker.strip()
+)
 
 # Polices par défaut quand le brand kit n'en fournit pas (fonts non générées par l'agent palette).
 DEFAULT_TITLE_FONT: str = "Playfair Display"
@@ -101,3 +115,6 @@ VERCEL_HTTP_TIMEOUT_SECONDS: float = float(os.getenv("VERCEL_HTTP_TIMEOUT_SECOND
 def vercel_is_configured() -> bool:
     """Garde-fou utilisé par les routes pour renvoyer 503 si la clé manque."""
     return bool(VERCEL_API_KEY)
+
+
+# (Contact form relay removed: generated websites use mailto directly.)

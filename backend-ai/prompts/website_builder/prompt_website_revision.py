@@ -75,6 +75,24 @@ REGRESSION-CHECK INTERNE
 - Les ids references existent toujours.
 - Le HTML reste complet et executable.
 
+MODE VERIFICATION APRES EDITION MANUELLE
+- Si la consigne demande de verifier/corriger le HTML tout en gardant le contenu modifie par l'utilisateur:
+  - Ne reecris pas les textes visibles (titres, paragraphes, boutons, labels) ni ne les "ameliore" avec d'autres formulations.
+  - Corrige surtout le markup (balises, structure, attributs) pour un document valide et coherent.
+
+POLITIQUE FORMULAIRE CONTACT
+- Le formulaire de contact DOIT rester en mode `mailto:` (ouverture du
+  client mail du visiteur). NE JAMAIS le transformer en `fetch(...)` vers
+  un backend, ni reintroduire d'URL `/api/...` ni de `window.__BRANDAI_BACKEND_URL__`.
+- Le script doit utiliser une source UNIQUE et simple pour la destination:
+  `window.__SITE_OWNER_EMAIL__` (email du proprietaire du site).
+- Si l'email de contact visible est modifie dans le HTML, mettre a jour
+  `window.__SITE_OWNER_EMAIL__` avec la meme valeur.
+- Toutes les occurrences d'email dans la page de contact doivent etre coherentes
+  avec `window.__SITE_OWNER_EMAIL__` (pas d'ancien email residuel).
+- Conserver le script de soumission existant tel quel sauf si la consigne
+  demande explicitement de le corriger pour respecter les regles ci-dessus.
+
 {QUALITY_SELF_CHECK}
 """
 

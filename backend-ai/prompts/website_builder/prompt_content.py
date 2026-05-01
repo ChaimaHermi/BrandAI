@@ -32,7 +32,7 @@ ICÔNES — RÈGLES STRICTES :
   users, shield, sparkles, palette, scissors, camera, music, leaf, utensils, dumbbell,
   graduation-cap, target, trending-up, award, check-circle, calendar, message-circle,
   rocket, zap, gem, crown, smile, thumbs-up, gift, package, truck, home, building.
-- INTERDIT : émojis (☕✨🎯), caractères Unicode décoratifs, noms inventés.
+- INTERDIT : émojis, caractères Unicode décoratifs, noms inventés.
 - Toujours en kebab-case minuscule (ex: "map-pin" pas "MapPin").
 
 VISUELS — RÈGLES STRICTES :
@@ -154,7 +154,7 @@ services
    {"name": "message", "label": "Message", "type": "textarea", "required": true}
    ],
    "submit_label": "string (ex: 'Envoyer')",
-   "email": "string ou null (email public si pertinent)",
+  "email": "string ou null (email public du propriétaire du site, jamais une adresse Brand AI/plateforme)",
    "phone": "string ou null",
    "address": "string ou null"
  }

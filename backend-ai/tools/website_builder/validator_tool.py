@@ -117,6 +117,7 @@ def validate_description_payload(data: dict[str, Any]) -> None:
 def validate_html_output(html: str) -> dict[str, int]:
     validate_html_document(html)
     _validate_navigation_integrity(html)
+    _validate_contact_privacy_integrity(html)
     _validate_image_integrity(html)
     _validate_responsive_integrity(html)
     return html_stats(html)
@@ -215,14 +216,24 @@ def sanitize_navigation_html(html: str) -> str:
 _HREF_RE = re.compile(r'href\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
 _IMG_TAG_RE = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
 _ATTR_RE = re.compile(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*["\']([^"\']*)["\']')
-_WINDOW_NAV_RE = re.compile(
-    r"(window\.location\s*=|location\.href\s*=|location\.assign\s*\(|location\.replace\s*\()",
+_UNSAFE_WINDOW_NAV_RE = re.compile(
+    r"(window\.location\s*=|location\.href\s*=|location\.assign\s*\(|location\.replace\s*\()\s*(?!['\"](?:mailto:|tel:))",
+    re.IGNORECASE,
+)
+_WINDOW_HREF_VAR_ASSIGN_RE = re.compile(
+    r"(?:window\.)?location\.href\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*;",
+    re.IGNORECASE,
+)
+_VAR_MAILTO_TEL_CONSTRUCTION_RE = re.compile(
+    r"(?:var|let|const)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*['\"](?:mailto:|tel:)",
     re.IGNORECASE,
 )
 _PLACEHOLDER_IMG_HOST_RE = re.compile(
     r"(via\.placeholder\.com|placehold\.co|placeholder\.com|dummyimage\.com)",
     re.IGNORECASE,
 )
+_PLATFORM_EMAIL_RE = re.compile(r"(brand\s*ai|brandai|support@brandai)", re.IGNORECASE)
+_EMAIL_TEXT_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
 
 
 def _is_external_href(href: str) -> bool:
@@ -231,11 +242,30 @@ def _is_external_href(href: str) -> bool:
 
 def _validate_navigation_integrity(html: str) -> None:
     lower = html.lower()
-    if _WINDOW_NAV_RE.search(lower):
-        raise RuntimeError(
-            "Navigation invalide : script de redirection detecte (window.location/location.href). "
-            "Utiliser uniquement des ancres internes #id pour nav/CTA."
+    # Autorise les redirections explicites vers mailto:/tel: (contact),
+    # mais bloque toute autre navigation via window.location/location.href.
+    has_unsafe_nav = bool(_UNSAFE_WINDOW_NAV_RE.search(lower))
+    if has_unsafe_nav:
+        allowed_vars = {
+            m.group(1).lower()
+            for m in _VAR_MAILTO_TEL_CONSTRUCTION_RE.finditer(html)
+            if m.group(1)
+        }
+        href_assignments = [
+            m.group(1).lower()
+            for m in _WINDOW_HREF_VAR_ASSIGN_RE.finditer(html)
+            if m.group(1)
+        ]
+        has_only_allowed_href_assignments = (
+            bool(href_assignments)
+            and all(var_name in allowed_vars for var_name in href_assignments)
         )
+        if not has_only_allowed_href_assignments:
+            raise RuntimeError(
+                "Navigation invalide : script de redirection detecte (window.location/location.href). "
+                "Utiliser des ancres internes #id pour nav/CTA. "
+                "Seuls mailto:/tel: sont autorises pour les interactions de contact."
+            )
 
     hrefs = _HREF_RE.findall(html)
     internal_targets = [h.strip() for h in hrefs if h and not _is_external_href(h.strip())]
@@ -260,6 +290,65 @@ def _validate_navigation_integrity(html: str) -> None:
             "Navigation invalide : ancres sans section cible detectees "
             f"({sample})."
         )
+
+
+def _validate_contact_privacy_integrity(html: str) -> None:
+    lower = html.lower()
+    if "/website/contact-form" in lower or "__brandai_backend_url__" in lower:
+        raise RuntimeError(
+            "Contact invalide : formulaire relaye via backend detecte. "
+            "Le site vitrine doit envoyer directement vers l'email du proprietaire (mailto:)."
+        )
+
+    # Supporte la variable historique (__BRANDAI_CONTACT_EMAIL__) et la nouvelle
+    # variable simple/source unique (__SITE_OWNER_EMAIL__).
+    configured_email = ""
+    for pattern in (
+        r"__SITE_OWNER_EMAIL__\s*=\s*['\"]([^'\"]+)['\"]",
+        r"__BRANDAI_CONTACT_EMAIL__\s*=\s*['\"]([^'\"]+)['\"]",
+    ):
+        match = re.search(pattern, html, flags=re.IGNORECASE)
+        if match and (match.group(1) or "").strip():
+            configured_email = (match.group(1) or "").strip()
+            break
+
+    if configured_email and _PLATFORM_EMAIL_RE.search(configured_email):
+        raise RuntimeError(
+            "Contact invalide : adresse email plateforme detectee pour le formulaire. "
+            "Utiliser l'email du proprietaire du site."
+        )
+
+    # Cohérence stricte : si l'email propriétaire est défini, toutes les
+    # occurrences mailto: / emails visibles doivent être alignées pour éviter
+    # les cas "support@ancien-domaine" restés dans le HTML.
+    if configured_email:
+        owner = configured_email.lower()
+
+        mailto_targets = [
+            (h.split("?", 1)[0][7:] or "").strip().lower()
+            for h in _HREF_RE.findall(html)
+            if h.lower().startswith("mailto:")
+        ]
+        mismatched_mailto = [e for e in mailto_targets if e and e != owner]
+        if mismatched_mailto:
+            sample = ", ".join(mismatched_mailto[:3])
+            raise RuntimeError(
+                "Contact invalide : des liens mailto utilisent un email different de __SITE_OWNER_EMAIL__ "
+                f"({sample})."
+            )
+
+        visible_emails = {
+            e.lower() for e in _EMAIL_TEXT_RE.findall(html) if "@" in e
+        }
+        # Ignore les emails potentiels dans scripts non liés ; on applique quand même
+        # un contrôle strict pour forcer la cohérence globale du site vitrine.
+        mismatched_visible = [e for e in visible_emails if e != owner]
+        if mismatched_visible:
+            sample = ", ".join(sorted(mismatched_visible)[:3])
+            raise RuntimeError(
+                "Contact invalide : des emails visibles ne correspondent pas a __SITE_OWNER_EMAIL__ "
+                f"({sample})."
+            )
 
 
 def _validate_image_integrity(html: str) -> None:

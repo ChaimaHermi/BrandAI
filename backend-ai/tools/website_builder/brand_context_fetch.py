@@ -24,6 +24,7 @@ from config.website_builder_config import (
     BACKEND_API_TIMEOUT_SECONDS,
     DEFAULT_BODY_FONT,
     DEFAULT_TITLE_FONT,
+    WEBSITE_CONTEXT_LOGO_NORMALIZE_TIMEOUT_SECONDS,
 )
 from tools.content_generation.cloudinary_upload import (
     cloudinary_configured,
@@ -254,7 +255,17 @@ async def _ensure_logo_public_url(logo_url: str | None) -> str | None:
 
     if url.startswith("https://"):
         try:
-            return await ensure_cloudinary_public_url(url)
+            # Evite qu'une URL logo lente bloque la phase "context" côté UI.
+            return await asyncio.wait_for(
+                ensure_cloudinary_public_url(url),
+                timeout=WEBSITE_CONTEXT_LOGO_NORMALIZE_TIMEOUT_SECONDS,
+            )
+        except TimeoutError:
+            logger.warning(
+                "[website_builder] Logo normalization timed out after %.1fs, fallback raw URL",
+                WEBSITE_CONTEXT_LOGO_NORMALIZE_TIMEOUT_SECONDS,
+            )
+            return url
         except Exception as exc:
             logger.warning("[website_builder] Logo HTTPS Cloudinary upload failed: %s", exc)
             return url

@@ -124,12 +124,61 @@ SECTIONS — RENDU
 - footer : 3-4 colonnes md:grid-cols-4 avec logo/marque, liens nav, slogan, copyright.
 
 ══════════════════════════════════════════
-FORMULAIRE CONTACT — OBLIGATOIRE
+FORMULAIRE CONTACT — DIRECT (mailto:)
 ══════════════════════════════════════════
-- <form> avec method="POST" action="#" (sans backend mais structure complète).
+PRINCIPE : le message va du visiteur DIRECTEMENT au propriétaire du site.
+Aucun serveur tiers (y compris Brand AI) ne voit son contenu — c'est le
+client mail du visiteur qui ouvre un nouveau message pré-rempli vers
+l'adresse du propriétaire, qu'il envoie depuis sa propre boîte.
+
+- <form id="contact-form"> (id obligatoire pour le script).
 - <input> et <textarea> avec labels accessibles, classes Tailwind (border, rounded, focus:ring-accent).
-- Bouton submit en accent (bg-accent text-white px-6 py-3 rounded-full hover:opacity-90).
+- Bouton submit id="contact-submit" en accent (bg-accent text-white px-6 py-3 rounded-full hover:opacity-90).
 - Validation HTML5 (required, type="email").
+- Ajouter un <p id="contact-feedback" class="mt-4 text-sm hidden"></p> pour afficher le retour.
+- Le formulaire NE poste PAS vers un backend. À la soumission, on construit
+  un lien `mailto:` pré-rempli (subject + corps) et on déclenche l'ouverture
+  du client mail du visiteur. Voici le script EXACT à inclure avant </body>
+  (après lucide.createIcons()) :
+
+  <script>
+  (function() {{
+    var form = document.getElementById('contact-form');
+    var btn = document.getElementById('contact-submit');
+    var fb = document.getElementById('contact-feedback');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {{
+      e.preventDefault();
+      var toEmail = (window.__SITE_OWNER_EMAIL__ || '').trim();
+      var brandName = window.__BRANDAI_BRAND_NAME__ || '';
+      if (!toEmail) {{
+        if (fb) {{ fb.textContent = 'Adresse de contact manquante.'; fb.className = 'mt-4 text-sm text-red-600'; fb.classList.remove('hidden'); }}
+        return;
+      }}
+      var name = form.querySelector('[name="name"]') ? form.querySelector('[name="name"]').value.trim() : '';
+      var email = form.querySelector('[name="email"]') ? form.querySelector('[name="email"]').value.trim() : '';
+      var message = form.querySelector('[name="message"]') ? form.querySelector('[name="message"]').value.trim() : '';
+      if (!name || !email || !message) return;
+      var subject = '[' + (brandName || 'Site') + '] Nouveau message de ' + name;
+      var body = 'Nom : ' + name + '\\n'
+               + 'Email : ' + email + '\\n\\n'
+               + 'Message :\\n' + message + '\\n\\n'
+               + '— Envoyé via le formulaire de contact du site ' + (brandName || '') + '.';
+      var href = 'mailto:' + encodeURIComponent(toEmail)
+               + '?subject=' + encodeURIComponent(subject)
+               + '&body=' + encodeURIComponent(body);
+      window.location.href = href;
+      if (fb) {{
+        fb.innerHTML = 'Votre client mail va s\\'ouvrir pour finaliser l\\'envoi. '
+                     + 'S\\'il ne s\\'ouvre pas, écrivez directement à <a class="underline" href="mailto:' + toEmail + '">' + toEmail + '</a>.';
+        fb.className = 'mt-4 text-sm text-ink-muted';
+        fb.classList.remove('hidden');
+      }}
+      btn.textContent = 'Ouverture du mail…';
+      setTimeout(function() {{ btn.textContent = 'Envoyer'; }}, 4000);
+    }});
+  }})();
+  </script>
 
 ══════════════════════════════════════════
 ANIMATIONS
@@ -180,9 +229,20 @@ def build_coder_user_prompt(
     ctx: BrandContext,
     architecture: dict[str, Any],
     content: dict[str, Any],
+    *,
+    contact_email: str | None = None,
 ) -> str:
     slogan_line = ctx.slogan or "(aucun slogan)"
     logo_line = ctx.logo_url or "(pas de logo — utiliser nom de marque en texte)"
+
+    contact_vars_block = f"""
+VARIABLES FORMULAIRE CONTACT (à injecter dans <script> avant </body>) :
+  window.__SITE_OWNER_EMAIL__      = {repr(contact_email or "")};
+  window.__BRANDAI_BRAND_NAME__    = {repr(ctx.brand_name)};
+Ces deux lignes DOIVENT apparaître dans un <script> avant le script du formulaire.
+Le formulaire fonctionne en `mailto:` pur — aucun backend n'est appelé,
+le mail part directement du visiteur vers le propriétaire.
+"""
 
     return f"""LANGUE : {ctx.language}
 
@@ -201,7 +261,7 @@ IDENTITÉ MARQUE :
 - Slogan : {slogan_line}
 - Logo URL : {logo_line}
 - Secteur : {ctx.sector or "(non précisé)"}
-
+{contact_vars_block}
 ARCHITECTURE DU SITE (structure figée — respecter ids et ordre) :
 {_json_for_prompt(architecture)}
 
@@ -213,5 +273,7 @@ Code le site complet en HTML autonome, en intégrant fidèlement architecture + 
 Utilise Tailwind CDN, Google Fonts, Lucide Icons.
 Le slogan doit apparaître mot pour mot dans le hero.
 Si logo_url est fourni, utilise <img> dans le header ; sinon, utilise le nom de marque en texte.
+Inclus les variables __SITE_OWNER_EMAIL__/__BRANDAI_BRAND_NAME__ et le script
+du formulaire EXACTEMENT comme spécifié.
 Renvoie UNIQUEMENT le HTML complet, rien d'autre.
 """

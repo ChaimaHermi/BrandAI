@@ -25,14 +25,14 @@ class LLMRotator:
             logger.warning("[rotator] Aucune clé Groq — LLMRotator désactivé (NVIDIA utilisé en priorité)")
 
     # ─────────────────────────────────────────────
-    # 🔥 GROQ ONLY (LLAMA)
+    # GROQ ONLY (LLAMA)
     # ─────────────────────────────────────────────
     @classmethod
     def groq_only(cls):
         return cls(model="openai/gpt-oss-120b")
 
     # ─────────────────────────────────────────────
-    # 🔥 GROQ GPT ONLY (TON CAS EXACT)
+    # GROQ GPT ONLY (TON CAS EXACT)
     # ─────────────────────────────────────────────
     @classmethod
     def groq_gpt_only(cls):

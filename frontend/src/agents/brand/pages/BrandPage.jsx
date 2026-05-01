@@ -485,7 +485,7 @@ export default function BrandPage() {
     [idea?.id, token, displayBrandName, refetchBrandRecord],
   );
 
-  const handleGenerateLogo = useCallback(async () => {
+  const handleGenerateLogo = useCallback(async ({ remarks = "" } = {}) => {
     if (!idea?.id || !token) return { ok: false };
     if (!displayBrandName) {
       setLogoGenMessage("Choisissez d’abord un nom de marque.");
@@ -511,10 +511,15 @@ export default function BrandPage() {
             .join("/")
         : null;
 
+      // Prompt du logo précédent — transmis au LLM pour éviter de régénérer la même chose
+      const previousPrompt = generatedLogoConcepts?.[0]?.image_prompt || null;
+
       const result = await generateLogo(idea.id, token, {
         brand_name: displayBrandName,
         slogan_hint: selectedSlogan || null,
         palette_color_hint: paletteColors,
+        previous_image_prompt: previousPrompt,
+        user_remarks: remarks || null,
         persist: true,
         persist_image_base64: false,
       });
@@ -577,6 +582,7 @@ export default function BrandPage() {
     selectedSlogan,
     selectedPaletteId,
     paletteListDisplayed,
+    generatedLogoConcepts,
     refetchBrandRecord,
   ]);
 
@@ -779,6 +785,7 @@ export default function BrandPage() {
             logoPreviewUrl={logoPreviewUrl}
             logoPreviewTransparentUrl={logoPreviewTransparentUrl}
             logoConcept={logoConceptsDisplayed[0] ?? null}
+            hasLogoResult={Boolean(logoConceptsDisplayed[0]?.image_prompt)}
           />
         )}
 

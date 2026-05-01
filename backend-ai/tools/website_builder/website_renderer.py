@@ -14,7 +14,11 @@ from __future__ import annotations
 
 import re
 
-from config.website_builder_config import HTML_MIN_LENGTH, HTML_REQUIRED_MARKERS
+from config.website_builder_config import (
+    HTML_MIN_LENGTH,
+    HTML_REQUIRED_MARKERS,
+    HTML_STRICT_VALIDATION,
+)
 
 
 _FENCE_RE = re.compile(r"```(?:html|HTML)?\s*([\s\S]*?)```", re.MULTILINE)
@@ -101,7 +105,13 @@ def repair_html_document(html: str) -> str:
 
 
 def validate_html_document(html: str) -> None:
-    if not html or len(html) < HTML_MIN_LENGTH:
+    if not html or not html.strip():
+        raise RuntimeError("Document HTML vide : aucune sortie exploitable à sauvegarder.")
+
+    if not HTML_STRICT_VALIDATION:
+        return
+
+    if len(html) < HTML_MIN_LENGTH:
         raise RuntimeError(
             f"HTML généré trop court ({len(html or '')} caractères). "
             f"Minimum attendu : {HTML_MIN_LENGTH}."

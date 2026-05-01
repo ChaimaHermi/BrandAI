@@ -68,7 +68,7 @@ async def main():
     agent = MarketAnalysisAgent()
     state = build_state_from_idea(IDEA)
 
-    print("\n🚀 Lancement analyse de marché")
+    print("\nLancement analyse de marché")
     print(f"Idée    : {IDEA['short_pitch']}")
     print(f"Secteur : {IDEA['sector']}")
     print(f"Pays    : {IDEA['country_code']}\n")
@@ -76,13 +76,13 @@ async def main():
     try:
         state = await agent.run(state)
     except Exception as e:
-        print("❌ Erreur pendant l'analyse :", e)
+        print("Erreur pendant l'analyse :", e)
         return
 
     report = state.market_analysis
 
     if not report:
-        print("❌ Aucun résultat généré")
+        print("Aucun résultat généré")
         return
 
     assert "executive_summary" in report
@@ -90,7 +90,7 @@ async def main():
     assert "competitor" in report
     assert "tendances" in report
 
-    print("\n🔍 DEBUG CHECK")
+    print("\nDEBUG CHECK")
     print("Tendances OK :", bool(report.get("tendances")))
     print("VOC OK       :", bool(report.get("market_voc")))
     print("Competitor OK:", bool(report.get("competitor")))
@@ -99,10 +99,10 @@ async def main():
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
-    print("\n📊 RESULTAT COMPLET :\n")
+    print("\nRESULTAT COMPLET :\n")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
-    print(f"\n✅ Rapport sauvegardé : {filename}")
+    print(f"\nRapport sauvegardé : {filename}")
 
     if report.get("data_quality", {}).get("warnings"):
         print("\n⚠ WARNINGS :")

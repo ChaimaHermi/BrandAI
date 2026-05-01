@@ -259,7 +259,7 @@ function DescriptionStructuredCard({ data }) {
                 )}
                 {s?.creative_touch && (
                   <p className="mt-1.5 rounded-md bg-brand-light/40 px-2 py-1 text-2xs text-ink">
-                    ✨ {s.creative_touch}
+                    {s.creative_touch}
                   </p>
                 )}
               </div>

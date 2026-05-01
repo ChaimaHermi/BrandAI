@@ -63,6 +63,9 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:3000",
     ],
+    # Autorise les sites déployés sur Vercel (*.vercel.app) à appeler
+    # les endpoints publics backend-ai sans CORS error.
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

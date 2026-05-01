@@ -5,7 +5,7 @@ import {
   apiFetchWebsiteContext,
   apiFetchWebsiteProject,
   apiApproveWebsiteDescription,
-  apiSaveWebsiteHtml,
+  apiReviseWebsite,
   apiDeployWebsite,
   apiStreamWebsiteDescription,
   apiStreamRefineWebsiteDescription,
@@ -13,6 +13,7 @@ import {
   apiStreamReviseWebsite,
   apiDeleteWebsiteDeployment,
 } from "../api/websiteBuilder.api";
+import { WEBSITE_BUILDER_MANUAL_EDIT_INSTRUCTION } from "../config/websiteBuilder.config";
 
 /**
  * Phases :
@@ -33,6 +34,204 @@ import {
  */
 
 let _msgSeq = 0;
+const PREVIEW_INJECTION_START = "<!-- BRANDAI_PREVIEW_INJECTION_START -->";
+const PREVIEW_INJECTION_END = "<!-- BRANDAI_PREVIEW_INJECTION_END -->";
+
+// Tokens identifiant les scripts injectés par le preview (guard + edit mode).
+// On ne les retire que si tous les tokens du tag <script> appartiennent à
+// l'injection — jamais en se basant sur un seul mot fragile (ex: "window.open"
+// pourrait apparaître légitimement dans un script applicatif).
+const PREVIEW_INJECTION_SCRIPT_TOKENS = [
+  "BRANDAI_PREVIEW_READY",
+  "BRANDAI_EDIT_MODE_ON",
+  "BRANDAI_EDIT_MODE_OFF",
+  "BRANDAI_HTML_UPDATE",
+  "BRANDAI_REQUEST_HTML",
+  "__brandai_edit_mode__",
+  "data-brandai-editable",
+  "__brandai_edit_styles__",
+  "data-img-fallback",
+  "isUnsafeNav",
+];
+
+function stripInjectedScripts(html) {
+  if (!html || typeof html !== "string") return html || "";
+  // Itère sur chaque <script>...</script> et retire UNIQUEMENT ceux qui
+  // contiennent un de nos tokens. Le regex est ancré sur le couple ouvrant/
+  // fermant pour ne JAMAIS traverser un autre </script> (ce qui sinon
+  // engloutissait le contenu HTML entre deux scripts non liés).
+  return html.replace(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi, (match, body) => {
+    return PREVIEW_INJECTION_SCRIPT_TOKENS.some((token) => body.includes(token))
+      ? ""
+      : match;
+  });
+}
+
+// Récupération d'un état déjà corrompu : si un précédent cycle de save a
+// laissé "fuir" du code JS d'injection sans balise <script> ouvrante (le
+// navigateur l'affiche alors comme du texte sur la page), on essaie de le
+// retirer en se basant sur des signatures uniques de notre script d'édition.
+const LEAKED_INJECTION_HEADS = [
+  "ensureStyles",
+  "removeStyles",
+  "enableEditMode",
+  "disableEditMode",
+  "sendHtmlUpdate",
+  "scheduleHtmlUpdate",
+];
+const LEAKED_INJECTION_SIGNATURES = [
+  "__brandai_edit_mode__",
+  "__brandai_edit_styles__",
+  "BRANDAI_PREVIEW_READY",
+  "BRANDAI_HTML_UPDATE",
+  "BRANDAI_EDIT_MODE_ON",
+  "BRANDAI_EDIT_MODE_OFF",
+  "data-brandai-editable",
+  "data-img-fallback",
+  "isUnsafeNav",
+];
+
+function stripLeakedInjectedScripts(html) {
+  if (!html || typeof html !== "string") return html || "";
+  // Heuristique : si aucune signature d'injection n'apparaît hors <script>,
+  // on ne touche à rien.
+  let cleaned = html;
+  // Cas 1 : leak d'un IIFE complet "(() => { ... })();" contenant des tokens.
+  cleaned = cleaned.replace(
+    /\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?\}\s*\)\s*\(\s*\)\s*;?/g,
+    (match) =>
+      LEAKED_INJECTION_SIGNATURES.some((s) => match.includes(s)) ? "" : match
+  );
+  // Cas 2 : leak partiel — la coupe a tronqué le début du script et ne reste
+  // qu'une queue commençant par "const ensureStyles = () => { ... })();".
+  // On retire en suivant chaque tête connue jusqu'à la prochaine fermeture
+  // d'IIFE "})();" si elle est suivie (ou contient) une signature d'injection.
+  for (const head of LEAKED_INJECTION_HEADS) {
+    const re = new RegExp(
+      `\\bconst\\s+${head}\\s*=[\\s\\S]*?\\}\\s*\\)\\s*\\(\\s*\\)\\s*;?`,
+      "g"
+    );
+    cleaned = cleaned.replace(re, (match) =>
+      LEAKED_INJECTION_SIGNATURES.some((s) => match.includes(s)) ? "" : match
+    );
+  }
+  // Cas 3 : retire les "</script>" orphelines (sans <script> ouvrant
+  // correspondant avant) — typiquement la queue d'un script tronqué par
+  // l'ancien bug. On scanne une seule fois en appariant les balises.
+  cleaned = removeOrphanClosingScriptTags(cleaned);
+  return cleaned;
+}
+
+function removeOrphanClosingScriptTags(html) {
+  let result = "";
+  let i = 0;
+  let openCount = 0;
+  while (i < html.length) {
+    const openMatch = html.substring(i, i + 8).match(/^<script\b/i);
+    if (openMatch) {
+      const closeIdx = html.indexOf(">", i);
+      if (closeIdx < 0) {
+        result += html.substring(i);
+        break;
+      }
+      result += html.substring(i, closeIdx + 1);
+      i = closeIdx + 1;
+      openCount += 1;
+      continue;
+    }
+    const closeMatch = html.substring(i, i + 12).match(/^<\/script\s*>/i);
+    if (closeMatch) {
+      if (openCount > 0) {
+        result += closeMatch[0];
+        openCount -= 1;
+      }
+      // sinon : balise fermante orpheline → on la jette
+      i += closeMatch[0].length;
+      continue;
+    }
+    result += html[i];
+    i += 1;
+  }
+  return result;
+}
+
+function sanitizePreviewArtifacts(rawHtml) {
+  const input = typeof rawHtml === "string" ? rawHtml : "";
+  if (!input) return "";
+  let cleaned = input;
+  // 1) Retire les blocs entre les marqueurs explicites (cas standard).
+  while (true) {
+    const start = cleaned.indexOf(PREVIEW_INJECTION_START);
+    if (start < 0) break;
+    const end = cleaned.indexOf(
+      PREVIEW_INJECTION_END,
+      start + PREVIEW_INJECTION_START.length
+    );
+    if (end < 0) break;
+    cleaned = cleaned.slice(0, start) + cleaned.slice(end + PREVIEW_INJECTION_END.length);
+  }
+  // 2) Compat : retire les scripts d'injection orphelins (sans marqueurs).
+  //    Le strip est borné à un <script>...</script> unique pour ne pas
+  //    traverser le contenu utile entre plusieurs scripts.
+  cleaned = stripInjectedScripts(cleaned);
+  // 2bis) Récupération d'état corrompu : retire le code JS d'injection qui
+  //       a "fuité" SANS balise <script> dans des cycles précédents (le
+  //       navigateur l'affichait alors comme du texte sur la page).
+  cleaned = stripLeakedInjectedScripts(cleaned);
+  // 3) Retire le <style> d'édition s'il a été oublié.
+  cleaned = cleaned.replace(
+    /<style[^>]*id\s*=\s*["']__brandai_edit_styles__["'][^>]*>[\s\S]*?<\/style\s*>/gi,
+    ""
+  );
+  // 4) Retire les attributs résiduels du mode édition sur les éléments éditables.
+  cleaned = cleaned
+    .replace(/\s+contenteditable\s*=\s*["']true["']/gi, "")
+    .replace(/\s+data-brandai-editable\s*=\s*["']1["']/gi, "")
+    .replace(/\s+data-brandai-edit-mode\s*=\s*["']1["']/gi, "");
+  // 5) Nettoie les marqueurs orphelins si un des deux manque.
+  cleaned = cleaned
+    .replace(/<!--\s*BRANDAI_PREVIEW_INJECTION_START\s*-->/g, "")
+    .replace(/<!--\s*BRANDAI_PREVIEW_INJECTION_END\s*-->/g, "");
+  // 6) Évite les fermetures dupliquées qui peuvent apparaître après édition/sauvegarde.
+  cleaned = cleaned.replace(/(\s*<\/body>\s*<\/html>\s*){2,}/gi, "\n</body>\n</html>");
+  return cleaned.trim();
+}
+
+function normalizeWebsiteHtml(rawHtml) {
+  const raw = String(rawHtml || "");
+  const sanitized = sanitizePreviewArtifacts(raw);
+  const cleaned = sanitized || raw;
+  const trimmed = cleaned.trim();
+  if (!trimmed) return "";
+
+  const lower = trimmed.toLowerCase();
+  if (lower.includes("<html") && lower.includes("<body") && lower.includes("</html>")) {
+    return trimmed;
+  }
+
+  // Si le modèle renvoie un fragment (ou un body/head partiel), on l'enveloppe
+  // dans un document complet pour garantir un rendu/ téléchargement valides.
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Website Preview</title>
+</head>
+<body>
+${trimmed}
+</body>
+</html>`;
+}
+
+function computeHtmlStatsFromString(rawHtml) {
+  const html = String(rawHtml || "");
+  return {
+    length: html.length,
+    approx_lines: (html.match(/\n/g) || []).length + 1,
+  };
+}
+
 function newId(kind) {
   _msgSeq += 1;
   return `${kind}-${Date.now()}-${_msgSeq}`;
@@ -65,6 +264,12 @@ function makeSystemMessage(content, kind = "info") {
     content,
     createdAt: Date.now(),
   };
+}
+
+function stripEmoji(text) {
+  return String(text || "")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+    .trim();
 }
 
 /**
@@ -196,6 +401,53 @@ function ensureResumeGuidance(messages, phase) {
   }
 
   return list;
+}
+
+function hasMessageTitle(messages, title) {
+  return (messages || []).some((m) => m && m.title === title);
+}
+
+function buildResumeSnapshotMessages(project, flatContext) {
+  const snapshots = [];
+
+  if (flatContext && typeof flatContext === "object") {
+    snapshots.push(
+      makeBotMessage("Contexte restauré depuis la session sauvegardée.", {
+        phase: "context",
+        title: "Phase 1 — Contexte chargé",
+        context: flatContext,
+      })
+    );
+  }
+
+  if (project?.description_json && typeof project.description_json === "object") {
+    snapshots.push(
+      makeBotMessage("Concept créatif restauré depuis la session sauvegardée.", {
+        phase: "description",
+        title: "Phase 2 — Concept créatif",
+      })
+    );
+  }
+
+  if (typeof project?.current_html === "string" && project.current_html.trim()) {
+    snapshots.push(
+      makeBotMessage("Site restauré depuis la session sauvegardée.", {
+        phase: "generation",
+        title: "Phase 3 — Site généré",
+      })
+    );
+  }
+
+  if (project?.last_deployment_url || project?.last_deployment_id) {
+    snapshots.push(
+      makeBotMessage("Déploiement restauré depuis la session sauvegardée.", {
+        phase: "deployment",
+        title: "Phase 5 — Site en ligne",
+      })
+    );
+  }
+
+  return snapshots;
 }
 
 function applyStreamEvent(message, event) {
@@ -437,7 +689,7 @@ export function useWebsiteBuilder() {
       }
 
       pushBot(
-        "👀 **Discute avec moi pour ajuster ce concept** (ex: « ajoute une section pricing », « rends le hero plus minimaliste », « ton plus chaleureux »...). Quand il te convient, clique sur **« J'approuve »** pour passer à la génération HTML.",
+        "**Discute avec moi pour ajuster ce concept** (ex: « ajoute une section pricing », « rends le hero plus minimaliste », « ton plus chaleureux »...). Quand il te convient, clique sur **« J'approuve »** pour passer à la génération HTML.",
         {
           phase: "description",
           actions: [
@@ -557,7 +809,7 @@ export function useWebsiteBuilder() {
         throw new Error("Aucun HTML reçu du backend.");
       }
 
-      setHtml(result.html);
+      setHtml(normalizeWebsiteHtml(result.html));
       setHtmlStats(result.html_stats || null);
       if (result.description) setDescription(result.description);
       setCurrentVersion(1);
@@ -621,7 +873,14 @@ export function useWebsiteBuilder() {
           },
         });
 
-        const finalHtml = result?.html || currentHtml;
+        if (!result || typeof result.html !== "string" || !result.html.trim()) {
+          throw new Error(
+            "Révision backend incomplète : aucun HTML renvoyé par l'agent (erreur fournisseur possible)."
+          );
+        }
+
+        const finalHtmlRaw = result?.html || currentHtml;
+        const finalHtml = normalizeWebsiteHtml(finalHtmlRaw);
         const hasHtmlChanged = finalHtml !== currentHtml;
         setHtml(finalHtml);
         if (result?.html_stats) setHtmlStats(result.html_stats);
@@ -649,22 +908,35 @@ export function useWebsiteBuilder() {
     async (newHtml) => {
       if (!ideaId || !token) return false;
       const trimmed = typeof newHtml === "string" ? newHtml : "";
-      if (!trimmed || trimmed.length < 200) return false;
+      const sanitized = normalizeWebsiteHtml(trimmed);
+      if (!sanitized) return false;
+
+      setHtml(sanitized);
+      setHtmlStats(computeHtmlStatsFromString(sanitized));
+      setCurrentVersion((v) => Math.max(1, v + 1));
+
       setPhase("saving_edits");
       setError(null);
       try {
-        const data = await apiSaveWebsiteHtml(token, { ideaId, html: trimmed });
-        setHtml(data?.html || trimmed);
+        const data = await apiReviseWebsite(token, {
+          ideaId,
+          currentHtml: sanitized,
+          instruction: WEBSITE_BUILDER_MANUAL_EDIT_INSTRUCTION,
+        });
+        const serverHtml = normalizeWebsiteHtml(data?.html || sanitized);
+        setHtml(serverHtml);
         if (data?.html_stats) setHtmlStats(data.html_stats);
-        setCurrentVersion((v) => Math.max(1, v + 1));
-        pushSystem("Modifications manuelles enregistrées.", "info");
+        pushSystem("Modifications enregistrées.", "info");
         setPhase("ready");
         return true;
       } catch (err) {
         setError(err?.message || "Sauvegarde impossible.");
-        pushSystem(`Sauvegarde impossible : ${err?.message || "erreur"}`, "error");
+        pushSystem(
+          `Enregistrement impossible (${err?.message || "erreur"}). Le preview affiche encore ta version locale.`,
+          "error"
+        );
         setPhase("ready");
-        return false;
+        return true;
       }
     },
     [ideaId, token, pushSystem]
@@ -677,10 +949,11 @@ export function useWebsiteBuilder() {
     setPhase("deploying");
     setError(null);
     try {
-      const data = await apiDeployWebsite(token, { ideaId, html: htmlRef.current });
+      const htmlForDeploy = normalizeWebsiteHtml(htmlRef.current);
+      const data = await apiDeployWebsite(token, { ideaId, html: htmlForDeploy });
       setDeployment(data?.deployment || null);
       pushBot(
-        data?.summary_md || "Site déployé.",
+        stripEmoji(data?.summary_md || "Site déployé."),
         {
           phase: "deployment",
           title: "Phase 5 — Site en ligne",
@@ -762,6 +1035,39 @@ export function useWebsiteBuilder() {
     try {
       const project = await apiFetchWebsiteProject(token, ideaId);
       if (!project || typeof project !== "object") return false;
+      let restoredContext = null;
+      try {
+        const ctxData = await apiFetchWebsiteContext(token, ideaId);
+        restoredContext = ctxData && typeof ctxData === "object"
+          ? {
+              idea_id: ctxData.idea_id,
+              project_name: ctxData.project_name,
+              sector: ctxData.sector,
+              target_audience: ctxData.target_audience,
+              short_pitch: ctxData.short_pitch,
+              description_brief: ctxData.description_brief,
+              language: ctxData.language,
+              brand_name: ctxData.brand_name,
+              slogan: ctxData.slogan,
+              logo_url: ctxData.logo_url,
+              primary_color: ctxData.primary_color,
+              secondary_color: ctxData.secondary_color,
+              accent_color: ctxData.accent_color,
+              background_color: ctxData.background_color,
+              text_color: ctxData.text_color,
+              title_font: ctxData.title_font,
+              body_font: ctxData.body_font,
+              visual_style: ctxData.visual_style,
+              raw_logo: ctxData.raw_logo,
+            }
+          : null;
+      } catch {
+        restoredContext = null;
+      }
+
+      if (restoredContext) {
+        setContext(restoredContext);
+      }
       setDescriptionApproved(Boolean(project.approved));
       setCurrentVersion(Number(project.current_version) || 0);
 
@@ -775,7 +1081,7 @@ export function useWebsiteBuilder() {
         hasRestoredState = true;
       }
       if (typeof project.current_html === "string") {
-        setHtml(project.current_html);
+        setHtml(normalizeWebsiteHtml(project.current_html));
         if (project.current_html.trim().length > 0) {
           hasRestoredState = true;
         }
@@ -798,12 +1104,20 @@ export function useWebsiteBuilder() {
             .sort((a, b) => a.createdAt - b.createdAt)
         : [];
 
+      const resumeSnapshots = buildResumeSnapshotMessages(project, restoredContext);
+      const mergedConversation = [...savedConversation];
+      for (const snap of resumeSnapshots) {
+        if (snap?.title && !hasMessageTitle(mergedConversation, snap.title)) {
+          mergedConversation.unshift(snap);
+        }
+      }
+
       const restoredPhase = derivePhaseFromProject(project);
-      if (savedConversation.length > 0) {
-        setMessages(ensureResumeGuidance(savedConversation, restoredPhase));
+      if (mergedConversation.length > 0) {
+        setMessages(ensureResumeGuidance(mergedConversation, restoredPhase));
         hasRestoredState = true;
       } else if (hasRestoredState) {
-        setMessages(ensureResumeGuidance([], restoredPhase));
+        setMessages(ensureResumeGuidance(mergedConversation, restoredPhase));
       }
 
       setPhase(restoredPhase);

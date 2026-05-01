@@ -80,7 +80,7 @@ CONTENT: {content}
     # ─────────────────────────
     async def run(self, state):
 
-        # 🔥 GET QUERIES FROM STATE (IMPORTANT)
+        # GET QUERIES FROM STATE (IMPORTANT)
         queries = state.market_analysis.get("voc_queries", [])
 
         if not queries:
@@ -99,10 +99,10 @@ CONTENT: {content}
         for q in queries:
             results = tavily_search(q)
 
-            # 🔥 LIMIT PER QUERY
+            # LIMIT PER QUERY
             all_results.extend(results[:8])
 
-        # 🔥 GLOBAL LIMIT
+        # GLOBAL LIMIT
         all_results = all_results[:40]
 
         print("[DEBUG VOC] total results:", len(all_results))

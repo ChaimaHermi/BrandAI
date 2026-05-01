@@ -30,7 +30,7 @@ def create_groq_clients(model: str = None, max_tokens: int | None = None) -> lis
     """
     clients = []
 
-    # 🔥 modèle par défaut
+    # modèle par défaut
     model_name = model if model else "openai/gpt-oss-120b"
 
     for key in GROQ_KEYS:

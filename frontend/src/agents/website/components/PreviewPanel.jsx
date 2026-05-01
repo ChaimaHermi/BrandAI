@@ -13,6 +13,153 @@ const VIEWPORTS = [
 
 // Tags rendus éditables en place (selon spec utilisateur).
 const EDITABLE_TAGS = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "button", "span", "li", "a"];
+const INJECTION_START = "<!-- BRANDAI_PREVIEW_INJECTION_START -->";
+const INJECTION_END = "<!-- BRANDAI_PREVIEW_INJECTION_END -->";
+
+// Tokens d'identification des scripts injectés par le preview. On retire un
+// <script> uniquement si son CONTENU contient un de ces tokens — jamais en
+// se basant sur un balayage glouton qui pourrait traverser plusieurs scripts.
+const PREVIEW_INJECTION_SCRIPT_TOKENS = [
+  "BRANDAI_PREVIEW_READY",
+  "BRANDAI_EDIT_MODE_ON",
+  "BRANDAI_EDIT_MODE_OFF",
+  "BRANDAI_HTML_UPDATE",
+  "BRANDAI_REQUEST_HTML",
+  "__brandai_edit_mode__",
+  "data-brandai-editable",
+  "__brandai_edit_styles__",
+  "data-img-fallback",
+  "isUnsafeNav",
+];
+
+const LEAKED_INJECTION_HEADS = [
+  "ensureStyles",
+  "removeStyles",
+  "enableEditMode",
+  "disableEditMode",
+  "sendHtmlUpdate",
+  "scheduleHtmlUpdate",
+];
+
+function stripLeakedInjectedJsText(html) {
+  if (!html || typeof html !== "string") return html || "";
+  let cleaned = html;
+  // IIFE complète "(() => { ... })();" contenant une signature.
+  cleaned = cleaned.replace(
+    /\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?\}\s*\)\s*\(\s*\)\s*;?/g,
+    (match) =>
+      PREVIEW_INJECTION_SCRIPT_TOKENS.some((s) => match.includes(s))
+        ? ""
+        : match
+  );
+  // Queue de script tronqué : "const ensureStyles = () => { ... })();"
+  for (const head of LEAKED_INJECTION_HEADS) {
+    const re = new RegExp(
+      `\\bconst\\s+${head}\\s*=[\\s\\S]*?\\}\\s*\\)\\s*\\(\\s*\\)\\s*;?`,
+      "g"
+    );
+    cleaned = cleaned.replace(re, (match) =>
+      PREVIEW_INJECTION_SCRIPT_TOKENS.some((s) => match.includes(s))
+        ? ""
+        : match
+    );
+  }
+  // Balises </script> orphelines (queue d'un script tronqué).
+  cleaned = removeOrphanClosingScriptTags(cleaned);
+  return cleaned;
+}
+
+function removeOrphanClosingScriptTags(html) {
+  let result = "";
+  let i = 0;
+  let openCount = 0;
+  while (i < html.length) {
+    if (html.substring(i, i + 8).match(/^<script\b/i)) {
+      const closeIdx = html.indexOf(">", i);
+      if (closeIdx < 0) {
+        result += html.substring(i);
+        break;
+      }
+      result += html.substring(i, closeIdx + 1);
+      i = closeIdx + 1;
+      openCount += 1;
+      continue;
+    }
+    const closeMatch = html.substring(i, i + 12).match(/^<\/script\s*>/i);
+    if (closeMatch) {
+      if (openCount > 0) {
+        result += closeMatch[0];
+        openCount -= 1;
+      }
+      i += closeMatch[0].length;
+      continue;
+    }
+    result += html[i];
+    i += 1;
+  }
+  return result;
+}
+
+function stripPreviewInjection(rawHtml) {
+  if (!rawHtml || typeof rawHtml !== "string") return "";
+  const blockPattern = new RegExp(
+    `${INJECTION_START}[\\s\\S]*?${INJECTION_END}`,
+    "g"
+  );
+  const withoutMarkedBlocks = rawHtml.replace(blockPattern, "");
+  // Compat: retire les scripts d'injection orphelins (sans marqueurs).
+  // Le strip est borné à un <script>...</script> unique pour ne PAS engloutir
+  // le contenu utile situé entre deux scripts.
+  const withoutLegacyScriptsTagged = withoutMarkedBlocks.replace(
+    /<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi,
+    (match, body) => {
+      return PREVIEW_INJECTION_SCRIPT_TOKENS.some((token) => body.includes(token))
+        ? ""
+        : match;
+    }
+  );
+  // Récupération d'état corrompu : retire aussi le code JS d'injection
+  // qui a fuité SANS <script> ouvrant (visible comme texte sur la page).
+  const withoutLegacyScripts = stripLeakedInjectedJsText(withoutLegacyScriptsTagged);
+  // Retire le <style> d'édition s'il a été oublié.
+  const withoutEditStyles = withoutLegacyScripts.replace(
+    /<style[^>]*id\s*=\s*["']__brandai_edit_styles__["'][^>]*>[\s\S]*?<\/style\s*>/gi,
+    ""
+  );
+  // Retire les attributs résiduels du mode édition.
+  const withoutEditAttrs = withoutEditStyles
+    .replace(/\s+contenteditable\s*=\s*["']true["']/gi, "")
+    .replace(/\s+data-brandai-editable\s*=\s*["']1["']/gi, "")
+    .replace(/\s+data-brandai-edit-mode\s*=\s*["']1["']/gi, "");
+  const withoutOrphanMarkers = withoutEditAttrs
+    .replace(/<!--\s*BRANDAI_PREVIEW_INJECTION_START\s*-->/g, "")
+    .replace(/<!--\s*BRANDAI_PREVIEW_INJECTION_END\s*-->/g, "");
+  const dedupedClosings = withoutOrphanMarkers.replace(
+    /(\s*<\/body>\s*<\/html>\s*){2,}/gi,
+    "\n</body>\n</html>"
+  );
+  return dedupedClosings.trim();
+}
+
+function normalizePreviewHtml(rawHtml) {
+  const trimmed = String(rawHtml || "").trim();
+  if (!trimmed) return "";
+  const lower = trimmed.toLowerCase();
+  if (lower.includes("<html") && lower.includes("<body") && lower.includes("</html>")) {
+    return trimmed;
+  }
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Website Preview</title>
+</head>
+<body>
+${trimmed}
+</body>
+</html>`;
+}
 
 function ViewportSwitcher({ value, onChange }) {
   return (
@@ -122,8 +269,18 @@ function FullscreenOverlay({ kind }) {
  */
 function buildPreviewHtml(html) {
   if (!html) return "";
+  const normalized = normalizePreviewHtml(html);
+  const baseHtml = stripPreviewInjection(normalized) || normalized;
 
   const editableTagsLiteral = JSON.stringify(EDITABLE_TAGS);
+  // IMPORTANT: on ne sérialise PAS les marqueurs en chaînes JS littérales
+  // dans la source du script, sinon `outerHTML` exposerait `<!-- ... -->`
+  // dans le code source du script (en tant que texte JS) et `indexOf` ne
+  // saurait plus distinguer le vrai commentaire HTML du littéral JS.
+  // À la place, on passe uniquement les TOKENS (sans les chevrons HTML)
+  // et on reconstruit les marqueurs au runtime côté iframe.
+  const markerStartTokenLiteral = JSON.stringify("BRANDAI_PREVIEW_INJECTION_START");
+  const markerEndTokenLiteral = JSON.stringify("BRANDAI_PREVIEW_INJECTION_END");
 
   const guardScript = `
 <script>
@@ -207,6 +364,13 @@ function buildPreviewHtml(html) {
 (() => {
   const EDITABLE_TAGS = ${editableTagsLiteral};
   const STYLE_ID = "__brandai_edit_styles__";
+  // Marqueurs reconstitués au runtime à partir de tokens nus pour ne PAS
+  // que la chaîne complète "<!-- BRANDAI_PREVIEW_INJECTION_* -->" apparaisse
+  // dans la source du script (sinon outerHTML expose ces littéraux et le
+  // strip indexOf coupe au mauvais endroit, laissant la queue du script
+  // sans <script> ouvrant — affichée comme du texte sur la page).
+  const MARKER_START = "<!" + "-- " + ${markerStartTokenLiteral} + " -" + "->";
+  const MARKER_END = "<!" + "-- " + ${markerEndTokenLiteral} + " -" + "->";
 
   const ensureStyles = () => {
     if (document.getElementById(STYLE_ID)) return;
@@ -263,8 +427,17 @@ function buildPreviewHtml(html) {
   const sendHtmlUpdate = () => {
     try {
       const fullHtml = "<!DOCTYPE html>\\n" + document.documentElement.outerHTML;
+      let cleanHtml = fullHtml;
+      while (true) {
+        const start = cleanHtml.indexOf(MARKER_START);
+        if (start < 0) break;
+        const end = cleanHtml.indexOf(MARKER_END, start + MARKER_START.length);
+        if (end < 0) break;
+        cleanHtml = cleanHtml.slice(0, start) + cleanHtml.slice(end + MARKER_END.length);
+      }
+      cleanHtml = cleanHtml.trim();
       window.parent.postMessage(
-        { type: "BRANDAI_HTML_UPDATE", html: fullHtml },
+        { type: "BRANDAI_HTML_UPDATE", html: cleanHtml || fullHtml },
         "*"
       );
     } catch (e) {
@@ -325,11 +498,11 @@ function buildPreviewHtml(html) {
 })();
 </script>`;
 
-  const injection = guardScript + editScript;
-  if (html.includes("</body>")) {
-    return html.replace("</body>", `${injection}</body>`);
+  const injection = `${INJECTION_START}${guardScript}${editScript}${INJECTION_END}`;
+  if (baseHtml.includes("</body>")) {
+    return baseHtml.replace("</body>", `${injection}</body>`);
   }
-  return `${html}${injection}`;
+  return `${baseHtml}${injection}`;
 }
 
 export function PreviewPanel({
@@ -356,6 +529,7 @@ export function PreviewPanel({
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
 
   const iframeRef = useRef(null);
+  const previewReadyRef = useRef(false);
 
   // En mode édition, on FREEZE la srcDoc pour éviter les rechargements
   // intempestifs : on garde la version envoyée au moment où l'edit a
@@ -368,7 +542,7 @@ export function PreviewPanel({
   // Indique qu'on souhaite activer l'edit mode dès que l'iframe émet PREVIEW_READY.
   const pendingEditModeRef = useRef(false);
 
-  const sourceHtml = isEditMode && liveHtml ? liveHtml : html;
+  const sourceHtml = normalizePreviewHtml(isEditMode && liveHtml ? liveHtml : html);
 
   const iframeKey = useMemo(() => {
     if (!hasHtml) return "empty";
@@ -400,6 +574,7 @@ export function PreviewPanel({
       }
 
       if (data.type === "BRANDAI_PREVIEW_READY") {
+        previewReadyRef.current = true;
         // Si on a demandé l'edit mode juste avant, l'envoyer maintenant.
         if (pendingEditModeRef.current) {
           pendingEditModeRef.current = false;
@@ -414,6 +589,13 @@ export function PreviewPanel({
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  const postEditModeOn = () => {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return false;
+    win.postMessage({ type: "BRANDAI_EDIT_MODE_ON" }, "*");
+    return true;
+  };
+
   // Toggle edit mode : envoie un postMessage à l'iframe.
   const enableEditMode = () => {
     if (!hasHtml) return;
@@ -427,19 +609,32 @@ export function PreviewPanel({
     // Si l'iframe est déjà chargée (cas rare, même clé), on envoie direct.
     // Sinon on attend BRANDAI_PREVIEW_READY déclenché après le reload (clé "edit-mode").
     pendingEditModeRef.current = true;
-    // Failsafe : si "ready" n'arrive pas en 800 ms, on tente quand même.
-    setTimeout(() => {
-      if (!pendingEditModeRef.current) return;
-      pendingEditModeRef.current = false;
-      const win = iframeRef.current?.contentWindow;
-      if (win) {
-        win.postMessage({ type: "BRANDAI_EDIT_MODE_ON" }, "*");
+    // Failsafe robuste : retente plusieurs fois tant que l'iframe n'est pas prête.
+    let tries = 0;
+    const maxTries = 8;
+    const timer = setInterval(() => {
+      if (!pendingEditModeRef.current) {
+        clearInterval(timer);
+        return;
       }
-    }, 800);
+      tries += 1;
+      if (previewReadyRef.current) {
+        pendingEditModeRef.current = false;
+        postEditModeOn();
+        clearInterval(timer);
+        return;
+      }
+      postEditModeOn();
+      if (tries >= maxTries) {
+        pendingEditModeRef.current = false;
+        clearInterval(timer);
+      }
+    }, 350);
   };
 
   const disableEditMode = async ({ persist = true } = {}) => {
     pendingEditModeRef.current = false;
+    previewReadyRef.current = false;
     const win = iframeRef.current?.contentWindow;
     if (win) {
       win.postMessage({ type: "BRANDAI_EDIT_MODE_OFF" }, "*");
@@ -651,6 +846,12 @@ export function PreviewPanel({
                   srcDoc={safePreviewHtml}
                   sandbox="allow-scripts allow-forms allow-popups"
                   className="block h-full w-full border-0"
+                  onLoad={() => {
+                    previewReadyRef.current = false;
+                    if (pendingEditModeRef.current) {
+                      postEditModeOn();
+                    }
+                  }}
                 />
               </div>
             </div>

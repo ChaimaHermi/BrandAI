@@ -23,8 +23,6 @@ from config.branding_config import (
     LOGO_ORIGINALITY_CHECK_ENABLED,
     LOGO_ORIGINALITY_MAX_RETRIES,
     LOGO_ORIGINALITY_MAX_SIMILAR,
-    LOGO_POLLINATIONS_FALLBACK,
-    LOGO_POLLINATIONS_IMAGE_MODEL,
 )
 from llm.llm_factory import create_azure_openai_client
 from prompts.branding.logo_prompt import (
@@ -201,10 +199,8 @@ class LogoAgent(BaseAgent):
         result = self._parse_logo_prompt_json(raw, brand_name)
         if not result:
             self.logger.warning(
-                "[logo_agent] Parse échoué | brand=%r | palette_hint=%r | raw[:300]=%r",
-                brand_name,
-                palette_hint[:80] if palette_hint else "(empty)",
-                raw[:300],
+                "[logo_agent] Parse échoué | brand=%r | raw[:300]=%r",
+                brand_name, raw[:300],
             )
         return result
 
@@ -381,12 +377,12 @@ class LogoAgent(BaseAgent):
         provider = (LOGO_IMAGE_PROVIDER or "huggingface").strip().lower()
         if provider == "none":
             return None, None, None
-        # Chaîne : HF Qwen → NVIDIA flux.2-klein-4b → Pollinations
+        # Chaîne : HF Qwen → NVIDIA flux.2-klein-4b (pas de Pollinations)
         data, mime, src = await fetch_logo_image_hf_with_pollinations_fallback(
             image_prompt,
             negative_prompt,
             model=LOGO_HF_IMAGE_MODEL,
-            pollinations_fallback=LOGO_POLLINATIONS_FALLBACK,
+            pollinations_fallback=False,
         )
         return data, mime, src
 
@@ -417,34 +413,10 @@ class LogoAgent(BaseAgent):
                 concept["image_provider"] = "nvidia"
                 m = (os.getenv("LOGO_NVIDIA_IMAGE_MODEL") or os.getenv("NVIDIA_IMAGE_MODEL") or "flux.2-klein-4b").strip()
                 concept["image_model"] = m
-                concept["image_attribution"] = (
-                    f"Image générée avec le modèle NVIDIA {m} via NVIDIA NIM API."
-                )
-            elif image_source == "pollinations":
-                concept["image_provider"] = "pollinations"
-                concept["image_model"] = LOGO_POLLINATIONS_IMAGE_MODEL
-                pm = LOGO_POLLINATIONS_IMAGE_MODEL
-                qwen_lbl = f"Qwen Image ({pm})" if "qwen" in pm.lower() else pm
-                concept["image_attribution"] = (
-                    f"Image générée avec Pollinations.AI — modèle {qwen_lbl} — "
-                    "service tiers (fallback lorsque Hugging Face n’est pas disponible)."
-                )
-            elif image_source == "azure":
-                concept["image_provider"] = "azure"
-                concept["image_model"] = str(os.getenv("AZURE_OPENAI_LOGO_IMAGE_DEPLOYMENT") or "").strip() or "azure-image"
-                concept["image_attribution"] = (
-                    "Image générée via Azure OpenAI (fallback après Hugging Face)."
-                )
+                concept["image_attribution"] = f"Image générée avec NVIDIA NIM — modèle {m}."
             elif image_source == "huggingface":
                 m = LOGO_HF_IMAGE_MODEL
-                if "qwen" in m.lower():
-                    concept["image_attribution"] = (
-                        f"Image générée avec le modèle Qwen Image ({m}) via Hugging Face Inference."
-                    )
-                else:
-                    concept["image_attribution"] = (
-                        f"Image générée avec le modèle {m} via Hugging Face Inference."
-                    )
+                concept["image_attribution"] = f"Image générée avec Hugging Face Inference — modèle {m}."
         return concept
 
     async def _generate_logo_concept(
@@ -454,6 +426,7 @@ class LogoAgent(BaseAgent):
         idea: dict,
         brand_name: str,
         palette_hint: str,
+        originality_feedback: str = "",
     ) -> dict[str, Any] | None:
         """Génère un concept logo (avec nom de marque) via appel LLM direct."""
         pair = self._draft_logo_prompt_direct(
@@ -461,7 +434,7 @@ class LogoAgent(BaseAgent):
             idea=idea,
             brand_name=brand_name,
             palette_hint=palette_hint,
-            validation_feedback="",
+            validation_feedback=originality_feedback,
         )
         if not pair:
             logger.warning("[logo_agent] Prompt logo : extraction échouée")
@@ -523,6 +496,23 @@ class LogoAgent(BaseAgent):
         idea = state.clarified_idea or {}
         palette_hint = str(getattr(state, "logo_palette_hint", "") or "").strip()
 
+        # Feedback de régénération : prompt précédent à éviter + remarques utilisateur
+        previous_prompt = str(getattr(state, "logo_previous_prompt", "") or "").strip()
+        user_remarks = str(getattr(state, "logo_user_remarks", "") or "").strip()
+        regen_feedback = ""
+        if previous_prompt:
+            regen_feedback = (
+                "REGENERATION REQUEST — the user did not like the previous logo.\n"
+                f"Previous image_prompt to AVOID completely:\n\"\"\"{previous_prompt}\"\"\"\n"
+                "You MUST produce a design that is clearly different: "
+                "choose a different icon concept, different typography style, and different composition. "
+                "Do NOT reuse any element from the previous prompt."
+            )
+            if user_remarks:
+                regen_feedback += f"\n\nUser remarks: {user_remarks}"
+        elif user_remarks:
+            regen_feedback = f"User remarks for this generation: {user_remarks}"
+
         def _is_tpd_error(err: Exception) -> bool:
             s = str(err).lower()
             return "tokens per day" in s or "tpd" in s
@@ -546,6 +536,7 @@ class LogoAgent(BaseAgent):
                 idea=idea,
                 brand_name=brand_name,
                 palette_hint=palette_hint,
+                originality_feedback=regen_feedback,
             )
         except Exception as e:
             self._log_error(e)
@@ -563,6 +554,70 @@ class LogoAgent(BaseAgent):
             state.status = "logo_failed"
             return state
 
+        # ── Vérification d'originalité + boucle retry ───────────────────────
+        if LOGO_ORIGINALITY_CHECK_ENABLED and concept.get("image_base64"):
+            logger.info("[logo_agent] Vérification originalité activée (max_retries=%d)", LOGO_ORIGINALITY_MAX_RETRIES)
+            for attempt in range(LOGO_ORIGINALITY_MAX_RETRIES):
+                raw_bytes = base64.b64decode(concept["image_base64"])
+                is_original, similar_urls = await verifier_originalite_logo_bytes(
+                    raw_bytes, max_similar=LOGO_ORIGINALITY_MAX_SIMILAR
+                )
+                if is_original:
+                    logger.info("[logo_agent] Logo original ✓ (tentative %d)", attempt + 1)
+                    break
+
+                logger.warning(
+                    "[logo_agent] Logo non original (tentative %d/%d) — similaires: %s",
+                    attempt + 1, LOGO_ORIGINALITY_MAX_RETRIES, similar_urls[:2],
+                )
+                refs = "; ".join(similar_urls[:3]) if similar_urls else "images existantes en ligne"
+                feedback = (
+                    "ORIGINALITY ISSUE — the previous logo is visually too similar to existing logos "
+                    f"found online ({refs}). "
+                    "You MUST generate a completely different and unique logo: "
+                    "change the icon concept entirely, use a different geometric metaphor, "
+                    "alter the typography style, and rethink the overall composition. "
+                    "The new logo must be distinct and unrecognisable compared to the previous one."
+                )
+                try:
+                    new_concept = await self._generate_logo_concept(
+                        llm=llm,
+                        idea=idea,
+                        brand_name=brand_name,
+                        palette_hint=palette_hint,
+                        originality_feedback=feedback,
+                    )
+                    if new_concept:
+                        concept = new_concept
+                except Exception as exc:
+                    logger.warning("[logo_agent] Erreur régénération originalité: %s", exc)
+                    break
+            else:
+                logger.info("[logo_agent] Max retries originalité atteint — on garde le dernier concept")
+
+        # ── Forcer la version transparente comme version principale ──────────
+        # Si une version sans fond a été générée, elle devient l'image principale.
+        if concept.get("image_base64_transparent"):
+            concept["image_base64"] = concept["image_base64_transparent"]
+            concept["image_mime"] = concept.get("image_mime_transparent", "image/png")
+            logger.info("[logo_agent] Version transparente utilisée comme image principale")
+        elif concept.get("image_base64"):
+            # Tentative supplémentaire de suppression du fond si la première a échoué
+            try:
+                raw = base64.b64decode(concept["image_base64"])
+                transparent_bytes, err = _remove_light_background_to_transparent(raw)
+                if transparent_bytes:
+                    t_b64 = base64.standard_b64encode(transparent_bytes).decode("ascii")
+                    concept["image_base64_transparent"] = t_b64
+                    concept["image_mime_transparent"] = "image/png"
+                    concept["image_base64"] = t_b64
+                    concept["image_mime"] = "image/png"
+                    logger.info("[logo_agent] Suppression fond (retry) réussie")
+                elif err:
+                    logger.warning("[logo_agent] Suppression fond échouée: %s", err)
+            except Exception as exc:
+                logger.warning("[logo_agent] Erreur suppression fond retry: %s", exc)
+
         # Extraire l'erreur image éventuelle et la nettoyer du concept
         image_fetch_error = concept.pop("_image_fetch_error", None)
 
@@ -575,7 +630,6 @@ class LogoAgent(BaseAgent):
             state.status = "logo_generated"
             logger.info("[logo_agent] logo généré avec image pour brand=%r", brand_name)
         else:
-            # Prompt créé mais image absente — on signale clairement
             img_err = image_fetch_error or "Aucun octet image reçu (HF, NVIDIA et Pollinations ont tous échoué)."
             state.brand_identity["logo_image_error"] = img_err
             state.brand_identity["branding_status"] = "logo_generated"

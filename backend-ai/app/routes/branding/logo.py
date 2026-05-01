@@ -30,6 +30,14 @@ class LogoGenerateRequest(BaseModel):
         None,
         description="Texte libre couleurs ; si omis, tente d’extraire les hex depuis l’étape palette.",
     )
+    previous_image_prompt: Optional[str] = Field(
+        None,
+        description="image_prompt du logo précédent — indique au LLM ce qu’il doit éviter absolument.",
+    )
+    user_remarks: Optional[str] = Field(
+        None,
+        description="Remarques libres de l’utilisateur pour orienter la régénération.",
+    )
     access_token: str
     persist: bool = True
     persist_image_base64: bool = Field(
@@ -64,6 +72,8 @@ async def logo_generate(body: LogoGenerateRequest) -> LogoGenerateResponse:
         brand_name=body.brand_name,
         slogan_hint=body.slogan_hint,
         palette_color_hint=body.palette_color_hint,
+        previous_image_prompt=body.previous_image_prompt,
+        user_remarks=body.user_remarks,
         access_token=body.access_token,
         persist=body.persist,
         persist_image_base64=body.persist_image_base64,

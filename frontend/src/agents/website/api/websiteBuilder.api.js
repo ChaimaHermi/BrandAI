@@ -1,3 +1,8 @@
+import {
+  WEBSITE_BUILDER_ENDPOINTS,
+  WEBSITE_BUILDER_TIMEOUTS_MS,
+} from "../config/websiteBuilder.config";
+
 /**
  * REST + SSE client pour les phases du Website Builder.
  *  Phase 1 — GET  /website/context?idea_id=...        → BrandContext + résumé Markdown
@@ -16,17 +21,11 @@
  *  POST /website/revise/stream
  */
 
-const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-const DEFAULT_TIMEOUT_MS = 25000;
-const CONTEXT_TIMEOUT_MS = 12000;
-const DESCRIPTION_TIMEOUT_MS = 90000;
-const GENERATION_TIMEOUT_MS = 320000;
-const REVISION_TIMEOUT_MS = 180000;
-const DEPLOY_TIMEOUT_MS = 240000;
-const SAVE_TIMEOUT_MS = 30000;
+const AI_URL = WEBSITE_BUILDER_ENDPOINTS.aiBaseUrl;
+const API_URL = WEBSITE_BUILDER_ENDPOINTS.apiBaseUrl;
+const TIMEOUTS = WEBSITE_BUILDER_TIMEOUTS_MS;
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+async function fetchWithTimeout(url, options = {}, timeoutMs = TIMEOUTS.default) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -37,7 +36,12 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_M
     return res;
   } catch (err) {
     if (err?.name === "AbortError") {
-      throw new Error(`Timeout réseau (${Math.round(timeoutMs / 1000)}s). Vérifie backend-ai/VITE_AI_URL.`);
+      throw new Error(
+        `Timeout réseau (${Math.round(timeoutMs / 1000)}s). Vérifie : ` +
+          `1) backend-ai lancé (ex. uvicorn sur le port de VITE_AI_URL) ; ` +
+          `2) VITE_AI_URL = base complète avec /api/ai (ex. http://localhost:8001/api/ai) ; ` +
+          `3) backend-api (port 8000) pour cette idée — le contexte site en dépend.`
+      );
     }
     throw err;
   } finally {
@@ -75,7 +79,7 @@ export async function apiFetchWebsiteContext(token, ideaId) {
   const res = await fetchWithTimeout(
     url,
     { headers: authHeaders(token) },
-    CONTEXT_TIMEOUT_MS
+    TIMEOUTS.context
   );
   return handleResponse(res);
 }
@@ -91,7 +95,7 @@ export async function apiGenerateWebsiteDescription(token, { ideaId }) {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId }),
-  }, DESCRIPTION_TIMEOUT_MS);
+  }, TIMEOUTS.description);
   return handleResponse(res);
 }
 
@@ -104,7 +108,7 @@ export async function apiRefineWebsiteDescription(token, { ideaId, description, 
       description,
       instruction,
     }),
-  }, DESCRIPTION_TIMEOUT_MS);
+  }, TIMEOUTS.description);
   return handleResponse(res);
 }
 
@@ -113,7 +117,7 @@ export async function apiApproveWebsiteDescription(token, { ideaId }) {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId }),
-  }, DEFAULT_TIMEOUT_MS);
+  }, TIMEOUTS.default);
   return handleResponse(res);
 }
 
@@ -125,7 +129,7 @@ export async function apiGenerateWebsite(token, { ideaId, description = null }) 
       idea_id: ideaId,
       ...(description ? { description } : {}),
     }),
-  }, GENERATION_TIMEOUT_MS);
+  }, TIMEOUTS.generation);
   return handleResponse(res);
 }
 
@@ -138,7 +142,7 @@ export async function apiReviseWebsite(token, { ideaId, currentHtml, instruction
       current_html: currentHtml,
       instruction,
     }),
-  }, REVISION_TIMEOUT_MS);
+  }, TIMEOUTS.revision);
   return handleResponse(res);
 }
 
@@ -147,7 +151,7 @@ export async function apiSaveWebsiteHtml(token, { ideaId, html }) {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId, html }),
-  }, SAVE_TIMEOUT_MS);
+  }, TIMEOUTS.save);
   return handleResponse(res);
 }
 
@@ -156,7 +160,7 @@ export async function apiDeployWebsite(token, { ideaId, html }) {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId, html }),
-  }, DEPLOY_TIMEOUT_MS);
+  }, TIMEOUTS.deploy);
   return handleResponse(res);
 }
 
@@ -165,7 +169,7 @@ export async function apiDeleteWebsiteDeployment(token, { ideaId, deploymentId }
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId, deployment_id: deploymentId }),
-  }, DEFAULT_TIMEOUT_MS);
+  }, TIMEOUTS.default);
   return handleResponse(res);
 }
 

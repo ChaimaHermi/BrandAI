@@ -810,8 +810,8 @@ class WebsiteBuilderOrchestrator(BaseAgent):
         )
 
         summary_md = (
-            "🎉 **Ton site est en ligne !**\n\n"
-            f"👉 [{deployment.full_url}]({deployment.full_url})\n\n"
+            "**Ton site est en ligne !**\n\n"
+            f"[{deployment.full_url}]({deployment.full_url})\n\n"
             f"_Projet Vercel : `{deployment.project_name}` · "
             f"deploiement `{deployment.deployment_id}` · "
             f"{deployment.elapsed_seconds:.1f}s_"
