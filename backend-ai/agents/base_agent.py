@@ -54,6 +54,8 @@ class PipelineState:
         self.slogan_preferences: dict = {}
         self.palette_slogan_hint = ""
         self.logo_palette_hint: str = ""
+        self.logo_previous_prompt: str = ""
+        self.logo_user_remarks: str = ""
 
     def to_dict(self):
         return {
@@ -173,11 +175,13 @@ class BaseAgent(ABC):
         n_keys = len(self._nvidia_keys)
         last_error = None
 
-        nv_timeout = _nvidia_http_timeout()
-        if nv_timeout is None:
-            httpx_timeout = httpx.Timeout(None)  # pas de limite (générations longues)
+        # Utiliser le timeout surchargé si défini, sinon env var NVIDIA_HTTP_TIMEOUT_S
+        override_timeout = getattr(self, '_override_timeout', None)
+        if override_timeout and override_timeout > 0:
+            httpx_timeout = httpx.Timeout(override_timeout)
         else:
-            httpx_timeout = httpx.Timeout(nv_timeout)
+            nv_timeout = _nvidia_http_timeout()
+            httpx_timeout = httpx.Timeout(None) if nv_timeout is None else httpx.Timeout(nv_timeout)
 
         async def _do_request(key: str) -> str:
             async with httpx.AsyncClient(timeout=httpx_timeout) as client:

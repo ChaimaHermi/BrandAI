@@ -1,56 +1,130 @@
 from __future__ import annotations
 
+import asyncio
+import logging
 import os
-import tempfile
-from pathlib import Path
+
+logger = logging.getLogger("brandai.logo_originality")
+
+_SERPAPI_URL = "https://serpapi.com/search.json"
+
+# Cache session : si quota SerpApi épuisé ou erreur fatale, on arrête les appels
+_api_disabled: bool = False
 
 
-def _resolve_google_credentials_path() -> str:
-    explicit = (os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
-    if explicit:
-        return explicit
-    local = (Path(__file__).resolve().parents[2] / "google_key.json").as_posix()
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = local
-    return local
-
-
-def verifier_originalite_logo(image_path: str, *, max_similar: int = 2) -> bool:
-    """
-    Vérifie l'originalité via Google Cloud Vision Web Detection.
-    Retourne False si le nombre d'images visuellement similaires > max_similar.
-    """
-    try:
-        _resolve_google_credentials_path()
-        from google.cloud import vision
-
-        client = vision.ImageAnnotatorClient()
-        with open(image_path, "rb") as f:
-            content = f.read()
-
-        image = vision.Image(content=content)
-        response = client.web_detection(image=image)
-        if response.error.message:
-            return False
-
-        similar = list((response.web_detection.visually_similar_images or []))
-        return len(similar) <= max_similar
-    except Exception:
-        return False
-
-
-def verifier_originalite_logo_bytes(
+async def verifier_originalite_logo_bytes(
     image_bytes: bytes,
     *,
-    suffix: str = ".png",
     max_similar: int = 2,
-) -> bool:
-    fd, path = tempfile.mkstemp(prefix="brandai-logo-", suffix=suffix)
+) -> tuple[bool, list[str]]:
+    """
+    Vérifie l'originalité du logo via SerpApi Google Lens (reverse image search).
+
+    Flow :
+      1. Upload image bytes sur Cloudinary → URL publique
+      2. SerpApi Google Lens → visual_matches
+      3. is_original = True si visual_matches <= max_similar
+
+    Nécessite SERPAPI_KEY dans .env.
+    Si clé absente / quota épuisé / erreur → retourne (True, []) sans bloquer.
+    """
+    global _api_disabled
+
+    if _api_disabled:
+        logger.debug("[originality] SerpApi désactivé (erreur précédente) — vérification ignorée")
+        return True, []
+
+    api_key = (os.getenv("SERPAPI_KEY") or "").strip()
+    if not api_key:
+        logger.warning("[originality] SERPAPI_KEY absent dans .env — vérification ignorée")
+        return True, []
+
+    if not image_bytes:
+        return True, []
+
     try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(image_bytes or b"")
-        return verifier_originalite_logo(path, max_similar=max_similar)
-    finally:
-        try:
-            os.remove(path)
-        except Exception:
-            pass
+        import httpx
+    except ImportError:
+        logger.warning("[originality] httpx non installé — vérification ignorée")
+        return True, []
+
+    # ── 1. Upload sur Cloudinary pour obtenir une URL publique ───────────────
+    try:
+        from tools.content_generation.cloudinary_upload import upload_image_bytes
+        image_url = await asyncio.to_thread(
+            upload_image_bytes,
+            image_bytes,
+            mime="image/png",
+            folder="brandai/logo-originality",
+        )
+        logger.info("[originality] Image uploadée → %s", image_url[:80])
+    except Exception as exc:
+        logger.warning("[originality] Upload Cloudinary échoué : %s — vérification ignorée", exc)
+        return True, []
+
+    # ── 2. SerpApi Google Lens ───────────────────────────────────────────────
+    params = {
+        "engine": "google_lens",
+        "url": image_url,
+        "api_key": api_key,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(_SERPAPI_URL, params=params)
+
+        # Quota épuisé ou clé invalide
+        if resp.status_code == 401:
+            _api_disabled = True
+            logger.error(
+                "[originality] ❌ SerpApi — clé invalide (401). "
+                "Vérifiez SERPAPI_KEY dans .env. Vérification désactivée pour cette session."
+            )
+            return True, []
+
+        if resp.status_code == 429:
+            _api_disabled = True
+            logger.error(
+                "[originality] ❌ SerpApi — quota mensuel épuisé (429). "
+                "Vérification désactivée pour cette session. "
+                "Renouvelez votre quota sur https://serpapi.com/manage-api-key"
+            )
+            return True, []
+
+        if not resp.is_success:
+            logger.warning(
+                "[originality] SerpApi HTTP %d — vérification ignorée", resp.status_code
+            )
+            return True, []
+
+        data = resp.json()
+
+        # Vérifier si SerpApi retourne une erreur applicative
+        if "error" in data:
+            err_msg = data["error"]
+            if "credit" in err_msg.lower() or "plan" in err_msg.lower() or "quota" in err_msg.lower():
+                _api_disabled = True
+                logger.error(
+                    "[originality] ❌ SerpApi quota épuisé : %s. "
+                    "Vérification désactivée pour cette session.",
+                    err_msg,
+                )
+            else:
+                logger.warning("[originality] SerpApi erreur : %s — vérification ignorée", err_msg)
+            return True, []
+
+        # visual_matches = images visuellement similaires trouvées sur le web
+        visual_matches = data.get("visual_matches") or []
+        similar_urls = [m.get("link") or m.get("thumbnail", "") for m in visual_matches if isinstance(m, dict)]
+        similar_urls = [u for u in similar_urls if u]
+
+        is_original = len(visual_matches) <= max_similar
+        logger.info(
+            "[originality] ✓ SerpApi Google Lens — similaires=%d  seuil=%d  →  original=%s",
+            len(visual_matches), max_similar, is_original,
+        )
+        return is_original, similar_urls
+
+    except Exception as exc:
+        logger.warning("[originality] Erreur inattendue SerpApi : %s — vérification ignorée", exc)
+        return True, []

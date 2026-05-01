@@ -371,6 +371,8 @@ class BrandingService:
         brand_name: str | None,
         slogan_hint: str | None,
         palette_color_hint: str | None,
+        previous_image_prompt: str | None = None,
+        user_remarks: str | None = None,
         access_token: str,
         persist: bool,
         persist_image_base64: bool = False,
@@ -388,6 +390,8 @@ class BrandingService:
         st.brand_name_chosen = resolved_name
         st.palette_slogan_hint = resolved_slogan
         st.logo_palette_hint = palette_hint
+        st.logo_previous_prompt = (previous_image_prompt or "").strip()
+        st.logo_user_remarks = (user_remarks or "").strip()
 
         agent = LogoAgent()
         logger.info(

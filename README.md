@@ -3,8 +3,8 @@ leur idée de startup en identité de marque complète grâce à un pipeline mul
 
 À partir d'une simple idée, BrandAI génère automatiquement :
 
-- 🔍 Analyse de marché et de la concurrence
-- 🎨 Identité de marque (nom, slogan, logo, couleurs)
-- 📱 Contenu pour les réseaux sociaux
-- 🌐 Site web vitrine
-- 📈 Stratégie marketing et recommandations
+- Analyse de marché et de la concurrence
+- Identité de marque (nom, slogan, logo, couleurs)
+- Contenu pour les réseaux sociaux
+- Site web vitrine
+- Stratégie marketing et recommandations

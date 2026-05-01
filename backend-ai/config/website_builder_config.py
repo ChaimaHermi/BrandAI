@@ -1,38 +1,43 @@
 """
 Configuration de l'agent Website Builder.
 
-L'agent utilise Azure OpenAI (déploiement `gpt-4.1` par défaut, voir `.env`)
-pour la génération créative (description, HTML, révision).
+L'agent utilise openai/gpt-oss-120b via NVIDIA NIM avec rotation des clés
+NVIDIA_API_KEY_1 … NVIDIA_API_KEY_4 (gérée par BaseAgent).
 """
 
 from __future__ import annotations
 
 import os
 
-from config.settings import AZURE_OPENAI_DEPLOYMENT
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Pipeline 3-tools : architecture → content → coder
+# Modèle : openai/gpt-oss-120b (NVIDIA NIM) — fenêtre 128k input / 65k output.
+# ─────────────────────────────────────────────────────────────────────────────
 
-# Déploiement Azure utilisé par l'agent. Par défaut on suit AZURE_OPENAI_DEPLOYMENT
-# (gpt-4.1 dans le .env actuel) ; possibilité de surcharger via une variable dédiée.
-WEBSITE_BUILDER_AZURE_DEPLOYMENT: str = (
-    os.getenv("WEBSITE_BUILDER_AZURE_DEPLOYMENT") or AZURE_OPENAI_DEPLOYMENT
-)
+# Phase 2A — Architecture : structure JSON (sections, nav, animations).
+# Sortie courte et focalisée → tokens limités.
+ARCHITECTURE_TEMPERATURE: float = float(os.getenv("WEBSITE_ARCHITECTURE_TEMPERATURE", "0.5"))
+ARCHITECTURE_MAX_TOKENS: int = int(os.getenv("WEBSITE_ARCHITECTURE_MAX_TOKENS", "2500"))
 
-# Description (phase 2) : on laisse de la marge pour un concept détaillé,
-# clair et structuré (sections + animations + tone + résumé).
-DESCRIPTION_TEMPERATURE: float = float(os.getenv("WEBSITE_DESCRIPTION_TEMPERATURE", "0.75"))
+# Phase 2B — Content : remplit chaque section avec du texte réel + icônes Lucide.
+# Sortie moyenne (texte structuré).
+CONTENT_TEMPERATURE: float = float(os.getenv("WEBSITE_CONTENT_TEMPERATURE", "0.7"))
+CONTENT_MAX_TOKENS: int = int(os.getenv("WEBSITE_CONTENT_MAX_TOKENS", "5000"))
+
+# Aliases description = architecture + content combinés (pour compat orchestrateur).
+DESCRIPTION_TEMPERATURE: float = float(os.getenv("WEBSITE_DESCRIPTION_TEMPERATURE", "0.7"))
 DESCRIPTION_MAX_TOKENS: int = int(os.getenv("WEBSITE_DESCRIPTION_MAX_TOKENS", "4000"))
 
-# Génération HTML/Tailwind = grosse sortie (site complet) :
-# l'utilisateur souhaite exploiter le maximum output dispo.
-GENERATION_TEMPERATURE: float = float(os.getenv("WEBSITE_GENERATION_TEMPERATURE", "0.4"))
-# 16000 couvre un site HTML complet (sections riches ~12000-15000 tokens réels).
-# Si Azure rate-limite, descendre via WEBSITE_GENERATION_MAX_TOKENS=12000 dans .env
-GENERATION_MAX_TOKENS: int = int(os.getenv("WEBSITE_GENERATION_MAX_TOKENS", "16000"))
+# Phase 3 — Coder : pure implémentation HTML/Tailwind à partir de architecture+content.
+# Le LLM n'invente plus de contenu, il code seulement → temp basse.
+GENERATION_TEMPERATURE: float = float(os.getenv("WEBSITE_GENERATION_TEMPERATURE", "0.3"))
+GENERATION_MAX_TOKENS: int = int(os.getenv("WEBSITE_GENERATION_MAX_TOKENS", "24000"))
 
-# Révision : on réécrit le HTML complet existant ; 16000 suffit.
+# Phase 4 — Révision : modification chirurgicale du HTML existant.
+# Le HTML d'entrée peut faire 6k–10k tokens → besoin de marge en sortie.
 REVISION_TEMPERATURE: float = float(os.getenv("WEBSITE_REVISION_TEMPERATURE", "0.3"))
-REVISION_MAX_TOKENS: int = int(os.getenv("WEBSITE_REVISION_MAX_TOKENS", "16000"))
+REVISION_MAX_TOKENS: int = int(os.getenv("WEBSITE_REVISION_MAX_TOKENS", "32000"))
 
 # Timeout par phase LLM Azure.
 # 0 = timeout desactive (attente illimitee jusqu'a reponse finale du provider).
@@ -54,14 +59,28 @@ WEBSITE_LLM_MAX_RETRIES: int = int(os.getenv("WEBSITE_LLM_MAX_RETRIES", "0"))
 # URL du backend FastAPI (idea + branding bundle).
 BACKEND_API_BASE_URL: str = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
 BACKEND_API_TIMEOUT_SECONDS: float = float(os.getenv("BACKEND_API_TIMEOUT_SECONDS", "30"))
+# Timeout max alloué à la normalisation du logo pendant la phase contexte.
+# Si dépassé, on garde l'URL logo brute pour éviter de bloquer /website/context.
+WEBSITE_CONTEXT_LOGO_NORMALIZE_TIMEOUT_SECONDS: float = float(
+    os.getenv("WEBSITE_CONTEXT_LOGO_NORMALIZE_TIMEOUT_SECONDS", "8")
+)
 
 # Garde-fous de validation Phase 2.
-REQUIRED_SECTIONS_MIN: int = 6
-REQUIRED_ANIMATIONS_MIN: int = 4
+REQUIRED_SECTIONS_MIN: int = 4  # min 4, max 6 imposé par le prompt
+REQUIRED_ANIMATIONS_MIN: int = 1
 
 # Garde-fous Phase 3 / 4 : un site doit contenir ces marqueurs élémentaires.
-HTML_MIN_LENGTH: int = 1500
-HTML_REQUIRED_MARKERS: tuple[str, ...] = ("<html", "<body", "</body", "</html")
+HTML_STRICT_VALIDATION: bool = os.getenv("WEBSITE_HTML_STRICT_VALIDATION", "0").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+HTML_MIN_LENGTH: int = int(os.getenv("WEBSITE_HTML_MIN_LENGTH", "1"))
+_markers_raw = os.getenv("WEBSITE_HTML_REQUIRED_MARKERS", "<html,</html>").strip()
+HTML_REQUIRED_MARKERS: tuple[str, ...] = tuple(
+    marker.strip().lower() for marker in _markers_raw.split(",") if marker.strip()
+)
 
 # Polices par défaut quand le brand kit n'en fournit pas (fonts non générées par l'agent palette).
 DEFAULT_TITLE_FONT: str = "Playfair Display"
@@ -96,3 +115,6 @@ VERCEL_HTTP_TIMEOUT_SECONDS: float = float(os.getenv("VERCEL_HTTP_TIMEOUT_SECOND
 def vercel_is_configured() -> bool:
     """Garde-fou utilisé par les routes pour renvoyer 503 si la clé manque."""
     return bool(VERCEL_API_KEY)
+
+
+# (Contact form relay removed: generated websites use mailto directly.)

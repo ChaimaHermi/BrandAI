@@ -21,13 +21,6 @@ from prompts.website_builder.prompt_common import (
 from tools.website_builder.brand_context_fetch import BrandContext
 
 
-def _safe_logo_line(raw_logo_url: str | None) -> str:
-    raw = (raw_logo_url or "").strip()
-    if raw.startswith(("http://", "https://")):
-        return raw
-    if raw.startswith("data:"):
-        return "(logo inline base64 masque pour prompt propre)"
-    return "(aucun logo URL)"
 
 
 WEBSITE_REVISION_SYSTEM = f"""Tu es un Senior Front-End Engineer charge d'appliquer une modification CIBLEE sur un site web existant.
@@ -52,10 +45,9 @@ REGLES D'EDITION
 10) Conserver ou introduire uniquement des icones de bibliotheques reconnues (Lucide recommande), coherentes avec le contexte metier.
 
 POLITIQUE COULEUR EN REVISION
-- Si la consigne impacte la direction visuelle, tu peux ajuster les couleurs de maniere creative.
-- Les couleurs finales peuvent s'eloigner des hex stricts tant qu'elles restent harmonieuses avec l'inspiration palette + brand.
-- Les degradés, overlays, teintes intermediaires et variantes tonales sont autorises.
-- Priorise la qualite visuelle et la lisibilite finale du site.
+- Conserver STRICTEMENT les couleurs du brand kit sauf si la consigne demande EXPLICITEMENT un changement de couleur.
+- En cas de changement demandé : rester dans la palette brand (variantes tonales du même hex, jamais de couleur extérieure).
+- INTERDIT de changer les couleurs pour une raison non demandée par l'utilisateur.
 
 POLITIQUE TYPO EN REVISION
 - Si la consigne touche le rendu visuel, tu peux ameliorer la hierarchie typographique (tailles, poids, tracking, line-height).
@@ -83,6 +75,24 @@ REGRESSION-CHECK INTERNE
 - Les ids references existent toujours.
 - Le HTML reste complet et executable.
 
+MODE VERIFICATION APRES EDITION MANUELLE
+- Si la consigne demande de verifier/corriger le HTML tout en gardant le contenu modifie par l'utilisateur:
+  - Ne reecris pas les textes visibles (titres, paragraphes, boutons, labels) ni ne les "ameliore" avec d'autres formulations.
+  - Corrige surtout le markup (balises, structure, attributs) pour un document valide et coherent.
+
+POLITIQUE FORMULAIRE CONTACT
+- Le formulaire de contact DOIT rester en mode `mailto:` (ouverture du
+  client mail du visiteur). NE JAMAIS le transformer en `fetch(...)` vers
+  un backend, ni reintroduire d'URL `/api/...` ni de `window.__BRANDAI_BACKEND_URL__`.
+- Le script doit utiliser une source UNIQUE et simple pour la destination:
+  `window.__SITE_OWNER_EMAIL__` (email du proprietaire du site).
+- Si l'email de contact visible est modifie dans le HTML, mettre a jour
+  `window.__SITE_OWNER_EMAIL__` avec la meme valeur.
+- Toutes les occurrences d'email dans la page de contact doivent etre coherentes
+  avec `window.__SITE_OWNER_EMAIL__` (pas d'ancien email residuel).
+- Conserver le script de soumission existant tel quel sauf si la consigne
+  demande explicitement de le corriger pour respecter les regles ci-dessus.
+
 {QUALITY_SELF_CHECK}
 """
 
@@ -92,7 +102,6 @@ def build_website_revision_user_prompt(
     current_html: str,
     instruction: str,
 ) -> str:
-    logo_line = _safe_logo_line(ctx.logo_url)
     slogan_line = ctx.slogan or "(aucun slogan)"
 
     return f"""LANGUE DU SITE : {ctx.language}
@@ -108,7 +117,6 @@ BRAND KIT (rappel — toute modification doit le respecter) :
 - Police corps        : {ctx.body_font}
 - Marque              : {ctx.brand_name}
 - Slogan              : {slogan_line}
-- Logo URL            : {logo_line}
 
 CONSIGNE UTILISATEUR (à appliquer précisément, rien de plus) :
 \"\"\"{instruction.strip()}\"\"\"

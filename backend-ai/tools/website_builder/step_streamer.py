@@ -161,6 +161,7 @@ async def run_with_progress(
     coro_factory: Callable[[], Awaitable[Any]],
     tick_messages: Sequence[str],
     tick_interval: float = 2.5,
+    emit_ticks: bool = False,
 ) -> Any:
     """
     Lance la coroutine `coro_factory()` en parallele d'un ticker qui emet
@@ -169,7 +170,7 @@ async def run_with_progress(
     Les ticks affichent ce que l'agent "pense" en boucle, jusqu'a ce que
     la coroutine renvoie son resultat.
     """
-    if not tick_messages:
+    if not emit_ticks or not tick_messages:
         return await coro_factory()
 
     stop = asyncio.Event()
