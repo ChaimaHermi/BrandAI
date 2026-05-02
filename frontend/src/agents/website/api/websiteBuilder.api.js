@@ -1,43 +1,40 @@
 /**
- * REST + SSE client pour les phases du Website Builder.
- *  Phase 1 — GET  /website/context?idea_id=...        → BrandContext + résumé Markdown
- *  Phase 2 — POST /website/description                → concept créatif (JSON)
- *  Phase 2.5 — POST /website/description/refine        → concept revu selon retours
- *  Phase 2 ✓ POST /website/description/approve         → marque le concept comme approuvé
- *  Phase 3 — POST /website/generate                    → HTML complet
- *  Phase 4 — POST /website/revise                      → HTML révisé
- *  Edit  — POST /website/save                          → sauvegarde HTML édité manuellement
- *  Phase 5 — POST /website/deploy                      → URL Vercel publique
+ * REST + SSE client — Website Builder.
  *
- * Variants SSE (live "XAI" steps) :
- *  POST /website/description/stream
- *  POST /website/description/refine/stream
- *  POST /website/generate/stream
- *  POST /website/revise/stream
+ * Phase 1   GET  /website/context?idea_id=...
+ * Phase 2   POST /website/description/stream       (SSE)
+ * Phase 2.5 POST /website/description/refine/stream (SSE)
+ *           POST /website/description/approve
+ * Phase 3   POST /website/generate/stream          (SSE)
+ * Phase 4   POST /website/revise                   (REST — chat + édition manuelle)
+ *           POST /website/revise/stream             (SSE — chat avec steps live)
+ * Phase 5   POST /website/deploy
+ *           POST /website/deploy/delete
  */
 
-const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-const DEFAULT_TIMEOUT_MS = 25000;
-const CONTEXT_TIMEOUT_MS = 12000;
-const DESCRIPTION_TIMEOUT_MS = 90000;
-const GENERATION_TIMEOUT_MS = 320000;
-const REVISION_TIMEOUT_MS = 180000;
-const DEPLOY_TIMEOUT_MS = 240000;
-const SAVE_TIMEOUT_MS = 30000;
+import {
+  WEBSITE_BUILDER_ENDPOINTS,
+  WEBSITE_BUILDER_TIMEOUTS_MS,
+} from "../config/websiteBuilder.config";
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+const AI_URL = WEBSITE_BUILDER_ENDPOINTS.aiBaseUrl;
+const API_URL = WEBSITE_BUILDER_ENDPOINTS.apiBaseUrl;
+const TIMEOUTS = WEBSITE_BUILDER_TIMEOUTS_MS;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = TIMEOUTS.default) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
+    const res = await fetch(url, { ...options, signal: controller.signal });
     return res;
   } catch (err) {
     if (err?.name === "AbortError") {
-      throw new Error(`Timeout réseau (${Math.round(timeoutMs / 1000)}s). Vérifie backend-ai/VITE_AI_URL.`);
+      throw new Error(
+        `Timeout réseau (${Math.round(timeoutMs / 1000)}s). Vérifie : ` +
+          `1) backend-ai lancé sur le port de VITE_AI_URL ; ` +
+          `2) VITE_AI_URL = base complète avec /api/ai ; ` +
+          `3) backend-api (port 8000) pour cette idée.`
+      );
     }
     throw err;
   } finally {
@@ -54,11 +51,7 @@ async function handleResponse(res) {
   }
   if (!res.ok) {
     const detail = data?.detail;
-    throw new Error(
-      typeof detail === "string"
-        ? detail
-        : `Erreur HTTP ${res.status}.`
-    );
+    throw new Error(typeof detail === "string" ? detail : `Erreur HTTP ${res.status}.`);
   }
   return data;
 }
@@ -70,13 +63,11 @@ function authHeaders(token) {
   };
 }
 
+// ── Phase 1 ──────────────────────────────────────────────────────────────────
+
 export async function apiFetchWebsiteContext(token, ideaId) {
   const url = `${AI_URL}/website/context?idea_id=${encodeURIComponent(ideaId)}`;
-  const res = await fetchWithTimeout(
-    url,
-    { headers: authHeaders(token) },
-    CONTEXT_TIMEOUT_MS
-  );
+  const res = await fetchWithTimeout(url, { headers: authHeaders(token) }, TIMEOUTS.context);
   return handleResponse(res);
 }
 
@@ -86,77 +77,36 @@ export async function apiFetchWebsiteProject(token, ideaId) {
   return handleResponse(res);
 }
 
-export async function apiGenerateWebsiteDescription(token, { ideaId }) {
-  const res = await fetchWithTimeout(`${AI_URL}/website/description`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({ idea_id: ideaId }),
-  }, DESCRIPTION_TIMEOUT_MS);
-  return handleResponse(res);
-}
-
-export async function apiRefineWebsiteDescription(token, { ideaId, description, instruction }) {
-  const res = await fetchWithTimeout(`${AI_URL}/website/description/refine`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({
-      idea_id: ideaId,
-      description,
-      instruction,
-    }),
-  }, DESCRIPTION_TIMEOUT_MS);
-  return handleResponse(res);
-}
+// ── Phase 2 approval ─────────────────────────────────────────────────────────
 
 export async function apiApproveWebsiteDescription(token, { ideaId }) {
   const res = await fetchWithTimeout(`${AI_URL}/website/description/approve`, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId }),
-  }, DEFAULT_TIMEOUT_MS);
+  }, TIMEOUTS.default);
   return handleResponse(res);
 }
 
-export async function apiGenerateWebsite(token, { ideaId, description = null }) {
-  const res = await fetchWithTimeout(`${AI_URL}/website/generate`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({
-      idea_id: ideaId,
-      ...(description ? { description } : {}),
-    }),
-  }, GENERATION_TIMEOUT_MS);
-  return handleResponse(res);
-}
+// ── Phase 4 — Révision REST (édition manuelle → revise + QA) ─────────────────
 
 export async function apiReviseWebsite(token, { ideaId, currentHtml, instruction }) {
   const res = await fetchWithTimeout(`${AI_URL}/website/revise`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({
-      idea_id: ideaId,
-      current_html: currentHtml,
-      instruction,
-    }),
-  }, REVISION_TIMEOUT_MS);
+    body: JSON.stringify({ idea_id: ideaId, current_html: currentHtml, instruction }),
+  }, TIMEOUTS.revision);
   return handleResponse(res);
 }
 
-export async function apiSaveWebsiteHtml(token, { ideaId, html }) {
-  const res = await fetchWithTimeout(`${AI_URL}/website/save`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({ idea_id: ideaId, html }),
-  }, SAVE_TIMEOUT_MS);
-  return handleResponse(res);
-}
+// ── Phase 5 ───────────────────────────────────────────────────────────────────
 
 export async function apiDeployWebsite(token, { ideaId, html }) {
   const res = await fetchWithTimeout(`${AI_URL}/website/deploy`, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId, html }),
-  }, DEPLOY_TIMEOUT_MS);
+  }, TIMEOUTS.deploy);
   return handleResponse(res);
 }
 
@@ -165,29 +115,16 @@ export async function apiDeleteWebsiteDeployment(token, { ideaId, deploymentId }
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId, deployment_id: deploymentId }),
-  }, DEFAULT_TIMEOUT_MS);
+  }, TIMEOUTS.default);
   return handleResponse(res);
 }
 
-// ── SSE helpers ─────────────────────────────────────────────────────────────
+// ── SSE helpers ───────────────────────────────────────────────────────────────
 
-/**
- * Consomme un endpoint SSE POST et appelle `onEvent(eventObj)` à chaque
- * message JSON reçu. Renvoie une promesse qui se résout quand le flux est
- * fermé proprement (ou rejette en cas d'erreur réseau).
- *
- * Format attendu du serveur (par défaut FastAPI EventSource) :
- *     data: {"type": "step", ...}\n\n
- *
- * `body` est sérialisé en JSON et envoyé en POST.
- */
 async function consumeSseStream(url, { token, body, onEvent, signal } = {}) {
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      ...authHeaders(token),
-      Accept: "text/event-stream",
-    },
+    headers: { ...authHeaders(token), Accept: "text/event-stream" },
     body: JSON.stringify(body || {}),
     signal,
   });
@@ -197,9 +134,7 @@ async function consumeSseStream(url, { token, body, onEvent, signal } = {}) {
     try {
       const data = await res.json();
       if (data?.detail && typeof data.detail === "string") detail = data.detail;
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
     throw new Error(detail);
   }
   if (!res.body) {
@@ -216,97 +151,65 @@ async function consumeSseStream(url, { token, body, onEvent, signal } = {}) {
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
 
-      // Découpe par double newline (séparateur d'event SSE).
       let sepIdx;
       while ((sepIdx = buffer.indexOf("\n\n")) >= 0) {
         const rawEvent = buffer.slice(0, sepIdx);
         buffer = buffer.slice(sepIdx + 2);
 
-        const lines = rawEvent.split(/\r?\n/);
-        const dataLines = lines
+        const dataLines = rawEvent
+          .split(/\r?\n/)
           .filter((l) => l.startsWith("data:"))
           .map((l) => l.slice(5).trimStart());
         if (dataLines.length === 0) continue;
 
-        const data = dataLines.join("\n");
         try {
-          const obj = JSON.parse(data);
+          const obj = JSON.parse(dataLines.join("\n"));
           onEvent?.(obj);
-          if (obj?.type === "done") {
-            return;
-          }
-          if (obj?.type === "error") {
-            throw new Error(obj.message || "Erreur SSE inconnue.");
-          }
+          if (obj?.type === "done") return;
+          if (obj?.type === "error") throw new Error(obj.message || "Erreur SSE inconnue.");
         } catch (parseErr) {
-          // Ignore les lignes non-JSON (heartbeats éventuels), mais relance
-          // les erreurs explicites.
-          if (parseErr instanceof Error && parseErr.message?.startsWith("Erreur SSE")) {
-            throw parseErr;
-          }
+          if (parseErr instanceof Error && parseErr.message?.startsWith("Erreur SSE")) throw parseErr;
         }
       }
     }
   } finally {
-    try {
-      reader.releaseLock();
-    } catch {
-      // ignore
-    }
+    try { reader.releaseLock(); } catch { /* ignore */ }
   }
 }
 
+// ── SSE endpoints ─────────────────────────────────────────────────────────────
+
 export async function apiStreamWebsiteDescription(token, { ideaId, onEvent, signal } = {}) {
   return consumeSseStream(`${AI_URL}/website/description/stream`, {
-    token,
-    body: { idea_id: ideaId },
-    onEvent,
-    signal,
+    token, body: { idea_id: ideaId }, onEvent, signal,
   });
 }
 
 export async function apiStreamRefineWebsiteDescription(
-  token,
-  { ideaId, description, instruction, onEvent, signal } = {}
+  token, { ideaId, description, instruction, onEvent, signal } = {}
 ) {
   return consumeSseStream(`${AI_URL}/website/description/refine/stream`, {
-    token,
-    body: {
-      idea_id: ideaId,
-      description,
-      instruction,
-    },
-    onEvent,
-    signal,
+    token, body: { idea_id: ideaId, description, instruction }, onEvent, signal,
   });
 }
 
 export async function apiStreamGenerateWebsite(
-  token,
-  { ideaId, description = null, onEvent, signal } = {}
+  token, { ideaId, description = null, onEvent, signal } = {}
 ) {
   return consumeSseStream(`${AI_URL}/website/generate/stream`, {
     token,
-    body: {
-      idea_id: ideaId,
-      ...(description ? { description } : {}),
-    },
+    body: { idea_id: ideaId, ...(description ? { description } : {}) },
     onEvent,
     signal,
   });
 }
 
 export async function apiStreamReviseWebsite(
-  token,
-  { ideaId, currentHtml, instruction, onEvent, signal } = {}
+  token, { ideaId, currentHtml, instruction, onEvent, signal } = {}
 ) {
   return consumeSseStream(`${AI_URL}/website/revise/stream`, {
     token,
-    body: {
-      idea_id: ideaId,
-      current_html: currentHtml,
-      instruction,
-    },
+    body: { idea_id: ideaId, current_html: currentHtml, instruction },
     onEvent,
     signal,
   });

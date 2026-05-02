@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import re
 
-from config.website_builder_config import HTML_MIN_LENGTH, HTML_REQUIRED_MARKERS
 
 
 _FENCE_RE = re.compile(r"```(?:html|HTML)?\s*([\s\S]*?)```", re.MULTILINE)
@@ -101,13 +100,11 @@ def repair_html_document(html: str) -> str:
 
 
 def validate_html_document(html: str) -> None:
-    if not html or len(html) < HTML_MIN_LENGTH:
-        raise RuntimeError(
-            f"HTML généré trop court ({len(html or '')} caractères). "
-            f"Minimum attendu : {HTML_MIN_LENGTH}."
-        )
+    """Vérifie que le document HTML n'est pas vide et contient les balises de base."""
+    if not html or not html.strip():
+        raise RuntimeError("Document HTML vide : aucune sortie exploitable.")
     lower = html.lower()
-    missing = [m for m in HTML_REQUIRED_MARKERS if m not in lower]
+    missing = [m for m in ("<html", "<body", "</body", "</html") if m not in lower]
     if missing:
         raise RuntimeError(
             "Document HTML invalide : marqueurs manquants → " + ", ".join(missing)

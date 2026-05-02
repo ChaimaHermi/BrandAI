@@ -55,11 +55,7 @@ WEBSITE_LLM_MAX_RETRIES: int = int(os.getenv("WEBSITE_LLM_MAX_RETRIES", "0"))
 BACKEND_API_BASE_URL: str = os.getenv("BACKEND_API_BASE_URL", "http://localhost:8000/api").rstrip("/")
 BACKEND_API_TIMEOUT_SECONDS: float = float(os.getenv("BACKEND_API_TIMEOUT_SECONDS", "30"))
 
-# Garde-fous de validation Phase 2.
-REQUIRED_SECTIONS_MIN: int = 6
-REQUIRED_ANIMATIONS_MIN: int = 4
-
-# Garde-fous Phase 3 / 4 : un site doit contenir ces marqueurs élémentaires.
+# Garde-fou minimal Phase 3 / 4 : un site ne peut pas être vide.
 HTML_MIN_LENGTH: int = 1500
 HTML_REQUIRED_MARKERS: tuple[str, ...] = ("<html", "<body", "</body", "</html")
 

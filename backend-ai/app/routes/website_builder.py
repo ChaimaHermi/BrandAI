@@ -3,24 +3,21 @@ Routes HTTP — Website Builder Agent.
 
 Exposees sous /api/ai/website/...
 
-Endpoints classiques (JSON) :
-  GET  /api/ai/website/context?idea_id=...      → Phase 1 (CONTEXT)
-  POST /api/ai/website/description              → Phase 1 + Phase 2
-  POST /api/ai/website/description/refine       → Phase 2.5 (affinage du concept)
-  POST /api/ai/website/description/approve      → marque le concept comme approuve
-  POST /api/ai/website/generate                 → Phase 1 + 2 + 3
-  POST /api/ai/website/revise                   → Phase 4 (HTML existant + instruction)
-  POST /api/ai/website/save                     → sauvegarde HTML edite manuellement
+Endpoints JSON :
+  GET  /api/ai/website/context?idea_id=...      → Phase 1
+  POST /api/ai/website/description              → Phase 2 (description)
+  POST /api/ai/website/description/refine       → Phase 2.5 (affinage)
+  POST /api/ai/website/description/approve      → approbation
+  POST /api/ai/website/generate                 → Phase 3 (HTML)
+  POST /api/ai/website/revise                   → Phase 4 (révision chat + édition manuelle)
   POST /api/ai/website/deploy                   → Phase 5 (Vercel)
+  POST /api/ai/website/deploy/delete            → suppression déploiement
 
-Endpoints SSE (Server-Sent Events) — temps reel "XAI" :
+Endpoints SSE :
   POST /api/ai/website/description/stream
   POST /api/ai/website/description/refine/stream
   POST /api/ai/website/generate/stream
   POST /api/ai/website/revise/stream
-
-Tous les endpoints exigent un access_token (JWT backend-api FastAPI) pour
-recuperer l'idee et le brand kit cote backend-api.
 """
 
 from __future__ import annotations
@@ -131,14 +128,8 @@ class GenerateRequest(BaseModel):
 class ReviseRequest(BaseModel):
     idea_id: int = Field(..., ge=1)
     access_token: str | None = None
-    current_html: str = Field(..., min_length=200)
+    current_html: str = Field(..., min_length=1)
     instruction: str = Field(..., min_length=1)
-
-
-class SaveHtmlRequest(BaseModel):
-    idea_id: int = Field(..., ge=1)
-    access_token: str | None = None
-    html: str = Field(..., min_length=200)
 
 
 class DeployRequest(BaseModel):
@@ -176,12 +167,6 @@ class GenerateResponse(BaseModel):
 class ReviseResponse(BaseModel):
     idea_id: int
     instruction: str
-    html: str
-    html_stats: dict[str, int]
-
-
-class SaveHtmlResponse(BaseModel):
-    idea_id: int
     html: str
     html_stats: dict[str, int]
 
@@ -352,32 +337,6 @@ async def website_revise(
         raise HTTPException(status_code=503, detail=f"Revision indisponible : {exc!s}") from exc
 
     return ReviseResponse(**payload)
-
-
-@router.post(
-    "/save",
-    response_model=SaveHtmlResponse,
-    summary="Sauvegarde le HTML modifie manuellement (mode 'Modifier le site') sans LLM",
-)
-async def website_save(
-    body: SaveHtmlRequest,
-    authorization: str | None = Header(default=None),
-) -> SaveHtmlResponse:
-    token = _extract_token(authorization, body.access_token)
-    try:
-        payload = await orchestrator.save_html_directly(
-            idea_id=body.idea_id,
-            token=token,
-            html=body.html,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except RuntimeError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except Exception as exc:
-        logger.exception("[website_builder] save failed")
-        raise HTTPException(status_code=503, detail=f"Sauvegarde impossible : {exc!s}") from exc
-    return SaveHtmlResponse(**payload)
 
 
 @router.post(

@@ -4,6 +4,10 @@ import {
   FiDownload, FiRefreshCw, FiCpu, FiCloud, FiGlobe, FiCode,
   FiMaximize2, FiX, FiEdit3, FiSave, FiCheck, FiTrash2,
 } from "react-icons/fi";
+import { stripInjectionArtifacts, normalizeHtml } from "../utils/htmlUtils";
+
+const INJECTION_START = "<!-- BRANDAI_PREVIEW_INJECTION_START -->";
+const INJECTION_END = "<!-- BRANDAI_PREVIEW_INJECTION_END -->";
 
 const VIEWPORTS = [
   { id: "desktop", label: "Desktop", Icon: FiMonitor, width: "100%" },
@@ -120,7 +124,9 @@ function FullscreenOverlay({ kind }) {
  *    rend les tags éditables, ajoute un outline bleu au hover, et émet
  *    chaque modification vers le parent (HTML_UPDATE).
  */
-function buildPreviewHtml(html) {
+function buildPreviewHtml(rawHtml) {
+  if (!rawHtml) return "";
+  const html = stripInjectionArtifacts(normalizeHtml(rawHtml)) || normalizeHtml(rawHtml);
   if (!html) return "";
 
   const editableTagsLiteral = JSON.stringify(EDITABLE_TAGS);
@@ -325,7 +331,7 @@ function buildPreviewHtml(html) {
 })();
 </script>`;
 
-  const injection = guardScript + editScript;
+  const injection = `${INJECTION_START}${guardScript}${editScript}${INJECTION_END}`;
   if (html.includes("</body>")) {
     return html.replace("</body>", `${injection}</body>`);
   }
