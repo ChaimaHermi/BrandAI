@@ -12,6 +12,8 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from langsmith import traceable
+
 from config.website_builder_config import (
     DESCRIPTION_MAX_TOKENS,
     DESCRIPTION_TEMPERATURE,
@@ -22,11 +24,24 @@ from prompts.website_builder.prompt_description_refinement import (
     build_description_refine_user_prompt,
 )
 from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.langsmith_traces import (
+    TAGS_TOOL,
+    process_refine_inputs,
+    process_refine_outputs,
+)
 from tools.website_builder.validator_tool import validate_description_payload
 
 logger = logging.getLogger("brandai.website_builder.refinement_tool")
 
 
+@traceable(
+    name="website_builder.tool.refine_description",
+    run_type="tool",
+    tags=[*TAGS_TOOL, "phase_2_5"],
+    metadata={"step": "description_refinement"},
+    process_inputs=process_refine_inputs,
+    process_outputs=process_refine_outputs,
+)
 async def refine_website_description(
     *,
     ctx: BrandContext,

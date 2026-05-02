@@ -4,21 +4,13 @@ import {
 } from "../config/websiteBuilder.config";
 
 /**
- * REST + SSE client pour les phases du Website Builder.
- *  Phase 1 — GET  /website/context?idea_id=...        → BrandContext + résumé Markdown
- *  Phase 2 — POST /website/description                → concept créatif (JSON)
- *  Phase 2.5 — POST /website/description/refine        → concept revu selon retours
- *  Phase 2 ✓ POST /website/description/approve         → marque le concept comme approuvé
- *  Phase 3 — POST /website/generate                    → HTML complet
- *  Phase 4 — POST /website/revise                      → HTML révisé
- *  Edit  — POST /website/save                          → sauvegarde HTML édité manuellement
- *  Phase 5 — POST /website/deploy                      → URL Vercel publique
+ * Client HTTP du Website Builder (frontend).
  *
- * Variants SSE (live "XAI" steps) :
- *  POST /website/description/stream
- *  POST /website/description/refine/stream
- *  POST /website/generate/stream
- *  POST /website/revise/stream
+ * Flux réellement utilisés par l’UI :
+ *  - GET  /website/context (backend-ai) — phase 1
+ *  - GET  /website/ideas/:id (backend-api) — reprise de session
+ *  - POST …/stream — description, refine, génération HTML, révision chat (SSE)
+ *  - POST /website/description/approve, /save, /deploy, /deploy/delete (JSON court)
  */
 
 const AI_URL = WEBSITE_BUILDER_ENDPOINTS.aiBaseUrl;
@@ -90,59 +82,12 @@ export async function apiFetchWebsiteProject(token, ideaId) {
   return handleResponse(res);
 }
 
-export async function apiGenerateWebsiteDescription(token, { ideaId }) {
-  const res = await fetchWithTimeout(`${AI_URL}/website/description`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({ idea_id: ideaId }),
-  }, TIMEOUTS.description);
-  return handleResponse(res);
-}
-
-export async function apiRefineWebsiteDescription(token, { ideaId, description, instruction }) {
-  const res = await fetchWithTimeout(`${AI_URL}/website/description/refine`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({
-      idea_id: ideaId,
-      description,
-      instruction,
-    }),
-  }, TIMEOUTS.description);
-  return handleResponse(res);
-}
-
 export async function apiApproveWebsiteDescription(token, { ideaId }) {
   const res = await fetchWithTimeout(`${AI_URL}/website/description/approve`, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ idea_id: ideaId }),
   }, TIMEOUTS.default);
-  return handleResponse(res);
-}
-
-export async function apiGenerateWebsite(token, { ideaId, description = null }) {
-  const res = await fetchWithTimeout(`${AI_URL}/website/generate`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({
-      idea_id: ideaId,
-      ...(description ? { description } : {}),
-    }),
-  }, TIMEOUTS.generation);
-  return handleResponse(res);
-}
-
-export async function apiReviseWebsite(token, { ideaId, currentHtml, instruction }) {
-  const res = await fetchWithTimeout(`${AI_URL}/website/revise`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({
-      idea_id: ideaId,
-      current_html: currentHtml,
-      instruction,
-    }),
-  }, TIMEOUTS.revision);
   return handleResponse(res);
 }
 

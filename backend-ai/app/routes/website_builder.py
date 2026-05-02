@@ -1,31 +1,20 @@
 """
 Routes HTTP — Website Builder Agent.
 
-Exposees sous /api/ai/website/...
+Base : /api/ai/website/
 
-Endpoints classiques (JSON) :
-  GET  /api/ai/website/context?idea_id=...      → Phase 1 (CONTEXT)
-  POST /api/ai/website/description              → Phase 1 + Phase 2
-  POST /api/ai/website/description/refine       → Phase 2.5 (affinage du concept)
-  POST /api/ai/website/description/approve      → marque le concept comme approuve
-  POST /api/ai/website/generate                 → Phase 1 + 2 + 3
-  POST /api/ai/website/revise                   → Phase 4 (HTML existant + instruction)
-  POST /api/ai/website/save                     → sauvegarde HTML edite manuellement
-  POST /api/ai/website/deploy                   → Phase 5 (Vercel)
+Surface exposee (alignee sur l’app React) :
+  GET  /context                              → Phase 1 (idee + brand kit)
+  POST /description/stream                   → Phase 2 (concept, SSE)
+  POST /description/refine/stream            → Phase 2.5 (affinage chat, SSE)
+  POST /description/approve                → approbation concept (JSON)
+  POST /generate/stream                      → Phase 3 (HTML, SSE)
+  POST /revise/stream                        → Phase 4 (modif site par chat, SSE)
+  POST /save                                 → sauvegarde edition manuelle sans LLM
+  POST /deploy, /deploy/delete               → Vercel
 
-Endpoints SSE (Server-Sent Events) — temps reel "XAI" :
-  POST /api/ai/website/description/stream
-  POST /api/ai/website/description/refine/stream
-  POST /api/ai/website/generate/stream
-  POST /api/ai/website/revise/stream
-
-Tous les endpoints ACTIFS exigent un access_token (JWT backend-api FastAPI)
-pour recuperer l'idee et le brand kit cote backend-api.
-
-Exception legacy (depreciee) :
-  POST /api/ai/website/contact-form
-  Cet endpoint ne requiert pas de token et renvoie 410 Gone, car le flux
-  officiel est desormais le formulaire `mailto:` direct (sans relay backend).
+Tous les endpoints exigent un JWT (header Authorization ou body access_token).
+Les formulaires de contact des sites utilisent mailto: (pas de relay HTTP dedie).
 """
 
 from __future__ import annotations
@@ -164,27 +153,6 @@ class ContextResponse(BaseModel):
     summary_md: str
 
 
-class DescriptionResponse(BaseModel):
-    context: dict[str, Any]
-    description: dict[str, Any]
-    description_summary_md: str
-
-
-class GenerateResponse(BaseModel):
-    context: dict[str, Any]
-    description: dict[str, Any]
-    description_summary_md: str
-    html: str
-    html_stats: dict[str, int]
-
-
-class ReviseResponse(BaseModel):
-    idea_id: int
-    instruction: str
-    html: str
-    html_stats: dict[str, int]
-
-
 class SaveHtmlResponse(BaseModel):
     idea_id: int
     html: str
@@ -209,7 +177,7 @@ class DeployDeleteResponse(BaseModel):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Endpoints classiques (JSON)
+# Endpoints JSON (hors flux SSE)
 # ─────────────────────────────────────────────────────────────────────────────
 @router.get(
     "/context",
@@ -230,59 +198,6 @@ async def website_context(
 
 
 @router.post(
-    "/description",
-    response_model=DescriptionResponse,
-    summary="Phases 1 + 2 — contexte + description creative",
-)
-async def website_description(
-    body: DescriptionRequest,
-    authorization: str | None = Header(default=None),
-) -> DescriptionResponse:
-    token = _extract_token(authorization, body.access_token)
-    try:
-        payload = await orchestrator.generate_description(idea_id=body.idea_id, token=token)
-    except RuntimeError as exc:
-        logger.exception("[website_builder] description failed (validation)")
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except Exception as exc:
-        logger.exception("[website_builder] description failed")
-        raise HTTPException(status_code=503, detail=f"Description indisponible : {exc!s}") from exc
-
-    return DescriptionResponse(**payload)
-
-
-@router.post(
-    "/description/refine",
-    response_model=DescriptionResponse,
-    summary="Phase 2.5 — affine la description selon les retours utilisateur",
-)
-async def website_description_refine(
-    body: DescriptionRefineRequest,
-    authorization: str | None = Header(default=None),
-) -> DescriptionResponse:
-    token = _extract_token(authorization, body.access_token)
-    try:
-        payload = await orchestrator.refine_description(
-            idea_id=body.idea_id,
-            token=token,
-            current_description=body.description,
-            user_feedback=body.instruction,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except RuntimeError as exc:
-        logger.exception("[website_builder] description/refine failed (validation)")
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except Exception as exc:
-        logger.exception("[website_builder] description/refine failed")
-        raise HTTPException(
-            status_code=503,
-            detail=f"Affinage de la description impossible : {exc!s}",
-        ) from exc
-    return DescriptionResponse(**payload)
-
-
-@router.post(
     "/description/approve",
     response_model=ApproveResponse,
     summary="Marque le concept Phase 2 comme approuve par l'utilisateur",
@@ -298,65 +213,6 @@ async def website_description_approve(
         logger.exception("[website_builder] description/approve failed")
         raise HTTPException(status_code=503, detail=f"Approbation impossible : {exc!s}") from exc
     return ApproveResponse(**payload)
-
-
-@router.post(
-    "/generate",
-    response_model=GenerateResponse,
-    summary="Phases 1 + 2 + 3 — contexte, description et site HTML/Tailwind/JS complet",
-)
-async def website_generate(
-    body: GenerateRequest,
-    authorization: str | None = Header(default=None),
-) -> GenerateResponse:
-    token = _extract_token(authorization, body.access_token)
-    try:
-        payload = await orchestrator.generate_website(
-            idea_id=body.idea_id,
-            token=token,
-            description=body.description,
-        )
-    except RuntimeError as exc:
-        msg = str(exc)
-        if "timeout" in msg.lower():
-            logger.exception("[website_builder] generate failed (timeout)")
-            raise HTTPException(status_code=504, detail=msg) from exc
-        logger.exception("[website_builder] generate failed (validation)")
-        raise HTTPException(status_code=422, detail=msg) from exc
-    except Exception as exc:
-        logger.exception("[website_builder] generate failed")
-        raise HTTPException(status_code=503, detail=f"Generation indisponible : {exc!s}") from exc
-
-    return GenerateResponse(**payload)
-
-
-@router.post(
-    "/revise",
-    response_model=ReviseResponse,
-    summary="Phase 4 — applique une modification ciblee au HTML existant",
-)
-async def website_revise(
-    body: ReviseRequest,
-    authorization: str | None = Header(default=None),
-) -> ReviseResponse:
-    token = _extract_token(authorization, body.access_token)
-    try:
-        payload = await orchestrator.revise_website(
-            idea_id=body.idea_id,
-            token=token,
-            current_html=body.current_html,
-            instruction=body.instruction,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except RuntimeError as exc:
-        logger.exception("[website_builder] revise failed (validation)")
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except Exception as exc:
-        logger.exception("[website_builder] revise failed")
-        raise HTTPException(status_code=503, detail=f"Revision indisponible : {exc!s}") from exc
-
-    return ReviseResponse(**payload)
 
 
 @router.post(
@@ -454,33 +310,6 @@ async def website_deploy_delete(
         raise HTTPException(status_code=503, detail=f"Suppression deploiement indisponible : {exc!s}") from exc
 
     return DeployDeleteResponse(**payload)
-
-
-@router.post(
-    "/contact-form",
-    summary="DÉSACTIVÉ — les sites générés utilisent désormais mailto: directement",
-    deprecated=True,
-)
-async def website_contact_form() -> None:
-    """
-    DÉSACTIVÉ — par décision produit, les messages des formulaires de contact
-    des sites vitrines générés ne transitent PLUS par Brand AI. Le formulaire
-    ouvre maintenant directement le client mail du visiteur via `mailto:` et
-    le mail part de son adresse vers celle du propriétaire du site.
-
-    Brand AI ne voit donc jamais le contenu de ces messages. Cet endpoint est
-    conservé temporairement (compat anciens sites déjà déployés) mais renvoie
-    410 Gone : aucun message n'est plus relayé.
-    """
-    logger.info("[website_builder] contact-form call ignored (endpoint deprecated, mailto-only)")
-    raise HTTPException(
-        status_code=410,
-        detail=(
-            "Le relais de messages via Brand AI est désactivé. "
-            "Le formulaire doit utiliser un lien mailto: pointant directement "
-            "vers le propriétaire du site."
-        ),
-    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

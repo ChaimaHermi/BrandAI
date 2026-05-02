@@ -41,7 +41,7 @@ REGLES D'EDITION
 6) Aucun lorem ipsum / TODO / placeholder.
 7) Interdit d'introduire des liens relatifs de l'app (/, /ideas, /dashboard, etc.) dans nav/CTA.
 8) Interdit d'utiliser window.location/location.href/location.assign/location.replace pour naviguer.
-9) Conserver le slogan de contexte tel quel (si present), sauf demande explicite contraire de l'utilisateur.
+9) PRESERVER le HTML actuel sauf zones visees par la consigne : ne pas reecrire contact, footer, hero ou autres blocs pour reimposer le slogan ou le texte du brand kit. Le nom de marque indique dans le BRAND KIT du message utilisateur doit rester present quelque part. Le slogan du kit n'est pas obligatoire dans la page si l'utilisateur a deja change les formulations.
 10) Conserver ou introduire uniquement des icones de bibliotheques reconnues (Lucide recommande), coherentes avec le contexte metier.
 
 POLITIQUE COULEUR EN REVISION
@@ -126,5 +126,5 @@ HTML ACTUEL DU SITE (à modifier sur place) :
 
 CONSIGNE FINALE :
 Applique la modification demandee et renvoie UNIQUEMENT le document HTML complet resultant. Aucun texte autour.
-Le slogan du contexte doit rester identique mot pour mot (sauf instruction explicite de le changer).
+Conserve mot pour mot tout le contenu visible des parties du HTML que la consigne ne demande pas de modifier (y compris contact, emails, telephones). Ne remplace pas ces textes par le slogan du kit sauf si la consigne le demande explicitement.
 """

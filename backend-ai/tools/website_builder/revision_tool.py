@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-import logging
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable
+
+from langsmith import traceable
 
 from config.website_builder_config import (
     REVISION_MAX_TOKENS,
@@ -14,6 +16,11 @@ from prompts.website_builder.prompt_website_revision import (
     build_website_revision_user_prompt,
 )
 from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.langsmith_traces import (
+    TAGS_TOOL,
+    process_revision_inputs,
+    process_revision_outputs,
+)
 from tools.website_builder.website_renderer import extract_html_document, repair_html_document
 
 logger = logging.getLogger("brandai.website_builder.revision_tool")
@@ -29,6 +36,14 @@ def _is_transient_provider_error(exc: Exception) -> bool:
     return "bad gateway" in msg or "gateway timeout" in msg or "service unavailable" in msg
 
 
+@traceable(
+    name="website_builder.tool.revision_html",
+    run_type="tool",
+    tags=[*TAGS_TOOL, "phase_4"],
+    metadata={"step": "html_revision"},
+    process_inputs=process_revision_inputs,
+    process_outputs=process_revision_outputs,
+)
 async def revise_website_html(
     *,
     ctx: BrandContext,

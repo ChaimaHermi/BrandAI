@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
+from langsmith import traceable
 
 from config.website_builder_config import (
     BACKEND_API_BASE_URL,
@@ -30,6 +31,11 @@ from tools.content_generation.cloudinary_upload import (
     cloudinary_configured,
     ensure_cloudinary_public_url,
     upload_image_bytes,
+)
+from tools.website_builder.langsmith_traces import (
+    TAGS_CONTEXT,
+    process_context_fetch_inputs,
+    process_context_fetch_outputs,
 )
 
 logger = logging.getLogger("brandai.website_builder.context")
@@ -363,6 +369,14 @@ def validate_brand_context(ctx: BrandContext) -> None:
             raise RuntimeError(f"Contexte invalide : {label}={value!r} n'est pas un hex #RRGGBB.")
 
 
+@traceable(
+    name="website_builder.fetch_brand_context",
+    run_type="tool",
+    tags=[*TAGS_CONTEXT, "phase_1"],
+    metadata={"step": "backend_api_idea_plus_bundle"},
+    process_inputs=process_context_fetch_inputs,
+    process_outputs=process_context_fetch_outputs,
+)
 async def fetch_full_brand_context(idea_id: int, access_token: str) -> BrandContext:
     """Phase 1 : exécute idée + bundle en parallèle puis normalise."""
     logger.info("[website_builder] PHASE 1 (CONTEXT) START idea_id=%s", idea_id)
