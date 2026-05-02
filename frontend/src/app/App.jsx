@@ -20,6 +20,7 @@ import ContentPage from "@/agents/content/pages/ContentPage";
 import ContentConnectPage from "@/agents/content/pages/ContentConnectPage";
 import ContentSchedulePage from "@/agents/content/pages/ContentSchedulePage";
 import WebsiteBuilderPage from "@/agents/website/pages/WebsiteBuilderPage";
+import OptimizerPage from "@/agents/optimizer/pages/OptimizerPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 
 function PlaceholderPage({ name }) {
@@ -141,10 +142,7 @@ export default function App() {
               <Route path="schedule" element={<ContentSchedulePage />} />
             </Route>
             <Route path="website" element={<WebsiteBuilderPage />} />
-            <Route
-              path="optimizer"
-              element={<PlaceholderPage name="Optimizer" />}
-            />
+            <Route path="optimizer" element={<OptimizerPage />} />
           </Route>
           <Route
             path="/projects/:id"
