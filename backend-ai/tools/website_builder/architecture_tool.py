@@ -10,6 +10,8 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from langsmith import traceable
+
 from config.website_builder_config import (
     ARCHITECTURE_MAX_TOKENS,
     ARCHITECTURE_TEMPERATURE,
@@ -20,11 +22,24 @@ from prompts.website_builder.prompt_architecture import (
     build_architecture_user_prompt,
 )
 from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.langsmith_traces import (
+    TAGS_TOOL,
+    process_architecture_inputs,
+    process_architecture_outputs,
+)
 from tools.website_builder.validator_tool import validate_architecture_payload
 
 logger = logging.getLogger("brandai.website_builder.architecture_tool")
 
 
+@traceable(
+    name="website_builder.tool.architecture",
+    run_type="tool",
+    tags=[*TAGS_TOOL, "phase_2a"],
+    metadata={"step": "architecture_json"},
+    process_inputs=process_architecture_inputs,
+    process_outputs=process_architecture_outputs,
+)
 async def generate_website_architecture(
     *,
     ctx: BrandContext,

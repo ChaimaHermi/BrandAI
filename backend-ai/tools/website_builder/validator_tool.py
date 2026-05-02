@@ -123,7 +123,24 @@ def validate_html_output(html: str) -> dict[str, int]:
     return html_stats(html)
 
 
-def validate_brand_identity(html: str, *, brand_name: str, slogan: str | None = None) -> None:
+def validate_brand_identity(
+    html: str,
+    *,
+    brand_name: str,
+    slogan: str | None = None,
+    require_slogan_verbatim: bool = True,
+) -> None:
+    """
+    Vérifie la présence du nom de marque (toujours si défini).
+
+    Si require_slogan_verbatim=True (génération initiale), le slogan du contexte
+    doit apparaître tel quel — sinon la QA déclenche une réécriture LLM qui
+    écrase souvent les textes modifiés manuellement.
+
+    En phase révision chat (require_slogan_verbatim=False), on n'impose plus le
+    slogan : l'utilisateur peut avoir changé hero, footer ou contact sans
+    conserver la phrase exacte du kit.
+    """
     lower = html.lower()
     brand = (brand_name or "").strip()
     slog = (slogan or "").strip()
@@ -132,7 +149,7 @@ def validate_brand_identity(html: str, *, brand_name: str, slogan: str | None = 
         raise RuntimeError(
             "Identite invalide : le nom de marque du contexte est absent du HTML genere."
         )
-    if slog and slog.lower() not in lower:
+    if require_slogan_verbatim and slog and slog.lower() not in lower:
         raise RuntimeError(
             "Identite invalide : le slogan du contexte n'est pas present tel quel dans le HTML genere."
         )

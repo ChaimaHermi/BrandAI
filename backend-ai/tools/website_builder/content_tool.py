@@ -10,6 +10,8 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from langsmith import traceable
+
 from config.website_builder_config import (
     CONTENT_MAX_TOKENS,
     CONTENT_TEMPERATURE,
@@ -20,11 +22,24 @@ from prompts.website_builder.prompt_content import (
     build_content_user_prompt,
 )
 from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.langsmith_traces import (
+    TAGS_TOOL,
+    process_content_inputs,
+    process_content_outputs,
+)
 from tools.website_builder.validator_tool import validate_content_payload
 
 logger = logging.getLogger("brandai.website_builder.content_tool")
 
 
+@traceable(
+    name="website_builder.tool.content",
+    run_type="tool",
+    tags=[*TAGS_TOOL, "phase_2b"],
+    metadata={"step": "content_json"},
+    process_inputs=process_content_inputs,
+    process_outputs=process_content_outputs,
+)
 async def generate_website_content(
     *,
     ctx: BrandContext,

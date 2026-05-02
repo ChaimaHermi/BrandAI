@@ -5,6 +5,26 @@ from typing import Any
 
 from langsmith import traceable
 from agents.base_agent import BaseAgent, PipelineState
+from tools.website_builder.langsmith_traces import (
+    TAGS_LLM,
+    TAGS_ORCH,
+    TAGS_QA,
+    TAGS_STREAM,
+    process_context_dict_outputs,
+    process_ensure_html_inputs,
+    process_ensure_html_outputs,
+    process_generate_full_description_inputs,
+    process_llm_inputs,
+    process_llm_outputs,
+    process_merge_description_outputs,
+    process_route_inputs_idea_token,
+    process_save_html_outputs,
+    process_save_html_route_inputs,
+    process_stream_description_inputs,
+    process_stream_generate_inputs,
+    process_stream_refine_inputs,
+    process_stream_revise_inputs,
+)
 from tools.website_builder.architecture_tool import generate_website_architecture
 from tools.website_builder.coder_tool import build_website_html
 from tools.website_builder.content_tool import generate_website_content
@@ -119,6 +139,14 @@ class WebsiteBuilderOrchestrator(BaseAgent):
     async def run(self, state: PipelineState) -> Any:
         raise NotImplementedError("Use orchestrator methods directly.")
 
+    @traceable(
+        name="website_builder.invoke_llm",
+        run_type="llm",
+        tags=TAGS_LLM,
+        metadata={"component": "website_builder"},
+        process_inputs=process_llm_inputs,
+        process_outputs=process_llm_outputs,
+    )
     async def invoke_llm(
         self,
         system_prompt: str,
@@ -145,6 +173,14 @@ class WebsiteBuilderOrchestrator(BaseAgent):
     def parse_json_output(self, raw: str) -> dict[str, Any]:
         return self._parse_json(raw)
 
+    @traceable(
+        name="website_builder.merge_description",
+        run_type="chain",
+        tags=TAGS_ORCH,
+        metadata={"phase": "2", "step": "architecture_plus_content"},
+        process_inputs=process_generate_full_description_inputs,
+        process_outputs=process_merge_description_outputs,
+    )
     async def _generate_full_description(self, ctx) -> dict[str, Any]:
         """Pipeline Phase 2 : architecture → contenu → description fusionnée."""
         architecture = await generate_website_architecture(
@@ -160,31 +196,55 @@ class WebsiteBuilderOrchestrator(BaseAgent):
         )
         return _merge_architecture_and_content(architecture, content)
 
+    @traceable(
+        name="website_builder.ensure_valid_html",
+        run_type="chain",
+        tags=TAGS_QA,
+        metadata={"component": "website_builder"},
+        process_inputs=process_ensure_html_inputs,
+        process_outputs=process_ensure_html_outputs,
+    )
     async def _ensure_valid_html(self, *, ctx, html: str, phase: str) -> tuple[str, dict[str, int]]:
         """
         Validate generated/revised HTML and attempt one automatic correction pass
         if QA fails.
         """
+        strict_slogan = phase != "revision"
         normalized_html = sanitize_navigation_html(html)
         try:
             validate_brand_identity(
                 normalized_html,
                 brand_name=ctx.brand_name,
                 slogan=ctx.slogan,
+                require_slogan_verbatim=strict_slogan,
             )
             stats = validate_html_output(normalized_html)
             return normalized_html, stats
         except RuntimeError as exc:
-            auto_fix_instruction = (
-                "Corrige automatiquement ce HTML pour qu'il passe la QA sans changer "
-                "l'identité de marque: "
-                "1) slogan du contexte présent tel quel, "
-                "2) navigation interne uniquement avec ancres #id valides, "
-                "2.1) interdit absolu: href=\"#\" et ancres orphelines (ex: #cgu sans section), "
-                "3) images robustes (src http/https/data, alt, fallback), "
-                "4) responsive complet (meta viewport, breakpoints sm/md/lg, nav mobile). "
-                f"Phase: {phase}. Erreur QA détectée: {exc}"
-            )
+            if phase == "revision":
+                auto_fix_instruction = (
+                    "Corrige ce HTML pour qu'il passe la QA technique. "
+                    "CONSERVE MOT POUR MOT tous les textes visibles deja presents "
+                    "(titres, paragraphes, emails, telephones, labels, boutons) — "
+                    "ne les remplace pas par le slogan ou le kit marque du contexte. "
+                    "Le nom de la marque doit rester present quelque part dans la page. "
+                    "1) navigation interne uniquement avec ancres #id valides, "
+                    "2) interdit: href=\"#\" et ancres orphelines, "
+                    "3) images robustes (src http/https/data, alt, fallback), "
+                    "4) responsive (meta viewport, breakpoints, nav mobile). "
+                    f"Erreur QA: {exc}"
+                )
+            else:
+                auto_fix_instruction = (
+                    "Corrige automatiquement ce HTML pour qu'il passe la QA sans changer "
+                    "l'identité de marque: "
+                    "1) slogan du contexte présent tel quel, "
+                    "2) navigation interne uniquement avec ancres #id valides, "
+                    "2.1) interdit absolu: href=\"#\" et ancres orphelines (ex: #cgu sans section), "
+                    "3) images robustes (src http/https/data, alt, fallback), "
+                    "4) responsive complet (meta viewport, breakpoints sm/md/lg, nav mobile). "
+                    f"Phase: {phase}. Erreur QA détectée: {exc}"
+                )
             healed_html = await revise_website_html(
                 ctx=ctx,
                 current_html=normalized_html,
@@ -196,11 +256,19 @@ class WebsiteBuilderOrchestrator(BaseAgent):
                 healed_html,
                 brand_name=ctx.brand_name,
                 slogan=ctx.slogan,
+                require_slogan_verbatim=strict_slogan,
             )
             stats = validate_html_output(healed_html)
             return healed_html, stats
 
-    @traceable(name="website_builder.orchestrator.fetch_context", tags=["website_builder", "orchestrator", "context"])
+    @traceable(
+        name="website_builder.fetch_context",
+        run_type="chain",
+        tags=[*TAGS_ORCH, "context"],
+        metadata={"route": "GET /website/context"},
+        process_inputs=process_route_inputs_idea_token,
+        process_outputs=process_context_dict_outputs,
+    )
     async def fetch_context(self, *, idea_id: int, token: str) -> dict[str, Any]:
         ctx = await self.context_tool.fetch(idea_id=idea_id, access_token=token)
         return {
@@ -208,192 +276,13 @@ class WebsiteBuilderOrchestrator(BaseAgent):
             "summary_md": render_context_summary(ctx),
         }
 
-    @traceable(name="website_builder.orchestrator.generate_description", tags=["website_builder", "orchestrator", "description"])
-    async def generate_description(self, *, idea_id: int, token: str) -> dict[str, Any]:
-        ctx = await self.context_tool.fetch(idea_id=idea_id, access_token=token)
-        description = await self._generate_full_description(ctx)
-
-        await patch_website_project(
-            idea_id=idea_id,
-            access_token=token,
-            patch={"status": "draft", "description_json": description},
-        )
-        await append_website_message(
-            idea_id=idea_id,
-            access_token=token,
-            message=build_message(
-                role="assistant",
-                msg_type="description_result",
-                content="Description du site generee.",
-                meta={
-                    "sections": len(description.get("sections") or []),
-                    "animations": len(description.get("animations") or []),
-                },
-            ),
-        )
-
-        return {
-            "context": {
-                **ctx.as_dict(),
-                "summary_md": render_context_summary(ctx),
-            },
-            "description": description,
-            "description_summary_md": render_description_summary(description),
-        }
-
-    @traceable(name="website_builder.orchestrator.generate_website", tags=["website_builder", "orchestrator", "generation"])
-    async def generate_website(
-        self,
-        *,
-        idea_id: int,
-        token: str,
-        description: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        ctx = await self.context_tool.fetch(idea_id=idea_id, access_token=token)
-        used_description = description or await self._generate_full_description(ctx)
-        html = await build_website_html(
-            ctx=ctx,
-            architecture=used_description.get("architecture") or used_description,
-            content=used_description.get("content") or {},
-            invoke_llm=self.invoke_llm,
-        )
-        html, stats = await self._ensure_valid_html(ctx=ctx, html=html, phase="generation")
-
-        await patch_website_project(
-            idea_id=idea_id,
-            access_token=token,
-            patch={
-                "status": "generated",
-                "description_json": used_description,
-                "current_html": html,
-                "current_version": 1,
-            },
-        )
-        await append_website_message(
-            idea_id=idea_id,
-            access_token=token,
-            message=build_message(
-                role="assistant",
-                msg_type="generation_result",
-                content="Site HTML genere.",
-                meta=stats,
-            ),
-        )
-
-        return {
-            "context": {
-                **ctx.as_dict(),
-                "summary_md": render_context_summary(ctx),
-            },
-            "description": used_description,
-            "description_summary_md": render_description_summary(used_description),
-            "html": html,
-            "html_stats": stats,
-        }
-
-    @traceable(name="website_builder.orchestrator.revise_website", tags=["website_builder", "orchestrator", "revision"])
-    async def revise_website(
-        self,
-        *,
-        idea_id: int,
-        token: str,
-        current_html: str,
-        instruction: str,
-    ) -> dict[str, Any]:
-        ctx = await self.context_tool.fetch(idea_id=idea_id, access_token=token)
-        html = await revise_website_html(
-            ctx=ctx,
-            current_html=current_html,
-            instruction=instruction,
-            invoke_llm=self.invoke_llm,
-        )
-        html, stats = await self._ensure_valid_html(ctx=ctx, html=html, phase="revision")
-
-        await patch_website_project(
-            idea_id=idea_id,
-            access_token=token,
-            patch={"status": "generated", "current_html": html},
-        )
-        await append_website_message(
-            idea_id=idea_id,
-            access_token=token,
-            message=build_message(
-                role="user",
-                msg_type="revision_instruction",
-                content=instruction.strip(),
-            ),
-        )
-        await append_website_message(
-            idea_id=idea_id,
-            access_token=token,
-            message=build_message(
-                role="assistant",
-                msg_type="revision_result",
-                content="Modification appliquee sur le site.",
-                meta=stats,
-            ),
-        )
-        return {
-            "idea_id": idea_id,
-            "instruction": instruction.strip(),
-            "html": html,
-            "html_stats": stats,
-        }
-
-    @traceable(name="website_builder.orchestrator.refine_description", tags=["website_builder", "orchestrator", "refinement"])
-    async def refine_description(
-        self,
-        *,
-        idea_id: int,
-        token: str,
-        current_description: dict[str, Any],
-        user_feedback: str,
-    ) -> dict[str, Any]:
-        ctx = await self.context_tool.fetch(idea_id=idea_id, access_token=token)
-        new_description = await refine_website_description(
-            ctx=ctx,
-            current_description=current_description,
-            user_feedback=user_feedback,
-            invoke_llm=self.invoke_llm,
-            parse_json=self.parse_json_output,
-        )
-        await patch_website_project(
-            idea_id=idea_id,
-            access_token=token,
-            patch={"status": "draft", "description_json": new_description},
-        )
-        await append_website_message(
-            idea_id=idea_id,
-            access_token=token,
-            message=build_message(
-                role="user",
-                msg_type="description_refine_request",
-                content=user_feedback.strip(),
-            ),
-        )
-        await append_website_message(
-            idea_id=idea_id,
-            access_token=token,
-            message=build_message(
-                role="assistant",
-                msg_type="description_refine_result",
-                content="Description du site mise a jour selon tes retours.",
-                meta={
-                    "sections": len(new_description.get("sections") or []),
-                    "animations": len(new_description.get("animations") or []),
-                },
-            ),
-        )
-        return {
-            "context": {
-                **ctx.as_dict(),
-                "summary_md": render_context_summary(ctx),
-            },
-            "description": new_description,
-            "description_summary_md": render_description_summary(new_description),
-        }
-
-    @traceable(name="website_builder.orchestrator.approve_description", tags=["website_builder", "orchestrator", "approval"])
+    @traceable(
+        name="website_builder.approve_description",
+        run_type="chain",
+        tags=[*TAGS_ORCH, "approval"],
+        metadata={"route": "POST /website/description/approve"},
+        process_inputs=process_route_inputs_idea_token,
+    )
     async def approve_description(self, *, idea_id: int, token: str) -> dict[str, Any]:
         await patch_website_project(
             idea_id=idea_id,
@@ -411,7 +300,14 @@ class WebsiteBuilderOrchestrator(BaseAgent):
         )
         return {"idea_id": idea_id, "approved": True}
 
-    @traceable(name="website_builder.orchestrator.save_html_directly", tags=["website_builder", "orchestrator", "edit"])
+    @traceable(
+        name="website_builder.save_html_manual",
+        run_type="chain",
+        tags=[*TAGS_ORCH, "edit", "manual_save"],
+        metadata={"route": "POST /website/save", "llm": False},
+        process_inputs=process_save_html_route_inputs,
+        process_outputs=process_save_html_outputs,
+    )
     async def save_html_directly(
         self,
         *,
@@ -453,6 +349,13 @@ class WebsiteBuilderOrchestrator(BaseAgent):
     # StepEmitter / SSE. Utilises par les routes /stream du Website Builder.
     # ─────────────────────────────────────────────────────────────────────────
 
+    @traceable(
+        name="website_builder.stream.description",
+        run_type="chain",
+        tags=TAGS_STREAM,
+        metadata={"sse_route": "/website/description/stream", "phase": "2"},
+        process_inputs=process_stream_description_inputs,
+    )
     async def stream_description(
         self,
         *,
@@ -530,6 +433,13 @@ class WebsiteBuilderOrchestrator(BaseAgent):
         finally:
             await emitter.close()
 
+    @traceable(
+        name="website_builder.stream.refine_description",
+        run_type="chain",
+        tags=TAGS_STREAM,
+        metadata={"sse_route": "/website/description/refine/stream", "phase": "2.5"},
+        process_inputs=process_stream_refine_inputs,
+    )
     async def stream_refine_description(
         self,
         *,
@@ -619,6 +529,13 @@ class WebsiteBuilderOrchestrator(BaseAgent):
         finally:
             await emitter.close()
 
+    @traceable(
+        name="website_builder.stream.generate_website",
+        run_type="chain",
+        tags=TAGS_STREAM,
+        metadata={"sse_route": "/website/generate/stream", "phase": "3"},
+        process_inputs=process_stream_generate_inputs,
+    )
     async def stream_generate_website(
         self,
         *,
@@ -720,6 +637,13 @@ class WebsiteBuilderOrchestrator(BaseAgent):
         finally:
             await emitter.close()
 
+    @traceable(
+        name="website_builder.stream.revise_website",
+        run_type="chain",
+        tags=TAGS_STREAM,
+        metadata={"sse_route": "/website/revise/stream", "phase": "4"},
+        process_inputs=process_stream_revise_inputs,
+    )
     async def stream_revise_website(
         self,
         *,
@@ -799,7 +723,13 @@ class WebsiteBuilderOrchestrator(BaseAgent):
         finally:
             await emitter.close()
 
-    @traceable(name="website_builder.orchestrator.deploy_website", tags=["website_builder", "orchestrator", "deployment"])
+    @traceable(
+        name="website_builder.deploy_website",
+        run_type="chain",
+        tags=[*TAGS_ORCH, "deployment"],
+        metadata={"route": "POST /website/deploy"},
+        process_inputs=process_save_html_route_inputs,
+    )
     async def deploy_website(self, *, idea_id: int, token: str, html: str) -> dict[str, Any]:
         ctx = await self.context_tool.fetch(idea_id=idea_id, access_token=token)
         validate_html_document(html)
@@ -844,7 +774,13 @@ class WebsiteBuilderOrchestrator(BaseAgent):
             "summary_md": summary_md,
         }
 
-    @traceable(name="website_builder.orchestrator.delete_deployment", tags=["website_builder", "orchestrator", "deployment"])
+    @traceable(
+        name="website_builder.delete_deployment",
+        run_type="chain",
+        tags=[*TAGS_ORCH, "deployment"],
+        metadata={"route": "POST /website/deploy/delete"},
+        process_inputs=process_route_inputs_idea_token,
+    )
     async def delete_deployment(self, *, idea_id: int, token: str, deployment_id: str) -> dict[str, Any]:
         dep_id = str(deployment_id or "").strip()
         if not dep_id:

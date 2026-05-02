@@ -12,6 +12,8 @@ import re
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from langsmith import traceable
+
 from config.website_builder_config import (
     GENERATION_MAX_TOKENS,
     GENERATION_TEMPERATURE,
@@ -22,6 +24,11 @@ from prompts.website_builder.prompt_coder import (
     build_coder_user_prompt,
 )
 from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.langsmith_traces import (
+    TAGS_TOOL,
+    process_coder_inputs,
+    process_coder_outputs,
+)
 from tools.website_builder.website_renderer import extract_html_document, repair_html_document
 
 logger = logging.getLogger("brandai.website_builder.coder_tool")
@@ -66,6 +73,14 @@ def _extract_contact_email(architecture: dict[str, Any], content: dict[str, Any]
     return None
 
 
+@traceable(
+    name="website_builder.tool.coder_html",
+    run_type="tool",
+    tags=[*TAGS_TOOL, "phase_3"],
+    metadata={"step": "html_generation"},
+    process_inputs=process_coder_inputs,
+    process_outputs=process_coder_outputs,
+)
 async def build_website_html(
     *,
     ctx: BrandContext,

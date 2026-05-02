@@ -1,4 +1,4 @@
-"""Outils Website Builder (context, planning, build, revision, validation)."""
+"""Outils Website Builder (context, build, revision, validation)."""
 
 from tools.website_builder.context_tool import WebsiteContextTool
 

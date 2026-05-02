@@ -5,7 +5,7 @@ import {
   apiFetchWebsiteContext,
   apiFetchWebsiteProject,
   apiApproveWebsiteDescription,
-  apiReviseWebsite,
+  apiSaveWebsiteHtml,
   apiDeployWebsite,
   apiStreamWebsiteDescription,
   apiStreamRefineWebsiteDescription,
@@ -13,7 +13,6 @@ import {
   apiStreamReviseWebsite,
   apiDeleteWebsiteDeployment,
 } from "../api/websiteBuilder.api";
-import { WEBSITE_BUILDER_MANUAL_EDIT_INSTRUCTION } from "../config/websiteBuilder.config";
 
 /**
  * Phases :
@@ -918,10 +917,9 @@ export function useWebsiteBuilder() {
       setPhase("saving_edits");
       setError(null);
       try {
-        const data = await apiReviseWebsite(token, {
+        const data = await apiSaveWebsiteHtml(token, {
           ideaId,
-          currentHtml: sanitized,
-          instruction: WEBSITE_BUILDER_MANUAL_EDIT_INSTRUCTION,
+          html: sanitized,
         });
         const serverHtml = normalizeWebsiteHtml(data?.html || sanitized);
         setHtml(serverHtml);
