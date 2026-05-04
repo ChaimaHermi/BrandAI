@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.schemas.social_connection import (
     LinkedInConnectionUpsert,
-    LinkedInUrlPatch,
+    LinkedInProfileUrlPatch,
     MetaConnectionUpsert,
     MetaSelectedPagePatch,
     SocialConnectionsOut,
@@ -81,6 +81,7 @@ def put_meta_connection(
             user_access_token=body.user_access_token,
             pages=pages,
             selected_page_id=sid,
+            token_expires_at=body.token_expires_at,
         )
         return social_svc.get_connections_for_idea(db, idea_id, current_user.id)
     except ProgrammingError as e:
@@ -130,6 +131,7 @@ def put_linkedin_connection(
             access_token=body.access_token,
             person_urn=body.person_urn,
             name=body.name,
+            token_expires_at=body.token_expires_at,
         )
         return social_svc.get_connections_for_idea(db, idea_id, current_user.id)
     except ProgrammingError as e:
@@ -140,17 +142,17 @@ def put_linkedin_connection(
 @router.patch("/linkedin/url", response_model=SocialConnectionsOut)
 def patch_linkedin_profile_url(
     idea_id: int,
-    body: LinkedInUrlPatch,
+    body: LinkedInProfileUrlPatch,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> SocialConnectionsOut:
-    """URL de profil LinkedIn optionnelle (colonne linkedin_url ; ex. pour l’agent Optimizer)."""
+    """URL de profil LinkedIn optionnelle (colonne profile_url ; ex. pour l’agent Optimizer)."""
     try:
-        ok = social_svc.patch_linkedin_url(
+        ok = social_svc.patch_linkedin_profile_url(
             db,
             idea_id=idea_id,
             user_id=current_user.id,
-            linkedin_url=body.linkedin_url,
+            profile_url=body.profile_url,
         )
         if not ok:
             raise HTTPException(

@@ -110,18 +110,18 @@ export async function putLinkedInSocialConnection(token, ideaId, body) {
  * @param {number|string} ideaId
  * @param {string|null|undefined} linkedinUrl — chaîne vide ou null pour effacer
  */
-export async function patchLinkedInUrl(token, ideaId, linkedinUrl) {
-  const linkedin_url =
-    linkedinUrl == null || linkedinUrl === ""
+export async function patchLinkedInUrl(token, ideaId, profileUrl) {
+  const profile_url =
+    profileUrl == null || profileUrl === ""
       ? null
-      : String(linkedinUrl).trim() || null;
+      : String(profileUrl).trim() || null;
   const res = await fetch(`${socialConnectionsBase(ideaId)}/linkedin/url`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ linkedin_url }),
+    body: JSON.stringify({ profile_url }),
   });
   return handleResponse(res);
 }

@@ -23,8 +23,9 @@ async def publish_to_platform(
 ) -> dict[str, Any]:
     """Publish a post to one platform via backend-ai social endpoints.
 
-    `social_tokens` is the decrypted payload from UserSocialConnection:
-      meta  → {pages: [...], selected_page_id, user_access_token}
+    `social_tokens` is the decrypted payload from `social_connections.access_token_encrypted` :
+      facebook_page → {pages: [...], selected_page_id, user_access_token}
+      instagram_business → {page_id, page_access_token, instagram_business_account_id?}
       linkedin → {access_token, person_urn}
     """
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
@@ -73,9 +74,16 @@ async def publish_to_platform(
 
 
 def _resolve_meta_page(social_tokens: dict[str, Any]) -> dict[str, Any]:
-    pages = social_tokens.get("pages") or []
-    page_id = social_tokens.get("selected_page_id")
-    page = next((p for p in pages if str(p.get("id")) == str(page_id)), None)
-    if not page:
-        raise RuntimeError("Aucune page Facebook sélectionnée ou token invalide.")
-    return page
+    pages = social_tokens.get("pages")
+    if isinstance(pages, list) and pages:
+        page_id = social_tokens.get("selected_page_id")
+        page = next((p for p in pages if str(p.get("id")) == str(page_id)), None)
+        if not page and len(pages) == 1:
+            page = pages[0]
+        if page and page.get("id") and page.get("access_token"):
+            return page
+    pid = social_tokens.get("page_id")
+    tok = social_tokens.get("page_access_token")
+    if pid and tok:
+        return {"id": str(pid), "access_token": str(tok)}
+    raise RuntimeError("Aucune page Facebook sélectionnée ou token invalide.")

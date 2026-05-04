@@ -111,6 +111,7 @@ export default function ConnectSocialModal({ open, onClose, social }) {
   if (!open) return null;
 
   const metaConnected = social.metaConnected;
+  const instagramConnected = social.instagramConnected;
   const linkedinConnected = social.linkedinConnected;
   const allReady = metaConnected && linkedinConnected;
 
@@ -199,13 +200,15 @@ export default function ConnectSocialModal({ open, onClose, social }) {
           </PlatformSection>
 
           {/* Instagram info */}
-          <PlatformSection platform={INSTAGRAM_PLATFORM} connected={metaConnected}>
-            <div className={`flex items-start gap-2 rounded-xl px-3 py-2.5 ${metaConnected ? "bg-success/5 border border-success/20" : "bg-amber-50 border border-amber-200"}`}>
-              <FiShield className={`mt-0.5 h-4 w-4 shrink-0 ${metaConnected ? "text-success" : "text-amber-500"}`} />
+          <PlatformSection platform={INSTAGRAM_PLATFORM} connected={instagramConnected}>
+            <div className={`flex items-start gap-2 rounded-xl px-3 py-2.5 ${instagramConnected ? "bg-success/5 border border-success/20" : "bg-amber-50 border border-amber-200"}`}>
+              <FiShield className={`mt-0.5 h-4 w-4 shrink-0 ${instagramConnected ? "text-success" : "text-amber-500"}`} />
               <p className="text-xs leading-relaxed text-ink-muted">
-                {metaConnected
-                  ? "Prêt. Assurez-vous que votre compte Instagram pro est bien lié à la Page Facebook sélectionnée."
-                  : "Connectez Meta ci-dessus pour activer Instagram Business."}
+                {!metaConnected
+                  ? "Connectez Meta ci-dessus pour activer Instagram Business."
+                  : instagramConnected
+                    ? "Compte Instagram Business détecté et lié à la Page sélectionnée."
+                    : "Aucun compte Instagram Business lié à cette Page — vérifiez Meta Business ou choisissez une autre Page."}
               </p>
             </div>
           </PlatformSection>

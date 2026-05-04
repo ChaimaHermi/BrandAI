@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -13,22 +15,26 @@ class MetaConnectionUpsert(BaseModel):
     user_access_token: str = Field(..., min_length=1)
     pages: list[MetaPageIn] = Field(..., min_length=1)
     selected_page_id: str | None = None
+    token_expires_at: datetime | None = Field(
+        None,
+        description="Expiration du jeton utilisateur Meta si connue (OAuth).",
+    )
 
 
 class MetaSelectedPagePatch(BaseModel):
     selected_page_id: str = Field(..., min_length=1)
 
 
-class LinkedInUrlPatch(BaseModel):
-    """URL de profil LinkedIn optionnelle (saisie manuelle, ex. pour l’agent Optimizer)."""
+class LinkedInProfileUrlPatch(BaseModel):
+    """URL de profil LinkedIn optionnelle (ex. pour l’agent Optimizer)."""
 
-    linkedin_url: str | None = Field(
+    profile_url: str | None = Field(
         None,
         max_length=2048,
         description="https://www.linkedin.com/in/… — laisser vide pour effacer.",
     )
 
-    @field_validator("linkedin_url", mode="before")
+    @field_validator("profile_url", mode="before")
     @classmethod
     def normalize_optional_url(cls, v: object) -> str | None:
         if v is None:
@@ -45,7 +51,7 @@ class LinkedInUrlPatch(BaseModel):
             s = "https://" + s[7:]
         return s
 
-    @field_validator("linkedin_url")
+    @field_validator("profile_url")
     @classmethod
     def must_be_https_linkedin(cls, v: str | None) -> str | None:
         if v is None:
@@ -62,6 +68,7 @@ class LinkedInConnectionUpsert(BaseModel):
     access_token: str = Field(..., min_length=1)
     person_urn: str = Field(..., min_length=1)
     name: str | None = None
+    token_expires_at: datetime | None = None
 
 
 class MetaPageOut(BaseModel):
@@ -70,14 +77,23 @@ class MetaPageOut(BaseModel):
     access_token: str
 
 
+class InstagramBusinessConnectionOut(BaseModel):
+    platform_account_id: str | None = None
+    profile_url: str | None = None
+    account_name: str | None = None
+    page_name: str | None = None
+    token_expires_at: datetime | None = None
+
+
 class MetaConnectionOut(BaseModel):
     user_access_token: str
     pages: list[MetaPageOut]
     selected_page_id: str | None = None
     account_name: str | None = None
     page_name: str | None = None
-    facebook_url: str | None = None
-    instagram_url: str | None = None
+    profile_url: str | None = None
+    token_expires_at: datetime | None = None
+    instagram_business: InstagramBusinessConnectionOut | None = None
 
 
 class LinkedInConnectionOut(BaseModel):
@@ -86,7 +102,8 @@ class LinkedInConnectionOut(BaseModel):
     name: str | None = None
     account_name: str | None = None
     page_name: str | None = None
-    linkedin_url: str | None = None
+    profile_url: str | None = None
+    token_expires_at: datetime | None = None
 
 
 class SocialConnectionsOut(BaseModel):

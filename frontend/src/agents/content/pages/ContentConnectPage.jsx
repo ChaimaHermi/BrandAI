@@ -135,7 +135,7 @@ export default function ContentConnectPage() {
         />
         <SocialCard
           platform={PLATFORMS[1]}
-          connected={social.metaConnected}
+          connected={social.instagramConnected}
         />
         <SocialCard
           platform={PLATFORMS[2]}

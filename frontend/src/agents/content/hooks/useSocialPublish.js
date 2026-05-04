@@ -199,6 +199,7 @@ export function useSocialPublish(ideaId) {
   const [linkedinProfileUrlSaving, setLinkedinProfileUrlSaving] = useState(false);
   const [connectBusy, setConnectBusy] = useState(null);
   const [remoteLoaded, setRemoteLoaded] = useState(false);
+  const [instagramBusinessConnected, setInstagramBusinessConnected] = useState(false);
 
   /* Hydratation session (par idée) puis chargement serveur */
   useEffect(() => {
@@ -210,6 +211,7 @@ export function useSocialPublish(ideaId) {
       setLinkedinUrn("");
       setLinkedinName("");
       setLinkedinProfileUrl("");
+      setInstagramBusinessConnected(false);
       setRemoteLoaded(false);
       return;
     }
@@ -239,17 +241,19 @@ export function useSocialPublish(ideaId) {
           setSelectedPageId(
             data.meta.selected_page_id ? String(data.meta.selected_page_id) : "",
           );
+          setInstagramBusinessConnected(Boolean(data.meta.instagram_business));
         } else {
           setMetaPages([]);
           setMetaUserToken("");
           setSelectedPageId("");
+          setInstagramBusinessConnected(false);
         }
         if (data.linkedin?.access_token) {
           setLinkedinToken(data.linkedin.access_token);
           setLinkedinUrn(data.linkedin.person_urn || "");
           setLinkedinName(data.linkedin.name ? String(data.linkedin.name) : "");
           setLinkedinProfileUrl(
-            data.linkedin.linkedin_url ? String(data.linkedin.linkedin_url) : "",
+            data.linkedin.profile_url ? String(data.linkedin.profile_url) : "",
           );
         } else {
           setLinkedinToken("");
@@ -298,9 +302,13 @@ export function useSocialPublish(ideaId) {
       return;
     }
     const t = setTimeout(() => {
-      patchMetaSelectedPage(apiToken, iid, selectedPageId).catch((e) => {
-        console.warn("[social] sync page sélectionnée:", e?.message || e);
-      });
+      patchMetaSelectedPage(apiToken, iid, selectedPageId)
+        .then((data) => {
+          setInstagramBusinessConnected(Boolean(data?.meta?.instagram_business));
+        })
+        .catch((e) => {
+          console.warn("[social] sync page sélectionnée:", e?.message || e);
+        });
     }, 400);
     return () => clearTimeout(t);
   }, [selectedPageId, apiToken, remoteLoaded, metaPages.length, keys, iid]);
@@ -354,6 +362,7 @@ export function useSocialPublish(ideaId) {
                 if (out?.meta?.selected_page_id) {
                   setSelectedPageId(String(out.meta.selected_page_id));
                 }
+                setInstagramBusinessConnected(Boolean(out?.meta?.instagram_business));
               })
               .catch((e) => {
                 console.warn("[social] enregistrement Meta BDD:", e?.message || e);
@@ -409,7 +418,7 @@ export function useSocialPublish(ideaId) {
                     : "",
               );
               setLinkedinProfileUrl(
-                out?.linkedin?.linkedin_url ? String(out.linkedin.linkedin_url) : "",
+                out?.linkedin?.profile_url ? String(out.linkedin.profile_url) : "",
               );
             })
             .catch((e) => {
@@ -501,7 +510,7 @@ export function useSocialPublish(ideaId) {
     setLinkedinProfileUrlSaving(true);
     try {
       const data = await patchLinkedInUrl(t, currentIdea, toSend);
-      const u = data?.linkedin?.linkedin_url;
+      const u = data?.linkedin?.profile_url;
       setLinkedinProfileUrl(u ? String(u) : "");
       toast.success(
         toSend ? "Lien LinkedIn enregistré." : "Lien LinkedIn effacé.",
@@ -617,6 +626,7 @@ export function useSocialPublish(ideaId) {
     setMetaPages([]);
     setMetaUserToken("");
     setSelectedPageId("");
+    setInstagramBusinessConnected(false);
     if (k) {
       try {
         sessionStorage.removeItem(k.META_PAGES);
@@ -658,6 +668,7 @@ export function useSocialPublish(ideaId) {
     setSelectedPageId,
     selectedPage,
     metaConnected: metaPages.length > 0,
+    instagramConnected: instagramBusinessConnected,
     linkedinConnected: Boolean(linkedinToken),
     linkedinName: linkedinName || null,
     linkedinProfileUrl,
