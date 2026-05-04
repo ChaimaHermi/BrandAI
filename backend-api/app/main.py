@@ -54,6 +54,7 @@ from app.api.routes import (
     idea_scheduled_publications,
     notifications,
     website_projects,
+    optimizer,
 )
 
 app = FastAPI(
@@ -123,6 +124,7 @@ app.include_router(market_analysis.router, prefix="/api")
 app.include_router(marketing_plans.router, prefix="/api")
 app.include_router(branding_results.router, prefix="/api")
 app.include_router(social_connections.router, prefix="/api")
+app.include_router(optimizer.router, prefix="/api")
 app.include_router(idea_scheduled_publications.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(website_projects.router, prefix="/api")

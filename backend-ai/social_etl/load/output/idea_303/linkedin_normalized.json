@@ -1,0 +1,266 @@
+{
+  "platform": "linkedin",
+  "followers_count": 3000,
+  "posts_count": 10,
+  "posts": [
+    {
+      "platform": "linkedin",
+      "post_id": "7456958146373107713",
+      "post_type": "post",
+      "message_preview": "🧭 Data Engineer Roadmap — What Actually Matters When I first looked at a Data Engineering roadmap, it felt overwhelming.",
+      "published_at": {
+        "timestamp": 1777877365678,
+        "date": "2026-05-04T06:49:25.678Z",
+        "postedAgoShort": "1d",
+        "postedAgoText": "1 day ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1777877365.678,
+      "likes": 102,
+      "comments": 0,
+      "shares": 15,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 117,
+      "reactions_breakdown": {
+        "like": 93,
+        "empathy": 6,
+        "praise": 2,
+        "interest": 1
+      }
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7452008537305640960",
+      "post_type": "post",
+      "message_preview": "Bonjour Brand AI",
+      "published_at": {
+        "timestamp": 1776697286917,
+        "date": "2026-04-20T15:01:26.917Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1776697286.917,
+      "likes": 0,
+      "comments": 0,
+      "shares": 0,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 0,
+      "reactions_breakdown": {}
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7443395097494192128",
+      "post_type": "post",
+      "message_preview": "LLM, RAG, AI Agent, Agentic AI.",
+      "published_at": {
+        "timestamp": 1774643682836,
+        "date": "2026-03-27T20:34:42.836Z",
+        "postedAgoShort": "1mo",
+        "postedAgoText": "1 month ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1774643682.836,
+      "likes": 186,
+      "comments": 11,
+      "shares": 40,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 237,
+      "reactions_breakdown": {
+        "like": 172,
+        "interest": 5,
+        "empathy": 4,
+        "praise": 3,
+        "appreciation": 2
+      }
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7441573345164292096",
+      "post_type": "post",
+      "message_preview": "RAG is not a “technique.” It’s a whole ecosystem — and a developer’s stack.",
+      "published_at": {
+        "timestamp": 1774209343234,
+        "date": "2026-03-22T19:55:43.234Z",
+        "postedAgoShort": "2mo",
+        "postedAgoText": "2 months ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1774209343.234,
+      "likes": 754,
+      "comments": 44,
+      "shares": 85,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 883,
+      "reactions_breakdown": {
+        "like": 715,
+        "interest": 24,
+        "empathy": 9,
+        "praise": 5,
+        "appreciation": 1
+      }
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7451263825795862528",
+      "post_type": "post",
+      "message_preview": "malla isamm ❤️",
+      "published_at": {
+        "timestamp": 1776519733857,
+        "date": "2026-04-18T13:42:13.857Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1776519733.857,
+      "likes": 8,
+      "comments": 0,
+      "shares": 0,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 8,
+      "reactions_breakdown": {
+        "empathy": 4,
+        "praise": 3,
+        "like": 1
+      }
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7452005057077895168",
+      "post_type": "post",
+      "message_preview": "Bonjour Brand AI",
+      "published_at": {
+        "timestamp": 1776696457166,
+        "date": "2026-04-20T14:47:37.166Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1776696457.166,
+      "likes": 2,
+      "comments": 0,
+      "shares": 0,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 2,
+      "reactions_breakdown": {
+        "like": 2
+      }
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7452007170688344064",
+      "post_type": "post",
+      "message_preview": "Le dressing qui prend la poussière, c’est plus qu’un espace encombré : c’est une source de gaspillage textile.",
+      "published_at": {
+        "timestamp": 1776696961090,
+        "date": "2026-04-20T14:56:01.090Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1776696961.09,
+      "likes": 8,
+      "comments": 0,
+      "shares": 0,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 8,
+      "reactions_breakdown": {
+        "like": 4,
+        "empathy": 4
+      }
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7449810356568387586",
+      "post_type": "post",
+      "message_preview": "Bonjour Brand AI - 2026-04-14 14:26:39",
+      "published_at": {
+        "timestamp": 1776173199789,
+        "date": "2026-04-14T13:26:39.789Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1776173199.789,
+      "likes": 7,
+      "comments": 0,
+      "shares": 0,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 7,
+      "reactions_breakdown": {
+        "entertainment": 4,
+        "like": 2,
+        "empathy": 1
+      }
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7442672228778942464",
+      "post_type": "post",
+      "message_preview": "📌𝗨𝗻𝗱𝗲𝗿𝘀𝘁𝗮𝗻𝗱𝗶𝗻𝗴 𝘁𝗵𝗲 𝗔𝗜 𝗦𝘁𝗮𝗰𝗸: 𝗙𝗿𝗼𝗺 𝗟𝗲𝗮𝗿𝗻𝗶𝗻𝗴 𝘁𝗼 𝗔𝘂𝘁𝗼𝗻𝗼𝗺𝘆 In AI discussions, terms like Machine Learning, Deep Learning, Generative AI, RAG, a…",
+      "published_at": {
+        "timestamp": 1774471337504,
+        "date": "2026-03-25T20:42:17.504Z",
+        "postedAgoShort": "1mo",
+        "postedAgoText": "1 month ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1774471337.504,
+      "likes": 361,
+      "comments": 5,
+      "shares": 115,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 481,
+      "reactions_breakdown": {
+        "like": 272,
+        "empathy": 48,
+        "praise": 28,
+        "interest": 8,
+        "appreciation": 5
+      }
+    },
+    {
+      "platform": "linkedin",
+      "post_id": "7449813611339882496",
+      "post_type": "post",
+      "message_preview": "Bonjour Brand AI test auto 2",
+      "published_at": {
+        "timestamp": 1776173975787,
+        "date": "2026-04-14T13:39:35.787Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "published_at_ts": 1776173975.787,
+      "likes": 4,
+      "comments": 0,
+      "shares": 0,
+      "saves": null,
+      "clicks": null,
+      "reach": null,
+      "impressions": null,
+      "interactions_total": 4,
+      "reactions_breakdown": {
+        "entertainment": 2,
+        "like": 2
+      }
+    }
+  ]
+}

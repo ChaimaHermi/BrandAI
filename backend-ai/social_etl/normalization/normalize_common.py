@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +25,20 @@ def dump_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def parse_dt(value: Any) -> datetime | None:
+    """Parse une date ISO (str) ou un objet type Apify LinkedIn ``{date, timestamp}``."""
+    if isinstance(value, dict):
+        date_str = value.get("date")
+        if isinstance(date_str, str) and date_str.strip():
+            value = date_str
+        else:
+            ts = value.get("timestamp")
+            if isinstance(ts, (int, float)) and ts > 0:
+                try:
+                    sec = float(ts) / 1000.0 if float(ts) > 1_000_000_000_000 else float(ts)
+                    return datetime.fromtimestamp(sec, tz=timezone.utc)
+                except (OSError, OverflowError, ValueError):
+                    return None
+            return None
     if not isinstance(value, str) or not value.strip():
         return None
     raw = value.strip()

@@ -633,6 +633,103 @@ def delete_linkedin(db: Session, *, idea_id: int, user_id: int) -> bool:
     return True
 
 
+def build_social_etl_pipeline_accounts(
+    db: Session,
+    idea_id: int,
+    user_id: int,
+    *,
+    post_limit: int = 10,
+    comments_limit: int | None = None,
+    reactions_limit: int = 100,
+    apify_token: str | None = None,
+    apify_actor_id: str | None = None,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """
+    Construit la liste ``accounts`` pour ``social_etl.pipeline.run_pipeline_async``.
+
+    Meta : page sélectionnée → Facebook ; ligne Instagram Business → Instagram.
+    LinkedIn : URL profil en base + jeton **Apify** (paramètre ``apify_token``, pas OAuth LI).
+    """
+    _assert_idea_owned(db, idea_id, user_id)
+    c_lim = int(comments_limit if comments_limit is not None else settings.SOCIAL_ETL_COMMENTS_LIMIT)
+    accounts: list[dict[str, Any]] = []
+    warnings: list[str] = []
+
+    mr = _row(db, idea_id, PLATFORM_FACEBOOK_PAGE)
+    if mr:
+        data = decrypt_json_payload(mr.access_token_encrypted)
+        page = _selected_meta_page(list(data.get("pages") or []), data.get("selected_page_id"))
+        if page:
+            pid = str(page.get("id") or "").strip()
+            tok = str(page.get("access_token") or "").strip()
+            if pid and tok:
+                accounts.append(
+                    {
+                        "platform": "facebook",
+                        "access_token": tok,
+                        "account_id": pid,
+                        "limit": post_limit,
+                        "comments_limit": c_lim,
+                        "reactions_limit": reactions_limit,
+                    }
+                )
+
+    ig_row = _row(db, idea_id, PLATFORM_INSTAGRAM_BUSINESS)
+    if ig_row:
+        try:
+            ig_data = decrypt_json_payload(ig_row.access_token_encrypted)
+        except Exception:
+            ig_data = {}
+        page_tok = str(ig_data.get("page_access_token") or "").strip()
+        ig_uid = str(ig_data.get("instagram_business_account_id") or "").strip()
+        page_id_fb = str(ig_data.get("page_id") or "").strip()
+        aid = ig_uid or page_id_fb
+        if page_tok and aid:
+            accounts.append(
+                {
+                    "platform": "instagram",
+                    "access_token": page_tok,
+                    "account_id": aid,
+                    "limit": post_limit,
+                    "comments_limit": c_lim,
+                }
+            )
+        else:
+            warnings.append("Connexion Instagram incomplète (jeton page ou id compte manquant).")
+
+    lr = _row(db, idea_id, PLATFORM_LINKEDIN)
+    if lr:
+        profile_url = _strip_or_none(lr.profile_url)
+        try:
+            li = decrypt_json_payload(lr.access_token_encrypted)
+        except Exception:
+            li = {}
+        if not profile_url:
+            profile_url = _legacy_linkedin_url_from_payload(li)
+        apify = (apify_token or "").strip()
+        if profile_url and apify:
+            li_acc: dict[str, Any] = {
+                "platform": "linkedin",
+                "access_token": apify,
+                "account_id": profile_url,
+                "limit": post_limit,
+            }
+            act = (apify_actor_id or "").strip()
+            if act:
+                li_acc["actor_id"] = act
+            accounts.append(li_acc)
+        elif profile_url:
+            warnings.append(
+                "Profil LinkedIn renseigné mais APIFY_TOKEN absent — extraction LinkedIn ignorée."
+            )
+        else:
+            warnings.append(
+                "Connexion LinkedIn sans URL de profil — renseignez l’URL pour l’analyse (Apify)."
+            )
+
+    return accounts, warnings
+
+
 def get_decrypted_tokens_for_publish(
     db: Session,
     *,

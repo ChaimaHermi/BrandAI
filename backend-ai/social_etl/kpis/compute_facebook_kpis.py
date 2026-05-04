@@ -18,7 +18,11 @@ def main() -> None:
     total_clicks = sum(int(p.get("clicks") or 0) for p in posts if isinstance(p, dict) and p.get("clicks") is not None)
     total_interactions = total_reactions_global + total_comments + total_shares
 
-    reach_values = [int(p.get("reach")) for p in posts if isinstance(p, dict) and isinstance(p.get("reach"), int)]
+    reach_values = [
+        int(p.get("reach"))
+        for p in posts
+        if isinstance(p, dict) and isinstance(p.get("reach"), (int, float))
+    ]
     reach_total = sum(reach_values) if reach_values else None
 
     reactions_map: dict[str, int] = {}
@@ -28,18 +32,31 @@ def main() -> None:
     for p in posts:
         if not isinstance(p, dict):
             continue
-        reach = p.get("reach") if isinstance(p.get("reach"), int) else None
+        reach = p.get("reach") if isinstance(p.get("reach"), (int, float)) else None
         reactions = int(p.get("likes") or 0)
         comments = int(p.get("comments") or 0)
         er_post = pct(reactions + comments, reach) if reach else None
         if er_post is not None:
             er_values.append(er_post)
-        ptype = str(p.get("post_type") or "unknown")
+        ptype = str(p.get("media_type") or p.get("post_type") or "unknown")
         post_type_counts[ptype] = post_type_counts.get(ptype, 0) + 1
         breakdown = p.get("reactions_breakdown") if isinstance(p.get("reactions_breakdown"), dict) else {}
-        for k, v in breakdown.items():
-            if isinstance(v, int):
-                reactions_map[k] = reactions_map.get(k, 0) + v
+        if breakdown:
+            for k, v in breakdown.items():
+                if isinstance(v, int):
+                    reactions_map[k] = reactions_map.get(k, 0) + v
+        else:
+            pairs = (
+                ("like", p.get("reactions_like")),
+                ("love", p.get("reactions_love")),
+                ("haha", p.get("reactions_haha")),
+                ("wow", p.get("reactions_wow")),
+                ("sad", p.get("reactions_sad")),
+                ("angry", p.get("reactions_angry")),
+            )
+            for k, v in pairs:
+                if isinstance(v, int):
+                    reactions_map[k] = reactions_map.get(k, 0) + v
         enriched_posts.append({**p, "engagement_rate_post": er_post})
 
     nb_posts = len(posts)

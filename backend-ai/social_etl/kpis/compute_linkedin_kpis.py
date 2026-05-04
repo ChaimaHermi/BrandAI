@@ -34,10 +34,12 @@ def main() -> None:
     for p in posts:
         if not isinstance(p, dict):
             continue
-        interactions = int(p.get("interactions_total") or 0)
-        ptype = str(p.get("post_type") or "unknown")
+        interactions = int(p.get("interactions_total") or 0) or (
+            int(p.get("likes") or 0) + int(p.get("comments") or 0) + int(p.get("shares") or 0)
+        )
+        ptype = str(p.get("media_type") or p.get("post_type") or "unknown")
         post_type_counts[ptype] = post_type_counts.get(ptype, 0) + 1
-        enriched_posts.append({**p, "interactions_per_post": interactions})
+        enriched_posts.append({**p, "interactions_per_post": interactions, "interactions_total": interactions})
 
     nb_posts = len(posts)
     nb_days = post_days_span(posts)
@@ -66,7 +68,9 @@ def main() -> None:
         },
         "content": {
             "top_5_posts": sorted(
-                enriched_posts, key=lambda x: int(x.get("interactions_total") or 0), reverse=True
+                enriched_posts,
+                key=lambda x: int(x.get("interactions_total") or x.get("interactions_per_post") or 0),
+                reverse=True,
             )[:5],
             "interactions_breakdown": {
                 "total_likes": total_likes,

@@ -1,0 +1,1215 @@
+{
+  "platform": "linkedin",
+  "source": "apify",
+  "collected_at": "2026-05-04T16:26:35.045125+00:00",
+  "profile": {},
+  "profile_url": "https://www.linkedin.com/in/chaima-hermi/",
+  "profile_social": {
+    "followers_count": 3000,
+    "followers_count_source": "author.info_heuristic",
+    "followers_count_precision": "estimated",
+    "connections_count": null,
+    "connections_count_source": "not_available",
+    "connections_count_precision": "unknown",
+    "total_posts_count": null,
+    "total_posts_count_source": "not_available",
+    "total_posts_count_precision": "unknown"
+  },
+  "posts_count": 10,
+  "posts": [
+    {
+      "id": "7456958146373107713",
+      "post_type_api": "post",
+      "text": "🧭 Data Engineer Roadmap — What Actually Matters\nWhen I first looked at a Data Engineering roadmap,\nit felt overwhelming.\nToo many tools. Too many concepts. No clear direction.\nBut over time, I realized:\n👉 It’s not about learning everything.\n👉 It’s about understanding the order and purpose.\nHere’s how I now see the roadmap:\n🔹 1. SQL & Data Fundamentals\nEverything starts here.\nIf you don’t understand how data is stored, queried, and structured → nothing else will make sense.\n🔹 2. Python / PySpark\nNot just coding—but processing data at scale.\nThis is where you move from small datasets → big data thinking.\n🔹 3. Data Modeling & ETL/ELT\nThis is where engineering actually begins.\nDesigning how data flows, transforms, and becomes usable.\n🔹 4. Big Data Tools (Spark, Kafka)\nHandling volume and velocity.\nLearning how distributed systems process massive datasets.\n🔹 5. Cloud Platforms (Azure/AWS/GCP)\nModern data engineering lives in the cloud.\nScalability, storage, and compute all come together here.\n🔹 6. Orchestration (ADF, Airflow)\nPipelines don’t run themselves.\nThis layer controls scheduling, dependencies, and execution.\n🔹 7. Data Lakes & Warehouses\nWhere data is stored and served.\nFrom raw → structured → analytics-ready.\n🔹 8. Monitoring & Data Quality\nPipelines will fail. Data will break.\nGood engineers detect and fix issues early.\n🔹 9. Real-Time Processing\nFor systems that need instant insights.\n(Used when batch is not enough)\n🔹 10. CI/CD & DevOps for Data\nTaking pipelines from development → production reliably.\n💡 What most people miss:\nThis is NOT a checklist.\n👉 It’s a progression of thinking:\n• From querying → processing\n• From coding → designing systems\n• From working code → reliable pipelines\n💡 My biggest takeaway:\nYou don’t need to learn everything at once.\n👉 Focus on one stage → build something → move forward\nBecause in the end:\n👉 Data Engineering is not about tools.\nIt’s about building systems that handle data reliably at scale.\n\nFound this helpful? Repost it! 🔁\n\n#DataEngineering #Roadmap #Azure #BigData #CareerGrowth",
+      "published_at": {
+        "timestamp": 1777877365678,
+        "date": "2026-05-04T06:49:25.678Z",
+        "postedAgoShort": "1d",
+        "postedAgoText": "1 day ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7456958146373107713",
+        "linkedinUrl": "https://www.linkedin.com/posts/activity-7456511358822543360--GEi",
+        "content": "🧭 Data Engineer Roadmap — What Actually Matters\nWhen I first looked at a Data Engineering roadmap,\nit felt overwhelming.\nToo many tools. Too many concepts. No clear direction.\nBut over time, I realized:\n👉 It’s not about learning everything.\n👉 It’s about understanding the order and purpose.\nHere’s how I now see the roadmap:\n🔹 1. SQL & Data Fundamentals\nEverything starts here.\nIf you don’t understand how data is stored, queried, and structured → nothing else will make sense.\n🔹 2. Python / PySpark\nNot just coding—but processing data at scale.\nThis is where you move from small datasets → big data thinking.\n🔹 3. Data Modeling & ETL/ELT\nThis is where engineering actually begins.\nDesigning how data flows, transforms, and becomes usable.\n🔹 4. Big Data Tools (Spark, Kafka)\nHandling volume and velocity.\nLearning how distributed systems process massive datasets.\n🔹 5. Cloud Platforms (Azure/AWS/GCP)\nModern data engineering lives in the cloud.\nScalability, storage, and compute all come together here.\n🔹 6. Orchestration (ADF, Airflow)\nPipelines don’t run themselves.\nThis layer controls scheduling, dependencies, and execution.\n🔹 7. Data Lakes & Warehouses\nWhere data is stored and served.\nFrom raw → structured → analytics-ready.\n🔹 8. Monitoring & Data Quality\nPipelines will fail. Data will break.\nGood engineers detect and fix issues early.\n🔹 9. Real-Time Processing\nFor systems that need instant insights.\n(Used when batch is not enough)\n🔹 10. CI/CD & DevOps for Data\nTaking pipelines from development → production reliably.\n💡 What most people miss:\nThis is NOT a checklist.\n👉 It’s a progression of thinking:\n• From querying → processing\n• From coding → designing systems\n• From working code → reliable pipelines\n💡 My biggest takeaway:\nYou don’t need to learn everything at once.\n👉 Focus on one stage → build something → move forward\nBecause in the end:\n👉 Data Engineering is not about tools.\nIt’s about building systems that handle data reliably at scale.\n\nFound this helpful? Repost it! 🔁\n\n#DataEngineering #Roadmap #Azure #BigData #CareerGrowth",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAABN7Q7wBNliiseSYQ66RT6qZsjO-RSnET9k",
+          "universalName": null,
+          "publicIdentifier": "rajbir-singh-76456291",
+          "type": "profile",
+          "name": "Rajbir Singh",
+          "linkedinUrl": "https://www.linkedin.com/in/rajbir-singh-76456291?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAABN7Q7wBNliiseSYQ66RT6qZsjO-RSnET9k",
+          "info": "Data & AI Engineer | Data Engineer | Python, SQL, AWS | ETL, Data Pipelines | Gen AI | Machine Learning | Business Insights",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D5603AQGcG1a2U2GYYw/profile-displayphoto-crop_800_800/B56ZxnLxz4JsAI-/0/1771257667639?e=1779321600&v=beta&t=V-4ygMIY7XYbOsqZfvrBZNoZEqaMF8-us6ShQwlifSo",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1779321600000
+          },
+          "urn": "326845372"
+        },
+        "postedAt": {
+          "timestamp": 1777877365678,
+          "date": "2026-05-04T06:49:25.678Z",
+          "postedAgoShort": "1d",
+          "postedAgoText": "1 day ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [
+          {
+            "url": "https://media.licdn.com/dms/image/v2/D4E22AQEfixVMd4Kb1A/feedshare-shrink_1280/B4EZ3rZkXWGkAM-/0/1777770841915?e=1779321600&v=beta&t=dDZt_bKDLKdUDIacnrJg2FhZjWRJyhvEs4QdhIHE7Yk",
+            "width": 1206,
+            "height": 1766,
+            "expiresAt": 1779321600000
+          }
+        ],
+        "repostedBy": {
+          "name": "Chaima Hermi",
+          "publicIdentifier": "chaima-hermi",
+          "universalName": null,
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE"
+        },
+        "repostedAt": {
+          "timestamp": 1777877365678,
+          "date": "2026-05-04T06:49:25.678Z"
+        },
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/activity-7456511358822543360--GEi?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "image": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "linkedinUrl": "https://www.linkedin.com/feed/update/urn:li:activity:7456958146373107713?updateEntityUrn=urn%3Ali%3Afsd_update%3A%28urn%3Ali%3Aactivity%3A7456958146373107713%2CMEMBER_SHARES%2CDEBUG_REASON%2CDEFAULT%2Cfalse%29&originTrackingId=%2BNHWkRW2Tae7BrYxi4kKcg%3D%3D",
+          "imageLink": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "text": "Chaima Hermi reposted this"
+        },
+        "entityId": "7456958146373107713",
+        "shareUrn": "urn:li:share:7456511357509644289",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7456511357509644289",
+        "engagement": {
+          "id": "7456511358822543360",
+          "likes": 102,
+          "comments": 0,
+          "shares": 15,
+          "reactions": [
+            {
+              "type": "LIKE",
+              "count": 93
+            },
+            {
+              "type": "EMPATHY",
+              "count": 6
+            },
+            {
+              "type": "PRAISE",
+              "count": 2
+            },
+            {
+              "type": "INTEREST",
+              "count": 1
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7452008537305640960",
+      "post_type_api": "post",
+      "text": "Bonjour Brand AI",
+      "published_at": {
+        "timestamp": 1776697286917,
+        "date": "2026-04-20T15:01:26.917Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7452008537305640960",
+        "linkedinUrl": "https://www.linkedin.com/posts/activity-7452008537305640960-YVGP",
+        "content": "Bonjour Brand AI",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "universalName": null,
+          "publicIdentifier": "chaima-hermi",
+          "type": "profile",
+          "name": "Chaima Hermi",
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "info": "🚀+3k | Software Engineering Student 💻 | BI Developer 📊 | Data and AI Enthusiast 🔝",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "urn": "1005067558"
+        },
+        "postedAt": {
+          "timestamp": 1776697286917,
+          "date": "2026-04-20T15:01:26.917Z",
+          "postedAgoShort": "2w",
+          "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [],
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/activity-7452008537305640960-YVGP?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "text": null
+        },
+        "entityId": "7452008537305640960",
+        "shareUrn": "urn:li:share:7452008536722612224",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7452008536722612224",
+        "engagement": {
+          "id": "7452008537305640960",
+          "likes": 0,
+          "comments": 0,
+          "shares": 0,
+          "reactions": []
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7443395097494192128",
+      "post_type_api": "post",
+      "text": "LLM, RAG, AI Agent, Agentic AI.\nIf you can’t say when to use each, you are not ready for 2026.\n\nI see teams mixing these up every week.\n\nConfusion wastes time and money.\n\nHere’s how I break down these systems (and what each one is ACTUALLY for):\n\n→ LLM (Large Language Model)\nGenerates text from your prompt.\nNo outside info, fast and simple.\nLimited to what it learned before.\n\n→ RAG (Retrieval-Augmented Generation)\nCombines LLM power with real-time data retrieval.\nPulls in up-to-date info, but depends on quality sources.\n\n→ AI Agent\nPlans, reasons, and uses tools to complete tasks.\nWorks on multi-step workflows, remembers context, follows your goals.\n\n→ Agentic AI\nMultiple agents work together, divide tasks, share memory.\nHandles complex, ongoing projects with feedback and adaptation.\n\nKnowing the difference decides if your business stays ahead.\n\nHere’s how I match them to real use-cases:\n\n· LLM: Simple text generation, basic Q&A, chatbots.\n· RAG: Research, summarizing fresh info, domain knowledge.\n· AI Agent: Automating tasks that need planning and tool use.\n· Agentic AI: Multi-user, multi-step processes, coordinated teams.\n\nI learned the hard way:\n\nPicking the wrong system wastes resources and slows your business.\n\nGetting crystal clear on requirements before building helped me.\n\nAI skills alone are not enough in 2026.\n\nThe winners will bridge business needs with the right AI architecture.\n\nWant to get clear on what your team needs?\n\nHit me with a DM.",
+      "published_at": {
+        "timestamp": 1774643682836,
+        "date": "2026-03-27T20:34:42.836Z",
+        "postedAgoShort": "1mo",
+        "postedAgoText": "1 month ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7443395097494192128",
+        "linkedinUrl": "https://www.linkedin.com/posts/thevicmontano_llm-rag-ai-agent-agentic-ai-if-you-can-activity-7441863035377373184-ppDc",
+        "content": "LLM, RAG, AI Agent, Agentic AI.\nIf you can’t say when to use each, you are not ready for 2026.\n\nI see teams mixing these up every week.\n\nConfusion wastes time and money.\n\nHere’s how I break down these systems (and what each one is ACTUALLY for):\n\n→ LLM (Large Language Model)\nGenerates text from your prompt.\nNo outside info, fast and simple.\nLimited to what it learned before.\n\n→ RAG (Retrieval-Augmented Generation)\nCombines LLM power with real-time data retrieval.\nPulls in up-to-date info, but depends on quality sources.\n\n→ AI Agent\nPlans, reasons, and uses tools to complete tasks.\nWorks on multi-step workflows, remembers context, follows your goals.\n\n→ Agentic AI\nMultiple agents work together, divide tasks, share memory.\nHandles complex, ongoing projects with feedback and adaptation.\n\nKnowing the difference decides if your business stays ahead.\n\nHere’s how I match them to real use-cases:\n\n· LLM: Simple text generation, basic Q&A, chatbots.\n· RAG: Research, summarizing fresh info, domain knowledge.\n· AI Agent: Automating tasks that need planning and tool use.\n· Agentic AI: Multi-user, multi-step processes, coordinated teams.\n\nI learned the hard way:\n\nPicking the wrong system wastes resources and slows your business.\n\nGetting crystal clear on requirements before building helped me.\n\nAI skills alone are not enough in 2026.\n\nThe winners will bridge business needs with the right AI architecture.\n\nWant to get clear on what your team needs?\n\nHit me with a DM.",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAABdwu5MBy3j_QEauNGbJdDFmJUUgIcKlHiM",
+          "universalName": null,
+          "publicIdentifier": "thevicmontano",
+          "type": "profile",
+          "name": "Victor Montaño",
+          "linkedinUrl": "https://www.linkedin.com/in/thevicmontano?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAABdwu5MBy3j_QEauNGbJdDFmJUUgIcKlHiM",
+          "info": "Your AI & Automation Partner 💻🤝 | Helped +70 companies save time & cut costs 📊",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D5603AQG_pBBmvA-B9w/profile-displayphoto-crop_800_800/B56Zlg8fdSHUAI-/0/1758268098387?e=1779321600&v=beta&t=zWVbPmbccveaHwnAtvwxDwi9vB7ESyjiZY0850bXm-M",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1779321600000
+          },
+          "urn": "393264019"
+        },
+        "postedAt": {
+          "timestamp": 1774643682836,
+          "date": "2026-03-27T20:34:42.836Z",
+          "postedAgoShort": "1mo",
+          "postedAgoText": "1 month ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [
+          {
+            "url": "https://media.licdn.com/dms/image/v2/D4E10AQE7BlkHo_PDZg/image-shrink_1280/B4EZ0bO9_WI8Ac-/0/1774278404494?e=1778518800&v=beta&t=H1d95l1uRhzh6ifp7Cw90udESdSQQmSg9CrSiiJiQmA",
+            "width": 800,
+            "height": 1001,
+            "expiresAt": 1778518800000
+          }
+        ],
+        "repostedBy": {
+          "name": "Chaima Hermi",
+          "publicIdentifier": "chaima-hermi",
+          "universalName": null,
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE"
+        },
+        "repostedAt": {
+          "timestamp": 1774643682836,
+          "date": "2026-03-27T20:34:42.836Z"
+        },
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/thevicmontano_llm-rag-ai-agent-agentic-ai-if-you-can-activity-7441863035377373184-ppDc?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "image": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "linkedinUrl": "https://www.linkedin.com/feed/update/urn:li:activity:7443395097494192128?updateEntityUrn=urn%3Ali%3Afsd_update%3A%28urn%3Ali%3Aactivity%3A7443395097494192128%2CMEMBER_SHARES%2CDEBUG_REASON%2CDEFAULT%2Cfalse%29&originTrackingId=L3orO7zD%2FK2qErmUZM7b2w%3D%3D",
+          "imageLink": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "text": "Chaima Hermi reposted this"
+        },
+        "entityId": "7443395097494192128",
+        "shareUrn": "urn:li:share:7441863000640126976",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7441863000640126976",
+        "engagement": {
+          "id": "7441863035377373184",
+          "likes": 186,
+          "comments": 11,
+          "shares": 40,
+          "reactions": [
+            {
+              "type": "LIKE",
+              "count": 172
+            },
+            {
+              "type": "INTEREST",
+              "count": 5
+            },
+            {
+              "type": "EMPATHY",
+              "count": 4
+            },
+            {
+              "type": "PRAISE",
+              "count": 3
+            },
+            {
+              "type": "APPRECIATION",
+              "count": 2
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7441573345164292096",
+      "post_type_api": "post",
+      "text": "RAG is not a “technique.”\n\nIt’s a whole ecosystem — and a developer’s stack.\n\nOver the past 18 months, Retrieval-Augmented Generation (RAG) has quietly evolved from a simple “search + LLM” pattern into a complete engineering discipline.\n\nToday, building AI systems isn’t just about choosing a model.\n\nIt’s about architecting the entire pipeline — from extraction to embeddings, from vector databases to evaluation, from closed models to open-source innovators.",
+      "published_at": {
+        "timestamp": 1774209343234,
+        "date": "2026-03-22T19:55:43.234Z",
+        "postedAgoShort": "2mo",
+        "postedAgoText": "2 months ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7441573345164292096",
+        "linkedinUrl": "https://www.linkedin.com/posts/brijpandeyji_rag-is-not-a-technique-its-a-whole-ecosystem-activity-7433711264217948160-MdRC",
+        "content": "RAG is not a “technique.”\n\nIt’s a whole ecosystem — and a developer’s stack.\n\nOver the past 18 months, Retrieval-Augmented Generation (RAG) has quietly evolved from a simple “search + LLM” pattern into a complete engineering discipline.\n\nToday, building AI systems isn’t just about choosing a model.\n\nIt’s about architecting the entire pipeline — from extraction to embeddings, from vector databases to evaluation, from closed models to open-source innovators.",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAAAKDuMsBugjGZwz0pJy43LJ-6bVwc0gm9xQ",
+          "universalName": null,
+          "publicIdentifier": "brijpandeyji",
+          "type": "profile",
+          "name": "Brij kishore Pandey",
+          "linkedinUrl": "https://www.linkedin.com/in/brijpandeyji?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAAAKDuMsBugjGZwz0pJy43LJ-6bVwc0gm9xQ",
+          "info": "AI Architect & Engineer | AI Strategist",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D4D03AQHVV2OIX_R-mg/profile-displayphoto-crop_800_800/B4DZmN52FJGwAI-/0/1759022375588?e=1779321600&v=beta&t=Pi-L21P5QZjAhx2yt9v--1aq4EM1_FgQdX06gToJxxI",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1779321600000
+          },
+          "urn": "42186955"
+        },
+        "postedAt": {
+          "timestamp": 1774209343234,
+          "date": "2026-03-22T19:55:43.234Z",
+          "postedAgoShort": "2mo",
+          "postedAgoText": "2 months ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [
+          {
+            "url": "https://media.licdn.com/dms/image/v2/D4D22AQE3jcZ9BVTvhA/feedshare-image-high-res/B4DZynZANUHIAU-/0/1772334875784?e=1779321600&v=beta&t=KGCf1XiyDIL4dahJOzvpyGGbUGB3NCVPEvRzQ7Iegck",
+            "width": 1377,
+            "height": 1536,
+            "expiresAt": 1779321600000
+          }
+        ],
+        "repostedBy": {
+          "name": "Chaima Hermi",
+          "publicIdentifier": "chaima-hermi",
+          "universalName": null,
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE"
+        },
+        "repostedAt": {
+          "timestamp": 1774209343234,
+          "date": "2026-03-22T19:55:43.234Z"
+        },
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/brijpandeyji_rag-is-not-a-technique-its-a-whole-ecosystem-activity-7433711264217948160-MdRC?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "image": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "linkedinUrl": "https://www.linkedin.com/feed/update/urn:li:activity:7441573345164292096?updateEntityUrn=urn%3Ali%3Afsd_update%3A%28urn%3Ali%3Aactivity%3A7441573345164292096%2CMEMBER_SHARES%2CDEBUG_REASON%2CDEFAULT%2Cfalse%29&originTrackingId=SU6rQai047%2FH0S3OpcSXKA%3D%3D",
+          "imageLink": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "text": "Chaima Hermi reposted this"
+        },
+        "entityId": "7441573345164292096",
+        "shareUrn": "urn:li:share:7433711263081373696",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7433711263081373696",
+        "engagement": {
+          "id": "7433711264217948160",
+          "likes": 754,
+          "comments": 44,
+          "shares": 85,
+          "reactions": [
+            {
+              "type": "LIKE",
+              "count": 715
+            },
+            {
+              "type": "INTEREST",
+              "count": 24
+            },
+            {
+              "type": "EMPATHY",
+              "count": 9
+            },
+            {
+              "type": "PRAISE",
+              "count": 5
+            },
+            {
+              "type": "APPRECIATION",
+              "count": 1
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7451263825795862528",
+      "post_type_api": "post",
+      "text": "malla isamm ❤️",
+      "published_at": {
+        "timestamp": 1776519733857,
+        "date": "2026-04-18T13:42:13.857Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7451263825795862528",
+        "linkedinUrl": "https://www.linkedin.com/posts/activity-7451263825795862528-T71L",
+        "content": "malla isamm ❤️",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "universalName": null,
+          "publicIdentifier": "chaima-hermi",
+          "type": "profile",
+          "name": "Chaima Hermi",
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "info": "🚀+3k | Software Engineering Student 💻 | BI Developer 📊 | Data and AI Enthusiast 🔝",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "urn": "1005067558"
+        },
+        "postedAt": {
+          "timestamp": 1776519733857,
+          "date": "2026-04-18T13:42:13.857Z",
+          "postedAgoShort": "2w",
+          "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [],
+        "repostId": "7450885254787203072",
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/activity-7451263825795862528-T71L?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "text": null
+        },
+        "entityId": "7451263825795862528",
+        "shareUrn": "urn:li:ugcPost:7451263825225355264",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:ugcPost:7451263825225355264",
+        "repost": {
+          "id": "7450885254787203072",
+          "linkedinUrl": "https://www.linkedin.com/posts/nada-bouhadida-7868b721b_roadsafety-innovation-virtualreality-activity-7450885254787203072-lnrl",
+          "content": "I’m honored to be part of this innovative program focused on intelligent projects for road safety, in collaboration with the National Road Safety Observatory (ONSR), the Ministry of Interior, and the United Nations.\n\nOur project is a VR serious game designed for traffic police training, integrating Reinforcement Learning and Virtual Reality to create immersive and intelligent learning experiences.\n\nI would like to sincerely thank my supervisor, Mr Amine Kchiche , PMP®, for his guidance and continuous encouragement, as well as my teammate  Hamza Jemaa for his dedication, hard work, and commitment throughout this journey.\n\nTogether, we strive to contribute to a safer and better future for Tunisia 🇹🇳\n\n#RoadSafety #Innovation #VirtualReality #ReinforcementLearning #SmartProjects #Tunisia #ONSR #TechForGood",
+          "contentAttributes": [
+            {
+              "start": 200,
+              "length": 14,
+              "type": "COMPANY_NAME",
+              "hyperlink": null,
+              "textLink": null,
+              "company": {
+                "id": "1860",
+                "name": "United Nations",
+                "linkedinUrl": "https://www.linkedin.com/company/united-nations/"
+              }
+            },
+            {
+              "start": 452,
+              "length": 20,
+              "type": "PROFILE_MENTION",
+              "hyperlink": null,
+              "textLink": null,
+              "profile": {
+                "id": "ACoAAAnUvZcBsauDnUDb5E2ZOsxtNtsvKI-fXA0",
+                "firstName": "Amine",
+                "lastName": "Kchiche , PMP®",
+                "linkedinUrl": "https://www.linkedin.com/in/amine-kchiche-pmp®-8732a147",
+                "publicIdentifier": "amine-kchiche-pmp®-8732a147"
+              }
+            },
+            {
+              "start": 545,
+              "length": 11,
+              "type": "PROFILE_MENTION",
+              "hyperlink": null,
+              "textLink": null,
+              "profile": {
+                "id": "ACoAADz33CMBpjwhrzCzG53zUw8Tkz_FOOeYd-k",
+                "firstName": "Hamza",
+                "lastName": "Jemaa",
+                "linkedinUrl": "https://www.linkedin.com/in/jemaa-hamza",
+                "publicIdentifier": "jemaa-hamza"
+              }
+            }
+          ],
+          "author": {
+            "id": "ACoAADd7_pYBVCEKSLiRelUSqsZMROv4JEnVtMo",
+            "universalName": null,
+            "publicIdentifier": "nada-bouhadida-7868b721b",
+            "type": "profile",
+            "name": "Nada Bouhadida",
+            "linkedinUrl": "https://www.linkedin.com/in/nada-bouhadida-7868b721b?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADd7_pYBVCEKSLiRelUSqsZMROv4JEnVtMo",
+            "info": "Engineering student / Video Editor / Motion Designer",
+            "website": null,
+            "websiteLabel": null,
+            "avatar": {
+              "url": "https://media.licdn.com/dms/image/v2/D4E03AQFBgzZ2jW8eug/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1682704542421?e=1779321600&v=beta&t=LXa9hVSyND4K2O_XrKE11MWDO2nmonoLn7VxvFiX7Lk",
+              "width": 800,
+              "height": 800,
+              "expiresAt": 1779321600000
+            },
+            "urn": "930872982"
+          },
+          "postedAt": {
+            "timestamp": 1776429475495,
+            "date": "2026-04-17T12:37:55.495Z",
+            "postedAgoShort": "2w",
+            "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+          },
+          "postImages": [],
+          "postVideo": {
+            "thumbnailUrl": "https://media.licdn.com/dms/image/v2/D4D05AQHap_YRnGlC5A/videocover-high/B4DZ2bckYVH8BY-/0/1776429453092?e=1778518800&v=beta&t=vMpZEP7638B8KUUc6567TaICz3H5lUAgxTw5hdL2N20",
+            "videoUrl": "https://dms.licdn.com/playlist/vid/v2/D4D05AQHap_YRnGlC5A/mp4-720p-30fp-crf28/B4DZ2bckYVH8CI-/0/1776429462523?e=1778518800&v=beta&t=bYehuJkBzM2nEOQHfVdK8NgWgMC6NLW71vyc7Khaeec"
+          },
+          "socialContent": {
+            "hideCommentsCount": false,
+            "hideReactionsCount": false,
+            "hideSocialActivityCounts": false,
+            "hideShareAction": true,
+            "hideSendAction": true,
+            "hideRepostsCount": false,
+            "hideViewsCount": false,
+            "trustInterventionBanner": null,
+            "hideReactAction": false,
+            "hideCommentAction": false,
+            "shareUrl": "https://www.linkedin.com/posts/nada-bouhadida-7868b721b_roadsafety-innovation-virtualreality-activity-7450885254787203072-lnrl?",
+            "showContributionExperience": false,
+            "showSocialDetail": true
+          },
+          "comments": [],
+          "header": {
+            "text": null
+          },
+          "entityId": "7450885254787203072",
+          "shareUrn": "urn:li:ugcPost:7450885152974606336",
+          "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:ugcPost:7450885152974606336",
+          "engagement": null
+        },
+        "engagement": {
+          "id": "7451263825225355264",
+          "likes": 8,
+          "comments": 0,
+          "shares": 0,
+          "reactions": [
+            {
+              "type": "EMPATHY",
+              "count": 4
+            },
+            {
+              "type": "PRAISE",
+              "count": 3
+            },
+            {
+              "type": "LIKE",
+              "count": 1
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7452005057077895168",
+      "post_type_api": "post",
+      "text": "Bonjour Brand AI",
+      "published_at": {
+        "timestamp": 1776696457166,
+        "date": "2026-04-20T14:47:37.166Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7452005057077895168",
+        "linkedinUrl": "https://www.linkedin.com/posts/activity-7452005057077895168-KiGw",
+        "content": "Bonjour Brand AI",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "universalName": null,
+          "publicIdentifier": "chaima-hermi",
+          "type": "profile",
+          "name": "Chaima Hermi",
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "info": "🚀+3k | Software Engineering Student 💻 | BI Developer 📊 | Data and AI Enthusiast 🔝",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "urn": "1005067558"
+        },
+        "postedAt": {
+          "timestamp": 1776696457166,
+          "date": "2026-04-20T14:47:37.166Z",
+          "postedAgoShort": "2w",
+          "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [],
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/activity-7452005057077895168-KiGw?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "text": null
+        },
+        "entityId": "7452005057077895168",
+        "shareUrn": "urn:li:share:7452005056649850880",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7452005056649850880",
+        "engagement": {
+          "id": "7452005057077895168",
+          "likes": 2,
+          "comments": 0,
+          "shares": 0,
+          "reactions": [
+            {
+              "type": "LIKE",
+              "count": 2
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7452007170688344064",
+      "post_type_api": "post",
+      "text": "Le dressing qui prend la poussière, c’est plus qu’un espace encombré : c’est une source de gaspillage textile.  \n\nChaque saison, des milliers de vêtements restent inutilisés, finissent à la poubelle ou sont incinérés, générant des émissions de CO₂ et une pression supplémentaire sur les ressources naturelles.  \n\nImaginez un espace virtuel où chaque pièce trouve rapidement une seconde vie. Une application web permet à chaque utilisateur de créer son « vide‑dressing », de mettre en ligne les vêtements qu’il ne porte plus et de les proposer à d’autres particuliers en Tunisie. Le processus est sécurisé : paiement en ligne, gestion des expéditions, tout est intégré.  \n\nEn facilitant la revente d’articles d’occasion, la plateforme réduit la demande de production neuve, diminue les déchets textiles et encourage une consommation circulaire. C’est un petit geste individuel qui, multiplié, crée un impact environnemental réel.  \n\nVous avez déjà un dressing qui déborde ? Pensez à le transformer en ressource pour d’autres et participez à la réduction de l’empreinte carbone du secteur de la mode.  \n\nQuel vêtement pourriez‑vous libérer dès aujourd’hui pour donner une seconde vie à votre dressing ?  \n\n#Sustainability #CircularEconomy #Ecommerce #Innovation #FashionTech",
+      "published_at": {
+        "timestamp": 1776696961090,
+        "date": "2026-04-20T14:56:01.090Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7452007170688344064",
+        "linkedinUrl": "https://www.linkedin.com/posts/activity-7452007170688344064-5PN4",
+        "content": "Le dressing qui prend la poussière, c’est plus qu’un espace encombré : c’est une source de gaspillage textile.  \n\nChaque saison, des milliers de vêtements restent inutilisés, finissent à la poubelle ou sont incinérés, générant des émissions de CO₂ et une pression supplémentaire sur les ressources naturelles.  \n\nImaginez un espace virtuel où chaque pièce trouve rapidement une seconde vie. Une application web permet à chaque utilisateur de créer son « vide‑dressing », de mettre en ligne les vêtements qu’il ne porte plus et de les proposer à d’autres particuliers en Tunisie. Le processus est sécurisé : paiement en ligne, gestion des expéditions, tout est intégré.  \n\nEn facilitant la revente d’articles d’occasion, la plateforme réduit la demande de production neuve, diminue les déchets textiles et encourage une consommation circulaire. C’est un petit geste individuel qui, multiplié, crée un impact environnemental réel.  \n\nVous avez déjà un dressing qui déborde ? Pensez à le transformer en ressource pour d’autres et participez à la réduction de l’empreinte carbone du secteur de la mode.  \n\nQuel vêtement pourriez‑vous libérer dès aujourd’hui pour donner une seconde vie à votre dressing ?  \n\n#Sustainability #CircularEconomy #Ecommerce #Innovation #FashionTech",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "universalName": null,
+          "publicIdentifier": "chaima-hermi",
+          "type": "profile",
+          "name": "Chaima Hermi",
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "info": "🚀+3k | Software Engineering Student 💻 | BI Developer 📊 | Data and AI Enthusiast 🔝",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "urn": "1005067558"
+        },
+        "postedAt": {
+          "timestamp": 1776696961090,
+          "date": "2026-04-20T14:56:01.090Z",
+          "postedAgoShort": "2w",
+          "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [
+          {
+            "url": "https://media.licdn.com/dms/image/v2/D4D22AQF_IRIDIzIWtA/feedshare-shrink_1280/B4DZ2rZCQ_JQAM-/0/1776696960335?e=1779321600&v=beta&t=DT74306eHt0l2qP5xLAugZ5B8CC7_0sjDZkvBOpJJqA",
+            "width": 768,
+            "height": 768,
+            "expiresAt": 1779321600000
+          }
+        ],
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/activity-7452007170688344064-5PN4?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "text": null
+        },
+        "entityId": "7452007170688344064",
+        "shareUrn": "urn:li:share:7452007169530712064",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7452007169530712064",
+        "engagement": {
+          "id": "7452007170688344064",
+          "likes": 8,
+          "comments": 0,
+          "shares": 0,
+          "reactions": [
+            {
+              "type": "LIKE",
+              "count": 4
+            },
+            {
+              "type": "EMPATHY",
+              "count": 4
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7449810356568387586",
+      "post_type_api": "post",
+      "text": "Bonjour Brand AI - 2026-04-14 14:26:39",
+      "published_at": {
+        "timestamp": 1776173199789,
+        "date": "2026-04-14T13:26:39.789Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7449810356568387586",
+        "linkedinUrl": "https://www.linkedin.com/posts/activity-7449810356568387586-st6A",
+        "content": "Bonjour Brand AI - 2026-04-14 14:26:39",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "universalName": null,
+          "publicIdentifier": "chaima-hermi",
+          "type": "profile",
+          "name": "Chaima Hermi",
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "info": "🚀+3k | Software Engineering Student 💻 | BI Developer 📊 | Data and AI Enthusiast 🔝",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "urn": "1005067558"
+        },
+        "postedAt": {
+          "timestamp": 1776173199789,
+          "date": "2026-04-14T13:26:39.789Z",
+          "postedAgoShort": "2w",
+          "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [],
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/activity-7449810356568387586-st6A?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "text": null
+        },
+        "entityId": "7449810356568387586",
+        "shareUrn": "urn:li:share:7449810356060872704",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7449810356060872704",
+        "engagement": {
+          "id": "7449810356568387586",
+          "likes": 7,
+          "comments": 0,
+          "shares": 0,
+          "reactions": [
+            {
+              "type": "ENTERTAINMENT",
+              "count": 4
+            },
+            {
+              "type": "LIKE",
+              "count": 2
+            },
+            {
+              "type": "EMPATHY",
+              "count": 1
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7442672228778942464",
+      "post_type_api": "post",
+      "text": "📌𝗨𝗻𝗱𝗲𝗿𝘀𝘁𝗮𝗻𝗱𝗶𝗻𝗴 𝘁𝗵𝗲 𝗔𝗜 𝗦𝘁𝗮𝗰𝗸: 𝗙𝗿𝗼𝗺 𝗟𝗲𝗮𝗿𝗻𝗶𝗻𝗴 𝘁𝗼 𝗔𝘂𝘁𝗼𝗻𝗼𝗺𝘆\nIn AI discussions, terms like Machine Learning, Deep Learning, Generative AI, RAG, and AI Agents are often presented separately.\nIn reality, they form a progressive, interconnected stack, where each layer builds upon and amplifies the previous one.\n➡️ 𝐊𝐞𝐲 𝐋𝐚𝐲𝐞𝐫𝐬:\n✔️ ML: Learn from data and detect patterns\n✔️ DL: Handle complex tasks like vision, speech, NLP\n✔️ Generative AI: Create new content (text, code, images)\n✔️ RAG: Integrate external data for accurate, context-aware outputs\n✔️ AI Agents: Plan, reason, and act autonomously\n💡 𝗞𝗲𝘆 𝗜𝗻𝘀𝗶𝗴𝗵𝘁:\n The progression of AI capabilities can be summarized as:\n  𝐋𝐞𝐚𝐫𝐧𝐢𝐧𝐠 → 𝐂𝐨𝐦𝐩𝐥𝐞𝐱𝐢𝐭𝐲 → 𝐆𝐞𝐧𝐞𝐫𝐚𝐭𝐢𝐨𝐧 → 𝐆𝐫𝐨𝐮𝐧𝐝𝐢𝐧𝐠 → 𝐀𝐮𝐭𝐨𝐧𝐨𝐦𝐲\n⚙️ 𝐅𝐫𝐨𝐦 𝐓𝐫𝐚𝐝𝐢𝐭𝐢𝐨𝐧𝐚𝐥 𝐭𝐨 𝐌𝐨𝐝𝐞𝐫𝐧 𝐀𝐈 𝐖𝐨𝐫𝐤𝐟𝐥𝐨𝐰𝐬\nTraditional: Input → Model → Output\nModern AI: Goal → Planning → Data Retrieval → Reasoning → Action\n🎯 𝗪𝗵𝘆 𝗧𝗵𝗶𝘀 𝗠𝗮𝘁𝘁𝗲𝗿𝘀:\nBuilding robust AI today is not just about using models it’s about designing complete, reliable systems that integrate:\n➡️ Learning behavior of models\n➡️ Data and retrieval pipelines\n➡️ External knowledge sources\n➡️ Structured decision-making workflows\nThe true competitive edge is in system-level design, not just tool usage.\n#AI #MachineLearning #DeepLearning #GenerativeAI #RAG #AIAgents #MLOps #DataScience",
+      "published_at": {
+        "timestamp": 1774471337504,
+        "date": "2026-03-25T20:42:17.504Z",
+        "postedAgoShort": "1mo",
+        "postedAgoText": "1 month ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7442672228778942464",
+        "linkedinUrl": "https://www.linkedin.com/posts/ons-yahmadi_ai-machinelearning-deeplearning-activity-7442174625603596289-G6Vb",
+        "content": "📌𝗨𝗻𝗱𝗲𝗿𝘀𝘁𝗮𝗻𝗱𝗶𝗻𝗴 𝘁𝗵𝗲 𝗔𝗜 𝗦𝘁𝗮𝗰𝗸: 𝗙𝗿𝗼𝗺 𝗟𝗲𝗮𝗿𝗻𝗶𝗻𝗴 𝘁𝗼 𝗔𝘂𝘁𝗼𝗻𝗼𝗺𝘆\nIn AI discussions, terms like Machine Learning, Deep Learning, Generative AI, RAG, and AI Agents are often presented separately.\nIn reality, they form a progressive, interconnected stack, where each layer builds upon and amplifies the previous one.\n➡️ 𝐊𝐞𝐲 𝐋𝐚𝐲𝐞𝐫𝐬:\n✔️ ML: Learn from data and detect patterns\n✔️ DL: Handle complex tasks like vision, speech, NLP\n✔️ Generative AI: Create new content (text, code, images)\n✔️ RAG: Integrate external data for accurate, context-aware outputs\n✔️ AI Agents: Plan, reason, and act autonomously\n💡 𝗞𝗲𝘆 𝗜𝗻𝘀𝗶𝗴𝗵𝘁:\n The progression of AI capabilities can be summarized as:\n  𝐋𝐞𝐚𝐫𝐧𝐢𝐧𝐠 → 𝐂𝐨𝐦𝐩𝐥𝐞𝐱𝐢𝐭𝐲 → 𝐆𝐞𝐧𝐞𝐫𝐚𝐭𝐢𝐨𝐧 → 𝐆𝐫𝐨𝐮𝐧𝐝𝐢𝐧𝐠 → 𝐀𝐮𝐭𝐨𝐧𝐨𝐦𝐲\n⚙️ 𝐅𝐫𝐨𝐦 𝐓𝐫𝐚𝐝𝐢𝐭𝐢𝐨𝐧𝐚𝐥 𝐭𝐨 𝐌𝐨𝐝𝐞𝐫𝐧 𝐀𝐈 𝐖𝐨𝐫𝐤𝐟𝐥𝐨𝐰𝐬\nTraditional: Input → Model → Output\nModern AI: Goal → Planning → Data Retrieval → Reasoning → Action\n🎯 𝗪𝗵𝘆 𝗧𝗵𝗶𝘀 𝗠𝗮𝘁𝘁𝗲𝗿𝘀:\nBuilding robust AI today is not just about using models it’s about designing complete, reliable systems that integrate:\n➡️ Learning behavior of models\n➡️ Data and retrieval pipelines\n➡️ External knowledge sources\n➡️ Structured decision-making workflows\nThe true competitive edge is in system-level design, not just tool usage.\n#AI #MachineLearning #DeepLearning #GenerativeAI #RAG #AIAgents #MLOps #DataScience",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAADZZX8MByzY109xnZT6BAgBhXLKn7UAp5bc",
+          "universalName": null,
+          "publicIdentifier": "ons-yahmadi",
+          "type": "profile",
+          "name": "Ons El Yahmadi",
+          "linkedinUrl": "https://www.linkedin.com/in/ons-yahmadi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADZZX8MByzY109xnZT6BAgBhXLKn7UAp5bc",
+          "info": "Fullstack Developer - MLOPS Engineer",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D4D35AQG1A3FQNDVJ_A/profile-framedphoto-shrink_800_800/B4DZ0u98BQIEAg-/0/1774609482044?e=1778518800&v=beta&t=mDhoh09rnXdXz6aIb0yjUujLkYefQhFAhvwl0r78L7c",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "urn": "911826883"
+        },
+        "postedAt": {
+          "timestamp": 1774471337504,
+          "date": "2026-03-25T20:42:17.504Z",
+          "postedAgoShort": "1mo",
+          "postedAgoText": "1 month ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [
+          {
+            "url": "https://media.licdn.com/dms/image/v2/D4D22AQGyagyR9wJecA/feedshare-shrink_1280/B4DZ0fqYiZJ4AM-/0/1774352698024?e=1779321600&v=beta&t=PgrAadGtGlOG1x7vmyrrhXfI9IbTm4mogyyRNNogH2Q",
+            "width": 800,
+            "height": 944,
+            "expiresAt": 1779321600000
+          }
+        ],
+        "repostedBy": {
+          "name": "Chaima Hermi",
+          "publicIdentifier": "chaima-hermi",
+          "universalName": null,
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE"
+        },
+        "repostedAt": {
+          "timestamp": 1774471337504,
+          "date": "2026-03-25T20:42:17.504Z"
+        },
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/ons-yahmadi_ai-machinelearning-deeplearning-activity-7442174625603596289-G6Vb?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "image": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "linkedinUrl": "https://www.linkedin.com/feed/update/urn:li:activity:7442672228778942464?updateEntityUrn=urn%3Ali%3Afsd_update%3A%28urn%3Ali%3Aactivity%3A7442672228778942464%2CMEMBER_SHARES%2CDEBUG_REASON%2CDEFAULT%2Cfalse%29&originTrackingId=WojC9xQ0a0%2B7NsGhluXAig%3D%3D",
+          "imageLink": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "text": "Chaima Hermi reposted this"
+        },
+        "entityId": "7442672228778942464",
+        "shareUrn": "urn:li:share:7442174624341327873",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7442174624341327873",
+        "engagement": {
+          "id": "7442174625603596289",
+          "likes": 361,
+          "comments": 5,
+          "shares": 115,
+          "reactions": [
+            {
+              "type": "LIKE",
+              "count": 272
+            },
+            {
+              "type": "EMPATHY",
+              "count": 48
+            },
+            {
+              "type": "PRAISE",
+              "count": 28
+            },
+            {
+              "type": "INTEREST",
+              "count": 8
+            },
+            {
+              "type": "APPRECIATION",
+              "count": 5
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    },
+    {
+      "id": "7449813611339882496",
+      "post_type_api": "post",
+      "text": "Bonjour Brand AI test auto 2",
+      "published_at": {
+        "timestamp": 1776173975787,
+        "date": "2026-04-14T13:39:35.787Z",
+        "postedAgoShort": "2w",
+        "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+      },
+      "post_url": null,
+      "likes": null,
+      "comments": null,
+      "reposts": null,
+      "raw": {
+        "type": "post",
+        "id": "7449813611339882496",
+        "linkedinUrl": "https://www.linkedin.com/posts/activity-7449813611339882496-PnsY",
+        "content": "Bonjour Brand AI test auto 2",
+        "contentAttributes": [],
+        "author": {
+          "id": "ACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "universalName": null,
+          "publicIdentifier": "chaima-hermi",
+          "type": "profile",
+          "name": "Chaima Hermi",
+          "linkedinUrl": "https://www.linkedin.com/in/chaima-hermi?miniProfileUrn=urn%3Ali%3Afsd_profile%3AACoAADvoHSYBN3TnDZHMrsUy9F3BEPpzeV5HarE",
+          "info": "🚀+3k | Software Engineering Student 💻 | BI Developer 📊 | Data and AI Enthusiast 🔝",
+          "website": null,
+          "websiteLabel": null,
+          "avatar": {
+            "url": "https://media.licdn.com/dms/image/v2/D4E35AQFa9z9yOrOd_Q/profile-framedphoto-shrink_800_800/B4EZmRVDDkHIAg-/0/1759079838230?e=1778518800&v=beta&t=CfuIAt9yOgR7tZMq8rL0kvpG34L3tChEk7iOpHvs1Rc",
+            "width": 800,
+            "height": 800,
+            "expiresAt": 1778518800000
+          },
+          "urn": "1005067558"
+        },
+        "postedAt": {
+          "timestamp": 1776173975787,
+          "date": "2026-04-14T13:39:35.787Z",
+          "postedAgoShort": "2w",
+          "postedAgoText": "2 weeks ago • Visible to anyone on or off LinkedIn"
+        },
+        "postImages": [],
+        "socialContent": {
+          "hideCommentsCount": false,
+          "hideReactionsCount": false,
+          "hideSocialActivityCounts": false,
+          "hideShareAction": true,
+          "hideSendAction": true,
+          "hideRepostsCount": false,
+          "hideViewsCount": false,
+          "trustInterventionBanner": null,
+          "hideReactAction": false,
+          "hideCommentAction": false,
+          "shareUrl": "https://www.linkedin.com/posts/activity-7449813611339882496-PnsY?",
+          "showContributionExperience": false,
+          "showSocialDetail": true
+        },
+        "comments": [],
+        "header": {
+          "text": null
+        },
+        "entityId": "7449813611339882496",
+        "shareUrn": "urn:li:share:7449813610735857664",
+        "shareLinkedinUrl": "https://www.linkedin.com/feed/update/urn:li:share:7449813610735857664",
+        "engagement": {
+          "id": "7449813611339882496",
+          "likes": 4,
+          "comments": 0,
+          "shares": 0,
+          "reactions": [
+            {
+              "type": "ENTERTAINMENT",
+              "count": 2
+            },
+            {
+              "type": "LIKE",
+              "count": 2
+            }
+          ]
+        },
+        "reactions": [],
+        "reactionIds": [],
+        "commentIds": [],
+        "query": {
+          "sortBy": "date",
+          "page": "1",
+          "profilePublicIdentifier": "https://www.linkedin.com/in/chaima-hermi/",
+          "sessionId": "6c109d32-383b-411c-9195-ff8e4cc88e1e"
+        }
+      }
+    }
+  ],
+  "extract_config": {
+    "limit": 10,
+    "actor_id": "harvestapi/linkedin-profile-posts",
+    "dataset_id": "__inline__",
+    "profile_url_source": "account_id",
+    "profile_url_auto_resolved": false,
+    "apify_timeout_s": 600.0
+  }
+}

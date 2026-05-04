@@ -18,7 +18,11 @@ def main() -> None:
     total_shares = sum(int(p.get("shares") or 0) for p in posts if isinstance(p, dict) and p.get("shares") is not None)
     total_interactions = total_likes + total_comments + total_saves + total_shares
 
-    reach_values = [int(p.get("reach")) for p in posts if isinstance(p, dict) and isinstance(p.get("reach"), int)]
+    reach_values = [
+        int(p.get("reach"))
+        for p in posts
+        if isinstance(p, dict) and isinstance(p.get("reach"), (int, float))
+    ]
     reach_total = sum(reach_values) if reach_values else None
     nb_posts = len(posts)
     nb_days = post_days_span(posts)
@@ -32,11 +36,11 @@ def main() -> None:
         likes = int(p.get("likes") or 0)
         comments = int(p.get("comments") or 0)
         saves = int(p.get("saves") or 0) if p.get("saves") is not None else 0
-        reach = p.get("reach") if isinstance(p.get("reach"), int) else None
+        reach = p.get("reach") if isinstance(p.get("reach"), (int, float)) else None
         er_post = pct(likes + comments + saves, reach) if reach else None
         if er_post is not None:
             er_values.append(er_post)
-        ptype = str(p.get("post_type") or "unknown")
+        ptype = str(p.get("media_type") or p.get("post_type") or "unknown")
         post_type_counts[ptype] = post_type_counts.get(ptype, 0) + 1
         enriched_posts.append({**p, "engagement_rate_post": er_post})
 
