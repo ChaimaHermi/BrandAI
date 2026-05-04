@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import {
-  FiCheck, FiCheckCircle, FiExternalLink, FiLink,
+  FiCheck, FiCheckCircle, FiExternalLink, FiInfo, FiLink,
   FiLogOut, FiRefreshCw, FiShield, FiX,
 } from "react-icons/fi";
 import { Button } from "@/shared/ui/Button";
@@ -99,6 +100,14 @@ function ConnectedActions({ onDisconnect, onReconnect, loading }) {
 
 /* ── Main modal ─────────────────────────────────────────────────────── */
 export default function ConnectSocialModal({ open, onClose, social }) {
+  const [linkedinUrlDraft, setLinkedinUrlDraft] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setLinkedinUrlDraft(social.linkedinProfileUrl || "");
+    }
+  }, [open, social.linkedinProfileUrl]);
+
   if (!open) return null;
 
   const metaConnected = social.metaConnected;
@@ -218,6 +227,59 @@ export default function ConnectSocialModal({ open, onClose, social }) {
                   <p className="text-xs font-semibold text-success">
                     {social.linkedinName || "Compte LinkedIn connecté"}
                   </p>
+                </div>
+                <div className="space-y-2 rounded-xl border border-brand-border bg-[#fafbff] px-3 py-2.5">
+                  <label
+                    htmlFor="linkedin-profile-url"
+                    className="block text-2xs font-semibold uppercase tracking-wider text-ink-muted"
+                  >
+                    URL du profil LinkedIn (facultatif)
+                  </label>
+                  <input
+                    id="linkedin-profile-url"
+                    type="url"
+                    inputMode="url"
+                    autoComplete="url"
+                    placeholder="https://www.linkedin.com/in/votre-profil/"
+                    value={linkedinUrlDraft}
+                    onChange={(e) => setLinkedinUrlDraft(e.target.value)}
+                    disabled={social.linkedinProfileUrlSaving}
+                    className="w-full rounded-lg border border-brand-border bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:opacity-60"
+                  />
+                  <p className="flex gap-2 text-2xs leading-relaxed text-ink-muted">
+                    <FiInfo className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
+                    <span>
+                      Ce lien n’est pas obligatoire. Il est utile pour que l’agent{" "}
+                      <strong className="text-ink">Optimizer</strong> récupère vos
+                      informations publiques lorsque l’URL détectée automatiquement est
+                      absente ou incorrecte.
+                    </span>
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-0.5">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      disabled={social.linkedinProfileUrlSaving}
+                      onClick={() => social.saveLinkedInProfileUrl(linkedinUrlDraft)}
+                    >
+                      {social.linkedinProfileUrlSaving ? "Enregistrement…" : "Enregistrer le lien"}
+                    </Button>
+                    {Boolean(linkedinUrlDraft || social.linkedinProfileUrl) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={social.linkedinProfileUrlSaving}
+                        onClick={() => {
+                          setLinkedinUrlDraft("");
+                          social.saveLinkedInProfileUrl("");
+                        }}
+                      >
+                        Effacer
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <ConnectedActions
                   onDisconnect={social.disconnectLinkedIn}

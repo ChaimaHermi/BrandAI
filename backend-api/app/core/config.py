@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/google/callback"
     FRONTEND_CALLBACK_URL: str = "http://localhost:5173/auth/callback"
 
+    # Meta Graph — enrichissement profil connexion sociale (token page)
+    META_GRAPH_API_VERSION: str = "v25.0"
+
     # Configuration Pydantic v2 / pydantic-settings
     model_config = SettingsConfigDict(
         env_file=ENV_PATH,

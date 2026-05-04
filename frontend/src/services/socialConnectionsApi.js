@@ -14,12 +14,23 @@ async function handleResponse(res) {
   }
   if (!res.ok) {
     const detail = data?.detail;
-    const msg = Array.isArray(detail)
-      ? detail.map((d) => d.msg || d.message || JSON.stringify(d)).join(". ")
-      : typeof detail === "string"
-        ? detail
-        : "Une erreur est survenue.";
-    throw new Error(msg);
+    let msg = "Une erreur est survenue.";
+    if (Array.isArray(detail)) {
+      msg = detail
+        .map((d) =>
+          typeof d === "string"
+            ? d
+            : [d?.loc?.filter(Boolean).join("."), d?.msg || d?.message]
+                .filter(Boolean)
+                .join(" : "),
+        )
+        .join(" · ");
+    } else if (typeof detail === "string") {
+      msg = detail;
+    } else if (detail && typeof detail === "object") {
+      msg = detail.message || detail.msg || JSON.stringify(detail);
+    }
+    throw new Error(msg || `Erreur HTTP ${res.status}`);
   }
   return data;
 }
@@ -79,6 +90,26 @@ export async function putLinkedInSocialConnection(token, body) {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
+  });
+  return handleResponse(res);
+}
+
+/**
+ * @param {string} token
+ * @param {string|null|undefined} linkedinUrl — chaîne vide ou null pour effacer
+ */
+export async function patchLinkedInUrl(token, linkedinUrl) {
+  const linkedin_url =
+    linkedinUrl == null || linkedinUrl === ""
+      ? null
+      : String(linkedinUrl).trim() || null;
+  const res = await fetch(`${API_URL}/me/social-connections/linkedin/url`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ linkedin_url }),
   });
   return handleResponse(res);
 }

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { usePipeline } from "@/context/PipelineContext";
+import { useAuth } from "@/shared/hooks/useAuth";
 import {
   deleteLinkedInSocialConnection,
   deleteMetaSocialConnection,
   fetchSocialConnections,
   patchMetaSelectedPage,
+  patchLinkedInUrl,
   putLinkedInSocialConnection,
   putMetaSocialConnection,
 } from "@/services/socialConnectionsApi";
@@ -152,11 +154,14 @@ function loadJson(key, fallback) {
  * Connexion OAuth (popup) + publication par plateforme.
  */
 export function useSocialPublish() {
-  const { token } = usePipeline();
-  const tokenRef = useRef(token);
+  const { token: pipelineToken } = usePipeline();
+  const { token: authToken } = useAuth();
+  /** JWT Brand AI : priorité au pipeline, sinon Auth (évite token null hors layout / timing). */
+  const apiToken = pipelineToken || authToken || null;
+  const tokenRef = useRef(apiToken);
   useEffect(() => {
-    tokenRef.current = token;
-  }, [token]);
+    tokenRef.current = apiToken;
+  }, [apiToken]);
 
   const [metaPages, setMetaPages] = useState(() => loadJson(SK_META_PAGES, []));
   const [metaUserToken, setMetaUserToken] = useState(
@@ -172,18 +177,20 @@ export function useSocialPublish() {
     () => sessionStorage.getItem(SK_LI_URN) || "",
   );
   const [linkedinName, setLinkedinName] = useState("");
+  const [linkedinProfileUrl, setLinkedinProfileUrl] = useState("");
+  const [linkedinProfileUrlSaving, setLinkedinProfileUrlSaving] = useState(false);
   const [connectBusy, setConnectBusy] = useState(null);
   const [remoteLoaded, setRemoteLoaded] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    if (!apiToken) {
       setRemoteLoaded(false);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchSocialConnections(token);
+        const data = await fetchSocialConnections(apiToken);
         if (cancelled || !data) return;
         if (data.meta?.pages?.length) {
           setMetaPages(data.meta.pages);
@@ -200,10 +207,14 @@ export function useSocialPublish() {
           setLinkedinToken(data.linkedin.access_token);
           setLinkedinUrn(data.linkedin.person_urn || "");
           setLinkedinName(data.linkedin.name ? String(data.linkedin.name) : "");
+          setLinkedinProfileUrl(
+            data.linkedin.linkedin_url ? String(data.linkedin.linkedin_url) : "",
+          );
         } else {
           setLinkedinToken("");
           setLinkedinUrn("");
           setLinkedinName("");
+          setLinkedinProfileUrl("");
         }
       } catch (e) {
         console.warn("[social] chargement BDD:", e?.message || e);
@@ -214,7 +225,7 @@ export function useSocialPublish() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [apiToken]);
 
   useEffect(() => {
     sessionStorage.setItem(SK_META_PAGES, JSON.stringify(metaPages));
@@ -237,21 +248,21 @@ export function useSocialPublish() {
   }, [linkedinUrn]);
 
   useEffect(() => {
-    if (!token || !remoteLoaded || !selectedPageId || !metaPages.length) return;
+    if (!apiToken || !remoteLoaded || !selectedPageId || !metaPages.length) return;
     const t = setTimeout(() => {
-      patchMetaSelectedPage(token, selectedPageId).catch((e) => {
+      patchMetaSelectedPage(apiToken, selectedPageId).catch((e) => {
         console.warn("[social] sync page sélectionnée:", e?.message || e);
       });
     }, 400);
     return () => clearTimeout(t);
-  }, [selectedPageId, token, remoteLoaded, metaPages.length]);
+  }, [selectedPageId, apiToken, remoteLoaded, metaPages.length]);
 
   useEffect(() => {
     function onMessage(ev) {
       if (!isTrustedSocialOAuthOrigin(ev.origin)) return;
       const p = ev.data;
       if (!p || typeof p !== "object") return;
-      const t = tokenRef.current;
+      const jwt = tokenRef.current;
       if (p.type === "brandai-meta-oauth") {
         setConnectBusy(null);
         if (!p.ok && p.error) {
@@ -261,13 +272,25 @@ export function useSocialPublish() {
           return;
         }
         if (p.ok && Array.isArray(p.pages)) {
+          if (!p.pages.length) {
+            toast.warning(
+              "Meta a validé la connexion, mais aucune Page Facebook avec jeton n’a été renvoyée. Créez une Page Facebook ou vérifiez que votre compte a un rôle (admin / éditeur) sur au moins une Page.",
+            );
+            return;
+          }
           setMetaPages(p.pages);
           if (p.user_access_token) setMetaUserToken(p.user_access_token);
           let nextPageId = "";
           if (p.pages.length === 1) nextPageId = String(p.pages[0].id);
           if (nextPageId) setSelectedPageId(nextPageId);
-          if (t && p.user_access_token) {
-            putMetaSocialConnection(t, {
+          if (!jwt) {
+            toast.warning(
+              "Connexion Meta réussie, mais vous n’êtes pas authentifié côté Brand AI. Reconnectez-vous, puis refaites « Continuer avec Facebook » pour enregistrer les jetons.",
+            );
+            return;
+          }
+          if (p.user_access_token) {
+            putMetaSocialConnection(jwt, {
               user_access_token: p.user_access_token,
               pages: p.pages,
               selected_page_id: nextPageId || null,
@@ -279,7 +302,11 @@ export function useSocialPublish() {
               })
               .catch((e) => {
                 console.warn("[social] enregistrement Meta BDD:", e?.message || e);
-                toast.warning("Connexion Meta OK, mais la sauvegarde serveur a échoué.");
+                toast.warning(
+                  e?.message
+                    ? `Sauvegarde serveur impossible : ${e.message}`
+                    : "Connexion Meta OK, mais la sauvegarde serveur a échoué.",
+                );
               });
           }
         }
@@ -293,19 +320,55 @@ export function useSocialPublish() {
           return;
         }
         if (p.ok && p.access_token) {
-          setLinkedinToken(p.access_token);
-          if (p.person_urn) setLinkedinUrn(p.person_urn);
-          if (p.name) setLinkedinName(String(p.name));
-          if (t && p.person_urn) {
-            putLinkedInSocialConnection(t, {
-              access_token: p.access_token,
-              person_urn: p.person_urn,
-              name: p.name || null,
-            }).catch((e) => {
-              console.warn("[social] enregistrement LinkedIn BDD:", e?.message || e);
-              toast.warning("Connexion LinkedIn OK, mais la sauvegarde serveur a échoué.");
-            });
+          if (!jwt) {
+            toast.warning(
+              "Connexion LinkedIn réussie, mais session Brand AI absente. Reconnectez-vous puis refaites la liaison.",
+            );
+            return;
           }
+          if (!p.person_urn) {
+            toast.warning(
+              "LinkedIn n’a pas renvoyé d’identifiant profil (person_urn). Impossible d’enregistrer la connexion sur le serveur.",
+            );
+            return;
+          }
+          putLinkedInSocialConnection(jwt, {
+            access_token: p.access_token,
+            person_urn: p.person_urn,
+            name: p.name || null,
+          })
+            .then((out) => {
+              setLinkedinToken(p.access_token);
+              setLinkedinUrn(p.person_urn);
+              setLinkedinName(
+                out?.linkedin?.name != null
+                  ? String(out.linkedin.name)
+                  : p.name
+                    ? String(p.name)
+                    : "",
+              );
+              setLinkedinProfileUrl(
+                out?.linkedin?.linkedin_url ? String(out.linkedin.linkedin_url) : "",
+              );
+            })
+            .catch((e) => {
+              console.warn("[social] enregistrement LinkedIn BDD:", e?.message || e);
+              setLinkedinToken("");
+              setLinkedinUrn("");
+              setLinkedinName("");
+              setLinkedinProfileUrl("");
+              try {
+                sessionStorage.removeItem(SK_LI_TOKEN);
+                sessionStorage.removeItem(SK_LI_URN);
+              } catch {
+                /* ignore */
+              }
+              toast.warning(
+                e?.message
+                  ? `Sauvegarde serveur impossible : ${e.message}`
+                  : "Connexion LinkedIn OK, mais la sauvegarde serveur a échoué.",
+              );
+            });
         }
       }
     }
@@ -341,6 +404,52 @@ export function useSocialPublish() {
       toast.error(e?.message || "OAuth Meta indisponible.");
     }
   }, []);
+
+  const saveLinkedInProfileUrl = useCallback(
+    async (rawUrl) => {
+      const t = tokenRef.current;
+      if (!t) {
+        toast.warning("Connectez-vous à Brand AI pour enregistrer ce lien.");
+        return;
+      }
+      if (!linkedinToken) {
+        toast.warning(
+          "Connectez d’abord LinkedIn avec le bouton « Connecter avec LinkedIn » et attendez la confirmation de sauvegarde, puis saisissez l’URL.",
+        );
+        return;
+      }
+      let trimmed = (rawUrl || "").trim();
+      if (trimmed) {
+        if (!/^https?:\/\//i.test(trimmed)) {
+          trimmed = `https://${trimmed.replace(/^\/+/, "")}`;
+        } else if (/^http:\/\//i.test(trimmed)) {
+          trimmed = `https://${trimmed.slice(7)}`;
+        }
+      }
+      const toSend = trimmed || null;
+      setLinkedinProfileUrlSaving(true);
+      try {
+        const data = await patchLinkedInUrl(t, toSend);
+        const u = data?.linkedin?.linkedin_url;
+        setLinkedinProfileUrl(u ? String(u) : "");
+        toast.success(
+          toSend ? "Lien LinkedIn enregistré." : "Lien LinkedIn effacé.",
+        );
+      } catch (e) {
+        const m = e?.message || "";
+        if (m.includes("404") || m.toLowerCase().includes("introuvable")) {
+          toast.error(
+            "La connexion LinkedIn n’est pas enregistrée sur le serveur. Utilisez « Connecter avec LinkedIn », vérifiez qu’aucune erreur de sauvegarde n’apparaît, puis réessayez.",
+          );
+        } else {
+          toast.error(m || "Impossible d’enregistrer le lien.");
+        }
+      } finally {
+        setLinkedinProfileUrlSaving(false);
+      }
+    },
+    [linkedinToken],
+  );
 
   const openLinkedInConnect = useCallback(async () => {
     setConnectBusy("linkedin");
@@ -430,6 +539,9 @@ export function useSocialPublish() {
     metaConnected: metaPages.length > 0,
     linkedinConnected: Boolean(linkedinToken),
     linkedinName: linkedinName || null,
+    linkedinProfileUrl,
+    linkedinProfileUrlSaving,
+    saveLinkedInProfileUrl,
     connectBusy,
     openMetaConnect,
     openLinkedInConnect,
@@ -460,6 +572,7 @@ export function useSocialPublish() {
       setLinkedinToken("");
       setLinkedinUrn("");
       setLinkedinName("");
+      setLinkedinProfileUrl("");
       sessionStorage.removeItem(SK_LI_TOKEN);
       sessionStorage.removeItem(SK_LI_URN);
     }, []),
