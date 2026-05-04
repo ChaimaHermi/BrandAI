@@ -7,10 +7,12 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.social_token_crypto import decrypt_json_payload, encrypt_json_payload
+from app.models.idea import Idea
 from app.models.user_social_connection import UserSocialConnection
 from app.schemas.social_connection import (
     LinkedInConnectionOut,
@@ -260,21 +262,35 @@ def _fetch_linkedin_public_trace(
         return _PublicAccountTrace(None, _strip_or_none(fallback_display_name))
 
 
-def _row(db: Session, user_id: int, provider: str) -> UserSocialConnection | None:
+def _row(db: Session, idea_id: int, provider: str) -> UserSocialConnection | None:
     return (
         db.query(UserSocialConnection)
         .filter(
-            UserSocialConnection.user_id == user_id,
+            UserSocialConnection.idea_id == idea_id,
             UserSocialConnection.provider == provider,
         )
         .first()
     )
 
 
-def get_connections_for_user(db: Session, user_id: int) -> SocialConnectionsOut:
+def _assert_idea_owned(db: Session, idea_id: int, user_id: int) -> None:
+    ok = (
+        db.query(Idea.id)
+        .filter(Idea.id == idea_id, Idea.user_id == user_id)
+        .first()
+    )
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Idée introuvable ou accès refusé.",
+        )
+
+
+def get_connections_for_idea(db: Session, idea_id: int, user_id: int) -> SocialConnectionsOut:
+    _assert_idea_owned(db, idea_id, user_id)
     meta_out = None
     li_out = None
-    mr = _row(db, user_id, PROVIDER_META)
+    mr = _row(db, idea_id, PROVIDER_META)
     if mr:
         data = decrypt_json_payload(mr.payload_encrypted)
         pages_raw = data.get("pages") or []
@@ -296,7 +312,7 @@ def get_connections_for_user(db: Session, user_id: int) -> SocialConnectionsOut:
             facebook_url=mr.facebook_url,
             instagram_url=mr.instagram_url,
         )
-    lr = _row(db, user_id, PROVIDER_LINKEDIN)
+    lr = _row(db, idea_id, PROVIDER_LINKEDIN)
     if lr:
         data = decrypt_json_payload(lr.payload_encrypted)
         col_url = _strip_or_none(lr.linkedin_url)
@@ -339,23 +355,26 @@ def _trace_meta_row(
 def upsert_meta(
     db: Session,
     *,
+    idea_id: int,
     user_id: int,
     user_access_token: str,
     pages: list[dict[str, Any]],
     selected_page_id: str | None,
 ) -> None:
+    _assert_idea_owned(db, idea_id, user_id)
     payload = {
         "user_access_token": user_access_token.strip(),
         "pages": pages,
         "selected_page_id": (selected_page_id or "").strip() or None,
     }
     enc = encrypt_json_payload(payload)
-    row = _row(db, user_id, PROVIDER_META)
+    row = _row(db, idea_id, PROVIDER_META)
     if row:
         row.payload_encrypted = enc
     else:
         row = UserSocialConnection(
             user_id=user_id,
+            idea_id=idea_id,
             provider=PROVIDER_META,
             payload_encrypted=enc,
         )
@@ -368,8 +387,9 @@ def upsert_meta(
     db.commit()
 
 
-def patch_meta_selected_page(db: Session, *, user_id: int, selected_page_id: str) -> bool:
-    row = _row(db, user_id, PROVIDER_META)
+def patch_meta_selected_page(db: Session, *, idea_id: int, user_id: int, selected_page_id: str) -> bool:
+    _assert_idea_owned(db, idea_id, user_id)
+    row = _row(db, idea_id, PROVIDER_META)
     if not row:
         return False
     data = decrypt_json_payload(row.payload_encrypted)
@@ -387,12 +407,14 @@ def patch_meta_selected_page(db: Session, *, user_id: int, selected_page_id: str
 def upsert_linkedin(
     db: Session,
     *,
+    idea_id: int,
     user_id: int,
     access_token: str,
     person_urn: str,
     name: str | None,
 ) -> None:
-    row = _row(db, user_id, PROVIDER_LINKEDIN)
+    _assert_idea_owned(db, idea_id, user_id)
+    row = _row(db, idea_id, PROVIDER_LINKEDIN)
     prev_li = _strip_or_none(row.linkedin_url) if row else None
     if row and not prev_li:
         try:
@@ -412,6 +434,7 @@ def upsert_linkedin(
     else:
         row = UserSocialConnection(
             user_id=user_id,
+            idea_id=idea_id,
             provider=PROVIDER_LINKEDIN,
             payload_encrypted=enc,
         )
@@ -432,10 +455,12 @@ def upsert_linkedin(
 def patch_linkedin_url(
     db: Session,
     *,
+    idea_id: int,
     user_id: int,
     linkedin_url: str | None,
 ) -> bool:
-    row = _row(db, user_id, PROVIDER_LINKEDIN)
+    _assert_idea_owned(db, idea_id, user_id)
+    row = _row(db, idea_id, PROVIDER_LINKEDIN)
     if not row:
         return False
     row.linkedin_url = linkedin_url
@@ -451,8 +476,9 @@ def patch_linkedin_url(
     return True
 
 
-def delete_meta(db: Session, *, user_id: int) -> bool:
-    row = _row(db, user_id, PROVIDER_META)
+def delete_meta(db: Session, *, idea_id: int, user_id: int) -> bool:
+    _assert_idea_owned(db, idea_id, user_id)
+    row = _row(db, idea_id, PROVIDER_META)
     if not row:
         return False
     db.delete(row)
@@ -460,8 +486,9 @@ def delete_meta(db: Session, *, user_id: int) -> bool:
     return True
 
 
-def delete_linkedin(db: Session, *, user_id: int) -> bool:
-    row = _row(db, user_id, PROVIDER_LINKEDIN)
+def delete_linkedin(db: Session, *, idea_id: int, user_id: int) -> bool:
+    _assert_idea_owned(db, idea_id, user_id)
+    row = _row(db, idea_id, PROVIDER_LINKEDIN)
     if not row:
         return False
     db.delete(row)

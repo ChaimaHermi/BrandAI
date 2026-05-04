@@ -5,6 +5,7 @@ import { AGENTS } from "@/agents";
 import { AgentPageHeader } from "@/agents/shared/components/AgentPageHeader";
 import { Card } from "@/shared/ui/Card";
 import { Button } from "@/shared/ui/Button";
+import { usePipeline } from "@/context/PipelineContext";
 import ConnectSocialModal from "../components/ConnectSocialModal";
 import { useSocialPublish } from "../hooks/useSocialPublish";
 
@@ -91,10 +92,12 @@ function SocialCard({ platform, connected, linkedName }) {
 }
 
 export default function ContentConnectPage() {
-  const social = useSocialPublish();
+  const { idea } = usePipeline();
+  const social = useSocialPublish(idea?.id ?? null);
   const [open, setOpen] = useState(false);
 
   const allReady = social.metaConnected && social.linkedinConnected;
+  const hasIdea = idea?.id != null;
 
   return (
     <div className="app-content-scroll flex flex-1 flex-col gap-3">
@@ -111,7 +114,9 @@ export default function ContentConnectPage() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-ink">Connect Social Media</p>
           <p className="mt-0.5 text-xs text-ink-muted">
-            Une connexion unique pour Facebook, Instagram et LinkedIn. Publiez et planifiez sans vous reconnecter.
+            {hasIdea
+              ? "Connexions Meta et LinkedIn enregistrées pour ce projet uniquement. Chaque idée peut avoir ses propres pages."
+              : "Ouvrez un projet (idée) depuis le pipeline pour associer des comptes sociaux à ce projet."}
           </p>
         </div>
         {allReady && (
@@ -155,7 +160,13 @@ export default function ContentConnectPage() {
               </>
             )}
           </div>
-          <Button type="button" variant="secondary" size="md" onClick={() => setOpen(true)}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={!hasIdea}
+            onClick={() => setOpen(true)}
+          >
             <FiLink2 className="h-3.5 w-3.5" />
             Gérer les connexions
           </Button>

@@ -84,7 +84,7 @@ export default function CalendarPostDetailModal({
   scheduleId,
   onUpdated,
 }) {
-  const social = useSocialPublish();
+  const social = useSocialPublish(ideaId);
   const { startStream, isStreaming, steps, resetSSE } = useContentGenerationSSE();
 
   const [row, setRow] = useState(null);

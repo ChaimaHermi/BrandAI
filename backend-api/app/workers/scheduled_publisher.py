@@ -23,11 +23,12 @@ MAX_RETRIES = 3
 UPCOMING_MINUTES = 15
 
 
-def _get_social_tokens(db, user_id: int, platform: str) -> dict:
+def _get_social_tokens(db, idea_id: int, user_id: int, platform: str) -> dict:
     provider = "linkedin" if platform == "linkedin" else "meta"
     row = (
         db.query(UserSocialConnection)
         .filter(
+            UserSocialConnection.idea_id == idea_id,
             UserSocialConnection.user_id == user_id,
             UserSocialConnection.provider == provider,
         )
@@ -51,7 +52,7 @@ async def _publish_one(db, pub: ScheduledPublication) -> None:
     db.commit()
 
     try:
-        tokens = _get_social_tokens(db, pub.user_id, pub.platform)
+        tokens = _get_social_tokens(db, pub.idea_id, pub.user_id, pub.platform)
         result = await publish_to_platform(
             platform=pub.platform,
             caption=pub.caption_snapshot,

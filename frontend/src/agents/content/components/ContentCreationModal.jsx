@@ -120,7 +120,7 @@ function PlatformSelector({ activePlatform, onSelect }) {
 /* ── Inner modal body ───────────────────────────────────────────────── */
 function ContentCreationModalInner({ onClose, onScheduleCreated }) {
   const { idea, token } = usePipeline();
-  const social = useSocialPublish();
+  const social = useSocialPublish(idea?.id ?? null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
 
   const {

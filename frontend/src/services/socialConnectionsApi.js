@@ -1,8 +1,15 @@
 /**
- * Connexions sociales persistées (backend-api) — jetons chiffrés au repos côté serveur.
+ * Connexions sociales persistées (backend-api) — par idée de projet, jetons chiffrés au repos.
  */
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+
+function socialConnectionsBase(ideaId) {
+  if (ideaId == null || ideaId === "") {
+    throw new Error("ideaId est requis pour les connexions sociales.");
+  }
+  return `${API_URL}/ideas/${ideaId}/social-connections`;
+}
 
 async function handleResponse(res) {
   if (res.status === 204) return null;
@@ -37,10 +44,11 @@ async function handleResponse(res) {
 
 /**
  * @param {string} token
+ * @param {number|string} ideaId
  * @returns {Promise<{ meta?: object, linkedin?: object }>}
  */
-export async function fetchSocialConnections(token) {
-  const res = await fetch(`${API_URL}/me/social-connections`, {
+export async function fetchSocialConnections(token, ideaId) {
+  const res = await fetch(`${socialConnectionsBase(ideaId)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleResponse(res);
@@ -48,10 +56,11 @@ export async function fetchSocialConnections(token) {
 
 /**
  * @param {string} token
+ * @param {number|string} ideaId
  * @param {{ user_access_token: string, pages: Array<{ id: string|number, name?: string, access_token: string }>, selected_page_id?: string|null }} body
  */
-export async function putMetaSocialConnection(token, body) {
-  const res = await fetch(`${API_URL}/me/social-connections/meta`, {
+export async function putMetaSocialConnection(token, ideaId, body) {
+  const res = await fetch(`${socialConnectionsBase(ideaId)}/meta`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -64,10 +73,11 @@ export async function putMetaSocialConnection(token, body) {
 
 /**
  * @param {string} token
+ * @param {number|string} ideaId
  * @param {string} selectedPageId
  */
-export async function patchMetaSelectedPage(token, selectedPageId) {
-  const res = await fetch(`${API_URL}/me/social-connections/meta`, {
+export async function patchMetaSelectedPage(token, ideaId, selectedPageId) {
+  const res = await fetch(`${socialConnectionsBase(ideaId)}/meta`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -80,10 +90,11 @@ export async function patchMetaSelectedPage(token, selectedPageId) {
 
 /**
  * @param {string} token
+ * @param {number|string} ideaId
  * @param {{ access_token: string, person_urn: string, name?: string|null }} body
  */
-export async function putLinkedInSocialConnection(token, body) {
-  const res = await fetch(`${API_URL}/me/social-connections/linkedin`, {
+export async function putLinkedInSocialConnection(token, ideaId, body) {
+  const res = await fetch(`${socialConnectionsBase(ideaId)}/linkedin`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -96,14 +107,15 @@ export async function putLinkedInSocialConnection(token, body) {
 
 /**
  * @param {string} token
+ * @param {number|string} ideaId
  * @param {string|null|undefined} linkedinUrl — chaîne vide ou null pour effacer
  */
-export async function patchLinkedInUrl(token, linkedinUrl) {
+export async function patchLinkedInUrl(token, ideaId, linkedinUrl) {
   const linkedin_url =
     linkedinUrl == null || linkedinUrl === ""
       ? null
       : String(linkedinUrl).trim() || null;
-  const res = await fetch(`${API_URL}/me/social-connections/linkedin/url`, {
+  const res = await fetch(`${socialConnectionsBase(ideaId)}/linkedin/url`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -114,16 +126,16 @@ export async function patchLinkedInUrl(token, linkedinUrl) {
   return handleResponse(res);
 }
 
-export async function deleteMetaSocialConnection(token) {
-  const res = await fetch(`${API_URL}/me/social-connections/meta`, {
+export async function deleteMetaSocialConnection(token, ideaId) {
+  const res = await fetch(`${socialConnectionsBase(ideaId)}/meta`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleResponse(res);
 }
 
-export async function deleteLinkedInSocialConnection(token) {
-  const res = await fetch(`${API_URL}/me/social-connections/linkedin`, {
+export async function deleteLinkedInSocialConnection(token, ideaId) {
+  const res = await fetch(`${socialConnectionsBase(ideaId)}/linkedin`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
