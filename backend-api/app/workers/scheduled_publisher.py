@@ -9,10 +9,9 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import and_
 
 from app.core.database import SessionLocal
-from app.core.social_token_crypto import decrypt_json_payload
 from app.models.notification import Notification
 from app.models.scheduled_publication import ScheduledPublication
-from app.models.user_social_connection import UserSocialConnection
+from app.services import social_connection_service as social_conn_svc
 from app.services.notification_service import create_notification
 from app.services.platform_publisher import publish_to_platform
 
@@ -23,19 +22,32 @@ MAX_RETRIES = 3
 UPCOMING_MINUTES = 15
 
 
-def _get_social_tokens(db, user_id: int, platform: str) -> dict:
-    provider = "linkedin" if platform == "linkedin" else "meta"
-    row = (
-        db.query(UserSocialConnection)
-        .filter(
-            UserSocialConnection.user_id == user_id,
-            UserSocialConnection.provider == provider,
+def _db_platform_key(platform: str) -> str:
+    if platform == "linkedin":
+        return "linkedin"
+    if platform == "instagram":
+        return "instagram_business"
+    return "facebook_page"
+
+
+def _get_social_tokens(db, idea_id: int, user_id: int, platform: str) -> dict:
+    key = _db_platform_key(platform)
+    try:
+        return social_conn_svc.get_decrypted_tokens_for_publish(
+            db, idea_id=idea_id, user_id=user_id, platform_key=key
         )
-        .first()
-    )
-    if not row:
-        raise RuntimeError(f"Aucune connexion {provider} trouvée. Reconnectez votre compte.")
-    return decrypt_json_payload(row.payload_encrypted)
+    except RuntimeError as e:
+        if key == "instagram_business":
+            try:
+                return social_conn_svc.get_decrypted_tokens_for_publish(
+                    db,
+                    idea_id=idea_id,
+                    user_id=user_id,
+                    platform_key="facebook_page",
+                )
+            except RuntimeError:
+                pass
+        raise RuntimeError(f"{e} Reconnectez votre compte.") from e
 
 
 _PLATFORM_LABEL = {
@@ -51,7 +63,7 @@ async def _publish_one(db, pub: ScheduledPublication) -> None:
     db.commit()
 
     try:
-        tokens = _get_social_tokens(db, pub.user_id, pub.platform)
+        tokens = _get_social_tokens(db, pub.idea_id, pub.user_id, pub.platform)
         result = await publish_to_platform(
             platform=pub.platform,
             caption=pub.caption_snapshot,
