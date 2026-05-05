@@ -10,6 +10,10 @@ class KpiBlock(BaseModel):
     engagement_rate: float | None = None
     reach: int | None = None
     post_count: int | None = None
+    total_engagement: int | None = None
+    comments: int | None = None
+    clicks: int | None = None
+    shares: int | None = None
 
 
 class EvolutionPoint(BaseModel):
@@ -21,9 +25,11 @@ class TopPostOut(BaseModel):
     id: str
     preview: str | None = None
     platform: str
+    media_type: str | None = None
     likes: int | None = None
     comments: int | None = None
     reach: int | None = None
+    permalink_url: str | None = None
     published_at: str | None = None
 
 
@@ -31,6 +37,7 @@ class PlatformStatsOut(BaseModel):
     kpis: KpiBlock
     evolution: list[EvolutionPoint] = Field(default_factory=list)
     top_posts: list[TopPostOut] = Field(default_factory=list)
+    reactions_breakdown: dict[str, int] = Field(default_factory=dict)
 
 
 class SocialEtlSyncOut(BaseModel):

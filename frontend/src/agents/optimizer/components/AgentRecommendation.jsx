@@ -1,18 +1,62 @@
-import { FiZap, FiRefreshCw, FiInfo, FiCheckCircle } from "react-icons/fi";
+import { FiZap, FiRefreshCw, FiInfo, FiFlag, FiCheckSquare, FiTarget } from "react-icons/fi";
 import { Button } from "@/shared/ui/Button";
 import { PLATFORMS } from "../constants";
 
-function ActionItem({ text, index, color }) {
+function PriorityBadge({ priority }) {
+  const p = String(priority || "medium").toLowerCase();
+  const map = {
+    high: { label: "Priorité haute", cls: "bg-red-50 text-red-700 border-red-200" },
+    medium: { label: "Priorité moyenne", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+    low: { label: "Priorité basse", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  };
+  const item = map[p] || map.medium;
   return (
-    <li className="flex items-start gap-2.5 border-b border-brand-border/50 py-2.5 last:border-0 list-none">
-      <span
-        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black"
-        style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}
-      >
-        {index + 1}
-      </span>
-      <span className="text-xs leading-relaxed text-ink-body">{text}</span>
-    </li>
+    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${item.cls}`}>
+      {item.label}
+    </span>
+  );
+}
+
+function RecommendationCard({ item, color }) {
+  const actions = Array.isArray(item?.actions) ? item.actions : [];
+  const priority = String(item?.priority || "medium").toLowerCase();
+  const borderColor =
+    priority === "high"
+      ? "#dc2626"
+      : priority === "low"
+        ? "#059669"
+        : "#d97706";
+  return (
+    <article
+      className="rounded-xl border border-brand-border/70 bg-white px-3 py-2"
+      style={{ borderLeft: `4px solid ${borderColor}` }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="flex items-start gap-1.5 text-xs font-medium text-ink">
+          <FiTarget className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-muted" />
+          <span>
+          {item?.title || "Recommandation"}{item?.description ? ` — ${item.description}` : ""}
+          </span>
+        </p>
+        <PriorityBadge priority={item?.priority} />
+      </div>
+      {actions.length > 0 && (
+        <div
+          className="mt-1.5 rounded-md px-2 py-1"
+          style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
+        >
+          <p className="flex items-start gap-1.5 text-[11px] text-ink">
+            <FiCheckSquare className="mt-[1px] h-3.5 w-3.5 shrink-0 text-ink-muted" />
+            <span>
+            <span className="font-medium text-ink-muted">Actions :</span>
+            <span className="ml-1">
+              {actions.join(" · ")}
+            </span>
+            </span>
+          </p>
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -51,14 +95,14 @@ export function AgentRecommendation({
   const platform = PLATFORMS[activePlatform];
 
   return (
-    <aside className="w-72 shrink-0 space-y-3">
+    <aside className="w-full space-y-3">
 
       {/* Header card */}
       <div className="overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm">
         <div
           className="flex items-center justify-between border-b border-brand-border px-3 py-2.5"
           style={{
-            background: `linear-gradient(135deg, ${platform.color}08, ${platform.color}03)`,
+            background: "#f8fafc",
           }}
         >
           <div className="flex items-center gap-2">
@@ -86,7 +130,7 @@ export function AgentRecommendation({
         </div>
 
         {/* Body */}
-        <div className="max-h-[460px] overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-brand-border scrollbar-track-transparent">
+        <div className="p-3">
 
           {error && (
             <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
@@ -121,31 +165,33 @@ export function AgentRecommendation({
             <div className="space-y-3">
               {recommendation.summary && (
                 <p
-                  className="rounded-r-xl py-2 pl-3 pr-2 text-xs leading-relaxed text-ink-body"
+                  className="rounded-xl py-2.5 pl-3 pr-2 text-xs leading-relaxed text-ink-body"
                   style={{
-                    borderLeft: `3px solid ${platform.color}`,
-                    background: `${platform.color}07`,
+                    borderLeft: "3px solid #cbd5e1",
+                    background: "#f8fafc",
                   }}
                 >
                   {recommendation.summary}
                 </p>
               )}
 
-              {recommendation.actions?.length > 0 && (
+              {Array.isArray(recommendation.recommendations) && recommendation.recommendations.length > 0 && (
                 <div>
                   <p className="mb-1 text-2xs font-bold uppercase tracking-wider text-ink-muted">
-                    Actions recommandées
+                    <span className="inline-flex items-center gap-1">
+                      <FiFlag className="h-3.5 w-3.5" />
+                      Recommandations
+                    </span>
                   </p>
-                  <ul className="m-0 p-0">
-                    {recommendation.actions.map((action, i) => (
-                      <ActionItem
-                        key={i}
-                        text={action}
-                        index={i}
+                  <div className="space-y-2">
+                    {recommendation.recommendations.map((item, idx) => (
+                      <RecommendationCard
+                        key={item?.id || `rec-${idx}`}
+                        item={item}
                         color={platform.color}
                       />
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
 

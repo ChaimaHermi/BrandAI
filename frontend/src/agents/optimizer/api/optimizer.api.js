@@ -1,5 +1,5 @@
-const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+const AI_URL = import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
 
 function authHeaders(token) {
   const headers = { "Content-Type": "application/json" };
@@ -133,7 +133,7 @@ export async function fetchRecommendation(ideaId, platform, token) {
     {
       method: "POST",
       headers: authHeaders(token),
-      body: JSON.stringify({ idea_id: ideaId, platform }),
+      body: JSON.stringify({ idea_id: ideaId, platform, access_token: token, force: false }),
     },
   );
 
@@ -158,7 +158,7 @@ export async function regenerateRecommendation(ideaId, platform, token) {
     {
       method: "POST",
       headers: authHeaders(token),
-      body: JSON.stringify({ idea_id: ideaId, platform, force: true }),
+      body: JSON.stringify({ idea_id: ideaId, platform, access_token: token, force: true }),
     },
   );
 

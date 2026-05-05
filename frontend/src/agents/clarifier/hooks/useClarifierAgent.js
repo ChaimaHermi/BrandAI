@@ -7,6 +7,13 @@ import { apiGetIdea } from "@/services/ideaApi";
 const AI_URL =
   import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
 
+function isStorageStepMessage(message = "") {
+  const normalized = String(message).toLowerCase();
+  return /(sauvegard|stock|persist|base de donn|database|enregistr)/.test(
+    normalized,
+  );
+}
+
 /** Données affichées dans ClarifiedBlock, construites depuis l'idée en base. */
 function mapIdeaToClarifiedBlock(idea) {
   return {
@@ -159,14 +166,16 @@ export function useClarifierAgent(idea, token, options = {}) {
         },
         (eventType, data) => {
           if (eventType === "step") {
-            addXaiStep(data.status, data.message, {
-              sector: data.sector || null,
-              confidence: data.confidence || null,
-              dimensions: data.dimensions || null,
-              score: data.score || null,
-              model: data.model || null,
-              elapsed_ms: data.elapsed_ms || null,
-            });
+            if (!isStorageStepMessage(data.message)) {
+              addXaiStep(data.status, data.message, {
+                sector: data.sector || null,
+                confidence: data.confidence || null,
+                dimensions: data.dimensions || null,
+                score: data.score || null,
+                model: data.model || null,
+                elapsed_ms: data.elapsed_ms || null,
+              });
+            }
           }
 
           if (eventType === "result") {
@@ -306,11 +315,13 @@ export function useClarifierAgent(idea, token, options = {}) {
         },
         (eventType, data) => {
           if (eventType === "step") {
-            addXaiStep(data.status, data.message, {
-              score: data.score || null,
-              model: data.model || null,
-              elapsed_ms: data.elapsed_ms || null,
-            });
+            if (!isStorageStepMessage(data.message)) {
+              addXaiStep(data.status, data.message, {
+                score: data.score || null,
+                model: data.model || null,
+                elapsed_ms: data.elapsed_ms || null,
+              });
+            }
           }
 
           if (eventType === "result") {

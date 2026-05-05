@@ -14,9 +14,7 @@ const ICONS = {
 function formatKpi(value, isPercent) {
   if (value === null || value === undefined) return "—";
   if (isPercent) return `${Number(value).toFixed(1)} %`;
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)} M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)} K`;
-  return String(value);
+  return new Intl.NumberFormat("fr-FR").format(Number(value));
 }
 
 function SkeletonValue() {
@@ -34,15 +32,18 @@ function SkeletonValue() {
  */
 export function KpiCards({ kpis, loading, activePlatform }) {
   const platform = PLATFORMS[activePlatform];
+  const visibleConfig = KPI_CONFIG.filter(
+    (item) => !item.hiddenOn || !item.hiddenOn.includes(activePlatform),
+  );
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {KPI_CONFIG.map(({ key, label, icon, isPercent }) => {
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+      {visibleConfig.map(({ key, label, icon, isPercent }) => {
         const Icon = ICONS[icon];
         const value = kpis?.[key] ?? null;
 
         return (
-          <Card key={key} padding="p-4" className="flex flex-col gap-2">
+          <Card key={key} padding="p-4" className="flex flex-col gap-2 border border-brand-border bg-gradient-to-b from-white to-brand-light/10">
             <div className="flex items-center justify-between">
               <p className="text-2xs font-bold uppercase tracking-wider text-ink-muted">
                 {label}
@@ -58,7 +59,7 @@ export function KpiCards({ kpis, loading, activePlatform }) {
             {loading ? (
               <SkeletonValue />
             ) : (
-              <p className="text-2xl font-extrabold text-ink">
+              <p className="text-3xl font-black text-ink">
                 {formatKpi(value, isPercent)}
               </p>
             )}

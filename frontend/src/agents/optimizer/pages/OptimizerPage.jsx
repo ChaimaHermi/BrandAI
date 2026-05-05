@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AGENTS } from "@/agents";
 import { AgentPageHeader } from "@/agents/shared/components/AgentPageHeader";
@@ -8,6 +9,11 @@ import { usePipeline } from "@/context/PipelineContext";
 import { useOptimizer } from "../hooks/useOptimizer";
 import { PlatformNav } from "../components/PlatformNav";
 import { AgentRecommendation } from "../components/AgentRecommendation";
+import OptimizerSyncModal from "../components/OptimizerSyncModal";
+import KpiCards from "../components/KpiCards";
+import TopPostsTable from "../components/TopPostsTable";
+import EvolutionChart from "../components/EvolutionChart";
+import ReactionsDonut from "../components/ReactionsDonut";
 
 const optimizerAgent = AGENTS.find((a) => a.id === "optimizer");
 
@@ -15,19 +21,21 @@ function formatSyncEvent(ev) {
   if (!ev || typeof ev !== "object") return JSON.stringify(ev);
   const t = ev.type;
   if (t === "warnings") return `Avertissements : ${(ev.warnings || []).join(" · ")}`;
-  if (t === "started") return `Démarrage → ${ev.platforms_total ?? "?"} plateforme(s), dossier : ${ev.output_dir || ""}`;
+  if (t === "started") return `Démarrage → ${ev.platforms_total ?? "?"} plateforme(s)`;
   if (t === "platform_start") return `Extraction : ${ev.platform || "?"}`;
   if (t === "platform_done") {
-    return `Terminé : ${ev.platform} (${ev.posts_count ?? "?"} posts) → ${ev.normalized_path || ""}`;
+    return `Terminé : ${ev.platform} (${ev.posts_count ?? "?"} posts)`;
   }
   if (t === "platform_error") return `Erreur ${ev.platform} : ${ev.error || ""}`;
-  if (t === "complete") return `Pipeline terminé. Sortie : ${ev.output_dir || ""}`;
+  if (t === "complete") return "Pipeline terminé.";
   if (t === "fatal") return `Erreur fatale : ${ev.detail || ""}`;
   return JSON.stringify(ev);
 }
 
 export default function OptimizerPage() {
   const { idea, token } = usePipeline();
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const wasSyncLoadingRef = useRef(false);
 
   const {
     activePlatform,
@@ -41,13 +49,47 @@ export default function OptimizerPage() {
     syncError,
     lastSyncResult,
     syncEvents,
+    stats,
+    statsLoading,
+    statsError,
     runSocialEtlSync,
   } = useOptimizer({ ideaId: idea?.id ?? null, token });
 
   const connectHref = idea?.id ? `/ideas/${idea.id}/content/connect` : "#";
 
+  useEffect(() => {
+    if (syncLoading) setShowSyncModal(true);
+  }, [syncLoading]);
+
+  useEffect(() => {
+    if (syncLoading) {
+      wasSyncLoadingRef.current = true;
+      return;
+    }
+
+    if (!wasSyncLoadingRef.current) return;
+    wasSyncLoadingRef.current = false;
+
+    const hasError = syncEvents.some(
+      (ev) => ev?.type === "fatal" || ev?.type === "platform_error",
+    );
+    const isComplete = syncEvents.some((ev) => ev?.type === "complete");
+
+    // Auto-close only on successful completion.
+    if (!hasError && isComplete) {
+      const t = setTimeout(() => setShowSyncModal(false), 1300);
+      return () => clearTimeout(t);
+    }
+  }, [syncLoading, syncEvents]);
+
   return (
     <div className="app-content-scroll flex flex-1 flex-col gap-3">
+      <OptimizerSyncModal
+        open={showSyncModal && (syncLoading || syncEvents.length > 0)}
+        events={syncEvents}
+        isLoading={syncLoading}
+        onClose={() => setShowSyncModal(false)}
+      />
 
       <AgentPageHeader
         agent={optimizerAgent}
@@ -117,27 +159,9 @@ export default function OptimizerPage() {
           {syncError && (
             <ErrorBanner message={syncError} />
           )}
-          {syncEvents.length > 0 && (
-            <div className="rounded border border-brand-light/50 bg-brand-light/10 p-3">
-              <p className="text-2xs font-bold uppercase tracking-wider text-ink-muted">Progression (SSE)</p>
-              <ul className="mt-2 max-h-48 list-inside list-decimal space-y-1 overflow-y-auto text-2xs text-ink">
-                {syncEvents.map((ev, i) => (
-                  <li key={`${ev.type}-${i}`} className="break-words">
-                    {formatSyncEvent(ev)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {lastSyncResult?.output_dir && (
+          {lastSyncResult?.warnings?.length > 0 && (
             <p className="text-2xs text-ink-muted">
-              Données écrites côté serveur :{" "}
-              <code className="rounded bg-brand-light/30 px-1 py-0.5">{lastSyncResult.output_dir}</code>
-              {lastSyncResult.warnings?.length > 0 && (
-                <span className="block pt-1">
-                  Avertissements : {lastSyncResult.warnings.join(" · ")}
-                </span>
-              )}
+              Avertissements : {lastSyncResult.warnings.join(" · ")}
             </p>
           )}
         </Card>
@@ -148,17 +172,45 @@ export default function OptimizerPage() {
         onPlatformChange={onPlatformChange}
       />
 
-      <div className="flex items-start gap-3">
+      {statsError && <ErrorBanner message={statsError} />}
 
-        <AgentRecommendation
-          recommendation={recommendation}
-          loading={recoLoading}
-          error={null}
-          activePlatform={activePlatform}
-          onRegenerate={onRegenerate}
-        />
+      <KpiCards
+        kpis={stats?.kpis ?? null}
+        loading={statsLoading}
+        activePlatform={activePlatform}
+      />
 
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <div className={activePlatform !== "instagram" ? "lg:col-span-2" : "lg:col-span-3"}>
+          <EvolutionChart
+            evolution={stats?.evolution ?? []}
+            loading={statsLoading}
+            activePlatform={activePlatform}
+          />
+        </div>
+        {activePlatform !== "instagram" && (
+          <ReactionsDonut
+            reactions={stats?.reactions_breakdown ?? {}}
+            loading={statsLoading}
+          />
+        )}
       </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        <TopPostsTable
+          posts={stats?.top_posts ?? []}
+          loading={statsLoading}
+          activePlatform={activePlatform}
+        />
+      </div>
+
+      <AgentRecommendation
+        recommendation={recommendation}
+        loading={recoLoading}
+        error={null}
+        activePlatform={activePlatform}
+        onRegenerate={onRegenerate}
+      />
 
     </div>
   );

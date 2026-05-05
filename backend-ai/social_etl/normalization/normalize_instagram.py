@@ -119,12 +119,7 @@ def normalize_instagram_data(raw: dict[str, Any]) -> dict[str, Any]:
                 "reach": reach,
                 "impressions": impressions,
                 "video_views": video_views,
-                "reactions_like": None,
-                "reactions_love": None,
-                "reactions_haha": None,
-                "reactions_wow": None,
-                "reactions_sad": None,
-                "reactions_angry": None,
+                "reactions_breakdown": None,
             }
         )
 

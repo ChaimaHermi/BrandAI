@@ -17,7 +17,16 @@ export default function PipelineLayout() {
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const { idea, hasMarketResult, hasMarketingResult, hasBrandIdentityResult, refetch } =
+  const {
+    idea,
+    hasMarketResult,
+    hasMarketingResult,
+    hasBrandIdentityResult,
+    hasContentResult,
+    hasWebsiteResult,
+    hasOptimizerResult,
+    refetch,
+  } =
     usePipelineData(id, token);
 
   const activeAgent =
@@ -37,13 +46,22 @@ export default function PipelineLayout() {
     hasMarketResult,
     hasMarketingResult,
     hasBrandIdentityResult,
+    hasContentResult,
+    hasWebsiteResult,
+    hasOptimizerResult,
     activeAgentId: activeAgent.id,
   });
 
   const notifications = useNotifications(token);
 
   const userInitials = (user?.name || user?.email || "U").slice(0, 2).toUpperCase();
-  const ideaTitle = (idea?.description || "Votre projet").slice(0, 26);
+  const chosenBrandName = String(idea?.pipeline_progress?.brand_identity?.chosen_name || "").trim();
+  const baseIdeaTitle =
+    chosenBrandName ||
+    String(idea?.name || "").trim() ||
+    String(idea?.description || "").trim() ||
+    "Votre projet";
+  const ideaTitle = baseIdeaTitle.slice(0, 26);
 
   function handleLaunchPipeline() {
     if (!pipelineEnabled || pipelineCompleted) return;

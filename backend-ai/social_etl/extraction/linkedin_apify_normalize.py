@@ -57,19 +57,67 @@ def parse_count_like(value: Any) -> int | None:
     return int(num)
 
 
+def _linkedin_post_type_api(item: dict[str, Any]) -> str:
+    """
+    Normalise le type de post LinkedIn en catégories simples exploitables:
+    image | video | text | document | link | carousel | post | unknown
+    """
+    raw_type = str(item.get("type") or "").strip().lower()
+
+    # Si Apify donne déjà un type explicite, on le respecte.
+    if "video" in raw_type:
+        return "video"
+    if "image" in raw_type or "photo" in raw_type:
+        return "image"
+    if "document" in raw_type or "pdf" in raw_type:
+        return "document"
+    if "carousel" in raw_type or "album" in raw_type:
+        return "carousel"
+    if "link" in raw_type or "article" in raw_type:
+        return "link"
+    if raw_type in {"text", "textpost", "post_text"}:
+        return "text"
+
+    # Heuristiques sur le payload brut pour distinguer image vs texte.
+    image_keys = ("images", "image", "imageUrl", "image_url", "media", "mediaUrl", "media_url")
+    for key in image_keys:
+        val = item.get(key)
+        if isinstance(val, list) and len(val) > 0:
+            return "image"
+        if isinstance(val, dict) and val:
+            return "image"
+        if isinstance(val, str) and val.strip():
+            return "image"
+
+    text_value = item.get("text") or item.get("content") or item.get("postText")
+    if isinstance(text_value, str) and text_value.strip():
+        return "text"
+
+    if raw_type:
+        return raw_type
+    return "unknown"
+
+
 def normalize_linkedin_apify_items(items: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
     """Aligne les posts Apify sur le schéma historique ``linkedin_extract_result.json``."""
     posts: list[dict[str, Any]] = []
     for item in items[:limit]:
-        raw_type = str(item.get("type") or "").strip().lower()
-        post_type_api = raw_type if raw_type else "unknown"
+        post_url = (
+            item.get("postUrl")
+            or item.get("url")
+            or item.get("activityUrl")
+            or item.get("linkedinUrl")
+            or item.get("postLink")
+            or item.get("shareUrl")
+        )
+        post_type_api = _linkedin_post_type_api(item)
         comments_count, comments_list = _linkedin_comments_count_and_list(item)
         row: dict[str, Any] = {
             "id": item.get("id") or item.get("postId"),
             "post_type_api": post_type_api,
             "text": item.get("text") or item.get("content") or item.get("postText"),
             "published_at": item.get("postedAt") or item.get("timestamp") or item.get("date"),
-            "post_url": item.get("postUrl") or item.get("url"),
+            "post_url": post_url,
             "likes": item.get("likes") or item.get("numLikes"),
             "comments": comments_count,
             "reposts": item.get("reposts") or item.get("numShares") or item.get("shares"),

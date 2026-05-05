@@ -71,6 +71,11 @@ def _facebook_post_type_api(post: dict[str, Any]) -> str:
             first = data[0] if isinstance(data[0], dict) else {}
             media_type = str(first.get("media_type") or "").strip().lower()
             typ = str(first.get("type") or "").strip().lower()
+            subattachments = first.get("subattachments")
+            if isinstance(subattachments, dict):
+                sub_data = subattachments.get("data")
+                if isinstance(sub_data, list) and len(sub_data) > 1:
+                    return "carousel"
             if "video" in media_type or "video" in typ:
                 return "video"
             if "photo" in media_type or "photo" in typ:
@@ -85,6 +90,8 @@ def _facebook_post_type_api(post: dict[str, Any]) -> str:
         return "image"
     if "link" in status_type:
         return "link"
+    if post.get("full_picture"):
+        return "image"
     if status_type:
         return status_type
     return "unknown"
@@ -143,6 +150,37 @@ async def _fetch_page_posts_with_fallback(
     ]
 
     merged: dict[str, dict[str, Any]] = {}
+
+    def _merge_post_payload(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
+        # Keep existing values, but enrich with missing/empty fields from richer payloads.
+        merged_post = dict(base)
+        for key, value in incoming.items():
+            if key not in merged_post or merged_post.get(key) in (None, "", [], {}):
+                merged_post[key] = value
+                continue
+
+            # Attachments from feed are often richer than published_posts/posts.
+            if key == "attachments" and isinstance(value, dict):
+                current = merged_post.get(key)
+                if not isinstance(current, dict) or not current.get("data"):
+                    merged_post[key] = value
+                    continue
+                incoming_data = value.get("data")
+                current_data = current.get("data")
+                if (
+                    isinstance(incoming_data, list)
+                    and len(incoming_data) > len(current_data or [])
+                ):
+                    merged_post[key] = value
+                continue
+
+            # Prefer non-empty textual fields that improve media type inference.
+            if key in {"status_type", "story", "full_picture"}:
+                current_value = merged_post.get(key)
+                if not current_value and value:
+                    merged_post[key] = value
+
+        return merged_post
     for _source_name, source_path, req_limit, max_items, fields in candidates:
         rows = await fetch_graph_collection(
             path=source_path,
@@ -165,6 +203,8 @@ async def _fetch_page_posts_with_fallback(
                 continue
             if post_id not in merged:
                 merged[post_id] = row
+                continue
+            merged[post_id] = _merge_post_payload(merged[post_id], row)
 
     ordered = sorted(
         merged.values(),

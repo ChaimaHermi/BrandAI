@@ -2,20 +2,20 @@ import { FiInfo } from "react-icons/fi";
 import { Card } from "@/shared/ui/Card";
 import { PLATFORMS } from "../constants";
 
-const COLUMNS = [
+const BASE_COLUMNS = [
   { key: "preview",      label: "Aperçu",       width: "min-w-[200px]" },
   { key: "platform",     label: "Plateforme",   width: "w-28" },
+  { key: "media_type",   label: "Type",         width: "w-28" },
   { key: "likes",        label: "J'aime",       width: "w-20" },
   { key: "comments",     label: "Commentaires", width: "w-28" },
   { key: "reach",        label: "Portée",       width: "w-20" },
+  { key: "permalink_url", label: "URL",         width: "min-w-[220px]" },
   { key: "published_at", label: "Date",         width: "w-28" },
 ];
 
 function formatNum(n) {
   if (n === null || n === undefined) return "—";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)} K`;
-  return String(n);
+  return new Intl.NumberFormat("fr-FR").format(Number(n));
 }
 
 function formatDate(str) {
@@ -32,7 +32,7 @@ function formatDate(str) {
 function SkeletonRow() {
   return (
     <tr>
-      {COLUMNS.map((col) => (
+      {BASE_COLUMNS.map((col) => (
         <td key={col.key} className="px-4 py-3">
           <div
             className="h-3 animate-pulse rounded-md bg-brand-light/60"
@@ -62,14 +62,31 @@ function PlatformBadge({ platformKey }) {
   );
 }
 
+function formatMediaType(mediaType) {
+  const value = String(mediaType || "").trim().toLowerCase();
+  if (!value || value === "unknown") return "Inconnu";
+
+  if (value.includes("video")) return "Video";
+  if (value.includes("photo") || value.includes("image")) return "Image";
+  if (value.includes("carousel") || value.includes("album")) return "Carousel";
+  if (value.includes("text")) return "Texte";
+  if (value.includes("link")) return "Lien";
+  if (value.includes("document")) return "Document";
+
+  return value.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 /**
  * @param {{
  *   posts: import('../types/optimizer.types').TopPost[],
  *   loading: boolean
  * }} props
  */
-export function TopPostsTable({ posts, loading }) {
+export function TopPostsTable({ posts, loading, activePlatform }) {
   const isEmpty = !loading && (!posts || posts.length === 0);
+  const columns = BASE_COLUMNS.filter(
+    (c) => !(activePlatform === "linkedin" && c.key === "reach"),
+  );
 
   return (
     <Card padding="p-0" className="overflow-hidden">
@@ -101,7 +118,7 @@ export function TopPostsTable({ posts, loading }) {
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-brand-border bg-brand-light/20">
-              {COLUMNS.map((col) => (
+              {columns.map((col) => (
                 <th
                   key={col.key}
                   className={`${col.width} px-4 py-2.5 text-left text-2xs font-bold uppercase tracking-wider text-ink-muted`}
@@ -116,7 +133,7 @@ export function TopPostsTable({ posts, loading }) {
 
             {isEmpty && (
               <tr>
-                <td colSpan={COLUMNS.length} className="px-4 py-10 text-center">
+                <td colSpan={columns.length} className="px-4 py-10 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <FiInfo className="h-6 w-6 text-ink-muted/30" />
                     <p className="text-xs text-ink-muted">
@@ -139,13 +156,32 @@ export function TopPostsTable({ posts, loading }) {
                   <PlatformBadge platformKey={post.platform} />
                 </td>
                 <td className="px-4 py-3 text-xs font-semibold text-ink-muted">
+                  {formatMediaType(post.media_type)}
+                </td>
+                <td className="px-4 py-3 text-xs font-semibold text-ink-muted">
                   {formatNum(post.likes)}
                 </td>
                 <td className="px-4 py-3 text-xs font-semibold text-ink-muted">
                   {formatNum(post.comments)}
                 </td>
-                <td className="px-4 py-3 text-xs font-semibold text-ink-muted">
-                  {formatNum(post.reach)}
+                {activePlatform !== "linkedin" && (
+                  <td className="px-4 py-3 text-xs font-semibold text-ink-muted">
+                    {formatNum(post.reach)}
+                  </td>
+                )}
+                <td className="px-4 py-3 text-xs text-brand">
+                  {post.permalink_url ? (
+                    <a
+                      href={post.permalink_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block max-w-[220px] truncate hover:underline"
+                    >
+                      {post.permalink_url}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className="px-4 py-3 text-2xs text-ink-subtle">
                   {formatDate(post.published_at)}

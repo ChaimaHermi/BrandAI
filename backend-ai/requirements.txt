@@ -3,6 +3,7 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
 asyncio==4.0.0
+asyncpg
 Authlib==1.6.9
 bcrypt==4.0.1
 beautifulsoup4==4.14.3

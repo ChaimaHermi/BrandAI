@@ -1,40 +1,43 @@
-"""
-Pipeline social : extraction (API) puis normalisation, sans calcul KPI.
-
-Sorties dans ``social_etl/load/output/`` ou, si la config contient ``idea_id``,
-dans ``load/output/idea_{idea_id}/`` pour isoler les analyses par idée.
-
-Lancement (depuis ``backend-ai``)::
-
-    python social_etl/pipeline.py --config social_etl/load/pipeline.example.json
-"""
+"""Pipeline social : extraction (API), normalisation puis chargement en DB."""
 
 from __future__ import annotations
 
 import argparse
 import asyncio
 import json
+import logging
 import sys
 from collections.abc import AsyncIterator
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 NORM_DIR = BACKEND_ROOT / "social_etl" / "normalization"
-LOAD_OUTPUT_DIR = Path(__file__).resolve().parent / "load" / "output"
 
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 if str(NORM_DIR) not in sys.path:
     sys.path.insert(0, str(NORM_DIR))
 
-from normalize_common import dump_json  # noqa: E402
+from config.database import create_db_pool  # noqa: E402
 from normalize_facebook import build_normalized_facebook  # noqa: E402
 from normalize_instagram import build_normalized_instagram  # noqa: E402
 from normalize_linkedin import build_normalized_linkedin  # noqa: E402
+from social_etl.chargement.db_loader import (  # noqa: E402
+    log_sync,
+    upsert_daily_insights,
+    upsert_posts,
+)
 from social_etl.extraction.facebook_extractor import extract_facebook  # noqa: E402
 from social_etl.extraction.instagram_extractor import extract_instagram  # noqa: E402
 from social_etl.extraction.linkedin_extractor import extract_linkedin  # noqa: E402
+from social_etl.kpis.facebook_kpis import compute_facebook_kpis_for_connection  # noqa: E402
+from social_etl.kpis.instagram_kpis import compute_instagram_kpis_for_connection  # noqa: E402
+from social_etl.kpis.linkedin_kpis import compute_linkedin_kpis_for_connection  # noqa: E402
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def _validate_config_dict(data: dict[str, Any]) -> dict[str, Any]:
@@ -51,95 +54,174 @@ def _load_config(path: Path) -> dict[str, Any]:
     return _validate_config_dict(raw)
 
 
-def _resolve_output_dir(cfg: dict[str, Any], output_base: Path | None) -> Path:
-    base = (output_base or LOAD_OUTPUT_DIR).resolve()
-    raw_idea = cfg.get("idea_id")
-    if raw_idea is not None and str(raw_idea).strip() != "":
-        try:
-            return base / f"idea_{int(raw_idea)}"
-        except (TypeError, ValueError):
-            pass
-    return base
-
-
-async def _run_one(account: dict[str, Any], out_dir: Path) -> dict[str, Any]:
+async def _run_one(account: dict[str, Any], pool) -> dict[str, Any]:
     platform = str(account.get("platform") or "").strip().lower()
     token = str(account.get("access_token") or "").strip()
     account_id = str(account.get("account_id") or "").strip()
+    connection_id = account.get("connection_id")
     limit = int(account.get("limit") or 10)
 
     if platform not in ("facebook", "instagram", "linkedin"):
         raise ValueError(f"Plateforme inconnue: {platform!r}")
     if not token or not account_id:
         raise ValueError(f"{platform}: access_token et account_id sont requis.")
+    if not isinstance(connection_id, int):
+        raise ValueError(f"{platform}: connection_id requis pour le chargement DB.")
 
-    if platform == "facebook":
-        raw = await extract_facebook(
-            token,
-            account_id,
-            limit=limit,
-            comments_limit=int(account.get("comments_limit") or 100),
-            reactions_limit=int(account.get("reactions_limit") or 100),
-        )
-        normalized = build_normalized_facebook(raw)
-    elif platform == "instagram":
-        raw = await extract_instagram(
-            token,
-            account_id,
-            limit=limit,
-            comments_limit=int(account.get("comments_limit") or 100),
-        )
-        normalized = build_normalized_instagram(raw)
-    else:
-        raw = await extract_linkedin(
-            token,
-            account_id,
-            limit=limit,
-            actor_id=account.get("actor_id"),
-        )
-        normalized = build_normalized_linkedin(raw)
+    logger.info(
+        "social_etl platform start platform=%s connection_id=%s account_id=%s limit=%s",
+        platform,
+        connection_id,
+        account_id,
+        limit,
+    )
+    sync_start = datetime.now(timezone.utc)
+    await log_sync(
+        connection_id=connection_id,
+        status="started",
+        posts_fetched=0,
+        error_message=None,
+        pool=pool,
+        sync_start=sync_start,
+    )
 
-    raw_path = out_dir / f"{platform}_raw.json"
-    norm_path = out_dir / f"{platform}_normalized.json"
-    dump_json(raw_path, raw)
-    dump_json(norm_path, normalized)
+    try:
+        if platform == "facebook":
+            raw = await extract_facebook(
+                token,
+                account_id,
+                limit=limit,
+                comments_limit=int(account.get("comments_limit") or 100),
+                reactions_limit=int(account.get("reactions_limit") or 100),
+            )
+            normalized = build_normalized_facebook(raw)
+        elif platform == "instagram":
+            raw = await extract_instagram(
+                token,
+                account_id,
+                limit=limit,
+                comments_limit=int(account.get("comments_limit") or 100),
+            )
+            normalized = build_normalized_instagram(raw)
+        else:
+            raw = await extract_linkedin(
+                token,
+                account_id,
+                limit=limit,
+                actor_id=account.get("actor_id"),
+            )
+            normalized = build_normalized_linkedin(raw)
 
-    return {
-        "platform": platform,
-        "raw_path": str(raw_path.resolve()),
-        "normalized_path": str(norm_path.resolve()),
-        "posts_count": normalized.get("posts_count"),
-    }
+        normalized_posts = [
+            p for p in (normalized.get("posts") or []) if isinstance(p, dict)
+        ]
+        logger.info(
+            "social_etl platform normalized platform=%s connection_id=%s posts=%s",
+            platform,
+            connection_id,
+            len(normalized_posts),
+        )
+        await upsert_posts(connection_id, normalized_posts, pool)
+
+        daily_row = {
+            "date": datetime.now(timezone.utc).date(),
+            "followers_count": normalized.get("followers_count"),
+            "reach": normalized.get("reach"),
+            "impressions": normalized.get("impressions"),
+            "post_engagements": normalized.get("post_engagements"),
+        }
+        await upsert_daily_insights(connection_id, [daily_row], pool)
+
+        # Chainage ETL -> KPI: recalcul immediat des KPIs 30 jours
+        # pour la connexion dont le chargement vient de reussir.
+        if platform == "facebook":
+            await compute_facebook_kpis_for_connection(pool, connection_id)
+        elif platform == "instagram":
+            await compute_instagram_kpis_for_connection(pool, connection_id)
+        else:
+            await compute_linkedin_kpis_for_connection(pool, connection_id)
+
+        await log_sync(
+            connection_id=connection_id,
+            status="success",
+            posts_fetched=len(normalized_posts),
+            error_message=None,
+            pool=pool,
+            sync_start=sync_start,
+        )
+
+        logger.info(
+            "social_etl platform success platform=%s connection_id=%s",
+            platform,
+            connection_id,
+        )
+        return {
+            "platform": platform,
+            "connection_id": connection_id,
+            "posts_count": len(normalized_posts),
+            "storage": "database",
+            "kpis_computed": True,
+        }
+    except Exception as exc:
+        logger.exception(
+            "social_etl platform failed platform=%s connection_id=%s error=%s",
+            platform,
+            connection_id,
+            exc,
+        )
+        await log_sync(
+            connection_id=connection_id,
+            status="failed",
+            posts_fetched=0,
+            error_message=str(exc),
+            pool=pool,
+            sync_start=sync_start,
+        )
+        raise
 
 
 async def run_pipeline_async(
     cfg: dict[str, Any],
     *,
-    output_base: Path | None = None,
+    output_base: Path | None = None,  # rétrocompatibilité signature
 ) -> tuple[Path, list[dict[str, Any]]]:
     """
     Exécute le pipeline à partir d'un dict (utilisable depuis l'API backend).
 
-    ``cfg`` peut inclure ``idea_id`` (int) pour écrire sous ``output/idea_{id}/``.
+    ``cfg`` peut inclure ``idea_id`` (int). Les données sont chargées en DB.
     """
     cfg = _validate_config_dict(cfg)
-    out_dir = _resolve_output_dir(cfg, output_base)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = Path("database://social_etl")
 
     accounts = cfg.get("accounts") or []
+    logger.info(
+        "social_etl pipeline start idea_id=%s accounts_total=%s",
+        cfg.get("idea_id"),
+        len(accounts),
+    )
     results: list[dict[str, Any]] = []
-    for acc in accounts:
-        if not isinstance(acc, dict):
-            continue
-        row = await _run_one(acc, out_dir)
-        results.append(row)
+    pool = await create_db_pool()
+    try:
+        for acc in accounts:
+            if not isinstance(acc, dict):
+                logger.warning("social_etl skip invalid account entry type=%s", type(acc).__name__)
+                continue
+            row = await _run_one(acc, pool)
+            results.append(row)
+    finally:
+        await pool.close()
+    logger.info(
+        "social_etl pipeline done idea_id=%s accounts_done=%s",
+        cfg.get("idea_id"),
+        len(results),
+    )
     return out_dir, results
 
 
 async def run_pipeline_events(
     cfg: dict[str, Any],
     *,
-    output_base: Path | None = None,
+    output_base: Path | None = None,  # rétrocompatibilité signature
 ) -> AsyncIterator[dict[str, Any]]:
     """
     Même exécution que ``run_pipeline_async`` mais émet un événement JSON par étape (SSE).
@@ -148,8 +230,7 @@ async def run_pipeline_events(
     ``platform_error``, ``complete``.
     """
     cfg = _validate_config_dict(cfg)
-    out_dir = _resolve_output_dir(cfg, output_base)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = Path("database://social_etl")
 
     accounts_list = [a for a in (cfg.get("accounts") or []) if isinstance(a, dict)]
     yield {
@@ -160,24 +241,34 @@ async def run_pipeline_events(
     }
 
     results: list[dict[str, Any]] = []
-    for acc in accounts_list:
-        platform = str(acc.get("platform") or "").strip().lower()
-        yield {"type": "platform_start", "platform": platform}
-        try:
-            row = await _run_one(acc, out_dir)
-            results.append(row)
-            yield {"type": "platform_done", **row}
-        except Exception as e:
-            yield {
-                "type": "platform_error",
-                "platform": platform,
-                "error": str(e),
-            }
+    failed_count = 0
+    pool = await create_db_pool()
+    try:
+        for acc in accounts_list:
+            platform = str(acc.get("platform") or "").strip().lower()
+            yield {"type": "platform_start", "platform": platform}
+            try:
+                row = await _run_one(acc, pool)
+                results.append(row)
+                yield {"type": "platform_done", **row}
+            except Exception as e:
+                failed_count += 1
+                yield {
+                    "type": "platform_error",
+                    "platform": platform,
+                    "error": str(e),
+                }
+    finally:
+        await pool.close()
 
     yield {
         "type": "complete",
         "output_dir": str(out_dir.resolve()),
         "runs": results,
+        "platforms_total": len(accounts_list),
+        "platforms_done": len(results),
+        "platforms_failed": failed_count,
+        "status": "success" if failed_count == 0 else ("failed" if len(results) == 0 else "partial"),
     }
 
 
@@ -191,7 +282,7 @@ async def run_pipeline(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Pipeline extract + normalize → load/output/")
+    parser = argparse.ArgumentParser(description="Pipeline extract + normalize → DB")
     parser.add_argument(
         "--config",
         type=Path,
@@ -202,7 +293,7 @@ def main() -> None:
         "--output-dir",
         type=Path,
         default=None,
-        help=f"Dossier racine de sortie (défaut: {LOAD_OUTPUT_DIR})",
+        help="Option conservée pour rétrocompatibilité (non utilisée).",
     )
     args = parser.parse_args()
     config_path = args.config.resolve()

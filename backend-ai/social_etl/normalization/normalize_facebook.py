@@ -114,12 +114,14 @@ def normalize_facebook_data(raw: dict[str, Any]) -> dict[str, Any]:
         clicks = _insight_value(post_insights, "post_clicks")
         video_views = _insight_value(post_insights, "post_video_views")
 
-        reactions_like = _insight_value(post_insights, "post_reactions_like_total")
-        reactions_love = _insight_value(post_insights, "post_reactions_love_total")
-        reactions_haha = _insight_value(post_insights, "post_reactions_haha_total")
-        reactions_wow = _insight_value(post_insights, "post_reactions_wow_total")
-        reactions_sad = _insight_value(post_insights, "post_reactions_sorry_total")
-        reactions_angry = _insight_value(post_insights, "post_reactions_anger_total")
+        reactions_breakdown = {
+            "like": _insight_value(post_insights, "post_reactions_like_total"),
+            "love": _insight_value(post_insights, "post_reactions_love_total"),
+            "haha": _insight_value(post_insights, "post_reactions_haha_total"),
+            "wow": _insight_value(post_insights, "post_reactions_wow_total"),
+            "sad": _insight_value(post_insights, "post_reactions_sorry_total"),
+            "angry": _insight_value(post_insights, "post_reactions_anger_total"),
+        }
 
         normalized_posts.append(
             {
@@ -137,12 +139,7 @@ def normalize_facebook_data(raw: dict[str, Any]) -> dict[str, Any]:
                 "reach": reach,
                 "impressions": impressions,
                 "video_views": video_views,
-                "reactions_like": reactions_like,
-                "reactions_love": reactions_love,
-                "reactions_haha": reactions_haha,
-                "reactions_wow": reactions_wow,
-                "reactions_sad": reactions_sad,
-                "reactions_angry": reactions_angry,
+                "reactions_breakdown": reactions_breakdown,
             }
         )
 

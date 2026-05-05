@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+
 /**
  * ClarifierProgressModal
  *
@@ -44,93 +46,8 @@ function StepRow({ step }) {
         </span>
 
         {/* Message + inline extras */}
-        <span>
-          {step.text}
-          {step.detail?.sector     && ` · secteur ${step.detail.sector}`}
-          {step.detail?.confidence && ` · confiance ${step.detail.confidence}%`}
-        </span>
+        <span>{step.text}</span>
       </div>
-
-      {/* Dimensions inline */}
-      {step.detail?.dimensions && (
-        <div className="mt-0.5 flex gap-3 pl-[22px] font-mono text-[10px]">
-          {[
-            { k: "problem",  l: "problème" },
-            { k: "target",   l: "cible"    },
-            { k: "solution", l: "solution" },
-          ].map(({ k, l }) => (
-            <span
-              key={k}
-              className={`font-semibold ${
-                step.detail.dimensions[k] ? "text-[#1D9E75]" : "text-rose-600"
-              }`}
-            >
-              {step.detail.dimensions[k] ? "✓" : "✗"} {l}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Score */}
-      {step.detail?.score > 0 && (
-        <div
-          className={`pl-[22px] font-mono text-[10px] font-semibold ${
-            step.detail.score >= 80 ? "text-[#1D9E75]" : "text-[#EF9F27]"
-          }`}
-        >
-          score : {step.detail.score}/100
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Dimensions summary card ─────────────────────────────────────────────── */
-function DimensionsCard({ dims, sector }) {
-  if (!dims) return null;
-  return (
-    <div className="flex flex-wrap gap-2 border-t border-[#d1fae5] bg-[#f8fffe] px-4 py-3">
-      {[
-        { k: "problem",  l: "Problème" },
-        { k: "target",   l: "Cible"    },
-        { k: "solution", l: "Solution" },
-      ].map(({ k, l }) => (
-        <div
-          key={k}
-          className={`flex min-w-[72px] flex-1 rounded-lg px-2.5 py-2 text-center ${
-            dims[k]
-              ? "border border-[#9FE1CB] bg-[#f0fdf4]"
-              : "border border-[#fecaca] bg-[#fff5f5]"
-          }`}
-        >
-          <div className="w-full">
-            <div
-              className={`mb-[3px] text-[9px] font-bold uppercase tracking-[0.07em] ${
-                dims[k] ? "text-[#1D9E75]" : "text-rose-600"
-              }`}
-            >
-              {l}
-            </div>
-            <div
-              className={`text-[11px] font-semibold ${
-                dims[k] ? "text-[#085041]" : "text-rose-600"
-              }`}
-            >
-              {dims[k] ? "✓ Détecté" : "✗ Manquant"}
-            </div>
-          </div>
-        </div>
-      ))}
-      {sector && (
-        <div className="flex min-w-[72px] flex-1 rounded-lg border border-[#AFA9EC] bg-[#f0eeff] px-2.5 py-2 text-center">
-          <div className="w-full">
-            <div className="mb-[3px] text-[9px] font-bold uppercase tracking-[0.07em] text-[#7F77DD]">
-              Secteur
-            </div>
-            <div className="text-[11px] font-bold text-[#3C3489]">{sector}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -141,12 +58,6 @@ export default function ClarifierProgressModal({ open, steps, currentStep }) {
 
   const successCount = steps.filter((s) => s.status === "success").length;
   const hasError     = steps.some((s) => s.status === "error");
-
-  const dimStep = steps.findLast?.((s) => s.detail?.dimensions) ??
-    [...steps].reverse().find((s) => s.detail?.dimensions);
-  const dims   = dimStep?.detail?.dimensions ?? null;
-  const sector = steps.findLast?.((s) => s.detail?.sector)?.detail?.sector ??
-    [...steps].reverse().find((s) => s.detail?.sector)?.detail?.sector ?? null;
 
   /* progress bar */
   const totalExpected   = 5; // typical step count
@@ -159,18 +70,18 @@ export default function ClarifierProgressModal({ open, steps, currentStep }) {
     ? "Vérification des réponses…"
     : "Analyse de l'idée…";
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-md" />
 
       {/* Card */}
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl animate-[slideUp_0.3s_ease_forwards]">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div
@@ -223,9 +134,6 @@ export default function ClarifierProgressModal({ open, steps, currentStep }) {
           )}
         </div>
 
-        {/* ── Dimensions card ────────────────────────────────────────────── */}
-        <DimensionsCard dims={dims} sector={sector} />
-
         {/* ── Progress bar ───────────────────────────────────────────────── */}
         <div className="border-t border-[#d1fae5] bg-[#f8fffe] px-5 py-3">
           <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[#d1fae5]">
@@ -259,4 +167,6 @@ export default function ClarifierProgressModal({ open, steps, currentStep }) {
       `}</style>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

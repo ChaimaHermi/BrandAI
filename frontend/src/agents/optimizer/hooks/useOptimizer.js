@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   fetchOptimizerConnections,
+  fetchOptimizerStats,
   fetchRecommendation,
   regenerateRecommendation,
   runOptimizerSocialEtlSyncStream,
 } from "../api/optimizer.api";
 
-const INITIAL_PLATFORM = "global";
+const INITIAL_PLATFORM = "facebook";
 
 /**
  * @param {{ ideaId: number|null, token: string|null }} params
@@ -28,6 +29,10 @@ export function useOptimizer({ ideaId, token }) {
   const [lastSyncResult, setLastSyncResult] = useState(null);
   /** @type {[object[], Function]} */
   const [syncEvents, setSyncEvents] = useState([]);
+  /** @type {[import('../types/optimizer.types').PlatformStats|null, Function]} */
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState(null);
 
   const loadConnections = useCallback(async () => {
     if (!ideaId) return;
@@ -52,6 +57,21 @@ export function useOptimizer({ ideaId, token }) {
       setRecommendation(null);
     } finally {
       setRecoLoading(false);
+    }
+  }, [ideaId, activePlatform, token]);
+
+  const loadStats = useCallback(async () => {
+    if (!ideaId) return;
+    setStatsLoading(true);
+    setStatsError(null);
+    try {
+      const data = await fetchOptimizerStats(ideaId, activePlatform, token);
+      setStats(data);
+    } catch (e) {
+      setStats(null);
+      setStatsError(e?.message || "Impossible de charger les KPIs");
+    } finally {
+      setStatsLoading(false);
     }
   }, [ideaId, activePlatform, token]);
 
@@ -100,12 +120,13 @@ export function useOptimizer({ ideaId, token }) {
         },
       });
       await loadConnections();
+      await loadStats();
     } catch (e) {
       setSyncError(e?.message || "Échec de la synchronisation");
     } finally {
       setSyncLoading(false);
     }
-  }, [ideaId, token, loadConnections]);
+  }, [ideaId, token, loadConnections, loadStats]);
 
   useEffect(() => {
     loadConnections();
@@ -114,6 +135,10 @@ export function useOptimizer({ ideaId, token }) {
   useEffect(() => {
     loadRecommendation();
   }, [loadRecommendation]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   return {
     activePlatform,
@@ -127,7 +152,11 @@ export function useOptimizer({ ideaId, token }) {
     syncError,
     lastSyncResult,
     syncEvents,
+    stats,
+    statsLoading,
+    statsError,
     runSocialEtlSync,
     refetchConnections: loadConnections,
+    refetchStats: loadStats,
   };
 }

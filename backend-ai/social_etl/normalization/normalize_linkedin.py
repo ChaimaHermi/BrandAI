@@ -115,12 +115,6 @@ def normalize_linkedin_data(raw: dict[str, Any]) -> dict[str, Any]:
                 "reach": None,
                 "impressions": None,
                 "video_views": None,
-                "reactions_like": None,
-                "reactions_love": None,
-                "reactions_haha": None,
-                "reactions_wow": None,
-                "reactions_sad": None,
-                "reactions_angry": None,
                 "reactions_breakdown": reactions_breakdown or {},
             }
         )

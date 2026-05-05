@@ -95,19 +95,25 @@ def optimizer_stats(
     current_user: User = Depends(get_current_user),
 ) -> PlatformStatsOut:
     social_svc._assert_idea_owned(db, idea_id, current_user.id)
-    raw = get_optimizer_stats_for_idea(idea_id, platform)
+    raw = get_optimizer_stats_for_idea(db, idea_id, current_user.id, platform)
     return PlatformStatsOut.model_validate(raw)
 
 
 @router.post("/sync-social-etl", response_model=SocialEtlSyncOut)
 def optimizer_sync_social_etl(
     idea_id: int,
+    retry_failed_only: bool = True,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> SocialEtlSyncOut:
     social_svc._assert_idea_owned(db, idea_id, current_user.id)
     try:
-        summary, warnings = run_social_etl_for_idea(db, idea_id=idea_id, user_id=current_user.id)
+        summary, warnings = run_social_etl_for_idea(
+            db,
+            idea_id=idea_id,
+            user_id=current_user.id,
+            retry_failed_only=retry_failed_only,
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except FileNotFoundError as e:
@@ -129,12 +135,18 @@ def optimizer_sync_social_etl(
 @router.post("/sync-social-etl/stream")
 async def optimizer_sync_social_etl_stream(
     idea_id: int,
+    retry_failed_only: bool = True,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> StreamingResponse:
     """SSE : progression du pipeline (événements JSON par ligne ``data:``)."""
     social_svc._assert_idea_owned(db, idea_id, current_user.id)
-    cfg, warnings, err = build_social_etl_config(db, idea_id=idea_id, user_id=current_user.id)
+    cfg, warnings, err = build_social_etl_config(
+        db,
+        idea_id=idea_id,
+        user_id=current_user.id,
+        retry_failed_only=retry_failed_only,
+    )
     if err or not cfg:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err or "Configuration vide.")
 
