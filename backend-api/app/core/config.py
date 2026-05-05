@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     # Meta Graph — enrichissement profil connexion sociale (token page)
     META_GRAPH_API_VERSION: str = "v25.0"
 
+    # Social ETL (backend-ai) — extraction + normalisation pour l’agent Optimizer
+    # Dossier racine du repo ``backend-ai`` (sibling de ``backend-api`` si vide).
+    BACKEND_AI_ROOT: str = ""
+    SOCIAL_ETL_POST_LIMIT: int = 10
+    SOCIAL_ETL_COMMENTS_LIMIT: int = 100
+    APIFY_TOKEN: str = ""
+    APIFY_LINKEDIN_ACTOR_ID: str = ""
+
     # Configuration Pydantic v2 / pydantic-settings
     model_config = SettingsConfigDict(
         env_file=ENV_PATH,

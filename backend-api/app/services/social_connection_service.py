@@ -29,6 +29,7 @@ from app.schemas.social_connection import (
 )
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 _GRAPH_BASE = f"https://graph.facebook.com/{settings.META_GRAPH_API_VERSION.strip()}"
 
@@ -631,6 +632,174 @@ def delete_linkedin(db: Session, *, idea_id: int, user_id: int) -> bool:
     db.delete(row)
     db.commit()
     return True
+
+
+def build_social_etl_pipeline_accounts(
+    db: Session,
+    idea_id: int,
+    user_id: int,
+    *,
+    post_limit: int = 10,
+    comments_limit: int | None = None,
+    reactions_limit: int = 100,
+    apify_token: str | None = None,
+    apify_actor_id: str | None = None,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """
+    Construit la liste ``accounts`` pour ``social_etl.pipeline.run_pipeline_async``.
+
+    Meta : page sélectionnée → Facebook ; ligne Instagram Business → Instagram.
+    LinkedIn : URL profil en base + jeton **Apify** (paramètre ``apify_token``, pas OAuth LI).
+    """
+    _assert_idea_owned(db, idea_id, user_id)
+    logger.info(
+        "social_etl accounts build start idea_id=%s user_id=%s post_limit=%s comments_limit=%s reactions_limit=%s",
+        idea_id,
+        user_id,
+        post_limit,
+        comments_limit,
+        reactions_limit,
+    )
+    c_lim = int(comments_limit if comments_limit is not None else settings.SOCIAL_ETL_COMMENTS_LIMIT)
+    accounts: list[dict[str, Any]] = []
+    warnings: list[str] = []
+
+    mr = _row(db, idea_id, PLATFORM_FACEBOOK_PAGE)
+    if mr:
+        logger.info("social_etl facebook row found connection_id=%s", mr.id)
+        data = decrypt_json_payload(mr.access_token_encrypted)
+        page = _selected_meta_page(list(data.get("pages") or []), data.get("selected_page_id"))
+        if page:
+            pid = str(page.get("id") or "").strip()
+            tok = str(page.get("access_token") or "").strip()
+            if pid and tok:
+                accounts.append(
+                    {
+                        "connection_id": int(mr.id),
+                        "platform": "facebook",
+                        "access_token": tok,
+                        "account_id": pid,
+                        "limit": post_limit,
+                        "comments_limit": c_lim,
+                        "reactions_limit": reactions_limit,
+                    }
+                )
+                logger.info(
+                    "social_etl facebook account ready connection_id=%s page_id=%s",
+                    mr.id,
+                    pid,
+                )
+            else:
+                logger.warning(
+                    "social_etl facebook ignored connection_id=%s reason=missing_page_id_or_token",
+                    mr.id,
+                )
+        else:
+            logger.warning(
+                "social_etl facebook ignored connection_id=%s reason=no_selected_page",
+                mr.id,
+            )
+    else:
+        logger.info("social_etl facebook row missing idea_id=%s", idea_id)
+
+    ig_row = _row(db, idea_id, PLATFORM_INSTAGRAM_BUSINESS)
+    if ig_row:
+        logger.info("social_etl instagram row found connection_id=%s", ig_row.id)
+        try:
+            ig_data = decrypt_json_payload(ig_row.access_token_encrypted)
+        except Exception:
+            ig_data = {}
+            logger.exception(
+                "social_etl instagram decrypt failed connection_id=%s", ig_row.id
+            )
+        page_tok = str(ig_data.get("page_access_token") or "").strip()
+        ig_uid = str(ig_data.get("instagram_business_account_id") or "").strip()
+        page_id_fb = str(ig_data.get("page_id") or "").strip()
+        aid = ig_uid or page_id_fb
+        if page_tok and aid:
+            accounts.append(
+                {
+                    "connection_id": int(ig_row.id),
+                    "platform": "instagram",
+                    "access_token": page_tok,
+                    "account_id": aid,
+                    "limit": post_limit,
+                    "comments_limit": c_lim,
+                }
+            )
+            logger.info(
+                "social_etl instagram account ready connection_id=%s account_id=%s",
+                ig_row.id,
+                aid,
+            )
+        else:
+            warnings.append("Connexion Instagram incomplète (jeton page ou id compte manquant).")
+            logger.warning(
+                "social_etl instagram ignored connection_id=%s reason=missing_page_token_or_account_id",
+                ig_row.id,
+            )
+    else:
+        logger.info("social_etl instagram row missing idea_id=%s", idea_id)
+
+    lr = _row(db, idea_id, PLATFORM_LINKEDIN)
+    if lr:
+        logger.info("social_etl linkedin row found connection_id=%s", lr.id)
+        profile_url = _strip_or_none(lr.profile_url)
+        try:
+            li = decrypt_json_payload(lr.access_token_encrypted)
+        except Exception:
+            li = {}
+            logger.exception(
+                "social_etl linkedin decrypt failed connection_id=%s", lr.id
+            )
+        if not profile_url:
+            profile_url = _legacy_linkedin_url_from_payload(li)
+        apify = (apify_token or "").strip()
+        if profile_url and apify:
+            li_acc: dict[str, Any] = {
+                "connection_id": int(lr.id),
+                "platform": "linkedin",
+                "access_token": apify,
+                "account_id": profile_url,
+                "limit": post_limit,
+            }
+            act = (apify_actor_id or "").strip()
+            if act:
+                li_acc["actor_id"] = act
+            accounts.append(li_acc)
+            logger.info(
+                "social_etl linkedin account ready connection_id=%s profile_url=%s actor_id_set=%s",
+                lr.id,
+                profile_url,
+                bool(act),
+            )
+        elif profile_url:
+            warnings.append(
+                "Profil LinkedIn renseigné mais APIFY_TOKEN absent — extraction LinkedIn ignorée."
+            )
+            logger.warning(
+                "social_etl linkedin ignored connection_id=%s reason=missing_apify_token profile_url=%s",
+                lr.id,
+                profile_url,
+            )
+        else:
+            warnings.append(
+                "Connexion LinkedIn sans URL de profil — renseignez l’URL pour l’analyse (Apify)."
+            )
+            logger.warning(
+                "social_etl linkedin ignored connection_id=%s reason=missing_profile_url",
+                lr.id,
+            )
+    else:
+        logger.info("social_etl linkedin row missing idea_id=%s", idea_id)
+
+    logger.info(
+        "social_etl accounts build done idea_id=%s usable_accounts=%s warnings=%s",
+        idea_id,
+        len(accounts),
+        len(warnings),
+    )
+    return accounts, warnings
 
 
 def get_decrypted_tokens_for_publish(

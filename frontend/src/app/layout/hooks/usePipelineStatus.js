@@ -19,6 +19,9 @@ export function usePipelineStatus({
   hasMarketResult,
   hasMarketingResult,
   hasBrandIdentityResult,
+  hasContentResult,
+  hasWebsiteResult,
+  hasOptimizerResult,
   activeAgentId,
 }) {
   return useMemo(() => {
@@ -62,7 +65,18 @@ export function usePipelineStatus({
         if (activeAgentId === "brand" || hasBrandIdentityResult) return "active";
         return "pending";
       }
-      // Placeholder agents (content, website, optimizer)
+      if (agentId === "content") {
+        if (hasContentResult) return "done";
+        return activeAgentId === "content" ? "active" : "pending";
+      }
+      if (agentId === "website") {
+        if (hasWebsiteResult) return "done";
+        return activeAgentId === "website" ? "active" : "pending";
+      }
+      if (agentId === "optimizer") {
+        if (hasOptimizerResult) return "done";
+        return activeAgentId === "optimizer" ? "active" : "pending";
+      }
       if (pipelineCompleted) return "pending";
       return "pending";
     }
@@ -82,6 +96,9 @@ export function usePipelineStatus({
     hasMarketResult,
     hasMarketingResult,
     hasBrandIdentityResult,
+    hasContentResult,
+    hasWebsiteResult,
+    hasOptimizerResult,
     activeAgentId,
   ]);
 }

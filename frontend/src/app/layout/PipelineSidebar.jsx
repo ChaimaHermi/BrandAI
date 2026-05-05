@@ -108,6 +108,7 @@ export default function PipelineSidebar({
         {AGENTS.map((agent) => {
           const status  = getStatus(agent.id);
           const isActive  = agent.id === activeAgent.id;
+          const isRunning = status === "active";
           const isDone    = status === "done";
           const isPending = status === "pending";
           const isContent = agent.id === "content";
@@ -139,18 +140,18 @@ export default function PipelineSidebar({
                   style={
                     isDone
                       ? { background: "#1D9E75" }
-                      : isActive
+                      : isRunning
                         ? { background: agent.gradient, boxShadow: `0 2px 8px ${agent.color}44` }
                         : { background: "#f5f5f5" }
                   }
                 >
                   {agent.icon ? (
                     <agent.icon
-                      size={sidebarOpen ? (isDone || isActive ? 14 : 13) : 15}
-                      className={isDone || isActive ? "text-white" : "text-ink-subtle"}
+                      size={sidebarOpen ? (isDone || isRunning ? 14 : 13) : 15}
+                      className={isDone || isRunning ? "text-white" : "text-ink-subtle"}
                     />
                   ) : (
-                    <span className={`text-[9px] font-bold ${isDone || isActive ? "text-white" : "text-ink-subtle"}`}>
+                    <span className={`text-[9px] font-bold ${isDone || isRunning ? "text-white" : "text-ink-subtle"}`}>
                       {agent.short}
                     </span>
                   )}
@@ -159,8 +160,8 @@ export default function PipelineSidebar({
                 {/* Label + status text */}
                 <div className={`min-w-0 flex-1 ${sidebarOpen ? "block" : "hidden"}`}>
                   <p
-                    className={`truncate text-xs ${isDone || isActive ? "font-bold" : "font-medium"} ${
-                      isActive ? "text-brand-darker" : "text-ink-muted"
+                    className={`truncate text-xs ${isDone || isRunning ? "font-bold" : "font-medium"} ${
+                      isRunning ? "text-brand-darker" : "text-ink-muted"
                     }`}
                     /* dynamic done color from AGENTS registry */
                     style={isDone ? { color: agent.doneColor } : undefined}
@@ -169,13 +170,13 @@ export default function PipelineSidebar({
                   </p>
                   <p
                     className={`mt-0.5 flex items-center gap-[3px] text-[9px] ${
-                      isDone ? "text-success" : isActive ? "text-brand" : "text-ink-subtle"
+                      isDone ? "text-success" : isRunning ? "text-brand" : "text-ink-subtle"
                     }`}
                   >
-                    {isActive && (
+                    {isRunning && (
                       <span className="inline-block animate-[pulse_1.2s_infinite]">●</span>
                     )}
-                    {isDone ? "Terminé ✓" : isActive ? "En cours" : "En attente"}
+                    {isDone ? "Terminé ✓" : isRunning ? "En cours" : "En attente"}
                   </p>
                 </div>
               </div>

@@ -1,20 +1,8 @@
-import { FiGlobe } from "react-icons/fi";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 
-export const PLATFORM_ORDER = ["global", "facebook", "instagram", "linkedin"];
+export const PLATFORM_ORDER = ["facebook", "instagram", "linkedin"];
 
 export const PLATFORMS = {
-  global: {
-    key: "global",
-    label: "Global",
-    Icon: FiGlobe,
-    color: "#854F0B",
-    lightBg: "bg-[#854F0B]/10",
-    lightText: "text-[#854F0B]",
-    border: "border-[#854F0B]/30",
-    activeStyle: { background: "linear-gradient(135deg,#854F0B,#412402)", borderColor: "transparent" },
-    inactiveStyle: { background: "rgba(133,79,11,.08)", borderColor: "rgba(133,79,11,.35)", color: "#854F0B" },
-  },
   facebook: {
     key: "facebook",
     label: "Facebook",
@@ -66,10 +54,33 @@ export const KPI_CONFIG = [
     key: "reach",
     label: "Portée",
     icon: "globe",
+    hiddenOn: ["linkedin"],
   },
   {
     key: "post_count",
     label: "Publications",
+    icon: "file",
+  },
+  {
+    key: "total_engagement",
+    label: "Engagement total",
+    icon: "activity",
+  },
+  {
+    key: "comments",
+    label: "Commentaires",
+    icon: "file",
+    hiddenOn: ["linkedin"],
+  },
+  {
+    key: "clicks",
+    label: "Clics",
+    icon: "globe",
+    hiddenOn: ["instagram", "linkedin"],
+  },
+  {
+    key: "shares",
+    label: "Partages",
     icon: "file",
   },
 ];

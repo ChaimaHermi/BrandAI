@@ -11,6 +11,7 @@ from app.routes import (
     content_weekly_plan,
     market_analysis,
     market_strategy,
+    social_optimizer,
     social_publish,
     website_builder,
 )
@@ -81,6 +82,7 @@ app.include_router(logo.router, prefix="/api/ai")
 app.include_router(content_generation.router, prefix="/api/ai")
 app.include_router(content_weekly_plan.router, prefix="/api/ai")
 app.include_router(social_publish.router, prefix="/api/ai")
+app.include_router(social_optimizer.router, prefix="/api/ai")
 app.include_router(website_builder.router, prefix="/api/ai")
 
 
