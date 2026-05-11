@@ -61,29 +61,32 @@ class SocialOptimizerRecommendationAgent(BaseAgent):
 
     async def _call_llm_json_object(self, system_prompt: str, user_prompt: str) -> dict:
         max_tokens = min(self.llm_max_tokens, 4096)
-        key = self._next_nvidia_key()
-        async with httpx.AsyncClient(timeout=httpx.Timeout(180.0)) as client:
-            resp = await client.post(
-                "https://integrate.api.nvidia.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": self.llm_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "temperature": self.temperature,
-                    "max_tokens": max_tokens,
-                    "response_format": {"type": "json_object"},
-                },
-            )
-            resp.raise_for_status()
-            message = resp.json()["choices"][0]["message"]
-            content = (message.get("content") or "").strip()
-            return json.loads(content)
+        key, lock = await self._acquire_free_key()
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(180.0)) as client:
+                resp = await client.post(
+                    "https://integrate.api.nvidia.com/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": self.llm_model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        "temperature": self.temperature,
+                        "max_tokens": max_tokens,
+                        "response_format": {"type": "json_object"},
+                    },
+                )
+                resp.raise_for_status()
+                message = resp.json()["choices"][0]["message"]
+                content = (message.get("content") or "").strip()
+                return json.loads(content)
+        finally:
+            lock.release()
 
     @traceable(name="social_optimizer.agent.generate_recommendation", run_type="chain", tags=["social_optimizer", "agent"])
     async def generate_recommendation(
