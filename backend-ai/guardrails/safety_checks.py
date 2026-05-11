@@ -99,17 +99,19 @@ async def check_safety_with_llama_guard(payload: dict[str, Any]) -> dict[str, An
         raise RuntimeError("Aucune clé NVIDIA_API_KEY_* disponible pour safety check.")
 
     content = _flatten_payload(payload)
-    system_prompt = (
+    # NVIDIA Llama Guard examples use user-only messages; system+user can yield 400 on integrate.api.nvidia.com.
+    user_prompt = (
         "You are a strict safety classifier. "
         "Classify the user content as SAFE or UNSAFE. "
-        "If UNSAFE, provide brief violated categories."
+        "If UNSAFE, provide brief violated categories.\n\n"
+        "Content to classify (JSON):\n"
+        f"{content}"
     )
 
     body = {
         "model": _DEFAULT_SAFETY_MODEL,
         "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": content},
+            {"role": "user", "content": user_prompt},
         ],
         "temperature": 0,
         "max_tokens": 256,

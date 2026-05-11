@@ -2,20 +2,11 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from typing import Any
 
 import httpx
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from tools.social_publishing.meta_client import (  # noqa: E402
-    MetaGraphError,
-    _graph_get,
-)
+from app.social_etl.extraction._meta_http import MetaGraphError, _graph_get
 
 
 async def safe_graph_get(path: str, params: dict[str, Any]) -> dict[str, Any] | None:

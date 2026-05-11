@@ -95,9 +95,30 @@ def _nvidia_http_timeout() -> float | None:
     except ValueError:
         return 600.0
 
-REASONING_EFFORT_MAP = {
-    "openai/gpt-oss-120b": "medium",
-}
+def _nvidia_reasoning_effort() -> str | None:
+    """
+    Hosted NVIDIA NIM may reject unknown fields; only send reasoning_effort when explicitly set.
+    Env NVIDIA_REASONING_EFFORT: low | medium | high (see NVIDIA GPT-OSS docs).
+    """
+    raw = (os.getenv("NVIDIA_REASONING_EFFORT") or "").strip().lower()
+    if raw in ("low", "medium", "high"):
+        return raw
+    return None
+
+
+# ══════════════════════════════════════════════════════════════
+# Pool global de clés NVIDIA — partagé entre tous les agents
+# ══════════════════════════════════════════════════════════════
+
+# Verrou asyncio par clé — créé à la première utilisation depuis l'event loop
+_NVIDIA_KEY_LOCKS: dict[str, asyncio.Lock] = {}
+_KEY_POOL_RR_IDX: int = 0   # index round-robin global
+
+
+def _get_key_lock(key: str) -> asyncio.Lock:
+    """Retourne le verrou asyncio associé à cette clé (créé si absent).
+    Sûr en asyncio : pas d'await entre le test et l'assignation."""
+    return _NVIDIA_KEY_LOCKS.setdefault(key, asyncio.Lock())
 
 
 # ══════════════════════════════════════════════════════════════
@@ -132,14 +153,36 @@ class BaseAgent(ABC):
                 os.getenv("NVIDIA_API_KEY_4", ""),
             ] if k
         ]
-        self._nvidia_key_idx = 0
 
-    def _next_nvidia_key(self) -> str:
-        if not self._nvidia_keys:
+    async def _acquire_free_key(self) -> tuple[str, asyncio.Lock]:
+        """
+        Cherche une clé NVIDIA libre (verrou non acquis).
+        Si toutes occupées → attend sur la prochaine en round-robin global.
+        Retourne (key, lock) avec le verrou déjà acquis.
+        """
+        global _KEY_POOL_RR_IDX
+        keys = self._nvidia_keys
+        n = len(keys)
+        if not n:
             raise RuntimeError("Aucune clé NVIDIA_API_KEY définie")
-        key = self._nvidia_keys[self._nvidia_key_idx % len(self._nvidia_keys)]
-        self._nvidia_key_idx += 1
-        return key
+
+        # Passe 1 : cherche une clé libre (non bloquante)
+        for i in range(n):
+            idx = (_KEY_POOL_RR_IDX + i) % n
+            key  = keys[idx]
+            lock = _get_key_lock(key)
+            if not lock.locked():
+                _KEY_POOL_RR_IDX = (idx + 1) % n
+                await lock.acquire()
+                return key, lock
+
+        # Passe 2 : toutes occupées → attend sur la suivante en round-robin
+        idx  = _KEY_POOL_RR_IDX % n
+        _KEY_POOL_RR_IDX = (idx + 1) % n
+        key  = keys[idx]
+        lock = _get_key_lock(key)
+        await lock.acquire()
+        return key, lock
 
     # ─────────────────────────────────────────
     # LLM CALL
@@ -171,17 +214,11 @@ class BaseAgent(ABC):
           3. Après 3 cycles complets → lever une erreur
         """
         max_tokens = min(self.llm_max_tokens, NVIDIA_MAX_TOKENS_CAP)
-        effort = REASONING_EFFORT_MAP.get(self.llm_model)
-        n_keys = len(self._nvidia_keys)
+        effort     = _nvidia_reasoning_effort()
         last_error = None
 
-        # Utiliser le timeout surchargé si défini, sinon env var NVIDIA_HTTP_TIMEOUT_S
-        override_timeout = getattr(self, '_override_timeout', None)
-        if override_timeout and override_timeout > 0:
-            httpx_timeout = httpx.Timeout(override_timeout)
-        else:
-            nv_timeout = _nvidia_http_timeout()
-            httpx_timeout = httpx.Timeout(None) if nv_timeout is None else httpx.Timeout(nv_timeout)
+        nv_timeout    = _nvidia_http_timeout()
+        httpx_timeout = httpx.Timeout(None) if nv_timeout is None else httpx.Timeout(nv_timeout)
 
         async def _do_request(key: str) -> str:
             async with httpx.AsyncClient(timeout=httpx_timeout) as client:
@@ -211,50 +248,46 @@ class BaseAgent(ABC):
                     raise RuntimeError("Réponse NVIDIA vide")
                 return content
 
-        # 3 cycles : chaque cycle essaie toutes les clés, puis attend 60 sec
         for cycle in range(self.max_retries):
-            for _ in range(n_keys):
-                key = self._next_nvidia_key()
-                try:
-                    content = await _do_request(key)
-                    self.logger.info(
-                        f"[{self.agent_name}] NVIDIA OK | cycle={cycle} | "
-                        f"tokens ≈ {len(content)//4}"
-                    )
-                    return content
-                except httpx.HTTPStatusError as e:
-                    last_error = e
-                    status = e.response.status_code if e.response is not None else "?"
-                    self.logger.error(
-                        f"[API_KO] provider=NVIDIA status={status} "
-                        f"agent={self.agent_name} model={self.llm_model} "
-                        f"err={str(e)[:200]}"
-                    )
-                    if e.response.status_code == 429:
-                        # Rate limit → essayer la clé suivante immédiatement
-                        self.logger.warning(
-                            f"[{self.agent_name}] NVIDIA 429 → rotation clé suivante"
-                        )
-                        continue
-                    # Autre erreur HTTP → pas de rotation, on sort du cycle
-                    raise
-                except Exception as e:
-                    last_error = e
-                    self.logger.warning(
-                        f"[{self.agent_name}] NVIDIA erreur → {str(e)[:120]}"
-                    )
-                    continue
-
-            # Toutes les clés épuisées → attendre 60 sec avant le prochain cycle
-            if cycle < self.max_retries - 1:
-                self.logger.warning(
-                    f"[{self.agent_name}] Toutes les clés NVIDIA en limite "
-                    f"→ attente 60 sec (cycle {cycle+1}/{self.max_retries})"
+            # Acquiert une clé libre — attend si toutes occupées
+            key, lock = await self._acquire_free_key()
+            try:
+                self.logger.info(f"[{self.agent_name}] NVIDIA → clé …{key[-6:]}")
+                content = await _do_request(key)
+                self.logger.info(
+                    f"[{self.agent_name}] NVIDIA OK | cycle={cycle} | "
+                    f"tokens ≈ {len(content)//4}"
                 )
-                await asyncio.sleep(60)
+                return content
+
+            except httpx.HTTPStatusError as e:
+                last_error = e
+                status = e.response.status_code if e.response is not None else "?"
+                self.logger.error(
+                    f"[API_KO] provider=NVIDIA status={status} "
+                    f"agent={self.agent_name} err={str(e)[:200]}"
+                )
+                if status == 429:
+                    self.logger.warning(
+                        f"[{self.agent_name}] NVIDIA 429 sur clé …{key[-6:]} "
+                        f"→ retry cycle {cycle+1}"
+                    )
+                    # libère immédiatement et attend avant de réessayer
+                    if cycle < self.max_retries - 1:
+                        await asyncio.sleep(60)
+                    continue
+                raise
+
+            except Exception as e:
+                last_error = e
+                self.logger.warning(f"[{self.agent_name}] NVIDIA erreur → {str(e)[:120]}")
+                continue
+
+            finally:
+                lock.release()   # libère toujours la clé, même en cas d'erreur
 
         raise RuntimeError(
-            f"NVIDIA failed après {self.max_retries} cycles × {n_keys} clés : {last_error}"
+            f"NVIDIA failed après {self.max_retries} tentatives : {last_error}"
         )
 
     async def _call_langchain(self, system_prompt: str, user_prompt: str) -> str:

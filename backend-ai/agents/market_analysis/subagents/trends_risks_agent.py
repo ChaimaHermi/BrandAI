@@ -1,3 +1,4 @@
+import asyncio
 from urllib.parse import urlparse
 
 from agents.base_agent import BaseAgent
@@ -116,7 +117,7 @@ CONTENT: {content}
 
         trend_results = []
         for q in trend_q:
-            results = tavily_search(q)
+            results = await asyncio.to_thread(tavily_search, q)
             trend_results.extend(results[:per_query_cap])
             if len(trend_results) >= trend_budget:
                 break
@@ -124,7 +125,7 @@ CONTENT: {content}
 
         risk_results = []
         for q in risk_q:
-            results = tavily_search(q)
+            results = await asyncio.to_thread(tavily_search, q)
             risk_results.extend(results[:per_query_cap])
             if len(risk_results) >= risk_budget:
                 break
@@ -142,12 +143,7 @@ CONTENT: {content}
                 all_results.append(risk_results[j])
                 j += 1
 
-        print("[DEBUG TRENDS] total results:", len(all_results))
-
         context = self.build_context(all_results)
-
-        print("[DEBUG TRENDS] context length:", len(context))
-        print("[DEBUG TRENDS] approx tokens:", len(context) // 4)
 
         response = await self._call_llm(
             system_prompt=PROMPT_TRENDS_RISKS,

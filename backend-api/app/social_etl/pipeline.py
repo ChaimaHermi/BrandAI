@@ -6,35 +6,41 @@ import argparse
 import asyncio
 import json
 import logging
-import sys
 from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-BACKEND_ROOT = Path(__file__).resolve().parents[1]
-NORM_DIR = BACKEND_ROOT / "social_etl" / "normalization"
+import asyncpg
 
-if str(BACKEND_ROOT) not in sys.path:
-    sys.path.insert(0, str(BACKEND_ROOT))
-if str(NORM_DIR) not in sys.path:
-    sys.path.insert(0, str(NORM_DIR))
-
-from config.database import create_db_pool  # noqa: E402
-from normalize_facebook import build_normalized_facebook  # noqa: E402
-from normalize_instagram import build_normalized_instagram  # noqa: E402
-from normalize_linkedin import build_normalized_linkedin  # noqa: E402
-from social_etl.chargement.db_loader import (  # noqa: E402
+from app.core.config import settings
+from app.social_etl.chargement.db_loader import (
     log_sync,
     upsert_daily_insights,
     upsert_posts,
 )
-from social_etl.extraction.facebook_extractor import extract_facebook  # noqa: E402
-from social_etl.extraction.instagram_extractor import extract_instagram  # noqa: E402
-from social_etl.extraction.linkedin_extractor import extract_linkedin  # noqa: E402
-from social_etl.kpis.facebook_kpis import compute_facebook_kpis_for_connection  # noqa: E402
-from social_etl.kpis.instagram_kpis import compute_instagram_kpis_for_connection  # noqa: E402
-from social_etl.kpis.linkedin_kpis import compute_linkedin_kpis_for_connection  # noqa: E402
+from app.social_etl.extraction.facebook_extractor import extract_facebook
+from app.social_etl.extraction.instagram_extractor import extract_instagram
+from app.social_etl.extraction.linkedin_extractor import extract_linkedin
+from app.social_etl.kpis.facebook_kpis import compute_facebook_kpis_for_connection
+from app.social_etl.kpis.instagram_kpis import compute_instagram_kpis_for_connection
+from app.social_etl.kpis.linkedin_kpis import compute_linkedin_kpis_for_connection
+from app.social_etl.normalization.normalize_facebook import build_normalized_facebook
+from app.social_etl.normalization.normalize_instagram import build_normalized_instagram
+from app.social_etl.normalization.normalize_linkedin import build_normalized_linkedin
+
+
+def _build_asyncpg_dsn(url: str) -> str:
+    """SQLAlchemy URL (e.g. postgresql+psycopg2://...) -> asyncpg DSN."""
+    if "+" in url.split("://", 1)[0]:
+        scheme, rest = url.split("://", 1)
+        return scheme.split("+", 1)[0] + "://" + rest
+    return url
+
+
+async def create_db_pool(*, min_size: int = 1, max_size: int = 10) -> asyncpg.Pool:
+    dsn = _build_asyncpg_dsn(settings.DATABASE_URL)
+    return await asyncpg.create_pool(dsn=dsn, min_size=min_size, max_size=max_size)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

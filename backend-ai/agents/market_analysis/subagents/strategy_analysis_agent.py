@@ -12,44 +12,6 @@ class StrategyAnalysisAgent(BaseAgent):
             temperature=0.2
         )
 
-    def _top_n(self, items, n=5):
-        if not isinstance(items, list):
-            return []
-        out = []
-        for item in items:
-            if item is None:
-                continue
-            if isinstance(item, str):
-                item = item.strip()
-                if not item:
-                    continue
-            out.append(item)
-            if len(out) >= n:
-                break
-        return out
-
-    def _compress_competitors(self, competitor_block, n=8):
-        competitors = (competitor_block or {}).get("competitors", [])
-        out = []
-        for c in competitors[:n]:
-            if not isinstance(c, dict):
-                continue
-            out.append({
-                "name": c.get("name"),
-                "positioning": c.get("positioning"),
-                "target_users": c.get("target_users"),
-                "type": c.get("type"),
-                "scope": c.get("scope"),
-            })
-        return out
-
-    def _extract_voc_pains(self, voc_block, n=8):
-        vb = voc_block or {}
-        pains = []
-        pains.extend(vb.get("pain_points", []) or [])
-        pains.extend(vb.get("frustrations", []) or [])
-        return self._top_n(pains, n=n)
-
     def build_context(self, state):
         idea = state.clarified_idea or {}
         ma = state.market_analysis or {}
@@ -79,22 +41,10 @@ class StrategyAnalysisAgent(BaseAgent):
                 "budget_currency": idea.get("budget_currency"),
             },
             "source_2_market_intelligence": {
-                # Full raw outputs from subagents to preserve context fidelity.
-                "market_data_full": market,
-                "competitor_full": competitor,
-                "voc_full": voc,
-                "trends_risks_full": trends,
-                "keywords_full": keywords,
-                # Digest views to guide LLM attention.
-                "market_highlights": {
-                    "market_size": market.get("market_size"),
-                    "growth_rate": market.get("growth_rate"),
-                    "key_segments": self._top_n(market.get("segments", []), n=8),
-                },
-                "competitors_top": self._compress_competitors(competitor, n=8),
-                "voc_pains_top": self._extract_voc_pains(voc, n=8),
-                "trends_top": self._top_n(trends.get("market_trends", []), n=8),
-                "risks_top": self._top_n(trends.get("market_risks", []), n=8),
+                "market_data": market,
+                "competitor_data": competitor,
+                "voc_data": voc,
+                "trends_risks_data": trends,
             },
         }
 

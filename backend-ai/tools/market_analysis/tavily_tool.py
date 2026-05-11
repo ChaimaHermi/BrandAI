@@ -1,5 +1,6 @@
 import os
 import logging
+import threading
 import requests
 
 from config.market_analysis_config import MARKET_ANALYSIS_CONFIG
@@ -7,8 +8,16 @@ from config.market_analysis_config import MARKET_ANALYSIS_CONFIG
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 logger = logging.getLogger("brandai.market_api")
 
+# Verrou global : un seul appel Tavily à la fois, tous agents confondus
+_TAVILY_LOCK = threading.Semaphore(1)
+
 
 def tavily_search(query: str):
+    with _TAVILY_LOCK:
+        return _tavily_search_unlocked(query)
+
+
+def _tavily_search_unlocked(query: str):
     try:
         max_results = int(MARKET_ANALYSIS_CONFIG["api"]["tavily"]["max_results"])
     except (KeyError, TypeError, ValueError):

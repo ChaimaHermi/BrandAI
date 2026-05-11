@@ -1,5 +1,6 @@
 import os
 import logging
+import threading
 import requests
 
 from config.market_analysis_config import MARKET_ANALYSIS_CONFIG
@@ -7,8 +8,16 @@ from config.market_analysis_config import MARKET_ANALYSIS_CONFIG
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 logger = logging.getLogger("brandai.market_api")
 
+# Verrou global : un seul appel SerpAPI à la fois, tous agents confondus
+_SERP_LOCK = threading.Semaphore(1)
+
 
 def serpapi_search(query: str):
+    with _SERP_LOCK:
+        return _serpapi_search_unlocked(query)
+
+
+def _serpapi_search_unlocked(query: str):
     try:
         max_results = int(MARKET_ANALYSIS_CONFIG["api"]["serp"]["max_results"])
     except (KeyError, TypeError, ValueError):

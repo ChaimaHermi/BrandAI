@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from normalize_common import (
+from app.social_etl.normalization.normalize_common import (
     NORMALIZED_DIR,
     RESULTS_DIR,
     dump_json,

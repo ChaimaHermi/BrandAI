@@ -1,28 +1,26 @@
-"""Lance le pipeline social ETL (backend-ai) pour une idée."""
+"""Lance le pipeline social ETL pour une idée.
+
+Le pipeline ETL (extraction Meta / LinkedIn / Apify, normalisation, chargement DB,
+calcul des KPIs) reside desormais dans `app.social_etl`. Ce runner ne fait que
+preparer la configuration et invoquer le pipeline local — plus aucune dependance
+vers backend-ai.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 from collections.abc import AsyncIterator
-from pathlib import Path
 from typing import Any
 
 from sqlalchemy import text
 
 from app.core.config import settings
 import app.services.social_connection_service as social_svc
+from app.social_etl.pipeline import run_pipeline_async, run_pipeline_events
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-def backend_ai_root() -> Path:
-    raw = (settings.BACKEND_AI_ROOT or "").strip()
-    if raw:
-        return Path(raw).resolve()
-    return Path(__file__).resolve().parents[2].parent / "backend-ai"
 
 
 def build_social_etl_config(
@@ -147,18 +145,11 @@ def run_social_etl_for_idea(
         logger.warning("social_etl run aborted idea_id=%s reason=%s", idea_id, err)
         raise ValueError(err or "Configuration pipeline vide.")
 
-    root = backend_ai_root()
-    if not root.is_dir():
-        raise FileNotFoundError(
-            f"Dossier backend-ai introuvable : {root}. Définissez BACKEND_AI_ROOT dans .env."
-        )
-
-    if str(root) not in sys.path:
-        sys.path.insert(0, str(root))
-
-    from social_etl.pipeline import run_pipeline_async  # noqa: WPS433
-
-    logger.info("social_etl pipeline invoke idea_id=%s accounts=%s", idea_id, len(cfg.get("accounts") or []))
+    logger.info(
+        "social_etl pipeline invoke idea_id=%s accounts=%s",
+        idea_id,
+        len(cfg.get("accounts") or []),
+    )
     out_dir, runs = asyncio.run(run_pipeline_async(cfg))
     summary = {"output_dir": str(out_dir.resolve()), "runs": runs}
     logger.info("social_etl done idea_id=%s runs=%s", idea_id, len(runs))
@@ -172,16 +163,6 @@ async def stream_social_etl_events(
     """Événements JSON pour SSE (après lecture DB — ne pas passer la session ici)."""
     if warnings:
         yield {"type": "warnings", "warnings": warnings}
-
-    root = backend_ai_root()
-    if not root.is_dir():
-        yield {"type": "fatal", "detail": f"Dossier backend-ai introuvable : {root}"}
-        return
-
-    if str(root) not in sys.path:
-        sys.path.insert(0, str(root))
-
-    from social_etl.pipeline import run_pipeline_events  # noqa: WPS433
 
     async for ev in run_pipeline_events(cfg):
         yield ev

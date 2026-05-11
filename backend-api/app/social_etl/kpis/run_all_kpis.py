@@ -3,17 +3,11 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
-import sys
-from pathlib import Path
 
-BACKEND_ROOT = Path(__file__).resolve().parents[2]
-if str(BACKEND_ROOT) not in sys.path:
-    sys.path.insert(0, str(BACKEND_ROOT))
-
-from config.database import create_db_pool
-from social_etl.kpis.facebook_kpis import compute_facebook_kpis
-from social_etl.kpis.instagram_kpis import compute_instagram_kpis
-from social_etl.kpis.linkedin_kpis import compute_linkedin_kpis
+from app.social_etl.kpis.facebook_kpis import compute_facebook_kpis
+from app.social_etl.kpis.instagram_kpis import compute_instagram_kpis
+from app.social_etl.kpis.linkedin_kpis import compute_linkedin_kpis
+from app.social_etl.pipeline import create_db_pool
 
 logger = logging.getLogger(__name__)
 

@@ -8,27 +8,21 @@ Extraction Instagram Business (Graph API) — async, sans OAuth ni fichier.
 
 from __future__ import annotations
 
-import sys
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from social_etl.extraction.meta_graph_tools import (  # noqa: E402
+from app.social_etl.extraction._meta_http import (
+    MetaGraphError,
+    get_instagram_business_account_id,
+)
+from app.social_etl.extraction.meta_graph_tools import (
     extract_insight_value,
     fetch_graph_collection,
     safe_graph_get_with_error,
 )
-from social_etl.extraction.meta_insights_constants import (  # noqa: E402
+from app.social_etl.extraction.meta_insights_constants import (
     INSTAGRAM_ACCOUNT_INSIGHT_METRICS,
     INSTAGRAM_MEDIA_INSIGHT_METRICS,
-)
-from tools.social_publishing.meta_client import (  # noqa: E402
-    MetaGraphError,
-    get_instagram_business_account_id,
 )
 
 

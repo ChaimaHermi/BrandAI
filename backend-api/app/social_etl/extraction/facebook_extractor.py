@@ -7,27 +7,23 @@ Extraction Facebook (Graph API) — async, sans OAuth ni persistance fichier.
 
 from __future__ import annotations
 
-import sys
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from social_etl.extraction.meta_graph_tools import (  # noqa: E402
+from app.social_etl.extraction._meta_http import (
+    BASE,
+    fetch_meta_post_metrics,
+)
+from app.social_etl.extraction.meta_graph_tools import (
     extract_insight_value,
     fetch_graph_collection,
     safe_graph_get,
     safe_graph_get_with_error,
 )
-from social_etl.extraction.meta_insights_constants import (  # noqa: E402
+from app.social_etl.extraction.meta_insights_constants import (
     FACEBOOK_PAGE_INSIGHT_METRICS,
     FACEBOOK_POST_INSIGHT_METRICS,
 )
-from tools.social_optimizer.collectors.meta_collector import MetaCollector  # noqa: E402
-from tools.social_publishing.meta_client import BASE  # noqa: E402
 
 
 async def _fetch_insights_metrics_debug(
@@ -241,13 +237,6 @@ async def extract_facebook(
         page_id=page_id, page_token=page_token, limit=limit
     )
 
-    collector = MetaCollector()
-    account_ref: dict[str, Any] = {
-        "platform": "facebook",
-        "page_access_token": page_token,
-        "facebook_page_id": page_id,
-    }
-
     page_metrics = await safe_graph_get(
         page_id,
         {
@@ -279,7 +268,11 @@ async def extract_facebook(
 
         metrics: dict[str, Any] | None = None
         try:
-            metrics = await collector.fetch_post_metrics(account_ref, post_id)
+            metrics = await fetch_meta_post_metrics(
+                platform="facebook",
+                page_access_token=page_token,
+                post_id=post_id,
+            )
         except Exception:
             metrics = None
 

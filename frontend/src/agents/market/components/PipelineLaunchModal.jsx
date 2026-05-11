@@ -78,13 +78,17 @@ export default function PipelineLaunchModal({ isOpen, isDone, xaiSteps, error, o
     return map;
   }, [xaiSteps]);
 
-  /* Active stage = most recent non-done stage in the step stream */
-  const activeStageId = useMemo(() => {
-    for (let i = xaiSteps.length - 1; i >= 0; i--) {
-      const s = xaiSteps[i];
-      if (s.stage && s.status !== "done") return s.stage;
-    }
-    return null;
+  /* Active stages = all stages currently loading (supports parallel agents) */
+  const activeStages = useMemo(() => {
+    const set = new Set();
+    xaiSteps.forEach((s) => {
+      if (s.stage && s.status === "loading") set.add(s.stage);
+    });
+    // Remove stages that are now done
+    xaiSteps.forEach((s) => {
+      if (s.stage && s.status === "done") set.delete(s.stage);
+    });
+    return set;
   }, [xaiSteps]);
 
   const doneCount = PIPELINE_STAGES.filter((s) => stageMap[s.id]?.status === "done").length;
@@ -158,7 +162,7 @@ export default function PipelineLaunchModal({ isOpen, isDone, xaiSteps, error, o
           {PIPELINE_STAGES.map((stage, idx) => {
             const state      = stageMap[stage.id];
             const isDoneStage   = state?.status === "done";
-            const isActiveStage = !isDoneStage && activeStageId === stage.id;
+            const isActiveStage = !isDoneStage && activeStages.has(stage.id);
             const hasStarted    = !!state;
             const liveMessage   = state?.message;
 

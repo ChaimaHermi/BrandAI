@@ -21,19 +21,17 @@ from pipeline.market_strategy_graph import build_market_strategy_graph
 
 _MIN_CLARITY_SCORE = 80
 
-# (stage_id, loading_message, done_message)
 MARKET_NODE_SEQUENCE = [
-    ("keyword_extractor", "Extraction des mots-clés…", "Mots-clés extraits"),
-    ("market_sizing", "Dimensionnement du marché…", "Dimensionnement terminé"),
-    ("competitor", "Analyse des concurrents…", "Concurrents analysés"),
-    ("voc", "Voice of Customer…", "VOC terminé"),
-    ("trends_risks", "Tendances et risques…", "Tendances et risques analysés"),
-    ("strategy_analysis_agent", "Stratégie SWOT / PESTEL…", "Stratégie terminée"),
-    ("save_results", "Finalisation du rapport…", "Rapport de marché finalisé"),
+    ("keyword_extractor",       "Extraction des mots-clés…",   "Mots-clés extraits"),
+    ("market_sizing",           "Dimensionnement du marché…",   "Dimensionnement terminé"),
+    ("competitor",              "Analyse des concurrents…",     "Concurrents analysés"),
+    ("voc",                     "Voice of Customer…",           "VOC terminé"),
+    ("trends_risks",            "Tendances et risques…",        "Tendances et risques analysés"),
+    ("strategy_analysis_agent", "Stratégie SWOT / PESTEL…",    "Stratégie terminée"),
+    ("save_results",            "Finalisation du rapport…",     "Rapport de marché finalisé"),
 ]
-
-_NODE_IDX = {name: i for i, (name, _, _) in enumerate(MARKET_NODE_SEQUENCE)}
-_NODE_DONE = {name: msg for name, _, msg in MARKET_NODE_SEQUENCE}
+_NODE_IDX  = {name: i   for i, (name, _, _) in enumerate(MARKET_NODE_SEQUENCE)}
+_NODE_DONE = {name: msg for name, _, msg    in MARKET_NODE_SEQUENCE}
 
 
 class StepRunnerService:
@@ -106,16 +104,17 @@ class StepRunnerService:
         idea_id: int,
         clarified_idea: dict[str, Any],
     ) -> AsyncIterator[tuple[str, dict[str, Any] | None]]:
-        """Yield progress events while running market graph."""
+        """Yield SSE progress events while running the market graph sequentially."""
         first_name, first_msg, _ = MARKET_NODE_SEQUENCE[0]
         yield "step", {"status": "loading", "stage": first_name, "message": first_msg}
 
         market_input = {
-            "idea_id": idea_id,
-            "clarified_idea": clarified_idea,
+            "idea_id":         idea_id,
+            "clarified_idea":  clarified_idea,
             "market_analysis": {},
         }
         market_analysis: dict[str, Any] = {}
+
         async for chunk in self.market_graph.astream(market_input, stream_mode="updates"):
             for node_name, node_output in chunk.items():
                 if node_name not in _NODE_IDX:
@@ -127,6 +126,7 @@ class StepRunnerService:
                     yield "step", {"status": "loading", "stage": next_name, "message": next_msg}
                 if isinstance(node_output, dict) and "market_analysis" in node_output:
                     market_analysis = node_output["market_analysis"]
+
         yield "result", market_analysis
 
     async def run_marketing_step(
@@ -240,15 +240,14 @@ class StepRunnerService:
         yield self.sse_event("step", {"status": "done", "stage": "fetch_idea_context", "message": "Clarifier validé — démarrage de l'analyse de marché"})
 
         graph_input = {
-            "idea_id": idea_id,
-            "clarified_idea": clarified_idea,
+            "idea_id":         idea_id,
+            "clarified_idea":  clarified_idea,
             "market_analysis": {},
-            "marketing_plan": {},
+            "marketing_plan":  {},
         }
         market_analysis: dict[str, Any] = {}
         marketing_plan: dict[str, Any] = {}
 
-        # same market phase progress messages, then marketing phase.
         first_name, first_msg, _ = MARKET_NODE_SEQUENCE[0]
         yield self.sse_event("step", {"status": "loading", "stage": first_name, "message": first_msg})
 
@@ -262,7 +261,7 @@ class StepRunnerService:
                         yield self.sse_event("step", {"status": "loading", "stage": next_name, "message": next_msg})
                 elif node_name == "marketing_plan":
                     yield self.sse_event("step", {"status": "loading", "stage": "marketing_plan", "message": "Génération du plan marketing…"})
-                    yield self.sse_event("step", {"status": "done", "stage": "marketing_plan", "message": "Plan marketing généré"})
+                    yield self.sse_event("step", {"status": "done",    "stage": "marketing_plan",  "message": "Plan marketing généré"})
 
                 if isinstance(node_output, dict):
                     if "market_analysis" in node_output:

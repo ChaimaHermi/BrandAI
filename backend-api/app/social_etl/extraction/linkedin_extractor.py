@@ -12,18 +12,12 @@ d'environnement / paramètre ``actor_id`` de ``extract_linkedin``.
 from __future__ import annotations
 
 import os
-import sys
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 import httpx
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from social_etl.extraction.linkedin_apify_normalize import (  # noqa: E402
+from app.social_etl.extraction.linkedin_apify_normalize import (
     extract_linkedin_profile_counters,
     normalize_linkedin_apify_items,
 )

@@ -1,3 +1,5 @@
+import asyncio
+
 from agents.base_agent import BaseAgent
 from prompts.market_analysis.prompt_voc import PROMPT_VOC
 from tools.market_analysis.tavily_tool import tavily_search
@@ -97,25 +99,14 @@ CONTENT: {content}
         # SEARCH VIA TAVILY
         # ─────────────────────────
         for q in queries:
-            results = tavily_search(q)
-
-            # LIMIT PER QUERY
+            results = await asyncio.to_thread(tavily_search, q)
             all_results.extend(results[:8])
 
         # GLOBAL LIMIT
         all_results = all_results[:40]
 
-        print("[DEBUG VOC] total results:", len(all_results))
-
-        # ─────────────────────────
-        # BUILD CONTEXT
-        # ─────────────────────────
         context = self.build_context(all_results)
 
-        print("[DEBUG VOC] context length:", len(context))
-        print("[DEBUG VOC] approx tokens:", len(context) // 4)
-
-        # ─────────────────────────
         # CALL LLM
         # ─────────────────────────
         response = await self._call_llm(
