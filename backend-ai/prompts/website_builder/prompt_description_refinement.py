@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.context.brand_context_fetch import BrandContext
 
 
 WEBSITE_DESCRIPTION_REFINE_SYSTEM = """Tu es Senior Web Designer & Copywriter.

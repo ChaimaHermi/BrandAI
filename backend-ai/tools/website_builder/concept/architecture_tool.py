@@ -21,13 +21,13 @@ from prompts.website_builder.prompt_architecture import (
     WEBSITE_ARCHITECTURE_SYSTEM,
     build_architecture_user_prompt,
 )
-from tools.website_builder.brand_context_fetch import BrandContext
-from tools.website_builder.langsmith_traces import (
+from tools.website_builder.context.brand_context_fetch import BrandContext
+from tools.website_builder.infra.langsmith_traces import (
     TAGS_TOOL,
     process_architecture_inputs,
     process_architecture_outputs,
 )
-from tools.website_builder.validator_tool import validate_architecture_payload
+from tools.website_builder.qa.validator_tool import validate_architecture_payload
 
 logger = logging.getLogger("brandai.website_builder.architecture_tool")
 

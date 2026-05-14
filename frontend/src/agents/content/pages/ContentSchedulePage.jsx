@@ -301,10 +301,13 @@ export default function ContentSchedulePage() {
     }
   }, [location.state, navigate]);
 
+  // Inclut scheduled + published + failed + publishing pour garder l'historique
+  // visible. Les annules (cancelled) sont caches : l'utilisateur les a rejetes
+  // volontairement, plus besoin d'encombrer le calendrier.
   const eventsByDay = useMemo(
     () =>
       allPosts.reduce((acc, event) => {
-        if (event.status !== "scheduled") return acc;
+        if (event.status === "cancelled") return acc;
         if (!acc[event.date]) acc[event.date] = [];
         acc[event.date].push(event);
         return acc;
@@ -481,6 +484,8 @@ export default function ContentSchedulePage() {
                     <div className="flex flex-col gap-0.5">
                       {events.slice(0, 2).map((ev) => {
                         const p = PLATFORMS[ev.platform];
+                        const isPublished = ev.status === "published";
+                        const isFailed = ev.status === "failed";
                         return (
                           <div
                             key={ev.id}
@@ -496,7 +501,15 @@ export default function ContentSchedulePage() {
                                 setDetailScheduleId(ev.scheduleId);
                               }
                             }}
-                            className={`flex cursor-pointer items-center gap-1 rounded-lg px-1.5 py-0.5 ${p.lightBg} hover:ring-1 hover:ring-brand/30`}
+                            title={`${p.label} · ${statusLabel(ev.status)} · ${ev.time}`}
+                            className={[
+                              "flex cursor-pointer items-center gap-1 rounded-lg px-1.5 py-0.5 hover:ring-1 hover:ring-brand/30",
+                              isPublished
+                                ? "bg-success/10 ring-1 ring-success/30"
+                                : isFailed
+                                  ? "bg-red-50 ring-1 ring-red-200"
+                                  : p.lightBg,
+                            ].join(" ")}
                           >
                             <span
                               className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-white"
@@ -504,7 +517,17 @@ export default function ContentSchedulePage() {
                             >
                               <p.Icon className="h-1.5 w-1.5" />
                             </span>
-                            <span className={`truncate text-[10px] font-semibold ${p.lightText}`}>
+                            <span
+                              className={[
+                                "truncate text-[10px] font-semibold",
+                                isPublished
+                                  ? "text-success"
+                                  : isFailed
+                                    ? "text-red-600"
+                                    : p.lightText,
+                              ].join(" ")}
+                            >
+                              {isPublished ? "✓ " : isFailed ? "⚠ " : ""}
                               {ev.title}
                             </span>
                           </div>

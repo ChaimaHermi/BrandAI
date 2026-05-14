@@ -64,58 +64,97 @@ def _print_prompt_to_terminal(image_prompt: str, negative_prompt: str) -> None:
     print("\n".join(lines), file=sys.stderr, flush=True)
 
 
+def _flood_fill_background(data: bytearray, width: int, height: int, threshold: int = 230) -> None:
+    """
+    Flood-fill depuis les 4 bords de l'image pour supprimer le fond connecté.
+    Seuls les pixels clairs (min RGB >= threshold) reliés au bord deviennent
+    transparents — les zones claires à l'intérieur du logo restent intactes.
+    """
+    from collections import deque
+
+    visited = bytearray(width * height)  # 0 = non visité
+    queue: deque[int] = deque()
+
+    def enqueue(x: int, y: int) -> None:
+        idx_px = y * width + x
+        if visited[idx_px]:
+            return
+        idx = idx_px * 4
+        if min(data[idx], data[idx + 1], data[idx + 2]) >= threshold:
+            visited[idx_px] = 1
+            queue.append(idx_px)
+
+    for x in range(width):
+        enqueue(x, 0)
+        enqueue(x, height - 1)
+    for y in range(height):
+        enqueue(0, y)
+        enqueue(width - 1, y)
+
+    while queue:
+        idx_px = queue.popleft()
+        idx = idx_px * 4
+        r, g, b = data[idx], data[idx + 1], data[idx + 2]
+        # Transition douce sur 20 niveaux pour éviter les bords crénelés.
+        brightness = min(r, g, b)
+        feather_range = 20
+        alpha = max(0, int((threshold - brightness) / feather_range * 255))
+        data[idx + 3] = min(data[idx + 3], alpha)
+
+        x, y = idx_px % width, idx_px // width
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if 0 <= nx < width and 0 <= ny < height:
+                nidx_px = ny * width + nx
+                if not visited[nidx_px]:
+                    nidx = nidx_px * 4
+                    if min(data[nidx], data[nidx + 1], data[nidx + 2]) >= threshold:
+                        visited[nidx_px] = 1
+                        queue.append(nidx_px)
+
+
 def _remove_light_background_to_transparent(
     image_bytes: bytes,
 ) -> tuple[bytes | None, str | None]:
     """
-    Convert near-white background to transparency.
-    Returns PNG bytes with alpha channel when successful.
+    Supprime le fond clair/blanc du logo et retourne un PNG avec canal alpha.
+
+    Stratégie en 2 passes :
+    1. rembg (segmentation IA) si disponible — meilleure qualité.
+    2. Flood-fill depuis les bords (fallback PIL) — supprime le fond connecté
+       aux bords sans toucher les zones claires à l'intérieur du logo
+       (icône, texte clair, etc.).
     """
     try:
         from PIL import Image
     except Exception as e:
         return None, f"Pillow indisponible pour remove background: {e}"
 
-    # 1) Best effort with rembg (robust segmentation), if available.
+    # 1) rembg — segmentation IA (meilleure qualité, préserve les détails fins).
     try:
         from rembg import remove as rembg_remove
-
         out_bytes = rembg_remove(image_bytes)
         if isinstance(out_bytes, (bytes, bytearray)) and out_bytes:
             return bytes(out_bytes), None
     except Exception:
-        # fallback below
         pass
 
-    # 2) Fallback: near-white threshold transparency.
+    # 2) Fallback flood-fill depuis les bords : supprime le fond connecté
+    #    aux bords de l'image (cadre/sticker/fond blanc/off-white) sans
+    #    altérer les parties claires à l'intérieur du logo.
     try:
         with Image.open(io.BytesIO(image_bytes)) as img:
             rgba = img.convert("RGBA")
+            w, h = rgba.size
             data = bytearray(rgba.tobytes())
 
-            # Since logo prompt enforces white/light background, make near-white pixels transparent.
-            # Keep non-white pixels opaque to preserve logo details.
-            threshold = 245
-            feather = 25
-            for i in range(0, len(data), 4):
-                r, g, b = data[i], data[i + 1], data[i + 2]
-                min_rgb = min(r, g, b)
+            _flood_fill_background(data, w, h, threshold=230)
 
-                if min_rgb >= threshold:
-                    alpha = 0
-                else:
-                    # Soft transition near threshold to avoid jagged edges.
-                    distance = threshold - min_rgb
-                    alpha = min(255, int((distance / feather) * 255)) if distance < feather else 255
-
-                data[i + 3] = alpha
-
-            out = Image.frombytes("RGBA", rgba.size, bytes(data))
+            out = Image.frombytes("RGBA", (w, h), bytes(data))
             buf = io.BytesIO()
             out.save(buf, format="PNG")
             return buf.getvalue(), None
     except Exception as e:
-        return None, f"Remove background échoué (rembg indisponible + fallback Pillow): {e}"
+        return None, f"Remove background échoué: {e}"
 
 
 class LogoAgent(BaseAgent):

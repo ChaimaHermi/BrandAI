@@ -18,7 +18,7 @@ from prompts.website_builder.prompt_common import (
     NAVIGATION_INVARIANTS,
     QUALITY_SELF_CHECK,
 )
-from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.context.brand_context_fetch import BrandContext
 
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tools.website_builder.brand_context_fetch import BrandContext, fetch_full_brand_context
+from tools.website_builder.context.brand_context_fetch import BrandContext, fetch_full_brand_context
 
 
 class WebsiteContextTool:

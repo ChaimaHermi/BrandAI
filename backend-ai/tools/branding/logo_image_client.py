@@ -88,6 +88,57 @@ def _decode_b64_payload(value: str) -> bytes:
         return b""
 
 
+def _walk_image_strings(node: Any) -> Any:
+    """
+    Parcourt recursivement un payload JSON et yield toute string qui ressemble
+    a une image (base64 PNG/JPEG/WebP, data: URI, ou URL http/https vers image).
+    Permet de decoder les reponses NVIDIA dont la cle exacte varie (image,
+    images, generated_images, output, result, ...).
+    """
+    if isinstance(node, str):
+        s = node.strip()
+        if not s:
+            return
+        # data URI image
+        if s.startswith("data:image"):
+            yield ("b64", s)
+            return
+        # base64 brut (au moins 200 chars, charset valide)
+        if len(s) > 200 and all(c.isalnum() or c in "+/=\n\r" for c in s[:60]):
+            yield ("b64", s)
+            return
+        # URL directe
+        low = s.lower()
+        if low.startswith(("http://", "https://")) and any(
+            low.endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".webp", ".gif")
+        ):
+            yield ("url", s)
+            return
+        # URL signee (sans extension explicite) — heuristique large
+        if low.startswith(("http://", "https://")) and ("image" in low or "cdn" in low):
+            yield ("url", s)
+            return
+        return
+    if isinstance(node, dict):
+        # Priorise les cles connues pour decoder en premier
+        priority_keys = (
+            "b64_json", "base64", "image", "imageBase64", "imageBytes",
+            "url", "image_url",
+        )
+        for k in priority_keys:
+            if k in node:
+                yield from _walk_image_strings(node[k])
+        for k, v in node.items():
+            if k in priority_keys:
+                continue
+            yield from _walk_image_strings(v)
+        return
+    if isinstance(node, list):
+        for item in node:
+            yield from _walk_image_strings(item)
+        return
+
+
 def _text_to_image_sync(api_key: str, prompt: str, model: str) -> Any:
     try:
         from huggingface_hub import InferenceClient
@@ -193,46 +244,59 @@ async def fetch_logo_image_nvidia(
                 r = await client.post(endpoint, headers=headers, json=body)
                 if r.status_code >= 400:
                     raise RuntimeError(f"HTTP {r.status_code}: {r.text[:300]}")
-                payload = r.json()
 
-                image_field = payload.get("image") if isinstance(payload, dict) else None
-                if isinstance(image_field, str) and image_field.strip():
-                    raw = _decode_b64_payload(image_field)
-                    if raw:
-                        return raw, "image/png"
+                # Parfois NVIDIA renvoie directement les bytes (image/png) au lieu d'un JSON.
+                ctype = (r.headers.get("content-type") or "").lower()
+                if ctype.startswith("image/"):
+                    mime = "image/png"
+                    if "jpeg" in ctype or "jpg" in ctype:
+                        mime = "image/jpeg"
+                    elif "webp" in ctype:
+                        mime = "image/webp"
+                    return r.content, mime
 
-                artifacts = payload.get("artifacts") if isinstance(payload, dict) else None
-                if isinstance(artifacts, list):
-                    for item in artifacts:
-                        if not isinstance(item, dict):
+                try:
+                    payload = r.json()
+                except Exception as je:
+                    raise RuntimeError(
+                        f"NVIDIA : reponse non-JSON ({ctype}, {len(r.content)} octets) : {je}"
+                    )
+
+                # Decodeur generique : explore toutes les chaines base64/URL du payload.
+                for kind, value in _walk_image_strings(payload):
+                    if kind == "b64":
+                        raw = _decode_b64_payload(value)
+                        if raw and len(raw) > 256:
+                            _log.info(
+                                "[logo_image_client] NVIDIA — image decodee (base64, %d octets)",
+                                len(raw),
+                            )
+                            return raw, "image/png"
+                    elif kind == "url":
+                        try:
+                            rr = await client.get(value)
+                            rr.raise_for_status()
+                        except Exception as ue:
+                            _log.warning(
+                                "[logo_image_client] NVIDIA — URL image inaccessible (%s) : %s",
+                                value[:80],
+                                str(ue)[:120],
+                            )
                             continue
-                        raw = _decode_b64_payload(str(item.get("base64") or ""))
-                        if raw:
-                            return raw, "image/png"
-                        raw = _decode_b64_payload(str(item.get("b64_json") or ""))
-                        if raw:
-                            return raw, "image/png"
+                        ct = (rr.headers.get("content-type") or "").lower()
+                        if "jpeg" in ct or "jpg" in ct:
+                            return rr.content, "image/jpeg"
+                        if "webp" in ct:
+                            return rr.content, "image/webp"
+                        return rr.content, "image/png"
 
-                data_list = payload.get("data") if isinstance(payload, dict) else None
-                first = data_list[0] if isinstance(data_list, list) and data_list and isinstance(data_list[0], dict) else {}
-                b64 = first.get("b64_json")
-                if isinstance(b64, str) and b64.strip():
-                    raw = _decode_b64_payload(b64)
-                    if raw:
-                        return raw, "image/png"
-
-                url_img = first.get("url")
-                if isinstance(url_img, str) and url_img.strip():
-                    rr = await client.get(url_img)
-                    rr.raise_for_status()
-                    ct = (rr.headers.get("content-type") or "").lower()
-                    if "jpeg" in ct or "jpg" in ct:
-                        return rr.content, "image/jpeg"
-                    if "webp" in ct:
-                        return rr.content, "image/webp"
-                    return rr.content, "image/png"
-
-                raise RuntimeError("NVIDIA : aucune image décodable dans la réponse")
+                # Diagnostic : on log les cles racine du payload pour aider le debug.
+                top_keys = list(payload.keys()) if isinstance(payload, dict) else type(payload).__name__
+                preview = str(payload)[:300] if not isinstance(payload, dict) else str({k: type(v).__name__ for k, v in payload.items()})[:300]
+                raise RuntimeError(
+                    f"NVIDIA : aucune image decodable dans la reponse "
+                    f"(keys={top_keys}, preview={preview})"
+                )
         except Exception as e:
             last_err = e
             _log.warning("[logo_image_client] NVIDIA clé #%d échouée : %s", i + 1, str(e)[:240])

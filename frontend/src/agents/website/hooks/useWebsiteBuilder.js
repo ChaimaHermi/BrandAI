@@ -271,6 +271,21 @@ function stripEmoji(text) {
     .trim();
 }
 
+function buildDescriptionSummaryText(description) {
+  if (!description || typeof description !== "object") return null;
+  const sections = Array.isArray(description.sections) ? description.sections : [];
+  const animations = Array.isArray(description.animations) ? description.animations : [];
+  const tone = description.tone_of_voice || description.tone || "";
+  const lines = [];
+  if (sections.length > 0) {
+    const names = sections.map((s) => (s.title || s.type || s.id || "").replace(/-/g, " "));
+    lines.push(`**Sections (${sections.length}) :** ${names.join(" · ")}`);
+  }
+  if (tone) lines.push(`**Ton :** ${tone}`);
+  if (animations.length > 0) lines.push(`**Animations :** ${animations.join(", ")}`);
+  return lines.join("\n");
+}
+
 /**
  * Carte "live" affichée dans le chat pendant qu'une opération SSE tourne.
  * Stocke l'historique des étapes (steps + ticks) reçues du backend.
@@ -287,6 +302,11 @@ function makeStepStreamMessage(title) {
     streamSteps: [],
     streamTick: null,
     streamStatus: "running",
+    // Buffer du flux de code "live" envoye par GLM-4.7 (Phase 3) via SSE.
+    // Mis a jour a chaque event { type: "code_chunk" } recu du backend.
+    streamCode: "",
+    streamReasoning: "",
+    streamModel: "",
   };
 }
 
@@ -420,11 +440,14 @@ function buildResumeSnapshotMessages(project, flatContext) {
   }
 
   if (project?.description_json && typeof project.description_json === "object") {
+    const desc = project.description_json;
+    const summary = desc.user_summary || "Concept créatif restauré.";
+    const detailText = buildDescriptionSummaryText(desc);
     snapshots.push(
-      makeBotMessage("Concept créatif restauré depuis la session sauvegardée.", {
-        phase: "description",
-        title: "Phase 2 — Concept créatif",
-      })
+      makeBotMessage(
+        summary + (detailText ? "\n\n" + detailText : ""),
+        { phase: "description", title: "Phase 2 — Concept créatif" }
+      )
     );
   }
 
@@ -483,6 +506,18 @@ function applyStreamEvent(message, event) {
         label: String(event.label || ""),
         elapsed: Number(event.elapsed_seconds || 0),
       },
+    };
+  }
+
+  if (type === "code_chunk") {
+    const content = typeof event.content === "string" ? event.content : "";
+    const reasoning = typeof event.reasoning === "string" ? event.reasoning : "";
+    const model = typeof event.model === "string" ? event.model : message.streamModel;
+    return {
+      ...message,
+      streamCode: (message.streamCode || "") + content,
+      streamReasoning: (message.streamReasoning || "") + reasoning,
+      streamModel: model || message.streamModel || "",
     };
   }
 
@@ -671,24 +706,14 @@ export function useWebsiteBuilder() {
       setDescription(result.description);
       finalizeStream(streamId, { status: "done" });
 
+      const summaryText = buildDescriptionSummaryText(result.description);
       pushBot(
-        result.description_summary_md || "Concept généré.",
+        (result.description_summary_md || "Concept généré.") + (summaryText ? "\n\n" + summaryText : ""),
         { phase: "description", title: "Phase 2 — Concept créatif" }
       );
 
-      if (result.description && typeof result.description === "object") {
-        pushBot(
-          "Voici la description complète du site que j'ai générée :",
-          {
-            phase: "description",
-            title: "Description complète (JSON)",
-            json: result.description,
-          }
-        );
-      }
-
       pushBot(
-        "**Discute avec moi pour ajuster ce concept** (ex: « ajoute une section pricing », « rends le hero plus minimaliste », « ton plus chaleureux »...). Quand il te convient, clique sur **« J'approuve »** pour passer à la génération HTML.",
+        "Discute avec moi pour ajuster ce concept (ex: « ajoute une section pricing », « rends le hero plus minimaliste »). Quand il te convient, clique sur **J'approuve** pour générer le site.",
         {
           phase: "description",
           actions: [
@@ -747,21 +772,11 @@ export function useWebsiteBuilder() {
         setDescription(result.description);
         finalizeStream(streamId, { status: "done" });
 
+        const refineSummary = buildDescriptionSummaryText(result.description);
         pushBot(
-          result.description_summary_md || "Concept mis à jour.",
+          (result.description_summary_md || "Concept mis à jour.") + (refineSummary ? "\n\n" + refineSummary : ""),
           { phase: "description", title: "Phase 2.5 — Concept mis à jour" }
         );
-
-        if (result.description && typeof result.description === "object") {
-          pushBot(
-            "Voici la description mise à jour :",
-            {
-              phase: "description",
-              title: "Description complète (JSON)",
-              json: result.description,
-            }
-          );
-        }
 
         pushBot(
           "Continue les retours si tu veux affiner encore, ou approuve pour générer le site.",

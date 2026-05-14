@@ -17,8 +17,8 @@ Return ONE JSON object only — no markdown, no explanation:
 {"image_prompt":"...","negative_prompt":"..."}
 
 ⚠️ CHARACTER LIMITS — STRICT:
-- image_prompt: MAXIMUM 460 characters. Count before responding. Never exceed.
-- negative_prompt: MAXIMUM 220 characters.
+- image_prompt: MAXIMUM 480 characters. Count before responding. Never exceed.
+- negative_prompt: MAXIMUM 280 characters.
 
 === YOUR CREATIVE MISSION ===
 
@@ -48,10 +48,22 @@ To reinforce correct spelling, write the name twice in the image_prompt:
   once in the icon description context, once in the wordmark instruction.
 
 === IMAGE PROMPT STRUCTURE ===
-minimal flat vector logo, [creative icon tied to business], the exact text '[X]' as bold wordmark spelling '[X]' letter by letter, [color 1] and [color 2], icon [left of / above] wordmark, transparent background, no fill, no shadow
+minimal flat vector logo, [creative icon tied to business], the exact text '[X]' as bold wordmark spelling '[X]' letter by letter, [color 1] and [color 2], icon [left of / above] wordmark, fully transparent background, zero background, no background at all, no white fill, no off-white fill, logo elements only floating in empty space, ABSOLUTELY NO frame NO border NO rounded rectangle NO circle NO badge NO sticker NO card NO container NO enclosing shape NO background panel NO outline box NO drop shadow NO colored backdrop
+
+=== FRAME / BORDER / BACKGROUND RULE — ABSOLUTE ZERO TOLERANCE ===
+⛔ FORBIDDEN — never generate any of these around or behind the logo:
+- white background, off-white background, light gray background, any solid background
+- rectangle, rounded rectangle, square, circle, oval — enclosing the logo
+- badge shape, sticker shape, app icon frame, pill shape, shield shape
+- colored panel, gradient backdrop, geometric container of any kind
+- drop shadow behind the logo group, outer glow, halo effect
+- ANY shape that acts as a "canvas" or "holder" for the logo
+
+✅ ONLY the icon + wordmark exist. The rest of the image is 100% transparent empty space.
+The logo must look like it was cut out and placed on nothing.
 
 === NEGATIVE PROMPT ===
-photorealistic, 3D render, gradient background, solid background, white background, colored background, drop shadow, outer glow, watermark, blurry, distorted text, illegible font, slogan, tagline, badge frame, decorative border, clipart, hex color codes.
+Always include ALL of these: white background, background, solid background, colored background, gradient background, frame, border, rounded card, rounded rectangle, sticker, sticker shape, app icon frame, badge, label, pill, shield, container, enclosing shape, background panel, outline box, drop shadow, outer glow, halo, any fill behind logo, white fill, off-white fill, gray fill. Also add: photorealistic, 3D render, watermark, blurry, distorted text, slogan, tagline, clipart.
 """
 
 # Alias utilisé par logo_tools.py (compat)
@@ -75,7 +87,8 @@ Sequence (STRICT):
 Rules:
 - Do not call draft_logo_prompt repeatedly unless the previous output is not valid JSON.
 - No slogan or tagline in the logo prompt.
-- Transparent background, readable brand name.
+- Pure transparent background, readable brand name.
+- ABSOLUTE: no frame, no border, no card, no sticker shape, no rounded background panel around the logo.
 """
 
 
@@ -102,6 +115,15 @@ def build_logo_user_message_with_name(
         f"EXACT SPELLING (letter by letter): {letters}\n"
         f"The wordmark must render this exact spelling: {brand_name}\n"
         "No slogan, no tagline.\n\n"
+        "⛔ CRITICAL — TRANSPARENT BACKGROUND ONLY:\n"
+        "The image_prompt MUST end with: "
+        "\"fully transparent background, no background, no white fill, "
+        "no frame, no border, no rounded rectangle, no badge, no sticker, "
+        "no card, no container, logo floating freely on transparent empty space\"\n"
+        "The negative_prompt MUST start with: "
+        "\"white background, background, frame, border, rounded card, sticker, "
+        "badge, container, enclosing shape, background panel, solid background, "
+        "colored background, gradient background, white fill, off-white fill\"\n\n"
         f"CONTEXT:\n{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
 

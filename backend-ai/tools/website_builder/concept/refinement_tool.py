@@ -23,13 +23,13 @@ from prompts.website_builder.prompt_description_refinement import (
     WEBSITE_DESCRIPTION_REFINE_SYSTEM,
     build_description_refine_user_prompt,
 )
-from tools.website_builder.brand_context_fetch import BrandContext
-from tools.website_builder.langsmith_traces import (
+from tools.website_builder.context.brand_context_fetch import BrandContext
+from tools.website_builder.infra.langsmith_traces import (
     TAGS_TOOL,
     process_refine_inputs,
     process_refine_outputs,
 )
-from tools.website_builder.validator_tool import validate_description_payload
+from tools.website_builder.qa.validator_tool import validate_description_payload
 
 logger = logging.getLogger("brandai.website_builder.refinement_tool")
 

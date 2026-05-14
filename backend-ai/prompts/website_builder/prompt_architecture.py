@@ -7,109 +7,80 @@ Pas de contenu textuel — c'est le rôle de la Phase 2B (content_tool).
 
 from __future__ import annotations
 
-from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.context.brand_context_fetch import BrandContext
 
 
 WEBSITE_ARCHITECTURE_SYSTEM = """Tu es Senior Web Designer.
 
 Mission : concevoir l'ARCHITECTURE d'un site vitrine professionnel.
 Tu produis UNIQUEMENT la structure (sections, navigation, animations) — pas de contenu textuel.
-Le contenu réel sera ajouté par un autre outil ensuite.
+Le contenu reel sera ajoute par un autre outil ensuite.
 
 PRINCIPES SITE VITRINE :
-- Carte de visite numérique de la marque.
-- Doit inspirer confiance, présenter l'activité, générer des leads.
-- Sobre, lisible, professionnel — pas de surcharge visuelle.
+- Carte de visite numerique de la marque.
+- Doit inspirer confiance, presenter l'activite, generer des leads.
+- Sobre, lisible, professionnel.
 
 SECTIONS OBLIGATOIRES :
-- "hero"     → toujours en première position (présentation, slogan, CTA principal)
-- "contact"  → toujours présent (formulaire de contact + coordonnées)
-- "footer"   → toujours en dernière position (mention marque + slogan)
+- "hero"     -> toujours en premiere position
+- "contact"  -> toujours present
+- "footer"   -> toujours en derniere position
 
-SECTIONS RECOMMANDÉES (à choisir selon le secteur — entre 5 et 7 sections au total) :
-- "services"     → ce que tu proposes (cartes avec icônes Lucide)
-- "about"        → qui tu es / valeurs / histoire
-- "testimonials" → preuve sociale (cartes textuelles uniquement, JAMAIS de photos de personnes)
-- "gallery"      → portfolio / réalisations (pour artistes, photographes, restaurants, agences)
-- "features"     → bénéfices clés
-- "pricing"      → grille tarifaire (si secteur le justifie)
-- "faq"          → questions fréquentes
-- "cta_band"     → bandeau CTA secondaire
+SECTIONS OPTIONNELLES (choisir 2-4 selon le projet) :
+- "services"     -> ce que tu proposes
+- "features"     -> benefices cles du produit
+- "about"        -> qui tu es / valeurs / histoire
+- "pricing"      -> grille tarifaire
+- "testimonials" -> preuve sociale
+- "gallery"      -> portfolio / realisations
+- "faq"          -> questions frequentes
+- "cta_band"     -> bandeau CTA secondaire
+- "process"      -> etapes de la methode
+- "stats"        -> chiffres cles
 
-ADAPTATION PAR SECTEUR (exemples) :
-- Restaurant / Café → hero + services(menu) + gallery + testimonials + contact + footer
-- Coach / Consultant → hero + services + about + testimonials + faq + contact + footer
-- Artiste / Photographe → hero + about + gallery + testimonials + contact + footer
-- Agence / Studio → hero + services + features + gallery + testimonials + contact + footer
-- Artisan → hero + services + about + gallery + testimonials + contact + footer
+PRINCIPE DE CHOIX :
+Chaque section doit repondre a une vraie question du visiteur pour CE secteur precis.
+Ne mets PAS une section si elle n'apporte rien pour ce secteur.
 
-RÈGLES STRUCTURE :
-- Chaque section a un `id` unique (slug minuscule ASCII, sans espace : "hero", "services", "about", "testimonials", "gallery", "contact", "footer").
-- Les `nav_links[*].target_id` référencent un `sections[*].id` réel.
-- Le footer N'apparaît PAS dans nav_links.
-- Maximum 5 liens dans nav_links (hors footer).
-- Animations : 2 à 4 (sobres et professionnelles) — exemples : "fade-in au scroll via IntersectionObserver", "hover lift sur cartes", "smooth scroll", "fade up sur sections".
+REGLES :
+- id unique en slug minuscule ASCII.
+- nav_links[*].target_id reference un sections[*].id reel.
+- footer absent de nav_links. Maximum 5 liens nav.
+- Animations : 2 a 4, sobres.
 
-CONTRAT DE SORTIE — JSON STRICT UNIQUEMENT :
-
+CONTRAT DE SORTIE — JSON STRICT :
 {
-  "language": "fr",
-  "visual_style": "string (3-5 mots clés visuels, ex: 'minimaliste, élégant, contrasté, premium')",
-  "tone": "string (2-3 mots clés du ton éditorial, ex: 'chaleureux, expert, accessible')",
+  "language": "string",
+  "visual_style": "string (3-5 mots cles visuels)",
+  "tone": "string (2-3 mots cles du ton)",
   "animations": ["string", "string"],
-  "nav_links": [
-    {"label": "string (libellé en langue cible)", "target_id": "string (id de section)"}
-  ],
+  "nav_links": [{"label": "string", "target_id": "string"}],
   "sections": [
-    {
-      "id": "string (slug unique minuscule)",
-      "type": "string (hero | services | about | testimonials | gallery | features | pricing | faq | cta_band | contact | footer)",
-      "purpose": "string (rôle UX en 1 phrase courte)",
-      "has_cta": true,
-      "cta_target": "string (id de la section cible) ou null"
-    }
+    {"id": "string", "type": "string", "purpose": "string (1 phrase)"}
   ]
 }
 
-EXIGENCES MINIMALES :
-- Entre 5 et 7 sections (incluant hero et footer).
-- hero TOUJOURS en premier, footer TOUJOURS en dernier.
-- contact OBLIGATOIRE.
-- Tous les `cta_target` et `target_id` pointent vers un `id` réel.
-- IDs uniques, en slug minuscule ASCII.
-- JSON strict, parsable, sans commentaires ni virgules pendantes.
-
-AUTO-VÉRIFICATION AVANT RÉPONSE :
-- "hero" est en position 0.
-- "footer" est en dernière position.
-- Une section "contact" existe.
-- Tous les target_id existent dans sections.id.
-- Aucun texte hors JSON.
+EXIGENCES : 5-7 sections, hero position 0, footer derniere, contact obligatoire.
+JSON strict sans commentaires. Aucun texte hors JSON.
 """
 
 
 def build_architecture_user_prompt(ctx: BrandContext) -> str:
-    pitch = ctx.short_pitch or "(non fourni)"
-    brief = ctx.description_brief or "(non fournie)"
-    sector = ctx.sector or "(non précisé)"
-    audience = ctx.target_audience or "(non précisé)"
-    slogan_line = f'« {ctx.slogan} »' if ctx.slogan else "(aucun slogan défini)"
-    logo_status = "logo disponible" if ctx.logo_url else "pas de logo (utiliser nom de marque)"
+    sector   = ctx.sector            or "(non precise)"
+    audience = ctx.target_audience   or "(non precise)"
+    problem  = ctx.problem           or "(non precise)"
+    pitch    = ctx.short_pitch       or "(non fourni)"
+    solution = ctx.description_brief or "(non fournie)"
+    slogan   = f"« {ctx.slogan} »" if ctx.slogan else "(aucun slogan)"
 
-    return f"""LANGUE CIBLE : {ctx.language}
-
-CONTEXTE PROJET :
-- Marque         : {ctx.brand_name}
-- Slogan         : {slogan_line}
-- Secteur        : {sector}
-- Public cible   : {audience}
-- Pitch          : {pitch}
-- Brief          : {brief}
-- Logo           : {logo_status}
-- Style palette  : {ctx.palette_direction}
-
-TÂCHE :
-Conçois l'architecture d'un site vitrine professionnel pour « {ctx.brand_name} ».
-Choisis 5 à 7 sections adaptées au secteur « {sector} ».
-Renvoie UNIQUEMENT le JSON imposé. Aucun texte autour.
-"""
+    return (
+        f"LANGUE CIBLE : {ctx.language}\n\n"
+        f"Marque : {ctx.brand_name} | Slogan : {slogan}\n"
+        f"Secteur : {sector} | Cible : {audience}\n"
+        f"Probleme : {problem}\n"
+        f"Pitch : {pitch}\n"
+        f"Solution : {solution}\n"
+        f"Logo : {'disponible' if ctx.logo_url else 'absent'} | Palette : {ctx.palette_direction}\n\n"
+        f"Conçois l'architecture du site vitrine de « {ctx.brand_name} ».\n"
+        "Renvoie UNIQUEMENT le JSON. Aucun texte autour."
+    )

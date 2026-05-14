@@ -15,7 +15,7 @@ from prompts.website_builder.prompt_common import (
     NAVIGATION_INVARIANTS,
     QUALITY_SELF_CHECK,
 )
-from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.context.brand_context_fetch import BrandContext
 
 
 WEBSITE_CODER_SYSTEM = f"""Tu es Senior Front-End Engineer.
@@ -122,6 +122,14 @@ SECTIONS — RENDU
 - cta_band : section pleine largeur, fond coloré, headline + bouton.
 - contact : 2 colonnes md:grid-cols-2 — formulaire (name, email, message) + infos (email, téléphone, adresse).
 - footer : 3-4 colonnes md:grid-cols-4 avec logo/marque, liens nav, slogan, copyright.
+  Si footer.social_links present dans le contenu : afficher OBLIGATOIREMENT les icones
+  reseaux sociaux via Lucide dans la colonne logo/marque :
+  <a href="URL_DU_RESEAU" target="_blank" rel="noopener noreferrer" aria-label="NOM_RESEAU"
+     class="text-white/60 hover:text-white transition-colors">
+    <i data-lucide="NOM_ICONE_LUCIDE" class="w-5 h-5"></i>
+  </a>
+  Regrouper dans un div class="flex items-center gap-4 mt-4".
+  INTERDIT pour les reseaux sociaux : emojis, images, SVG inline — uniquement data-lucide.
 
 ══════════════════════════════════════════
 FORMULAIRE CONTACT — DIRECT (mailto:)

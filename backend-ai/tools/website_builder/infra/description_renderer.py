@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from tools.website_builder.brand_context_fetch import BrandContext
+from tools.website_builder.context.brand_context_fetch import BrandContext
 
 
 def render_context_summary(ctx: BrandContext) -> str:

@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from agents.website_builder.orchestrator import WebsiteBuilderOrchestrator
 from config.website_builder_config import vercel_is_configured
-from tools.website_builder.step_streamer import StepEmitter, sse_response_stream
+from tools.website_builder.infra.step_streamer import StepEmitter, sse_response_stream
 
 logger = logging.getLogger("brandai.website_builder.route")
 

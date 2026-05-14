@@ -21,13 +21,13 @@ from prompts.website_builder.prompt_content import (
     WEBSITE_CONTENT_SYSTEM,
     build_content_user_prompt,
 )
-from tools.website_builder.brand_context_fetch import BrandContext
-from tools.website_builder.langsmith_traces import (
+from tools.website_builder.context.brand_context_fetch import BrandContext
+from tools.website_builder.infra.langsmith_traces import (
     TAGS_TOOL,
     process_content_inputs,
     process_content_outputs,
 )
-from tools.website_builder.validator_tool import validate_content_payload
+from tools.website_builder.qa.validator_tool import validate_content_payload
 
 logger = logging.getLogger("brandai.website_builder.content_tool")
 

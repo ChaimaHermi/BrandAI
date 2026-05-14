@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
   FiGlobe,
   FiUser,
@@ -12,9 +13,43 @@ import {
   FiCheck,
   FiLoader,
   FiClock,
+  FiCode,
+  FiCpu,
   FiXCircle,
 } from "react-icons/fi";
 import { MiniMarkdown } from "../utils/miniMarkdown";
+
+/**
+ * Tail-truncate un long buffer de code stream pour ne garder que les derniers
+ * `maxChars` caracteres. Evite d'exploser le DOM quand GLM-4.7 a generé un
+ * site HTML/Tailwind de 30k+ caracteres. Garde le contexte de fin (la pointe
+ * de generation, ce que l'utilisateur veut voir en direct).
+ */
+function tailCode(code, maxChars = 4000) {
+  if (typeof code !== "string" || code.length <= maxChars) return code || "";
+  return "…\n" + code.slice(-maxChars);
+}
+
+/**
+ * Auto-scroll vers le bas d'un <pre> a chaque mise a jour du contenu, pour
+ * suivre en direct la generation de GLM-4.7. Utilise un ref interne.
+ */
+function StreamCodeBlock({ code, language = "html" }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [code]);
+  return (
+    <pre
+      ref={ref}
+      className="max-h-56 overflow-auto rounded-lg bg-slate-950 px-3 py-2 text-[10.5px] leading-snug text-emerald-200 shadow-inner"
+      data-language={language}
+    >
+      <code>{tailCode(code)}</code>
+    </pre>
+  );
+}
 
 function PhasePill({ label }) {
   if (!label) return null;
@@ -34,6 +69,9 @@ function StreamCard({ msg }) {
   const tick = msg.streamTick;
   const status = msg.streamStatus || "running";
   const errorMsg = msg.streamError;
+  const streamCode = msg.streamCode || "";
+  const streamReasoning = msg.streamReasoning || "";
+  const streamModel = msg.streamModel || "";
 
   const dotIcon = (s) => {
     if (s.status === "done") {
@@ -115,6 +153,37 @@ function StreamCard({ msg }) {
               {tick.label}
               {tick.elapsed > 0 ? ` · ${tick.elapsed}s` : ""}
             </span>
+          </div>
+        )}
+
+        {(streamCode || streamReasoning) && (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-2xs font-bold uppercase tracking-wider text-emerald-700">
+                <FiCpu size={10} />
+                {streamModel || "GLM"}
+              </span>
+              <span className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-wider text-ink-muted">
+                <FiCode size={11} />
+                Génération HTML en direct
+              </span>
+              {streamCode && (
+                <span className="ml-auto text-2xs text-ink-subtle">
+                  {streamCode.length.toLocaleString()} car.
+                </span>
+              )}
+            </div>
+            {streamReasoning && (
+              <details className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1">
+                <summary className="cursor-pointer text-2xs font-semibold uppercase tracking-wider text-amber-700">
+                  Raisonnement du modèle
+                </summary>
+                <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap text-[10.5px] leading-snug text-amber-900">
+                  {tailCode(streamReasoning, 2000)}
+                </pre>
+              </details>
+            )}
+            {streamCode && <StreamCodeBlock code={streamCode} />}
           </div>
         )}
 
@@ -208,108 +277,6 @@ function TagList({ text }) {
   );
 }
 
-function DescriptionStructuredCard({ data }) {
-  if (!data || typeof data !== "object") return null;
-  const sections = Array.isArray(data.sections) ? data.sections : [];
-  const animations = Array.isArray(data.animations) ? data.animations : [];
-  const hasCore = data.hero_concept || sections.length || animations.length;
-  if (!hasCore) return null;
-
-  return (
-    <div className="mt-2 rounded-xl border border-brand-border bg-white p-3">
-      <p className="mb-2 text-2xs font-extrabold uppercase tracking-wider text-brand-darker">
-        Concept du site
-      </p>
-
-      {data.hero_concept && (
-        <div className="rounded-lg border border-brand-border bg-brand-light/20 p-2.5">
-          <p className="text-2xs font-semibold uppercase tracking-wider text-ink-subtle">Hero concept</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink">{data.hero_concept}</p>
-        </div>
-      )}
-
-      {data.visual_style && (
-        <div className="mt-3 rounded-lg border border-brand-border bg-white p-2.5">
-          <p className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-wider text-ink-subtle">
-            <FiLayers size={11} />
-            Style visuel
-          </p>
-          <TagList text={data.visual_style} />
-        </div>
-      )}
-
-      {sections.length > 0 && (
-        <div className="mt-3">
-          <p className="mb-1.5 text-2xs font-semibold uppercase tracking-wider text-ink-subtle">
-            Sections proposées
-          </p>
-          <div className="space-y-2">
-            {sections.map((s, idx) => (
-              <div key={`${s?.id || "sec"}-${idx}`} className="rounded-lg border border-brand-border bg-white p-2.5">
-                <p className="text-xs font-bold text-ink">
-                  {s?.title || s?.id || `Section ${idx + 1}`}
-                </p>
-                {s?.purpose && <p className="mt-1 text-xs text-ink-muted">{s.purpose}</p>}
-                {Array.isArray(s?.key_elements) && s.key_elements.length > 0 && (
-                  <ul className="mt-1.5 ml-4 list-disc space-y-0.5 text-2xs text-ink">
-                    {s.key_elements.map((el, i) => (
-                      <li key={i}>{el}</li>
-                    ))}
-                  </ul>
-                )}
-                {s?.creative_touch && (
-                  <p className="mt-1.5 rounded-md bg-brand-light/40 px-2 py-1 text-2xs text-ink">
-                    {s.creative_touch}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {animations.length > 0 && (
-        <div className="mt-3 rounded-lg border border-brand-border bg-white p-2.5">
-          <p className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-wider text-ink-subtle">
-            <FiZap size={11} />
-            Animations
-          </p>
-          <ul className="mt-1.5 ml-4 list-decimal space-y-0.5 text-2xs text-ink">
-            {animations.map((a, i) => (
-              <li key={i}>{a}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {(data.typography_pairing || data.tone_of_voice || data.user_summary) && (
-        <div className="mt-3 space-y-2">
-          {data.typography_pairing && (
-            <div className="rounded-lg border border-brand-border bg-white p-2.5">
-              <p className="text-2xs font-semibold uppercase tracking-wider text-ink-subtle">Typographie</p>
-              <p className="mt-1 text-2xs text-ink">{data.typography_pairing}</p>
-            </div>
-          )}
-          {data.tone_of_voice && (
-            <div className="rounded-lg border border-brand-border bg-white p-2.5">
-              <p className="text-2xs font-semibold uppercase tracking-wider text-ink-subtle">Ton de voix</p>
-              <p className="mt-1 text-2xs text-ink">{data.tone_of_voice}</p>
-            </div>
-          )}
-          {data.user_summary && (
-            <div className="rounded-lg border border-brand-border bg-brand-light/20 p-2.5">
-              <p className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-wider text-ink-subtle">
-                <FiMessageSquare size={11} />
-                Résumé final
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-ink">{data.user_summary}</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // eslint-disable-next-line no-unused-vars
 function ContextItem({ icon: IconComp, label, value }) {
@@ -420,7 +387,7 @@ function ContextCard({ context }) {
         </p>
         {logoUrl ? (
           <div className="flex items-center gap-2">
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-brand-border bg-white">
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden">
               <img
                 src={logoUrl}
                 alt={context.brand_name || "Logo"}
@@ -488,8 +455,6 @@ export function ChatMessage({ msg, onAction, busy }) {
     return <StreamCard msg={msg} />;
   }
 
-  const isDescriptionJsonCard = msg.title === "Description complète (JSON)";
-
   // bot
   return (
     <div className="flex items-start gap-2 animate-[slideUp_0.25s_ease_forwards]">
@@ -500,11 +465,6 @@ export function ChatMessage({ msg, onAction, busy }) {
         <PhasePill label={msg.title} />
         <MiniMarkdown text={msg.content} />
         <ContextCard context={msg.context} />
-        {isDescriptionJsonCard ? (
-          <DescriptionStructuredCard data={msg.json} />
-        ) : (
-          <JsonBlock value={msg.json} />
-        )}
         <DeploymentCard deployment={msg.deployment} />
         <ActionButtons actions={msg.actions} onAction={onAction} disabled={busy} />
       </div>

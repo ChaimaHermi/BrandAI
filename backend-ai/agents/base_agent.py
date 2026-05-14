@@ -9,6 +9,8 @@ import os
 import re
 import time
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -288,6 +290,169 @@ class BaseAgent(ABC):
 
         raise RuntimeError(
             f"NVIDIA failed après {self.max_retries} tentatives : {last_error}"
+        )
+
+    async def _stream_nvidia_direct(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        model: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        extra_body: dict[str, Any] | None = None,
+        api_key_override: str | None = None,
+    ) -> AsyncIterator[dict[str, str]]:
+        """
+        Variante streaming de `_call_nvidia_direct`. Emet des chunks
+        `{"content": str}` et/ou `{"reasoning": str}` au fil de la generation.
+
+        Utilise pour la Phase 3 du Website Builder (GLM-4.7 via NVIDIA NIM)
+        afin d'afficher en temps reel ce que le modele est en train de generer.
+
+        Memes regles de rotation/retry sur 429 que `_call_nvidia_direct`.
+        """
+        used_model     = (model or self.llm_model).strip()
+        used_max       = min(max_tokens or self.llm_max_tokens, NVIDIA_MAX_TOKENS_CAP)
+        used_temp      = self.temperature if temperature is None else temperature
+        effort         = _nvidia_reasoning_effort()
+        nv_timeout     = _nvidia_http_timeout()
+        httpx_timeout  = httpx.Timeout(None) if nv_timeout is None else httpx.Timeout(nv_timeout)
+
+        if not self._nvidia_keys and not api_key_override:
+            raise RuntimeError(
+                "Streaming NVIDIA : aucune cle NVIDIA_API_KEY_1..4 definie dans .env."
+            )
+
+        last_error: Exception | None = None
+        for cycle in range(self.max_retries):
+            # Si une cle dediee est fournie (ex: GLM_NVIDIA_API_KEY), on
+            # l'utilise sans passer par le pool — pas de rotation, pas de lock.
+            if api_key_override:
+                key = api_key_override
+                lock = None
+            else:
+                key, lock = await self._acquire_free_key()
+            try:
+                self.logger.info(
+                    f"[{self.agent_name}] NVIDIA-STREAM model={used_model} cle …{key[-6:]}"
+                )
+                payload: dict[str, Any] = {
+                    "model": used_model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "temperature": used_temp,
+                    "max_tokens": used_max,
+                    "stream": True,
+                    **({"reasoning_effort": effort} if effort else {}),
+                    **(extra_body or {}),
+                }
+                async with httpx.AsyncClient(timeout=httpx_timeout) as client:
+                    async with client.stream(
+                        "POST",
+                        NVIDIA_API_BASE,
+                        headers={
+                            "Authorization": f"Bearer {key}",
+                            "Content-Type": "application/json",
+                            "Accept": "text/event-stream",
+                        },
+                        json=payload,
+                    ) as resp:
+                        if resp.status_code == 429:
+                            self.logger.warning(
+                                f"[{self.agent_name}] NVIDIA-STREAM 429 cle …{key[-6:]} "
+                                f"→ retry cycle {cycle+1}"
+                            )
+                            last_error = httpx.HTTPStatusError(
+                                "429", request=resp.request, response=resp
+                            )
+                            if cycle < self.max_retries - 1:
+                                await asyncio.sleep(60)
+                            continue
+                        if resp.status_code >= 400:
+                            err_body = (await resp.aread()).decode("utf-8", errors="ignore")
+                            self.logger.error(
+                                f"[{self.agent_name}] NVIDIA-STREAM HTTP {resp.status_code} "
+                                f"body={err_body[:500]}"
+                            )
+                            raise RuntimeError(
+                                f"NVIDIA stream HTTP {resp.status_code}: {err_body[:300]}"
+                            )
+
+                        self.logger.info(
+                            f"[{self.agent_name}] NVIDIA-STREAM 200 OK "
+                            f"ctype={resp.headers.get('content-type','?')} → consommation chunks"
+                        )
+                        line_count = 0
+                        content_chunks = 0
+                        reasoning_chunks = 0
+                        first_lines: list[str] = []
+                        async for line in resp.aiter_lines():
+                            line_count += 1
+                            if line_count <= 3 and line:
+                                first_lines.append(line[:200])
+                            if not line:
+                                continue
+                            # Format SSE standard : "data: {...}"
+                            if line.startswith("data:"):
+                                data_str = line[5:].strip()
+                            elif line.startswith("{"):
+                                # Fallback : certains endpoints renvoient du NDJSON brut
+                                data_str = line.strip()
+                            else:
+                                continue
+                            if not data_str or data_str == "[DONE]":
+                                continue
+                            try:
+                                obj = json.loads(data_str)
+                            except json.JSONDecodeError:
+                                continue
+                            try:
+                                delta = obj["choices"][0].get("delta") or {}
+                            except (KeyError, IndexError, TypeError):
+                                # Format inattendu (ex: error inline)
+                                if isinstance(obj, dict) and "error" in obj:
+                                    raise RuntimeError(
+                                        f"NVIDIA stream error inline: {obj['error']}"
+                                    )
+                                continue
+                            content = delta.get("content")
+                            if content:
+                                content_chunks += 1
+                                yield {"content": content}
+                            reasoning = delta.get("reasoning_content")
+                            if reasoning:
+                                reasoning_chunks += 1
+                                yield {"reasoning": reasoning}
+                        self.logger.info(
+                            f"[{self.agent_name}] NVIDIA-STREAM end lines={line_count} "
+                            f"content_chunks={content_chunks} reasoning_chunks={reasoning_chunks} "
+                            f"first_lines={first_lines!r}"
+                        )
+                    return
+            except httpx.HTTPStatusError as e:
+                last_error = e
+                self.logger.error(
+                    f"[API_KO] provider=NVIDIA-STREAM status="
+                    f"{e.response.status_code if e.response is not None else '?'} "
+                    f"agent={self.agent_name} err={str(e)[:200]}"
+                )
+                raise
+            except Exception as e:
+                last_error = e
+                self.logger.warning(
+                    f"[{self.agent_name}] NVIDIA-STREAM erreur → {str(e)[:160]}"
+                )
+                if cycle >= self.max_retries - 1:
+                    raise
+            finally:
+                if lock is not None:
+                    lock.release()
+
+        raise RuntimeError(
+            f"NVIDIA stream failed apres {self.max_retries} tentatives : {last_error}"
         )
 
     async def _call_langchain(self, system_prompt: str, user_prompt: str) -> str:

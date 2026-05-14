@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 from config.website_builder_config import REQUIRED_ANIMATIONS_MIN, REQUIRED_SECTIONS_MIN
-from tools.website_builder.website_renderer import html_stats, validate_html_document
+from tools.website_builder.generation.website_renderer import html_stats, validate_html_document
 
 
 def validate_architecture_payload(data: dict[str, Any]) -> None:

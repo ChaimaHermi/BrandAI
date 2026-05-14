@@ -17,7 +17,7 @@ import os
 
 # Phase 2A — Architecture : structure JSON (sections, nav, animations).
 # Sortie courte et focalisée → tokens limités.
-ARCHITECTURE_TEMPERATURE: float = float(os.getenv("WEBSITE_ARCHITECTURE_TEMPERATURE", "0.5"))
+ARCHITECTURE_TEMPERATURE: float = float(os.getenv("WEBSITE_ARCHITECTURE_TEMPERATURE", "0.7"))
 ARCHITECTURE_MAX_TOKENS: int = int(os.getenv("WEBSITE_ARCHITECTURE_MAX_TOKENS", "2500"))
 
 # Phase 2B — Content : remplit chaque section avec du texte réel + icônes Lucide.
@@ -31,25 +31,29 @@ DESCRIPTION_MAX_TOKENS: int = int(os.getenv("WEBSITE_DESCRIPTION_MAX_TOKENS", "4
 
 # Phase 3 — Coder : pure implémentation HTML/Tailwind à partir de architecture+content.
 # Le LLM n'invente plus de contenu, il code seulement → temp basse.
+# Modele dedie a la Phase 3 : GLM-4.7 servi par NVIDIA NIM (z-ai/glm4.7).
+# Streaming SSE active : on relaye chaque chunk content/reasoning au frontend.
 GENERATION_TEMPERATURE: float = float(os.getenv("WEBSITE_GENERATION_TEMPERATURE", "0.3"))
 GENERATION_MAX_TOKENS: int = int(os.getenv("WEBSITE_GENERATION_MAX_TOKENS", "24000"))
+GENERATION_MODEL: str = os.getenv("WEBSITE_GENERATION_MODEL", "z-ai/glm-5.1").strip()
 
 # Phase 4 — Révision : modification chirurgicale du HTML existant.
 # Le HTML d'entrée peut faire 6k–10k tokens → besoin de marge en sortie.
 REVISION_TEMPERATURE: float = float(os.getenv("WEBSITE_REVISION_TEMPERATURE", "0.3"))
 REVISION_MAX_TOKENS: int = int(os.getenv("WEBSITE_REVISION_MAX_TOKENS", "32000"))
 
-# Timeout par phase LLM Azure.
-# 0 = timeout desactive (attente illimitee jusqu'a reponse finale du provider).
-# L'utilisateur a demande de ne jamais couper la generation pour delai d'attente.
+# Timeouts par phase.
+# Description/révision (JSON court) : 90s max — si NVIDIA ne répond pas en 90s
+# c'est qu'il est down ou surchargé, inutile d'attendre plus longtemps.
+# Génération HTML (GLM streaming) : 0 = pas de timeout — le site peut être long.
 WEBSITE_DESCRIPTION_TIMEOUT_SECONDS: float = float(
-    os.getenv("WEBSITE_DESCRIPTION_TIMEOUT_SECONDS", "0")
+    os.getenv("WEBSITE_DESCRIPTION_TIMEOUT_SECONDS", "90")
 )
 WEBSITE_GENERATION_TIMEOUT_SECONDS: float = float(
     os.getenv("WEBSITE_GENERATION_TIMEOUT_SECONDS", "0")
 )
 WEBSITE_REVISION_TIMEOUT_SECONDS: float = float(
-    os.getenv("WEBSITE_REVISION_TIMEOUT_SECONDS", "0")
+    os.getenv("WEBSITE_REVISION_TIMEOUT_SECONDS", "90")
 )
 
 # 0 retry de notre côté : le SDK openai gère déjà ses propres retries (voir max_retries

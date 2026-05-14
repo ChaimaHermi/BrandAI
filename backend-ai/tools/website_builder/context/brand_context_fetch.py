@@ -32,7 +32,7 @@ from tools.content_generation.cloudinary_upload import (
     ensure_cloudinary_public_url,
     upload_image_bytes,
 )
-from tools.website_builder.langsmith_traces import (
+from tools.website_builder.infra.langsmith_traces import (
     TAGS_CONTEXT,
     process_context_fetch_inputs,
     process_context_fetch_outputs,
@@ -52,6 +52,7 @@ class BrandContext:
     project_name: str
     sector: str
     target_audience: str
+    problem: str          # problème que la startup résout
     short_pitch: str
     description_brief: str
     language: str  # "fr" | "en"
@@ -86,6 +87,7 @@ class BrandContext:
             "project_name": self.project_name,
             "sector": self.sector,
             "target_audience": self.target_audience,
+            "problem": self.problem,
             "short_pitch": self.short_pitch,
             "description_brief": self.description_brief,
             "language": self.language,
@@ -332,6 +334,7 @@ def _build_brand_context(idea: dict[str, Any], bundle: dict[str, Any]) -> BrandC
         target_audience=str(
             idea.get("clarity_target_users") or idea.get("target_audience") or ""
         ).strip(),
+        problem=str(idea.get("clarity_problem") or idea.get("problem") or "").strip(),
         short_pitch=str(idea.get("clarity_short_pitch") or "").strip(),
         description_brief=str(idea.get("description") or idea.get("clarity_solution") or "").strip(),
         language=str(idea.get("clarity_language") or "fr").strip().lower() or "fr",

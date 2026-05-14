@@ -15,13 +15,13 @@ from prompts.website_builder.prompt_website_revision import (
     WEBSITE_REVISION_SYSTEM,
     build_website_revision_user_prompt,
 )
-from tools.website_builder.brand_context_fetch import BrandContext
-from tools.website_builder.langsmith_traces import (
+from tools.website_builder.context.brand_context_fetch import BrandContext
+from tools.website_builder.infra.langsmith_traces import (
     TAGS_TOOL,
     process_revision_inputs,
     process_revision_outputs,
 )
-from tools.website_builder.website_renderer import extract_html_document, repair_html_document
+from tools.website_builder.generation.website_renderer import extract_html_document, repair_html_document
 
 logger = logging.getLogger("brandai.website_builder.revision_tool")
 

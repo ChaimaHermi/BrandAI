@@ -101,6 +101,27 @@ def event_tick(step_id: str, label: str) -> dict[str, Any]:
     return {"type": "tick", "id": step_id, "label": label}
 
 
+def event_code_chunk(
+    step_id: str,
+    *,
+    content: str = "",
+    reasoning: str = "",
+    model: str = "",
+) -> dict[str, Any]:
+    """
+    Event 'code_chunk' : un morceau de texte genere par le LLM en streaming.
+    Utilise pour afficher en direct le HTML produit par GLM-4.7 (Phase 3).
+    """
+    payload: dict[str, Any] = {"type": "code_chunk", "id": step_id}
+    if content:
+        payload["content"] = content
+    if reasoning:
+        payload["reasoning"] = reasoning
+    if model:
+        payload["model"] = model
+    return payload
+
+
 def event_result(payload: dict[str, Any]) -> dict[str, Any]:
     return {"type": "result", "payload": payload}
 
@@ -139,6 +160,25 @@ class StepEmitter:
 
     async def emit_result(self, payload: dict[str, Any]) -> None:
         await self.emit(event_result(payload))
+
+    async def emit_code_chunk(
+        self,
+        step_id: str,
+        *,
+        content: str = "",
+        reasoning: str = "",
+        model: str = "",
+    ) -> None:
+        if not content and not reasoning:
+            return
+        await self.emit(
+            event_code_chunk(
+                step_id,
+                content=content,
+                reasoning=reasoning,
+                model=model,
+            )
+        )
 
     async def emit_error(self, message: str) -> None:
         await self.emit(event_error(message))
