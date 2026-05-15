@@ -48,22 +48,23 @@ To reinforce correct spelling, write the name twice in the image_prompt:
   once in the icon description context, once in the wordmark instruction.
 
 === IMAGE PROMPT STRUCTURE ===
-minimal flat vector logo, [creative icon tied to business], the exact text '[X]' as bold wordmark spelling '[X]' letter by letter, [color 1] and [color 2], icon [left of / above] wordmark, fully transparent background, zero background, no background at all, no white fill, no off-white fill, logo elements only floating in empty space, ABSOLUTELY NO frame NO border NO rounded rectangle NO circle NO badge NO sticker NO card NO container NO enclosing shape NO background panel NO outline box NO drop shadow NO colored backdrop
+minimal flat vector logo, [creative icon tied to business], the exact text '[X]' as bold wordmark spelling '[X]' letter by letter, [color 1] and [color 2], icon [left of / above] wordmark, pure white background, flat white background only, logo elements only, ABSOLUTELY NO frame NO border NO rounded rectangle NO circle NO badge NO sticker NO card NO container NO enclosing shape NO background panel NO outline box NO drop shadow NO colored backdrop NO grey background NO glass effect NO metallic background
 
 === FRAME / BORDER / BACKGROUND RULE — ABSOLUTE ZERO TOLERANCE ===
 ⛔ FORBIDDEN — never generate any of these around or behind the logo:
-- white background, off-white background, light gray background, any solid background
+- grey background, gray background, silver background, metallic background, glass background
+- glossy background, gradient background, dark background, colored background
 - rectangle, rounded rectangle, square, circle, oval — enclosing the logo
 - badge shape, sticker shape, app icon frame, pill shape, shield shape
 - colored panel, gradient backdrop, geometric container of any kind
-- drop shadow behind the logo group, outer glow, halo effect
+- drop shadow behind the logo group, outer glow, halo effect, glassmorphism
 - ANY shape that acts as a "canvas" or "holder" for the logo
 
-✅ ONLY the icon + wordmark exist. The rest of the image is 100% transparent empty space.
-The logo must look like it was cut out and placed on nothing.
+✅ ONLY the icon + wordmark on a PURE WHITE flat background.
+Pure white makes automatic background removal fast and clean.
 
 === NEGATIVE PROMPT ===
-Always include ALL of these: white background, background, solid background, colored background, gradient background, frame, border, rounded card, rounded rectangle, sticker, sticker shape, app icon frame, badge, label, pill, shield, container, enclosing shape, background panel, outline box, drop shadow, outer glow, halo, any fill behind logo, white fill, off-white fill, gray fill. Also add: photorealistic, 3D render, watermark, blurry, distorted text, slogan, tagline, clipart.
+Always include ALL of these: grey background, gray background, silver background, metallic background, glass effect, glassmorphism, glossy background, gradient background, dark background, colored background, frame, border, rounded card, rounded rectangle, sticker, sticker shape, app icon frame, badge, label, pill, shield, container, enclosing shape, background panel, outline box, drop shadow, outer glow, halo, bokeh, shadow, photorealistic, 3D render, watermark, blurry, distorted text, slogan, tagline, clipart.
 """
 
 # Alias utilisé par logo_tools.py (compat)
@@ -115,15 +116,16 @@ def build_logo_user_message_with_name(
         f"EXACT SPELLING (letter by letter): {letters}\n"
         f"The wordmark must render this exact spelling: {brand_name}\n"
         "No slogan, no tagline.\n\n"
-        "⛔ CRITICAL — TRANSPARENT BACKGROUND ONLY:\n"
+        "⛔ CRITICAL — PURE WHITE BACKGROUND ONLY (no grey, no glass, no container):\n"
         "The image_prompt MUST end with: "
-        "\"fully transparent background, no background, no white fill, "
-        "no frame, no border, no rounded rectangle, no badge, no sticker, "
-        "no card, no container, logo floating freely on transparent empty space\"\n"
+        "\"pure white background, flat white background, no frame, no border, "
+        "no rounded rectangle, no badge, no sticker, no card, no container, "
+        "no grey background, no glass effect, no metallic background\"\n"
         "The negative_prompt MUST start with: "
-        "\"white background, background, frame, border, rounded card, sticker, "
-        "badge, container, enclosing shape, background panel, solid background, "
-        "colored background, gradient background, white fill, off-white fill\"\n\n"
+        "\"grey background, gray background, silver background, metallic background, "
+        "glass effect, glassmorphism, gradient background, dark background, "
+        "colored background, frame, border, rounded card, sticker, "
+        "badge, container, enclosing shape, background panel\"\n\n"
         f"CONTEXT:\n{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
 

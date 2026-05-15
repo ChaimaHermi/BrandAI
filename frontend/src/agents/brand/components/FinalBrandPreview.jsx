@@ -59,8 +59,8 @@ export default function FinalBrandPreview({
   /** Court texte issu du naming (description / rationale du nom choisi) */
   nameWhyText = "",
 }) {
-  const [variant, setVariant] = useState("with_bg");
   const canShowTransparent = Boolean(logoPreviewTransparentUrl);
+  const [variant, setVariant] = useState(canShowTransparent ? "without_bg" : "with_bg");
   const activeLogoUrl = useMemo(() => {
     if (variant === "without_bg" && logoPreviewTransparentUrl) {
       return logoPreviewTransparentUrl;
@@ -223,7 +223,11 @@ export default function FinalBrandPreview({
                 <img
                   src={activeLogoUrl}
                   alt="Logo"
-                  className="mx-auto max-h-48 w-auto rounded-xl border border-brand-border object-contain"
+                  className={`mx-auto max-h-48 w-auto object-contain ${
+                    variant === "with_bg"
+                      ? "rounded-xl border border-brand-border"
+                      : ""
+                  }`}
                 />
                 {logoConcept?.image_attribution ? (
                   <p className="mt-2 text-center text-[11px] leading-snug text-ink-subtle">

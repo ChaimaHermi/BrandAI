@@ -437,6 +437,15 @@ class BrandingService:
                     else:
                         to_save.append(c)
                 merged["logo_concepts"] = to_save
+                # Mettre à jour cloudinary_url avec le nouveau logo (évite que l'ancienne
+                # URL persiste après régénération et soit lue en priorité par _extract_logo_url)
+                new_image_url = (
+                    to_save[0].get("image_url", "") if to_save and isinstance(to_save[0], dict) else ""
+                )
+                if new_image_url:
+                    merged["cloudinary_url"] = new_image_url
+                else:
+                    merged.pop("cloudinary_url", None)
                 merged["chosen_brand_name"] = merged.get("chosen_brand_name") or resolved_name
                 ae = dict(merged.get("agent_errors") or {})
                 if bi.get("agent_errors"):
