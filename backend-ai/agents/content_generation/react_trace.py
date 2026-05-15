@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
@@ -77,6 +78,22 @@ def log_react_message(msg: Any, step: int) -> None:
     _print(f"\n--- [{type(msg).__name__}] (étape {step}) ---\n{_truncate(str(getattr(msg, 'content', msg)), 400)}")
 
 
+def _msg_label(msg: Any) -> str:
+    """Résumé court d'un message pour les logs de timing."""
+    if isinstance(msg, AIMessage):
+        tcalls = getattr(msg, "tool_calls", None) or []
+        if tcalls:
+            names = ",".join(
+                (tc.get("name") if isinstance(tc, dict) else getattr(tc, "name", "?"))
+                for tc in tcalls
+            )
+            return f"AIMessage[tool_call={names}]"
+        return "AIMessage[final]"
+    if isinstance(msg, ToolMessage):
+        return f"ToolMessage[{getattr(msg, 'name', '?')}]"
+    return type(msg).__name__
+
+
 async def invoke_react_with_optional_terminal_trace(
     agent: Any,
     *,
@@ -85,36 +102,51 @@ async def invoke_react_with_optional_terminal_trace(
     verbose: bool,
 ) -> dict[str, Any]:
     """
-    `ainvoke` classique, ou `astream` + logs si verbose.
+    `astream` + timing logger (toujours) + trace terminal si verbose.
     Retourne l'état final du graphe (dict avec clé `messages`).
     """
     cfg: dict[str, Any] = {"recursion_limit": recursion_limit}
 
-    if not verbose:
-        return await agent.ainvoke(initial, config=cfg)
-
-    _print("\n" + "=" * 60)
-    _print("  Content generation — ReAct (trace terminal)")
-    _print("=" * 60 + "\n")
+    if verbose:
+        _print("\n" + "=" * 60)
+        _print("  Content generation — ReAct (trace terminal)")
+        _print("=" * 60 + "\n")
 
     final_state: dict | None = None
     prev_len = 0
     step = 0
+    t_last = time.monotonic()
+    t_global = t_last
 
     async for state in agent.astream(initial, config=cfg, stream_mode="values"):
         final_state = state
         msgs = state.get("messages") or []
         for i in range(prev_len, len(msgs)):
             step += 1
-            log_react_message(msgs[i], step)
+            now = time.monotonic()
+            delta = now - t_last
+            total = now - t_global
+            t_last = now
+            label = _msg_label(msgs[i])
+            logger.info(
+                "[react_trace] étape %d | %s | Δt=%.1fs | total=%.1fs",
+                step, label, delta, total,
+            )
+            if verbose:
+                log_react_message(msgs[i], step)
         prev_len = len(msgs)
 
     if final_state is None:
         logger.warning("[react_trace] astream vide → fallback ainvoke")
         return await agent.ainvoke(initial, config=cfg)
 
-    _print("\n" + "-" * 60)
-    _print(f"  Fin de la trace — {step} message(s) affiché(s)")
-    _print("-" * 60 + "\n")
+    if verbose:
+        _print("\n" + "-" * 60)
+        _print(f"  Fin de la trace — {step} message(s) affiché(s)")
+        _print("-" * 60 + "\n")
 
+    logger.info(
+        "[react_trace] pipeline terminée | %d étapes | total=%.1fs",
+        step, time.monotonic() - t_global,
+    )
     return final_state

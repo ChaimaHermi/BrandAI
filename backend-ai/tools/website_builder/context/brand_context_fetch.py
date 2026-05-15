@@ -30,6 +30,7 @@ from config.website_builder_config import (
 from tools.content_generation.cloudinary_upload import (
     cloudinary_configured,
     ensure_cloudinary_public_url,
+    is_brandai_cloudinary_url,
     upload_image_bytes,
 )
 from tools.website_builder.infra.langsmith_traces import (
@@ -210,11 +211,19 @@ def _logo_concepts_data_url(logo_concepts: Any) -> str | None:
 def _extract_logo_url(logo_row: dict[str, Any], logo_chosen: dict[str, Any]) -> str | None:
     """
     Cherche une URL exploitable dans plusieurs emplacements :
+    0) logo.generated.cloudinary_url  (URL Cloudinary normalisée — sauvegardée au premier upload)
     1) logo.chosen.*            (cas nominal)
     2) logo.variants[*].*       (fallback courant)
     3) logo.generated[*].*      (fallback pipeline)
     4) logo.svg_data            (fallback data URL)
     """
+    # 0) cloudinary_url déjà normalisée et sauvegardée → court-circuit immédiat
+    generated = logo_row.get("generated")
+    if isinstance(generated, dict):
+        cdn_url = (generated.get("cloudinary_url") or "").strip()
+        if cdn_url.startswith("https://"):
+            return cdn_url
+
     # 1) chosen
     got = _pick_http_url(logo_chosen)
     if got:
@@ -238,7 +247,14 @@ def _extract_logo_url(logo_row: dict[str, Any], logo_chosen: dict[str, Any]) -> 
     # 3-bis) generated object with logo_concepts (brand final preview format)
     generated = logo_row.get("generated")
     if isinstance(generated, dict):
-        got = _logo_concepts_data_url(generated.get("logo_concepts"))
+        concepts = generated.get("logo_concepts")
+        if isinstance(concepts, list) and concepts:
+            c0 = concepts[0] if isinstance(concepts[0], dict) else {}
+            # image_url = URL Cloudinary sauvegardée au moment de la génération
+            img_url = (c0.get("image_url") or "").strip()
+            if img_url.startswith("https://"):
+                return img_url
+        got = _logo_concepts_data_url(concepts)
         if got:
             return got
 
@@ -296,6 +312,55 @@ async def _ensure_logo_public_url(logo_url: str | None) -> str | None:
             return url
 
     return url
+
+
+async def _patch_logo_cloudinary_url(
+    idea_id: int,
+    cloudinary_url: str,
+    access_token: str,
+) -> None:
+    """
+    Sauvegarde cloudinary_url dans logo.generated sans écraser les autres champs.
+    Stratégie : GET → merge → PATCH (fire-and-forget).
+    """
+    try:
+        base_url = f"{BACKEND_API_BASE_URL}/branding/ideas/{idea_id}/logo"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+            # 1. Lire le generated existant pour ne pas l'écraser
+            r_get = await client.get(base_url, headers=headers)
+            if r_get.status_code != 200:
+                logger.warning(
+                    "[website_builder] Logo GET HTTP %d — PATCH annulé", r_get.status_code
+                )
+                return
+            logo_row = r_get.json() or {}
+            existing_generated = dict(logo_row.get("generated") or {})
+
+            # 2. Merger cloudinary_url dans le generated existant
+            existing_generated["cloudinary_url"] = cloudinary_url
+
+            # 3. PATCH avec le generated complet mergé
+            r_patch = await client.patch(
+                base_url,
+                json={"status": "completed", "generated": existing_generated},
+                headers=headers,
+            )
+        if r_patch.status_code < 300:
+            logger.info(
+                "[website_builder] Logo cloudinary_url sauvegardée en base idea_id=%s → %s",
+                idea_id, cloudinary_url[:80],
+            )
+        else:
+            logger.warning(
+                "[website_builder] Logo PATCH HTTP %d — re-upload à la prochaine visite",
+                r_patch.status_code,
+            )
+    except Exception as exc:
+        logger.warning("[website_builder] Logo PATCH échoué (non bloquant) : %s", exc)
 
 
 def _extract_visual_style(palette_chosen: dict[str, Any]) -> str:
@@ -389,7 +454,21 @@ async def fetch_full_brand_context(idea_id: int, access_token: str) -> BrandCont
     )
     ctx = _build_brand_context(idea, bundle)
     validate_brand_context(ctx)
+
+    original_logo_url = ctx.logo_url
     ctx.logo_url = await _ensure_logo_public_url(ctx.logo_url)
+
+    # Si l'URL a été convertie vers Cloudinary pour la première fois → sauvegarder en base
+    # pour éviter le re-upload à chaque consultation suivante (fire-and-forget)
+    if (
+        ctx.logo_url
+        and ctx.logo_url != original_logo_url
+        and is_brandai_cloudinary_url(ctx.logo_url)
+    ):
+        asyncio.create_task(
+            _patch_logo_cloudinary_url(idea_id, ctx.logo_url, access_token)
+        )
+
     logger.info(
         "[website_builder] PHASE 1 (CONTEXT) SUCCESS idea_id=%s brand=%s palette=%s/%s/%s logo=%s",
         idea_id,

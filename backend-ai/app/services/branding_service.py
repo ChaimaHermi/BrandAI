@@ -426,13 +426,14 @@ class BrandingService:
             try:
                 prev = await fetch_branding_merged_generated(idea_id, access_token)
                 merged: dict[str, Any] = dict(prev) if prev else {}
+                _base64_keys = {"image_base64", "image_base64_transparent"}
                 to_save: list = []
                 for c in concepts or []:
                     if isinstance(c, dict):
                         if persist_image_base64:
                             to_save.append(dict(c))
                         else:
-                            to_save.append({k: v for k, v in c.items() if k != "image_base64"})
+                            to_save.append({k: v for k, v in c.items() if k not in _base64_keys})
                     else:
                         to_save.append(c)
                 merged["logo_concepts"] = to_save

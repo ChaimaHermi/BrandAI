@@ -32,21 +32,9 @@ CONTENT_LLM_CONFIG = {
     "reasoning": "medium",
 }
 
-# ── Hugging Face Inference (Qwen Image) — séparé du logo ; surcharges via .env
-CONTENT_HF_IMAGE_MODEL = (os.getenv("CONTENT_HF_IMAGE_MODEL") or "Qwen/Qwen-Image").strip()
-
-# Timeout HTTP pour la génération d’image HF avant bascule Pollinations (secondes)
-CONTENT_HF_TIMEOUT_S = float((os.getenv("CONTENT_HF_TIMEOUT_S") or "15").strip())
-
-
 def _env_flag(name: str, default: str = "1") -> bool:
     v = (os.getenv(name) or default).strip().lower()
     return v not in ("0", "false", "no", "off")
-
-
-# Fallback Pollinations si HF échoue ou timeout — désactiver : CONTENT_POLLINATIONS_FALLBACK=0
-CONTENT_POLLINATIONS_FALLBACK = _env_flag("CONTENT_POLLINATIONS_FALLBACK", "1")
-CONTENT_POLLINATIONS_MODEL_DEFAULT = (os.getenv("CONTENT_POLLINATIONS_MODEL_DEFAULT") or "qwen-image").strip()
 
 # ── Cloudinary — upload image générée → URL publique
 # Préférence : CONTENT_CLOUDINARY_* ; sinon les noms usuels CLOUDINARY_* (déjà présents sur beaucoup de projets)

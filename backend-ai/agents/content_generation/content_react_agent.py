@@ -1,28 +1,17 @@
 """
 ================================================================================
-Agent ReAct — génération de contenu social (BrandAI)
+Content Pipeline — génération séquentielle (BrandAI)
 ================================================================================
+Pipeline fixe en 5 étapes (aucun agent LLM orchestrateur) :
+  1. merge_context      — brief + contexte idée
+  2. get_platform_spec  — contraintes techniques plateforme
+  3. draft_post         — légende (LLM NVIDIA gpt-oss-120b)
+  4. build_image_prompt — prompts image (LLM NVIDIA, si image demandée)
+  5. image_client       — NVIDIA flux.2-klein-4b → Cloudinary
 
-Mode d'exécution UNIQUE pour la génération : LangGraph `create_react_agent`
-avec 5 outils (@tool). L'orchestrateur LLM (NVIDIA NIM / gpt-oss-120b uniquement) enchaîne les
-appels selon le prompt système ; l'état partagé `ContentPipelineState` est
-rempli par chaque outil.
-
-Flux des outils (ordre attendu, renforcé par le system prompt + guards dans les tools) :
-  1. merge_context      → brief + contexte idée (API FastAPI backend-api, optionnel si JWT)
-  2. get_platform_spec  → limites / ratios par réseau
-  3. draft_post         → légende (LLM via ContentLLMRunner)
-  4. build_image_prompt → JSON image_prompt / negative_prompt (si image demandée)
-  5. image_client       → HF → Pollinations → upload Cloudinary → URL publique
-
-La route HTTP appelle `run_content_generation` (alias public) qui invoque
-l'agent puis valide le résultat avec `_build_generation_result`.
-
-Traçabilité LangSmith : activer `LANGCHAIN_API_KEY` dans `.env` (voir `config/settings.py`).
-Projet LangSmith : `brand-ai`. Spans : `content_generation.run` et `content_react_agent.invoke`.
-
-Terminal : `CONTENT_AGENT_VERBOSE_TERMINAL=1` (défaut) affiche Thought / Action / Observation
-(`react_trace.py`). Mettre `0` pour désactiver en production.
+Points d'entrée publics (inchangés pour les routes FastAPI) :
+  - run_content_generation   : retourne dict { caption, image_url, char_count, platform }
+  - stream_content_generation : générateur SSE
 ================================================================================
 """
 
@@ -30,26 +19,19 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any, AsyncGenerator
 
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langgraph.prebuilt import create_react_agent
 from langsmith import traceable
-from langsmith.run_helpers import get_current_run_tree
 
 from agents.content_generation.content_llm_runner import ContentLLMRunner
-from agents.content_generation.react_trace import invoke_react_with_optional_terminal_trace
-from config.content_generation_config import (
-    CONTENT_AGENT_VERBOSE_TERMINAL,
-    CONTENT_LLM_CONFIG,
-)
-from llm.llm_factory import create_react_orchestrator_llm
 from tools.content_generation.brief_helpers import should_include_image_in_post
 from tools.content_generation.cloudinary_upload import (
     cloudinary_configured,
     is_brandai_cloudinary_url,
     upload_image_bytes,
 )
+from tools.content_generation.content_image_client import fetch_content_image
 from tools.content_generation.context_steps import (
     ContentPipelineState,
     get_platform_spec_step,
@@ -57,213 +39,31 @@ from tools.content_generation.context_steps import (
     merged_json_for_llm,
     spec_json_for_llm,
 )
-from tools.content_generation.content_image_client import fetch_content_image_hf_then_pollinations
 
-logger = logging.getLogger("brandai.content_react_agent")
-
-# -----------------------------------------------------------------------------
-# Corps réutilisables (outils LangChain + secours si l'orchestrateur saute des étapes)
-# -----------------------------------------------------------------------------
-async def _tool_build_image_prompt_body(
-    state: ContentPipelineState,
-    platform: str,
-    brief: dict[str, Any],
-    runner: ContentLLMRunner,
-) -> str:
-    if not should_include_image_in_post(platform, brief):
-        return json.dumps({"skipped": True, "reason": "include_image false"}, ensure_ascii=False)
-    state.ensure_spec()
-    cap = state.get("caption") or ""
-    if not cap:
-        return json.dumps({"error": "draft_post requis avant build_image_prompt"}, ensure_ascii=False)
-    merged_j = merged_json_for_llm(state)
-    spec_j = spec_json_for_llm(state)
-    ip, np = await runner.build_image_prompt(merged_j, spec_j, cap.strip())
-    state["image_prompt"] = ip
-    state["negative_prompt"] = np
-    return json.dumps({"image_prompt": ip[:500], "negative_prompt": np[:300]}, ensure_ascii=False)
+logger = logging.getLogger("brandai.content_pipeline")
 
 
-async def _tool_image_client_body(
-    state: ContentPipelineState,
-    platform: str,
-    brief: dict[str, Any],
-) -> str:
-    if not should_include_image_in_post(platform, brief):
-        return json.dumps({"skipped": True}, ensure_ascii=False)
-    if not state.get("image_prompt"):
-        return json.dumps({"error": "build_image_prompt requis avant image_client"}, ensure_ascii=False)
-    if not cloudinary_configured():
-        return json.dumps(
-            {"error": "Cloudinary non configuré (CONTENT_CLOUDINARY_* ou CLOUDINARY_*)"},
-            ensure_ascii=False,
-        )
-    try:
-        data, mime, src = await fetch_content_image_hf_then_pollinations(
-            str(state["image_prompt"]),
-            str(state.get("negative_prompt") or ""),
-        )
-        url = upload_image_bytes(data, mime=mime)
-        if not is_brandai_cloudinary_url(url):
-            logger.error("[image_client] URL inattendue (pas le compte Cloudinary projet) : %s", url[:120])
-        state["image_url"] = url
-        state["image_source"] = src
-        state["image_error"] = None
-        return url
-    except Exception as e:
-        # Ne casse pas toute la génération de post en cas de timeout fournisseur image.
-        err = f"image_generation_failed: {str(e)[:220]}"
-        logger.warning("[image_client] échec image, post texte conservé : %s", err)
-        state["image_error"] = err
-        state["image_url"] = None
-        return json.dumps({"warning": err}, ensure_ascii=False)
+# ---------------------------------------------------------------------------
+# SSE helper
+# ---------------------------------------------------------------------------
+def sse_event(event: str, data: dict) -> str:
+    payload = json.dumps(data, ensure_ascii=False, indent=2)
+    data_lines = "\n".join(f"data: {line}" for line in payload.splitlines())
+    return f"event: {event}\n{data_lines}\n\n"
 
 
-async def _ensure_image_pipeline_when_brief_requires(
-    state: ContentPipelineState,
-    *,
-    platform: str,
-    brief: dict[str, Any],
-    runner: ContentLLMRunner,
-) -> None:
-    """
-    L'orchestrateur ReAct peut terminer sans appeler build_image_prompt / image_client
-    alors que le brief impose une image. On rejoue alors les mêmes étapes que les outils.
-    """
-    if not should_include_image_in_post(platform, brief) or state.get("image_url"):
-        return
-    if not (state.get("caption") or "").strip():
-        return
-    try:
-        state.ensure_spec()
-    except RuntimeError as e:
-        logger.warning(
-            "[content_react_agent] image de secours ignorée (état incomplet) : %s",
-            e,
-        )
-        return
-    await _tool_build_image_prompt_body(state, platform, brief, runner)
-    if not state.get("image_prompt"):
-        return
-    await _tool_image_client_body(state, platform, brief)
-
-
-# -----------------------------------------------------------------------------
-# Prompt système — contrat pour le modèle orchestrateur (outil par outil)
-# -----------------------------------------------------------------------------
-REACT_ORCHESTRATOR_SYSTEM = """Tu es l'orchestrateur de génération de contenu social BrandAI.
-
-Obligation : appeler les outils dans cet ordre, sans sauter d'étape nécessaire :
-  1) merge_context — une fois
-  2) get_platform_spec — une fois
-  3) draft_post — une fois (produit la légende du post)
-  4) build_image_prompt — si une image est demandée : lis merged_context.brief.include_image.
-     Instagram : image requise sauf si include_image est explicitement false.
-     Facebook / LinkedIn : image requise si include_image est true.
-  5) image_client — immédiatement après build_image_prompt lorsqu'une image est requise.
-
-Ne rédige pas toi-même le post final dans le chat : délègue aux outils.
-Termine par un court message de confirmation une fois les outils nécessaires exécutés."""
-
-
-# -----------------------------------------------------------------------------
-# Fabrique d'outils LangChain — closure sur `state` + paramètres de la requête
-# -----------------------------------------------------------------------------
-def build_content_react_tools(
-    *,
-    idea_id: int,
-    platform: str,
-    brief: dict[str, Any],
-    access_token: str | None,
-    state: ContentPipelineState,
-    runner: ContentLLMRunner,
-    previous_caption: str | None = None,
-    regeneration_instruction: str | None = None,
-) -> list:
-    """
-    Construit les 5 tools @tool. Ils partagent le même `state` (dict mutable)
-    pour que merge → spec → … alimentent les étapes suivantes (guards inclus).
-    """
-    from langchain_core.tools import tool
-
-    # --- 1) Contexte fusionné (brief + idée backend-api FastAPI si token) ---
-    @tool
-    async def merge_context() -> str:
-        """Fusionne le brief utilisateur et le contexte idée (API si JWT). À appeler en premier."""
-        await merge_context_step(
-            state,
-            idea_id=idea_id,
-            platform=platform,
-            brief=brief,
-            access_token=access_token,
-        )
-        return json.dumps({"status": "merged", "idea_id": idea_id}, ensure_ascii=False)
-
-    # --- 2) Règles techniques plateforme (caractères, ratio image, …) ---
-    @tool
-    async def get_platform_spec() -> str:
-        """Retourne les contraintes techniques (longueur, ratio image) pour la plateforme cible. Après merge_context."""
-        spec = get_platform_spec_step(state, platform)
-        return json.dumps(spec, ensure_ascii=False)
-
-    # --- 3) Légende finale (appel LLM gpt-oss-120b) ---
-    @tool
-    async def draft_post() -> str:
-        """Génère le texte du post (légende) via le LLM à partir du contexte fusionné et des specs."""
-        state.ensure_spec()
-        merged_j = merged_json_for_llm(state)
-        spec_j = spec_json_for_llm(state)
-        caption = await runner.draft_post(
-            merged_j,
-            spec_j,
-            previous_caption=previous_caption,
-            regeneration_instruction=regeneration_instruction,
-        )
-        state["caption"] = caption
-        # Pas de troncature : l’état et l’observation doivent refléter la légende complète.
-        return caption
-
-    # --- 4) Prompts pour le générateur d'image (LLM → JSON) ---
-    @tool
-    async def build_image_prompt() -> str:
-        """Produit image_prompt et negative_prompt pour le modèle text-to-image. Après draft_post si image demandée."""
-        return await _tool_build_image_prompt_body(state, platform, brief, runner)
-
-    # --- 5) Image bytes (HF / Pollinations) + URL Cloudinary ---
-    @tool
-    async def image_client() -> str:
-        """Génère l'image puis l'upload sur Cloudinary. Après build_image_prompt si image demandée."""
-        return await _tool_image_client_body(state, platform, brief)
-
-    return [
-        merge_context,
-        get_platform_spec,
-        draft_post,
-        build_image_prompt,
-        image_client,
-    ]
-
-
-# -----------------------------------------------------------------------------
-# Validation du state après la boucle ReAct → payload API
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Validation finale de l'état → payload API
+# ---------------------------------------------------------------------------
 def _build_generation_result(
     state: ContentPipelineState,
     *,
     platform: str,
     brief: dict[str, Any],
 ) -> dict[str, Any]:
-    """
-    Transforme l'état partagé en réponse HTTP. Lève une erreur explicite si
-    l'agent n'a pas mené la génération jusqu'au bout (caption manquante, image
-    demandée mais URL absente, etc.).
-    """
     caption = (state.get("caption") or "").strip()
     if not caption:
-        raise RuntimeError(
-            "L'agent n'a pas produit de légende. Vérifiez les clés NVIDIA (NVIDIA_API_KEY_*) "
-            "ou augmentez la limite de récursion de l'agent."
-        )
+        raise RuntimeError("Pipeline : légende vide — vérifiez les clés NVIDIA.")
 
     want_image = should_include_image_in_post(platform, brief)
     image_url = state.get("image_url")
@@ -271,22 +71,11 @@ def _build_generation_result(
     if want_image and not image_url:
         image_error = (state.get("image_error") or "").strip()
         if image_error:
-            logger.warning(
-                "[content_react_agent] image indisponible, retour texte seul | reason=%s",
-                image_error[:180],
-            )
+            logger.warning("[content_pipeline] image indisponible, retour texte | %s", image_error[:180])
         elif not cloudinary_configured():
-            raise RuntimeError(
-                "Image demandée : configurez Cloudinary (CONTENT_CLOUDINARY_* ou "
-                "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) "
-                "pour obtenir une URL publique."
-            )
+            raise RuntimeError("Cloudinary non configuré (CLOUDINARY_*).")
         else:
-            # Cas non déterministe côté provider image : on renvoie quand même la légende.
-            logger.warning(
-                "[content_react_agent] image demandée mais indisponible sans erreur explicite, "
-                "retour texte seul."
-            )
+            logger.warning("[content_pipeline] image demandée mais absente, retour texte seul.")
 
     return {
         "caption": caption,
@@ -296,13 +85,81 @@ def _build_generation_result(
     }
 
 
-# -----------------------------------------------------------------------------
-# Point d'entrée principal — utilisé par la route FastAPI
-# -----------------------------------------------------------------------------
-@traceable(
-    name="content_generation.run",
-    tags=["content_generation", "api", "brandai"],
-)
+# ---------------------------------------------------------------------------
+# Pipeline séquentielle interne
+# ---------------------------------------------------------------------------
+async def _run_pipeline(
+    *,
+    idea_id: int,
+    platform: str,
+    brief: dict[str, Any],
+    access_token: str | None,
+    previous_caption: str | None,
+    regeneration_instruction: str | None,
+    state: ContentPipelineState,
+    runner: ContentLLMRunner,
+) -> None:
+    t0 = time.monotonic()
+
+    # 1 — merge_context
+    logger.info("[content_pipeline] 1/5 merge_context")
+    await merge_context_step(
+        state,
+        idea_id=idea_id,
+        platform=platform,
+        brief=brief,
+        access_token=access_token,
+    )
+
+    # 2 — get_platform_spec
+    logger.info("[content_pipeline] 2/5 get_platform_spec")
+    get_platform_spec_step(state, platform)
+
+    # 3 — draft_post
+    logger.info("[content_pipeline] 3/5 draft_post")
+    merged_j = merged_json_for_llm(state)
+    spec_j = spec_json_for_llm(state)
+    caption = await runner.draft_post(
+        merged_j,
+        spec_j,
+        previous_caption=previous_caption,
+        regeneration_instruction=regeneration_instruction,
+    )
+    state["caption"] = caption
+
+    if not should_include_image_in_post(platform, brief):
+        logger.info("[content_pipeline] image non requise — terminée en %.1fs", time.monotonic() - t0)
+        return
+
+    # 4 — build_image_prompt
+    logger.info("[content_pipeline] 4/5 build_image_prompt")
+    ip, np = await runner.build_image_prompt(merged_j, spec_j, caption)
+    state["image_prompt"] = ip
+    state["negative_prompt"] = np
+
+    # 5 — image_client (NVIDIA flux.2-klein-4b → Cloudinary)
+    logger.info("[content_pipeline] 5/5 image_client (NVIDIA flux.2-klein-4b)")
+    try:
+        data, mime, src = await fetch_content_image(ip, np)
+        url = upload_image_bytes(data, mime=mime)
+        if not is_brandai_cloudinary_url(url):
+            logger.warning("[content_pipeline] URL Cloudinary inattendue : %s", url[:120])
+        state["image_url"] = url
+        state["image_source"] = src
+        state["image_error"] = None
+    except Exception as e:
+        err = f"image_generation_failed: {str(e)[:220]}"
+        logger.warning("[content_pipeline] échec image, post texte conservé : %s", err)
+        state["image_error"] = err
+        state["image_url"] = None
+
+    logger.info("[content_pipeline] terminée en %.1fs", time.monotonic() - t0)
+
+
+# ---------------------------------------------------------------------------
+# Point d'entrée principal — route FastAPI
+# ---------------------------------------------------------------------------
+@traceable(name="content_generation.run", tags=["content_generation", "api", "brandai"])
 async def run_content_generation(
     *,
     idea_id: int,
@@ -311,128 +168,26 @@ async def run_content_generation(
     access_token: str | None = None,
     previous_caption: str | None = None,
     regeneration_instruction: str | None = None,
-    recursion_limit: int = 40,
+    recursion_limit: int = 40,  # conservé pour compatibilité signature
 ) -> dict[str, Any]:
-    """
-    Exécute l'agent ReAct puis retourne un dict { caption, image_url, char_count, platform }.
-
-    C'est la **seule** méthode d'orchestration exposée pour la génération de contenu.
-    """
-    state = await run_content_react_agent(
+    state = ContentPipelineState()
+    runner = ContentLLMRunner()
+    await _run_pipeline(
         idea_id=idea_id,
         platform=platform,
         brief=brief,
         access_token=access_token,
         previous_caption=previous_caption,
         regeneration_instruction=regeneration_instruction,
-        recursion_limit=recursion_limit,
-    )
-    await _ensure_image_pipeline_when_brief_requires(
-        state,
-        platform=platform,
-        brief=brief,
-        runner=ContentLLMRunner(),
+        state=state,
+        runner=runner,
     )
     return _build_generation_result(state, platform=platform, brief=brief)
 
 
-@traceable(
-    name="content_react_agent.invoke",
-    tags=["content_generation", "react", "langgraph", "brandai"],
-)
-async def run_content_react_agent(
-    *,
-    idea_id: int,
-    platform: str,
-    brief: dict[str, Any],
-    access_token: str | None = None,
-    previous_caption: str | None = None,
-    regeneration_instruction: str | None = None,
-    recursion_limit: int = 40,
-) -> ContentPipelineState:
-    """
-    Lance uniquement le graphe LangGraph ReAct et retourne l'état mutable rempli par les tools.
-    Préférez `run_content_generation` depuis l'API pour inclure la validation finale.
-    """
-    # Métadonnées visibles dans LangSmith (run racine + enfant graphe)
-    rt = get_current_run_tree()
-    if rt:
-        rt.metadata.update({
-            "idea_id": idea_id,
-            "platform": platform,
-            "brief_subject": ((brief.get("subject") or "")[:240]),
-            "recursion_limit": recursion_limit,
-            "verbose_terminal": CONTENT_AGENT_VERBOSE_TERMINAL,
-        })
-
-    state = ContentPipelineState()
-    runner = ContentLLMRunner()
-
-    tools = build_content_react_tools(
-        idea_id=idea_id,
-        platform=platform,
-        brief=brief,
-        access_token=access_token,
-        state=state,
-        runner=runner,
-        previous_caption=previous_caption,
-        regeneration_instruction=regeneration_instruction,
-    )
-
-    llm = create_react_orchestrator_llm(
-        model=CONTENT_LLM_CONFIG["model"],
-        temperature=float(CONTENT_LLM_CONFIG.get("temperature", 0.35)),
-        max_tokens=int(CONTENT_LLM_CONFIG.get("max_tokens", 4096)),
-    )
-
-    agent = create_react_agent(
-        llm,
-        tools,
-        prompt=REACT_ORCHESTRATOR_SYSTEM,
-        name="content_react",
-    )
-
-    user_msg = (
-        "Exécute la génération de contenu pour ce projet. "
-        f"Plateforme cible : {platform}. "
-        "Respecte l'ordre des outils décrit dans les instructions système."
-    )
-    if (regeneration_instruction or "").strip():
-        user_msg += (
-            " Il s'agit d'une régénération guidée : conserve l'intention du texte existant "
-            "et applique la consigne utilisateur."
-        )
-
-    initial = {"messages": [HumanMessage(content=user_msg)]}
-    result = await invoke_react_with_optional_terminal_trace(
-        agent,
-        initial=initial,
-        recursion_limit=recursion_limit,
-        verbose=CONTENT_AGENT_VERBOSE_TERMINAL,
-    )
-
-    n_msg = len(result.get("messages") or [])
-    logger.info(
-        "[content_react_agent] terminé | messages=%d | verbose_terminal=%s",
-        n_msg,
-        CONTENT_AGENT_VERBOSE_TERMINAL,
-    )
-    return state
-
-
-# -----------------------------------------------------------------------------
-# SSE helper — format Server-Sent Events
-# -----------------------------------------------------------------------------
-def sse_event(event: str, data: dict) -> str:
-    """Sérialise un dict en bloc SSE (event: + data: multi-lignes)."""
-    payload = json.dumps(data, ensure_ascii=False, indent=2)
-    data_lines = "\n".join(f"data: {line}" for line in payload.splitlines())
-    return f"event: {event}\n{data_lines}\n\n"
-
-
-# -----------------------------------------------------------------------------
-# Streaming SSE — utilisé par POST /content/generate/stream
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Streaming SSE — route POST /content/generate/stream
+# ---------------------------------------------------------------------------
 async def stream_content_generation(
     *,
     idea_id: int,
@@ -441,110 +196,74 @@ async def stream_content_generation(
     access_token: str | None = None,
     previous_caption: str | None = None,
     regeneration_instruction: str | None = None,
-    recursion_limit: int = 40,
+    recursion_limit: int = 40,  # conservé pour compatibilité signature
 ) -> AsyncGenerator[str, None]:
-    """
-    Générateur async SSE qui exécute l'agent ReAct en streaming.
-
-    Événements émis :
-      - tool_start  { tool: str }
-      - tool_end    { tool: str }
-      - done        { success: True, caption, image_url, char_count, platform }
-                 ou { success: False }
-      - error       { success: False, message: str }
-    """
     state = ContentPipelineState()
     runner = ContentLLMRunner()
-
-    tools = build_content_react_tools(
-        idea_id=idea_id,
-        platform=platform,
-        brief=brief,
-        access_token=access_token,
-        state=state,
-        runner=runner,
-        previous_caption=previous_caption,
-        regeneration_instruction=regeneration_instruction,
-    )
-
-    llm = create_react_orchestrator_llm(
-        model=CONTENT_LLM_CONFIG["model"],
-        temperature=float(CONTENT_LLM_CONFIG.get("temperature", 0.35)),
-        max_tokens=int(CONTENT_LLM_CONFIG.get("max_tokens", 4096)),
-    )
-
-    agent = create_react_agent(
-        llm,
-        tools,
-        prompt=REACT_ORCHESTRATOR_SYSTEM,
-        name="content_react",
-    )
-
-    user_msg = (
-        "Exécute la génération de contenu pour ce projet. "
-        f"Plateforme cible : {platform}. "
-        "Respecte l'ordre des outils décrit dans les instructions système."
-    )
-    if (regeneration_instruction or "").strip():
-        user_msg += (
-            " Il s'agit d'une régénération guidée : conserve l'intention du texte existant "
-            "et applique la consigne utilisateur."
-        )
-
-    initial = {"messages": [HumanMessage(content=user_msg)]}
-    cfg = {"recursion_limit": recursion_limit}
-
-    # Track already-seen message counts to detect new messages only
-    seen_count = 0
+    want_image = should_include_image_in_post(platform, brief)
 
     try:
-        async for chunk in agent.astream(initial, config=cfg, stream_mode="values"):
-            messages = chunk.get("messages") or []
-            new_messages = messages[seen_count:]
-            seen_count = len(messages)
+        # 1 — merge_context
+        yield sse_event("tool_start", {"tool": "merge_context"})
+        await merge_context_step(state, idea_id=idea_id, platform=platform, brief=brief, access_token=access_token)
+        yield sse_event("tool_end", {"tool": "merge_context"})
 
-            for msg in new_messages:
-                # tool_start: AIMessage with tool_calls
-                if isinstance(msg, AIMessage) and msg.tool_calls:
-                    for tc in msg.tool_calls:
-                        tool_name = tc["name"] if isinstance(tc, dict) else tc.name
-                        yield sse_event("tool_start", {"tool": tool_name})
+        # 2 — get_platform_spec
+        yield sse_event("tool_start", {"tool": "get_platform_spec"})
+        get_platform_spec_step(state, platform)
+        yield sse_event("tool_end", {"tool": "get_platform_spec"})
 
-                # tool_end: ToolMessage
-                elif isinstance(msg, ToolMessage):
-                    tool_name = msg.name or ""
-                    yield sse_event("tool_end", {"tool": tool_name})
-
-        # After the stream finishes — ensure image pipeline ran if needed
-        await _ensure_image_pipeline_when_brief_requires(
-            state,
-            platform=platform,
-            brief=brief,
-            runner=runner,
+        # 3 — draft_post
+        yield sse_event("tool_start", {"tool": "draft_post"})
+        merged_j = merged_json_for_llm(state)
+        spec_j = spec_json_for_llm(state)
+        caption = await runner.draft_post(
+            merged_j, spec_j,
+            previous_caption=previous_caption,
+            regeneration_instruction=regeneration_instruction,
         )
+        state["caption"] = caption
+        yield sse_event("tool_end", {"tool": "draft_post"})
+
+        if want_image:
+            # 4 — build_image_prompt
+            yield sse_event("tool_start", {"tool": "build_image_prompt"})
+            ip, np = await runner.build_image_prompt(merged_j, spec_j, caption)
+            state["image_prompt"] = ip
+            state["negative_prompt"] = np
+            yield sse_event("tool_end", {"tool": "build_image_prompt"})
+
+            # 5 — image_client
+            yield sse_event("tool_start", {"tool": "image_client"})
+            try:
+                data, mime, src = await fetch_content_image(ip, np)
+                url = upload_image_bytes(data, mime=mime)
+                state["image_url"] = url
+                state["image_source"] = src
+                state["image_error"] = None
+            except Exception as e:
+                err = f"image_generation_failed: {str(e)[:220]}"
+                logger.warning("[content_pipeline] échec image : %s", err)
+                state["image_error"] = err
+                state["image_url"] = None
+            yield sse_event("tool_end", {"tool": "image_client"})
+
         result = _build_generation_result(state, platform=platform, brief=brief)
-        yield sse_event(
-            "done",
-            {
-                "success": True,
-                "caption": result["caption"],
-                "image_url": result.get("image_url"),
-                "char_count": result["char_count"],
-                "platform": result["platform"],
-            },
-        )
+        yield sse_event("done", {
+            "success": True,
+            "caption": result["caption"],
+            "image_url": result.get("image_url"),
+            "char_count": result["char_count"],
+            "platform": result["platform"],
+        })
 
     except Exception as exc:
-        logger.exception("[stream_content_generation] erreur pendant le stream")
+        logger.exception("[content_pipeline] erreur pendant le stream")
         yield sse_event("error", {"success": False, "message": str(exc)})
         yield sse_event("done", {"success": False})
 
 
-# Alias explicite pour imports externes
 __all__ = [
-    "build_content_react_tools",
     "run_content_generation",
-    "run_content_react_agent",
     "stream_content_generation",
-    "REACT_ORCHESTRATOR_SYSTEM",
 ]

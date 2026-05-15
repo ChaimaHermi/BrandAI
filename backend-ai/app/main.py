@@ -39,8 +39,7 @@ for _name in (
     "brandai.logo_agent",
     "brandai.logo_image_client",
     "brandai.llm_rotator",
-    "brandai.content_react_agent",
-    "brandai.content_react_trace",
+    "brandai.content_pipeline",
     "brandai.linkedin_callback_proxy",
 ):
     logging.getLogger(_name).setLevel(logging.INFO)

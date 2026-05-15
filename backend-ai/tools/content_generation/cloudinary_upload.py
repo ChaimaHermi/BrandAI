@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import io
 import logging
 import mimetypes
@@ -110,10 +111,16 @@ def upload_image_bytes(
         api_secret=CONTENT_CLOUDINARY_API_SECRET,
     )
 
-    resource_type = "image"
+    # public_id déterministe basé sur le hash SHA-256 des bytes
+    # → même image uploadée 2 fois = même public_id = pas de doublon
+    content_hash = hashlib.sha256(data).hexdigest()[:40]
+    public_id = f"{upload_folder}/{content_hash}"
+
     upload_kwargs: dict = {
-        "folder": upload_folder,
-        "resource_type": resource_type,
+        "public_id": public_id,
+        "overwrite": True,
+        "unique_filename": False,
+        "resource_type": "image",
     }
 
     buf = io.BytesIO(data)

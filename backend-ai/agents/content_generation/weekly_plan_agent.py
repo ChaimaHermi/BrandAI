@@ -20,7 +20,7 @@ from tools.content_generation.cloudinary_upload import (
     cloudinary_configured,
     upload_image_bytes,
 )
-from tools.content_generation.content_image_client import fetch_content_image_hf_then_pollinations
+from tools.content_generation.content_image_client import fetch_content_image
 from tools.content_generation.idea_fetch import fetch_idea_row, idea_to_content_context
 from tools.content_generation.platform_specs import get_spec_for_platform
 
@@ -404,7 +404,7 @@ async def _generate_item_image(
             json.dumps(spec, ensure_ascii=False, indent=2),
             caption,
         )
-        data, mime, _ = await fetch_content_image_hf_then_pollinations(ip, np)
+        data, mime, _ = await fetch_content_image(ip, np)
         url = upload_image_bytes(data, mime=mime)
         return url, None
     except Exception as exc:

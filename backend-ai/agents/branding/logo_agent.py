@@ -660,10 +660,30 @@ class LogoAgent(BaseAgent):
         # Extraire l'erreur image éventuelle et la nettoyer du concept
         image_fetch_error = concept.pop("_image_fetch_error", None)
 
+        # ── Upload Cloudinary au moment de la génération ─────────────────────
+        # Stocke image_url dans le concept pour éviter tout re-upload lors des
+        # consultations futures (website builder, publications schedulées).
+        has_image = bool(concept.get("image_base64"))
+        if has_image:
+            try:
+                from tools.content_generation.cloudinary_upload import (
+                    cloudinary_configured,
+                    upload_image_bytes,
+                )
+                if cloudinary_configured():
+                    raw = base64.b64decode(concept["image_base64"])
+                    mime = concept.get("image_mime") or "image/png"
+                    image_url = await asyncio.to_thread(
+                        upload_image_bytes, raw, mime=mime, folder="brandai/logos"
+                    )
+                    concept["image_url"] = image_url
+                    logger.info("[logo_agent] Logo uploadé Cloudinary → %s", image_url[:80])
+            except Exception as exc:
+                logger.warning("[logo_agent] Upload Cloudinary échoué (non bloquant) : %s", exc)
+
         state.brand_identity["logo_concepts"] = [concept]
         state.brand_identity.pop("logo_error", None)
 
-        has_image = bool(concept.get("image_base64"))
         if has_image:
             state.brand_identity["branding_status"] = "logo_generated"
             state.status = "logo_generated"

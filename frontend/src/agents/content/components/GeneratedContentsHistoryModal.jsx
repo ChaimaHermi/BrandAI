@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
-import { FiClock, FiX, FiCheckCircle, FiAlertCircle, FiFileText, FiFilter } from "react-icons/fi";
+import { FiClock, FiX, FiCheckCircle, FiAlertCircle, FiFileText, FiFilter, FiSettings } from "react-icons/fi";
 import { apiListGeneratedContents } from "@/services/generatedContentApi";
 import { Button } from "@/shared/ui/Button";
 import { PLATFORMS, PLATFORM_LABELS } from "../constants";
+import HistoryPostDetailModal from "./HistoryPostDetailModal";
 
 /* ── Méta plateforme ─────────────────────────────────────────────────────── */
 const PLATFORM_ICON = {
@@ -83,13 +84,13 @@ function FilterPills({ options, value, onChange }) {
 }
 
 /* ── Carte post ──────────────────────────────────────────────────────────── */
-function PostCard({ row }) {
+function PostCard({ row, onManage }) {
   const plat  = PLATFORM_LABELS[row.platform] || row.platform;
   const pc    = PLATFORM_COLOR[row.platform]  || { bg: "bg-brand-light", text: "text-brand-dark" };
   const PIcon = PLATFORM_ICON[row.platform]   || FiFileText;
   const st    = STATUS_META[row.status]        || STATUS_META.generated;
 
-  const imgUrl  = row.image_url ? String(row.image_url).trim() : "";
+  const imgUrl   = row.image_url ? String(row.image_url).trim() : "";
   const hasImage = imgUrl && (imgUrl.startsWith("https://") || imgUrl.startsWith("http://"));
 
   return (
@@ -99,9 +100,7 @@ function PostCard({ row }) {
       {hasImage && (
         <div className="w-full bg-brand-light/30">
           <img
-            src={imgUrl}
-            alt=""
-            loading="lazy"
+            src={imgUrl} alt="" loading="lazy"
             className="max-h-64 w-full object-cover sm:max-h-72"
             onError={(e) => { e.currentTarget.parentElement.style.display = "none"; }}
           />
@@ -111,19 +110,14 @@ function PostCard({ row }) {
       <div className="space-y-3 p-4">
         {/* ── Meta row ── */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Platform badge */}
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-bold ${pc.bg} ${pc.text}`}>
             <PIcon className="h-3 w-3 shrink-0" />
             {plat}
           </span>
-
-          {/* Status badge */}
           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-2xs font-semibold ${st.className}`}>
             <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${st.dot}`} />
             {st.label}
           </span>
-
-          {/* Date */}
           <span className="ml-auto flex items-center gap-1 text-2xs text-ink-subtle">
             <FiClock className="h-3 w-3 shrink-0" />
             {formatDate(row.created_at)}
@@ -131,7 +125,7 @@ function PostCard({ row }) {
         </div>
 
         {/* Caption */}
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
+        <p className="line-clamp-4 whitespace-pre-wrap text-sm leading-relaxed text-ink">
           {row.caption || "—"}
         </p>
 
@@ -150,6 +144,20 @@ function PostCard({ row }) {
             {row.publish_error}
           </div>
         )}
+
+        {/* Bouton Gérer — masqué si déjà publié */}
+        {row.status !== "published" && (
+          <div className="pt-1">
+            <Button
+              type="button" variant="secondary" size="sm"
+              className="w-full"
+              onClick={() => onManage(row)}
+            >
+              <FiSettings className="h-3.5 w-3.5" />
+              Gérer ce post
+            </Button>
+          </div>
+        )}
       </div>
     </li>
   );
@@ -162,6 +170,15 @@ export default function GeneratedContentsHistoryModal({ open, onClose, ideaId, t
   const [err, setErr]                         = useState(null);
   const [platformFilter, setPlatformFilter]   = useState("");
   const [publicationFilter, setPublicationFilter] = useState("all");
+  const [selectedRow, setSelectedRow]         = useState(null);
+
+  function handleUpdated() {
+    // Recharger la liste après une action (modification, publication, planification)
+    if (!ideaId || !token) return;
+    apiListGeneratedContents(ideaId, token)
+      .then((data) => setItems(data?.items || []))
+      .catch(() => {});
+  }
 
   useEffect(() => {
     if (!open || !ideaId || !token) return;
@@ -190,6 +207,7 @@ export default function GeneratedContentsHistoryModal({ open, onClose, ideaId, t
   if (!open) return null;
 
   return (
+    <>
     <div
       className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       role="dialog"
@@ -297,7 +315,9 @@ export default function GeneratedContentsHistoryModal({ open, onClose, ideaId, t
 
           {!loading && !err && filteredItems.length > 0 && (
             <ul className="flex flex-col gap-4 pb-2">
-              {filteredItems.map((row) => <PostCard key={row.id} row={row} />)}
+              {filteredItems.map((row) => (
+                <PostCard key={row.id} row={row} onManage={setSelectedRow} />
+              ))}
             </ul>
           )}
 
@@ -312,5 +332,16 @@ export default function GeneratedContentsHistoryModal({ open, onClose, ideaId, t
 
       </div>
     </div>
+
+    {/* Modal de détail / gestion du post sélectionné */}
+    <HistoryPostDetailModal
+      open={!!selectedRow}
+      onClose={() => setSelectedRow(null)}
+      ideaId={ideaId}
+      token={token}
+      row={selectedRow}
+      onUpdated={handleUpdated}
+    />
+    </>
   );
 }
