@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1200" pageHeight="1400" math="0" shadow="0">
+  <root>
+    <mxCell id="0" /><mxCell id="1" parent="0" />
+
+    <!-- ══ SD FRAME ══ -->
+    <mxCell id="sd_border" value="" style="rounded=0;fillColor=none;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="10" y="10" width="1120" height="1200" as="geometry" /></mxCell>
+    <mxCell id="sd_label"  value="sd  Logo Agent" style="text;html=1;fillColor=#ffffff;strokeColor=#000000;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="10" y="10" width="200" height="26" as="geometry" /></mxCell>
+
+    <!-- ══ PARTICIPANTS ══ -->
+    <mxCell id="h_user" value="Utilisateur"          style="shape=mxgraph.flowchart.start_2;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="65"  y="46" width="36"  height="36" as="geometry" /></mxCell>
+    <mxCell id="h_fe"   value="Frontend&#xa;(React)"          style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="163" y="46" width="110" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_be"   value="Backend&#xa;(FastAPI)"         style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="303" y="46" width="110" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_ag"   value="Logo&#xa;Agent"                style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="443" y="46" width="110" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_llm"  value="LLM&#xa;(GLM-4.7)"            style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="583" y="46" width="110" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_img"  value="Modèle&#xa;Image"              style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="723" y="46" width="110" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_ser"  value="SerpAPI&#xa;Google Lens"       style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="863" y="46" width="120" height="36" as="geometry" /></mxCell>
+
+    <!-- ══ LIFELINES ══ (centers: user=83 fe=218 be=358 ag=498 llm=638 img=778 ser=923) -->
+    <mxCell id="ll_user" value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"  y="82" as="sourcePoint"/><mxPoint x="83"  y="1210" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_fe"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="218" y="82" as="sourcePoint"/><mxPoint x="218" y="1210" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_be"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="358" y="82" as="sourcePoint"/><mxPoint x="358" y="1210" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_ag"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="498" y="82" as="sourcePoint"/><mxPoint x="498" y="1210" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_llm"  value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="638" y="82" as="sourcePoint"/><mxPoint x="638" y="1210" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_img"  value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="778" y="82" as="sourcePoint"/><mxPoint x="778" y="1210" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_ser"  value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="923" y="82" as="sourcePoint"/><mxPoint x="923" y="1210" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ══ MESSAGES INITIAUX ══ -->
+    <mxCell id="m1" value="Choisir la palette et saisir des remarques"      style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"  y="120" as="sourcePoint"/><mxPoint x="218" y="120" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m2" value="Lancer la génération du logo"                   style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="218" y="142" as="sourcePoint"/><mxPoint x="358" y="142" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m3" value="Exécuter l'agent logo"                          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="358" y="164" as="sourcePoint"/><mxPoint x="498" y="164" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ═══════════════════════════════════════
+         PHASE 1 — Rédaction du prompt image
+         ═══════════════════════════════════════ -->
+    <mxCell id="sep1" value="Phase 1 — Rédaction du prompt image" style="text;html=1;strokeColor=#000000;fillColor=#dae8fc;align=center;fontSize=13;fontStyle=1;rounded=0;" vertex="1" parent="1"><mxGeometry x="30" y="186" width="1090" height="22" as="geometry" /></mxCell>
+
+    <mxCell id="note1" value="Contexte injecté :&#xa;— Nom de marque + idée clarifiée&#xa;— Palette de couleurs retenue&#xa;— Remarques utilisateur (si régénération)&#xa;— Contraintes : transparent, pas de badge/frame" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fontSize=13;strokeColor=#000000;fillColor=#dae8fc;align=left;size=14;" vertex="1" parent="1"><mxGeometry x="430" y="218" width="340" height="80" as="geometry" /></mxCell>
+
+    <mxCell id="m4" value="Rédiger le prompt image"                        style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="498" y="318" as="sourcePoint"/><mxPoint x="638" y="318" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m5" value="Retourner le prompt image"                      style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="638" y="342" as="sourcePoint"/><mxPoint x="498" y="342" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- self-call : valider prompt -->
+    <mxCell id="m6" value="Valider le prompt image" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="548" y="366"/><mxPoint x="548" y="392"/></Array>
+        <mxPoint x="498" y="366" as="sourcePoint"/><mxPoint x="498" y="392" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- ══════════════════════════════
+         PHASE 2 — Génération de l'image
+         ══════════════════════════════ -->
+    <mxCell id="sep2" value="Phase 2 — Génération de l'image" style="text;html=1;strokeColor=#000000;fillColor=#dae8fc;align=center;fontSize=13;fontStyle=1;rounded=0;" vertex="1" parent="1"><mxGeometry x="30" y="414" width="1090" height="22" as="geometry" /></mxCell>
+
+    <mxCell id="m7" value="Générer l'image du logo"                        style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="498" y="454" as="sourcePoint"/><mxPoint x="778" y="454" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m8" value="Retourner l'image générée (PNG)"                style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="778" y="478" as="sourcePoint"/><mxPoint x="498" y="478" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ══════════════════════════════
+         PHASE 3 — Suppression du fond
+         ══════════════════════════════ -->
+    <mxCell id="sep3" value="Phase 3 — Suppression du fond" style="text;html=1;strokeColor=#000000;fillColor=#dae8fc;align=center;fontSize=13;fontStyle=1;rounded=0;" vertex="1" parent="1"><mxGeometry x="30" y="500" width="1090" height="22" as="geometry" /></mxCell>
+
+    <mxCell id="note3" value="Traitement local (rembg / PIL)&#xa;Détection du sujet + suppression du fond&#xa;→ PNG avec canal alpha transparent" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fontSize=13;strokeColor=#000000;fillColor=#dae8fc;align=left;size=14;" vertex="1" parent="1"><mxGeometry x="430" y="530" width="320" height="54" as="geometry" /></mxCell>
+
+    <!-- self-call : supprimer le fond -->
+    <mxCell id="m9" value="Supprimer le fond (rembg / PIL)" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="548" y="594"/><mxPoint x="548" y="620"/></Array>
+        <mxPoint x="498" y="594" as="sourcePoint"/><mxPoint x="498" y="620" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- ══════════════════════════════════════
+         PHASE 4 — Vérification d'originalité
+         ══════════════════════════════════════ -->
+    <mxCell id="sep4" value="Phase 4 — Vérification d'originalité (SerpAPI Google Lens)" style="text;html=1;strokeColor=#000000;fillColor=#dae8fc;align=center;fontSize=13;fontStyle=1;rounded=0;" vertex="1" parent="1"><mxGeometry x="30" y="642" width="1090" height="22" as="geometry" /></mxCell>
+
+    <!-- boîte loop : max 2 tentatives -->
+    <mxCell id="loop_box"   value="" style="rounded=0;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="50" y="664" width="1060" height="424" as="geometry" /></mxCell>
+    <mxCell id="loop_label" value="loop" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="52" y="664" width="44" height="18" as="geometry" /></mxCell>
+    <mxCell id="loop_sub"   value="[max 2 tentatives]" style="text;html=1;fillColor=none;strokeColor=none;align=left;fontSize=13;" vertex="1" parent="1"><mxGeometry x="98" y="664" width="220" height="18" as="geometry" /></mxCell>
+
+    <mxCell id="m10" value="Effectuer une recherche inversée d'image"      style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="498" y="700" as="sourcePoint"/><mxPoint x="923" y="700" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m11" value="Retourner les correspondances trouvées"        style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="923" y="724" as="sourcePoint"/><mxPoint x="498" y="724" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- boîte alt : original / trop similaire -->
+    <mxCell id="alt_box"    value="" style="rounded=0;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="66" y="744" width="1030" height="326" as="geometry" /></mxCell>
+    <mxCell id="alt_tag"    value="alt" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="68" y="744" width="36" height="18" as="geometry" /></mxCell>
+    <mxCell id="alt_guard1" value="[logo original]" style="text;html=1;fillColor=none;strokeColor=none;align=left;fontSize=13;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="106" y="744" width="200" height="18" as="geometry" /></mxCell>
+
+    <!-- self-call : conserver le logo -->
+    <mxCell id="m12" value="Conserver le logo original" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="548" y="778"/><mxPoint x="548" y="804"/></Array>
+        <mxPoint x="498" y="778" as="sourcePoint"/><mxPoint x="498" y="804" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+
+    <mxCell id="alt_div"    value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="66" y="832" as="sourcePoint"/><mxPoint x="1096" y="832" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="alt_guard2" value="[trop similaire à des logos existants]" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="68" y="832" width="360" height="18" as="geometry" /></mxCell>
+
+    <mxCell id="m13" value="Régénérer le prompt avec feedback"             style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="498" y="864" as="sourcePoint"/><mxPoint x="638" y="864" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m14" value="Retourner le nouveau prompt image"             style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="638" y="888" as="sourcePoint"/><mxPoint x="498" y="888" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m15" value="Régénérer l'image du logo"                    style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="498" y="912" as="sourcePoint"/><mxPoint x="778" y="912" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m16" value="Retourner la nouvelle image"                   style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="778" y="936" as="sourcePoint"/><mxPoint x="498" y="936" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- self-call : supprimer le fond nouvelle image -->
+    <mxCell id="m17" value="Supprimer le fond de la nouvelle image" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="548" y="960"/><mxPoint x="548" y="986"/></Array>
+        <mxPoint x="498" y="960" as="sourcePoint"/><mxPoint x="498" y="986" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- ══ RÉSULTATS FINAUX ══ -->
+    <mxCell id="m18" value="Transmettre le logo final"                     style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="498" y="1110" as="sourcePoint"/><mxPoint x="358" y="1110" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m19" value="Retourner le logo transparent (PNG)"           style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="358" y="1134" as="sourcePoint"/><mxPoint x="218" y="1134" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m20" value="Afficher le logo généré"                       style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="218" y="1158" as="sourcePoint"/><mxPoint x="83"  y="1158" as="targetPoint"/></mxGeometry></mxCell>
+
+  </root>
+</mxGraphModel>

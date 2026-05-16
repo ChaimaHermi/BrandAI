@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1200" pageHeight="1100" math="0" shadow="0">
+  <root>
+    <mxCell id="0" /><mxCell id="1" parent="0" />
+
+    <!-- ══ SD FRAME ══ -->
+    <mxCell id="sd_border" value="" style="rounded=0;fillColor=none;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="10" y="10" width="1120" height="940" as="geometry" /></mxCell>
+    <mxCell id="sd_label"  value="sd  Naming Agent — Design Pattern ReAct" style="text;html=1;fillColor=#ffffff;strokeColor=#000000;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="10" y="10" width="420" height="26" as="geometry" /></mxCell>
+
+    <!-- ══ PARTICIPANTS ══ -->
+    <mxCell id="h_user" value="Utilisateur"       style="shape=mxgraph.flowchart.start_2;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="65"  y="46" width="36"  height="36" as="geometry" /></mxCell>
+    <mxCell id="h_fe"   value="Frontend&#xa;(React)"       style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="163" y="46" width="120" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_be"   value="Backend&#xa;(FastAPI)"      style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="323" y="46" width="120" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_ag"   value="Name Agent&#xa;(ReAct)"     style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="483" y="46" width="120" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_llm"  value="LLM&#xa;(GLM-4.7)"         style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="643" y="46" width="120" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_bf"   value="Brandfetch&#xa;API"         style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="803" y="46" width="120" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_db"   value="SQLite"            style="shape=mxgraph.flowchart.database;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="983" y="46" width="40"  height="36" as="geometry" /></mxCell>
+
+    <!-- ══ LIFELINES ══ -->
+    <mxCell id="ll_user" value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"   y="82" as="sourcePoint"/><mxPoint x="83"   y="950" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_fe"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223"  y="82" as="sourcePoint"/><mxPoint x="223"  y="950" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_be"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383"  y="82" as="sourcePoint"/><mxPoint x="383"  y="950" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_ag"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543"  y="82" as="sourcePoint"/><mxPoint x="543"  y="950" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_llm"  value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="703"  y="82" as="sourcePoint"/><mxPoint x="703"  y="950" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_bf"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="863"  y="82" as="sourcePoint"/><mxPoint x="863"  y="950" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_db"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1003" y="82" as="sourcePoint"/><mxPoint x="1003" y="950" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ══ MESSAGES INITIAUX ══ -->
+    <mxCell id="m1" value="Saisir ses préférences de nommage"               style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"  y="148" as="sourcePoint"/><mxPoint x="223" y="148" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m2" value="Lancer la génération des noms"                   style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="170" as="sourcePoint"/><mxPoint x="383" y="170" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m3" value="Exécuter l'agent de nommage (ReAct)"             style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="192" as="sourcePoint"/><mxPoint x="543" y="192" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ══ BOUCLE OUTER : loop ReAct ══ -->
+    <mxCell id="outer_box" value="" style="rounded=0;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="50" y="212" width="1060" height="584" as="geometry" /></mxCell>
+    <mxCell id="outer_tag" value="loop" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="52" y="212" width="44" height="18" as="geometry" /></mxCell>
+    <mxCell id="outer_sub" value="[jusqu'à 3 noms disponibles]" style="text;html=1;fillColor=none;strokeColor=none;align=left;fontSize=13;" vertex="1" parent="1"><mxGeometry x="98" y="212" width="300" height="18" as="geometry" /></mxCell>
+
+    <!-- note THINK -->
+    <mxCell id="note_think" value="[THINK]  Raisonner sur le nombre de noms disponibles&#xa;et ajuster la stratégie de génération" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fontSize=13;strokeColor=#000000;fillColor=#dae8fc;align=left;size=14;" vertex="1" parent="1"><mxGeometry x="450" y="228" width="340" height="44" as="geometry" /></mxCell>
+
+    <mxCell id="m4" value="Générer des noms de marque (exclusions SQLite)" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="292" as="sourcePoint"/><mxPoint x="703" y="292" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m5" value="Retourner les noms proposés"                     style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="703" y="316" as="sourcePoint"/><mxPoint x="543" y="316" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- boucle inner : pour chaque nom -->
+    <mxCell id="inner_box" value="" style="rounded=0;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="66" y="336" width="1030" height="202" as="geometry" /></mxCell>
+    <mxCell id="inner_tag" value="loop" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="68" y="336" width="44" height="18" as="geometry" /></mxCell>
+    <mxCell id="inner_sub" value="[pour chaque nom proposé]" style="text;html=1;fillColor=none;strokeColor=none;align=left;fontSize=13;" vertex="1" parent="1"><mxGeometry x="114" y="336" width="280" height="18" as="geometry" /></mxCell>
+
+    <mxCell id="m6" value="Vérifier la disponibilité du nom"               style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="370" as="sourcePoint"/><mxPoint x="863" y="370" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m7" value="Retourner la disponibilité du nom"              style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="863" y="394" as="sourcePoint"/><mxPoint x="543" y="394" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- alt : nom pris / nom disponible -->
+    <mxCell id="alt1_box"   value="" style="rounded=0;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="82" y="414" width="1000" height="110" as="geometry" /></mxCell>
+    <mxCell id="alt1_tag"   value="alt" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="84" y="414" width="36" height="18" as="geometry" /></mxCell>
+    <mxCell id="alt1_guard1" value="[nom déjà pris]" style="text;html=1;fillColor=none;strokeColor=none;align=left;fontSize=13;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="122" y="414" width="200" height="18" as="geometry" /></mxCell>
+
+    <mxCell id="m8" value="Mémoriser le nom pris (SQLite)"                 style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="452" as="sourcePoint"/><mxPoint x="1003" y="452" as="targetPoint"/></mxGeometry></mxCell>
+
+    <mxCell id="alt1_div"    value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="82" y="480" as="sourcePoint"/><mxPoint x="1082" y="480" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="alt1_guard2" value="[nom disponible] → Ajouter aux noms retenus" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="84" y="480" width="380" height="18" as="geometry" /></mxCell>
+
+    <!-- alt : nombre noms atteint -->
+    <mxCell id="alt2_box"   value="" style="rounded=0;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="66" y="556" width="1030" height="112" as="geometry" /></mxCell>
+    <mxCell id="alt2_tag"   value="alt" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="68" y="556" width="36" height="18" as="geometry" /></mxCell>
+    <mxCell id="alt2_guard1" value="[moins de 3 noms disponibles] → Continuer la boucle" style="text;html=1;fillColor=none;strokeColor=none;align=left;fontSize=13;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="106" y="556" width="460" height="18" as="geometry" /></mxCell>
+
+    <mxCell id="alt2_div"    value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="66" y="608" as="sourcePoint"/><mxPoint x="1096" y="608" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="alt2_guard2" value="[3 noms disponibles atteints] → Arrêter la boucle" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="68" y="608" width="420" height="18" as="geometry" /></mxCell>
+
+    <!-- ══ RÉSULTATS FINAUX ══ -->
+    <mxCell id="m9"  value="Retourner les 3 noms disponibles"               style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="816" as="sourcePoint"/><mxPoint x="383" y="816" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m10" value="Transmettre les noms disponibles"               style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="838" as="sourcePoint"/><mxPoint x="223" y="838" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m11" value="Afficher les 3 propositions de noms"            style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="860" as="sourcePoint"/><mxPoint x="83"  y="860" as="targetPoint"/></mxGeometry></mxCell>
+
+  </root>
+</mxGraphModel>

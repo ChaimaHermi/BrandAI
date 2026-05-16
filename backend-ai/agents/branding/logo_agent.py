@@ -466,8 +466,11 @@ class LogoAgent(BaseAgent):
         brand_name: str,
         palette_hint: str,
         originality_feedback: str = "",
+        emitter: Any = None,
     ) -> dict[str, Any] | None:
         """Génère un concept logo (avec nom de marque) via appel LLM direct."""
+        if emitter:
+            await emitter.emit_step("prompt", "Génération du prompt image (LLM)…", status="running")
         pair = self._draft_logo_prompt_direct(
             llm=llm,
             idea=idea,
@@ -477,11 +480,18 @@ class LogoAgent(BaseAgent):
         )
         if not pair:
             logger.warning("[logo_agent] Prompt logo : extraction échouée")
+            if emitter:
+                await emitter.emit_step("prompt", "Prompt image non généré", status="error")
             return None
 
         image_prompt, negative_prompt = pair
         _print_prompt_to_terminal(image_prompt, negative_prompt)
+        if emitter:
+            await emitter.emit_step("prompt", "Prompt image prêt", status="done",
+                                    meta={"preview": image_prompt[:120]})
 
+        if emitter:
+            await emitter.emit_step("image", "Génération de l'image logo (NVIDIA)…", status="running")
         image_bytes: bytes | None = None
         mime: str | None = None
         image_source: str | None = None
@@ -493,6 +503,16 @@ class LogoAgent(BaseAgent):
         except Exception as exc:
             image_fetch_error = str(exc)
             logger.error("[logo_agent] image fetch failed: %s", exc)
+
+        if emitter:
+            if image_bytes:
+                await emitter.emit_step("image", "Image générée", status="done")
+            else:
+                await emitter.emit_step(
+                    "image",
+                    f"Image non disponible : {(image_fetch_error or '')[:80]}",
+                    status="error",
+                )
 
         b64: str | None = None
         transparent_b64: str | None = None
@@ -516,7 +536,7 @@ class LogoAgent(BaseAgent):
         return concept
 
     @traceable(name="logo_agent.run", tags=["branding", "logo_agent"])
-    async def run(self, state: PipelineState) -> PipelineState:
+    async def run(self, state: PipelineState, emitter: Any = None) -> PipelineState:
         self._log_start(state)
 
         if not hasattr(state, "brand_identity") or state.brand_identity is None:
@@ -576,6 +596,7 @@ class LogoAgent(BaseAgent):
                 brand_name=brand_name,
                 palette_hint=palette_hint,
                 originality_feedback=regen_feedback,
+                emitter=emitter,
             )
         except Exception as e:
             self._log_error(e)
@@ -596,6 +617,8 @@ class LogoAgent(BaseAgent):
         # ── Vérification d'originalité + boucle retry ───────────────────────
         if LOGO_ORIGINALITY_CHECK_ENABLED and concept.get("image_base64"):
             logger.info("[logo_agent] Vérification originalité activée (max_retries=%d)", LOGO_ORIGINALITY_MAX_RETRIES)
+            if emitter:
+                await emitter.emit_step("originality", "Vérification d'originalité…", status="running")
             for attempt in range(LOGO_ORIGINALITY_MAX_RETRIES):
                 raw_bytes = base64.b64decode(concept["image_base64"])
                 is_original, similar_urls = await verifier_originalite_logo_bytes(
@@ -603,12 +626,20 @@ class LogoAgent(BaseAgent):
                 )
                 if is_original:
                     logger.info("[logo_agent] Logo original ✓ (tentative %d)", attempt + 1)
+                    if emitter:
+                        await emitter.emit_step("originality", "Logo original ✓", status="done")
                     break
 
                 logger.warning(
                     "[logo_agent] Logo non original (tentative %d/%d) — similaires: %s",
                     attempt + 1, LOGO_ORIGINALITY_MAX_RETRIES, similar_urls[:2],
                 )
+                if emitter:
+                    await emitter.emit_step(
+                        "originality",
+                        f"Non original, régénération ({attempt + 1}/{LOGO_ORIGINALITY_MAX_RETRIES})…",
+                        status="running",
+                    )
                 refs = "; ".join(similar_urls[:3]) if similar_urls else "images existantes en ligne"
                 feedback = (
                     "ORIGINALITY ISSUE — the previous logo is visually too similar to existing logos "
@@ -625,6 +656,7 @@ class LogoAgent(BaseAgent):
                         brand_name=brand_name,
                         palette_hint=palette_hint,
                         originality_feedback=feedback,
+                        emitter=emitter,
                     )
                     if new_concept:
                         concept = new_concept
@@ -632,10 +664,13 @@ class LogoAgent(BaseAgent):
                     logger.warning("[logo_agent] Erreur régénération originalité: %s", exc)
                     break
             else:
+                if emitter:
+                    await emitter.emit_step("originality", "Originalité non vérifiée (max retries)", status="done")
                 logger.info("[logo_agent] Max retries originalité atteint — on garde le dernier concept")
 
         # ── Forcer la version transparente comme version principale ──────────
-        # Si une version sans fond a été générée, elle devient l'image principale.
+        if emitter:
+            await emitter.emit_step("background", "Suppression du fond…", status="running")
         if concept.get("image_base64_transparent"):
             concept["image_base64"] = concept["image_base64_transparent"]
             concept["image_mime"] = concept.get("image_mime_transparent", "image/png")
@@ -657,6 +692,9 @@ class LogoAgent(BaseAgent):
             except Exception as exc:
                 logger.warning("[logo_agent] Erreur suppression fond retry: %s", exc)
 
+        if emitter:
+            await emitter.emit_step("background", "Fond supprimé", status="done")
+
         # Extraire l'erreur image éventuelle et la nettoyer du concept
         image_fetch_error = concept.pop("_image_fetch_error", None)
 
@@ -665,6 +703,8 @@ class LogoAgent(BaseAgent):
         # consultations futures (website builder, publications schedulées).
         has_image = bool(concept.get("image_base64"))
         if has_image:
+            if emitter:
+                await emitter.emit_step("upload", "Sauvegarde vers Cloudinary…", status="running")
             try:
                 from tools.content_generation.cloudinary_upload import (
                     cloudinary_configured,
@@ -678,8 +718,15 @@ class LogoAgent(BaseAgent):
                     )
                     concept["image_url"] = image_url
                     logger.info("[logo_agent] Logo uploadé Cloudinary → %s", image_url[:80])
+                    if emitter:
+                        await emitter.emit_step("upload", "Logo sauvegardé", status="done")
+                else:
+                    if emitter:
+                        await emitter.emit_step("upload", "Cloudinary non configuré", status="done")
             except Exception as exc:
                 logger.warning("[logo_agent] Upload Cloudinary échoué (non bloquant) : %s", exc)
+                if emitter:
+                    await emitter.emit_step("upload", "Upload ignoré (non bloquant)", status="done")
 
         state.brand_identity["logo_concepts"] = [concept]
         state.brand_identity.pop("logo_error", None)

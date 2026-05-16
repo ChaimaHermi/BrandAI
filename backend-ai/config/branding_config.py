@@ -37,8 +37,8 @@ LOGO_LLM_CONFIG = {
 }
 LOGO_AGENT_RECURSION_LIMIT = 10
 LOGO_AGENT_VERBOSE_REACT = True
-LOGO_IMAGE_PROVIDER = "huggingface"
-LOGO_HF_IMAGE_MODEL = "Qwen/Qwen-Image"
+LOGO_IMAGE_PROVIDER = "nvidia"
+LOGO_HF_IMAGE_MODEL = "flux.2-klein-4b"
 
 def _env_flag(name: str, default: str = "1") -> bool:
     v = (os.getenv(name) or default).strip().lower()

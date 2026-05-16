@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1100" pageHeight="1400" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ══ SD FRAME ══ -->
+    <mxCell id="sd_border" value="" style="rounded=0;fillColor=none;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="10" y="10" width="1060" height="1310" as="geometry" />
+    </mxCell>
+    <mxCell id="sd_label" value="sd  Phase 1 + Phase 2 — Chargement du contexte &amp; Concept du site + Raffinement HITL" style="text;html=1;fillColor=#ffffff;strokeColor=#000000;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="10" y="10" width="760" height="26" as="geometry" />
+    </mxCell>
+
+    <!-- ══ PARTICIPANTS ══ -->
+    <mxCell id="h_user" value="Utilisateur"             style="shape=mxgraph.flowchart.start_2;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="65"  y="46" width="36"  height="36" as="geometry" /></mxCell>
+    <mxCell id="h_fe"   value="Frontend&#xa;(React)"    style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="163" y="46" width="120" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_orch" value="Website Builder&#xa;(Orchestrateur)" style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="323" y="46" width="120" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_api"  value="Router + Service&#xa;(backend-api)"  style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="483" y="46" width="120" height="36" as="geometry" /></mxCell>
+    <mxCell id="h_db"   value="PostgreSQL"              style="shape=mxgraph.flowchart.database;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="663" y="46" width="40"  height="36" as="geometry" /></mxCell>
+    <mxCell id="h_llm"  value="GLM-4.7&#xa;(SiliconFlow)" style="rounded=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="763" y="46" width="120" height="36" as="geometry" /></mxCell>
+
+    <!-- ══ LIFELINES ══ -->
+    <mxCell id="ll_user" value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"  y="82" as="sourcePoint"/><mxPoint x="83"  y="1320" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_fe"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="82" as="sourcePoint"/><mxPoint x="223" y="1320" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_orch" value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="82" as="sourcePoint"/><mxPoint x="383" y="1320" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_api"  value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="82" as="sourcePoint"/><mxPoint x="543" y="1320" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_db"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="683" y="82" as="sourcePoint"/><mxPoint x="683" y="1320" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="ll_llm"  value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="823" y="82" as="sourcePoint"/><mxPoint x="823" y="1320" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ════════════════════════════════════════════
+         PHASE 1 — Chargement du contexte brand kit
+         ════════════════════════════════════════════ -->
+    <mxCell id="sep1" value="Phase 1 — Chargement du contexte brand kit" style="text;html=1;strokeColor=#000000;fillColor=#dae8fc;align=center;fontSize=13;fontStyle=1;rounded=0;" vertex="1" parent="1">
+      <mxGeometry x="30" y="104" width="1030" height="22" as="geometry" />
+    </mxCell>
+
+    <mxCell id="m1"  value="Ouvrir la page Website Builder"     style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"  y="148" as="sourcePoint"/><mxPoint x="223" y="148" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m2"  value="Récupérer le contexte du projet"   style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="172" as="sourcePoint"/><mxPoint x="383" y="172" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- boîte par -->
+    <mxCell id="par_box"   value="" style="rounded=0;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="370" y="190" width="690" height="206" as="geometry" /></mxCell>
+    <mxCell id="par_label" value="par" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="372" y="190" width="36" height="18" as="geometry" /></mxCell>
+    <mxCell id="par_sub"   value="Chargement en parallèle" style="text;html=1;fillColor=none;strokeColor=none;align=left;fontSize=13;" vertex="1" parent="1"><mxGeometry x="410" y="190" width="240" height="18" as="geometry" /></mxCell>
+    <mxCell id="par_div"   value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="370" y="293" as="sourcePoint"/><mxPoint x="1060" y="293" as="targetPoint"/></mxGeometry></mxCell>
+
+    <mxCell id="m3"  value="Récupérer l'idée du projet"        style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="213" as="sourcePoint"/><mxPoint x="543" y="213" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m4"  value="Interroger la base de données"     style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="233" as="sourcePoint"/><mxPoint x="683" y="233" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m5"  value="Retourner les données de l'idée"   style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="683" y="253" as="sourcePoint"/><mxPoint x="543" y="253" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m6"  value="Transmettre l'idée du projet"      style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="273" as="sourcePoint"/><mxPoint x="383" y="273" as="targetPoint"/></mxGeometry></mxCell>
+
+    <mxCell id="m7"  value="Récupérer le brand kit"            style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="313" as="sourcePoint"/><mxPoint x="543" y="313" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m8"  value="Interroger la base de données"     style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="333" as="sourcePoint"/><mxPoint x="683" y="333" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m9"  value="Retourner le brand kit"            style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="683" y="353" as="sourcePoint"/><mxPoint x="543" y="353" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m10" value="Transmettre le brand kit"          style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="373" as="sourcePoint"/><mxPoint x="383" y="373" as="targetPoint"/></mxGeometry></mxCell>
+
+    <mxCell id="m11" value="Transmettre le contexte complet"   style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="412" as="sourcePoint"/><mxPoint x="223" y="412" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m12" value="Afficher le résumé du projet"      style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="432" as="sourcePoint"/><mxPoint x="83"  y="432" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ════════════════════════════════════
+         PHASE 2A — Architecture du site
+         ════════════════════════════════════ -->
+    <mxCell id="sep2" value="Phase 2A — Architecture du site" style="text;html=1;strokeColor=#000000;fillColor=#dae8fc;align=center;fontSize=13;fontStyle=1;rounded=0;" vertex="1" parent="1">
+      <mxGeometry x="30" y="458" width="1030" height="22" as="geometry" />
+    </mxCell>
+
+    <mxCell id="m13" value="Cliquer sur Générer la description" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"  y="498" as="sourcePoint"/><mxPoint x="223" y="498" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m14" value="Lancer la génération du concept"   style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="520" as="sourcePoint"/><mxPoint x="383" y="520" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m15" value="Notifier le début de génération"   style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="542" as="sourcePoint"/><mxPoint x="223" y="542" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m16" value="Générer l'architecture du site"    style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="564" as="sourcePoint"/><mxPoint x="823" y="564" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m17" value="Retourner la structure du site"    style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="823" y="586" as="sourcePoint"/><mxPoint x="383" y="586" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ════════════════════════════════════
+         PHASE 2B — Contenu des sections
+         ════════════════════════════════════ -->
+    <mxCell id="sep3" value="Phase 2B — Contenu des sections" style="text;html=1;strokeColor=#000000;fillColor=#dae8fc;align=center;fontSize=13;fontStyle=1;rounded=0;" vertex="1" parent="1">
+      <mxGeometry x="30" y="610" width="1030" height="22" as="geometry" />
+    </mxCell>
+
+    <mxCell id="m18" value="Générer le contenu des sections"   style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="652" as="sourcePoint"/><mxPoint x="823" y="652" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m19" value="Retourner le contenu des sections" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="823" y="674" as="sourcePoint"/><mxPoint x="383" y="674" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m20" value="Sauvegarder le concept"            style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="696" as="sourcePoint"/><mxPoint x="543" y="696" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m21" value="Mettre à jour la base de données"  style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="718" as="sourcePoint"/><mxPoint x="683" y="718" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m22" value="Confirmer la mise à jour"          style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="683" y="740" as="sourcePoint"/><mxPoint x="543" y="740" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m23" value="Confirmer la sauvegarde"           style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="762" as="sourcePoint"/><mxPoint x="383" y="762" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m24" value="Notifier la fin du concept"        style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="784" as="sourcePoint"/><mxPoint x="223" y="784" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m25" value="Afficher le concept du site"       style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="806" as="sourcePoint"/><mxPoint x="83"  y="806" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- ════════════════════════════════════════════════════
+         PHASE 2.5 — Raffinement par chat (optionnel, HITL)
+         ════════════════════════════════════════════════════ -->
+    <mxCell id="sep4" value="Phase 2.5 — Raffinement par chat (optionnel, HITL)" style="text;html=1;strokeColor=#000000;fillColor=#dae8fc;align=center;fontSize=13;fontStyle=1;rounded=0;" vertex="1" parent="1">
+      <mxGeometry x="30" y="830" width="1030" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- boîte opt -->
+    <mxCell id="opt_box"   value="" style="rounded=0;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="30" y="852" width="1030" height="440" as="geometry" /></mxCell>
+    <mxCell id="opt_label" value="opt" style="text;html=1;fillColor=#ffffff;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="32" y="852" width="36" height="18" as="geometry" /></mxCell>
+    <mxCell id="opt_sub"   value="L'utilisateur souhaite modifier le concept" style="text;html=1;fillColor=none;strokeColor=none;align=left;fontSize=13;" vertex="1" parent="1"><mxGeometry x="70" y="852" width="360" height="18" as="geometry" /></mxCell>
+
+    <mxCell id="m26" value="Envoyer une instruction de modification" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"  y="892" as="sourcePoint"/><mxPoint x="223" y="892" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m27" value="Lancer le raffinement du concept"       style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="914" as="sourcePoint"/><mxPoint x="383" y="914" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m28" value="Mettre à jour le concept"               style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="936" as="sourcePoint"/><mxPoint x="823" y="936" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m29" value="Retourner le concept mis à jour"        style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="823" y="958" as="sourcePoint"/><mxPoint x="383" y="958" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m30" value="Sauvegarder le concept mis à jour"      style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="980" as="sourcePoint"/><mxPoint x="543" y="980" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m31" value="Mettre à jour la base de données"       style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="1002" as="sourcePoint"/><mxPoint x="683" y="1002" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m32" value="Confirmer la mise à jour"               style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="683" y="1022" as="sourcePoint"/><mxPoint x="383" y="1022" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m33" value="Notifier le concept mis à jour"         style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="1044" as="sourcePoint"/><mxPoint x="223" y="1044" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m34" value="Afficher le concept révisé"             style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="1066" as="sourcePoint"/><mxPoint x="83"  y="1066" as="targetPoint"/></mxGeometry></mxCell>
+
+    <!-- note répétition -->
+    <mxCell id="note1"      value="Peut être répété&#xa;autant de fois que souhaité" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fontSize=13;strokeColor=#000000;fillColor=#ffffc0;align=left;size=14;" vertex="1" parent="1"><mxGeometry x="860" y="1054" width="186" height="44" as="geometry" /></mxCell>
+    <mxCell id="note1_line" value="" style="endArrow=none;dashed=1;strokeColor=#000000;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83" y="1066" as="sourcePoint"/><mxPoint x="860" y="1076" as="targetPoint"/></mxGeometry></mxCell>
+
+    <mxCell id="m35" value="Cliquer sur J'approuve"                 style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="83"  y="1126" as="sourcePoint"/><mxPoint x="223" y="1126" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m36" value="Approuver le concept"                   style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="223" y="1148" as="sourcePoint"/><mxPoint x="383" y="1148" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m37" value="Marquer le concept comme approuvé"      style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="1170" as="sourcePoint"/><mxPoint x="543" y="1170" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m38" value="Mettre à jour le statut approuvé"       style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="543" y="1192" as="sourcePoint"/><mxPoint x="683" y="1192" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m39" value="Confirmer l'approbation"                style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="683" y="1214" as="sourcePoint"/><mxPoint x="383" y="1214" as="targetPoint"/></mxGeometry></mxCell>
+    <mxCell id="m40" value="Notifier l'approbation"                 style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=13;align=center;verticalAlign=bottom;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="383" y="1236" as="sourcePoint"/><mxPoint x="223" y="1236" as="targetPoint"/></mxGeometry></mxCell>
+
+  </root>
+</mxGraphModel>

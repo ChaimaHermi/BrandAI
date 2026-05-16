@@ -364,6 +364,116 @@ class BrandingService:
         return out
 
     @classmethod
+    async def generate_logo_stream(
+        cls,
+        *,
+        idea_id: int,
+        brand_name: str | None,
+        slogan_hint: str | None,
+        palette_color_hint: str | None,
+        previous_image_prompt: str | None = None,
+        user_remarks: str | None = None,
+        access_token: str,
+        persist: bool,
+        persist_image_base64: bool = False,
+        emitter: Any,
+    ) -> None:
+        """Même pipeline que generate_logo mais émet des événements SSE via emitter."""
+        from tools.website_builder.infra.step_streamer import event_result, event_error
+        try:
+            await emitter.emit_step("context", "Chargement du contexte…", status="running")
+            resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
+            resolved_slogan = await cls.resolve_slogan_hint(idea_id, access_token, slogan_hint)
+            palette_hint = await cls.resolve_palette_hint_for_logo(
+                idea_id, access_token, palette_color_hint
+            )
+            row = await cls.fetch_idea_row(idea_id, access_token.strip())
+            clarified = cls.idea_api_to_clarified(row)
+            await emitter.emit_step("context", f"Contexte chargé — marque : {resolved_name}", status="done")
+
+            st = cls._base_state(idea_id, row, clarified)
+            st.clarified_idea = clarified
+            st.brand_name_chosen = resolved_name
+            st.palette_slogan_hint = resolved_slogan
+            st.logo_palette_hint = palette_hint
+            st.logo_previous_prompt = (previous_image_prompt or "").strip()
+            st.logo_user_remarks = (user_remarks or "").strip()
+
+            agent = LogoAgent()
+            st = await agent.run(st, emitter=emitter)
+            bi = st.brand_identity or {}
+            concepts = bi.get("logo_concepts") or []
+
+            out: dict[str, Any] = {
+                "idea_id": idea_id,
+                "status": st.status,
+                "logo_concepts": concepts if isinstance(concepts, list) else [],
+                "branding_status": bi.get("branding_status"),
+                "logo_error": bi.get("logo_error"),
+                "logo_image_error": bi.get("logo_image_error"),
+                "errors": list(st.errors or []),
+                "persisted": False,
+                "resolved_brand_name": resolved_name,
+                "resolved_slogan_hint": resolved_slogan,
+                "resolved_palette_hint": palette_hint,
+            }
+
+            if persist and st.status == "logo_generated" and access_token:
+                await emitter.emit_step("persist", "Sauvegarde des résultats…", status="running")
+                try:
+                    prev = await fetch_branding_merged_generated(idea_id, access_token)
+                    merged: dict[str, Any] = dict(prev) if prev else {}
+                    _base64_keys = {"image_base64", "image_base64_transparent"}
+                    to_save: list = []
+                    for c in concepts or []:
+                        if isinstance(c, dict):
+                            if persist_image_base64:
+                                to_save.append(dict(c))
+                            else:
+                                to_save.append({k: v for k, v in c.items() if k not in _base64_keys})
+                        else:
+                            to_save.append(c)
+                    merged["logo_concepts"] = to_save
+                    new_image_url = (
+                        to_save[0].get("image_url", "") if to_save and isinstance(to_save[0], dict) else ""
+                    )
+                    if new_image_url:
+                        merged["cloudinary_url"] = new_image_url
+                    else:
+                        merged.pop("cloudinary_url", None)
+                    merged["chosen_brand_name"] = merged.get("chosen_brand_name") or resolved_name
+                    ae = dict(merged.get("agent_errors") or {})
+                    if bi.get("agent_errors"):
+                        ae.update(bi["agent_errors"])
+                    merged["agent_errors"] = ae
+                    if merged.get("name_options") or merged.get("slogan_options") or merged.get("palette_options"):
+                        merged["branding_status"] = "partial"
+                    else:
+                        merged["branding_status"] = "logo_generated"
+                    started_at = datetime.now(timezone.utc)
+                    completed_at = datetime.now(timezone.utc)
+                    await persist_brand_identity_row(
+                        idea_id=idea_id,
+                        brand_identity=merged,
+                        started_at=started_at,
+                        completed_at=completed_at,
+                        access_token=access_token,
+                    )
+                    out["persisted"] = True
+                    await emitter.emit_step("persist", "Résultats sauvegardés", status="done")
+                except Exception as e:
+                    logger.exception("Échec persistance brand_identity après logo (stream)")
+                    out["errors"] = list(out["errors"]) + [f"persist: {e}"]
+                    await emitter.emit_step("persist", "Sauvegarde échouée (non bloquant)", status="error")
+
+            await emitter.emit(event_result(out))
+        except Exception as exc:
+            logger.exception("[branding_service] generate_logo_stream — erreur non gérée")
+            await emitter.emit(event_error(str(exc)))
+        finally:
+            await emitter.close()
+
+    @classmethod
     async def generate_logo(
         cls,
         *,

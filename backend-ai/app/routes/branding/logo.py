@@ -1,19 +1,26 @@
-"""
-Génération logo : LLM (prompt image) puis image via Hugging Face Inference (Replicate, ex. Qwen Image).
-"""
-
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Optional
 
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.services.branding_service import BrandingService
+from tools.website_builder.infra.step_streamer import StepEmitter, sse_response_stream
 
 logger = logging.getLogger("brandai.logo_route")
 router = APIRouter(tags=["Logo"])
+
+_BACKGROUND_TASKS: set[asyncio.Task[Any]] = set()
+
+def _spawn(coro: Any) -> asyncio.Task[Any]:
+    task = asyncio.create_task(coro)
+    _BACKGROUND_TASKS.add(task)
+    task.add_done_callback(_BACKGROUND_TASKS.discard)
+    return task
 
 
 class LogoGenerateRequest(BaseModel):
@@ -58,6 +65,35 @@ class LogoGenerateResponse(BaseModel):
     resolved_brand_name: str | None = None
     resolved_slogan_hint: str = ""
     resolved_palette_hint: str = ""
+
+
+@router.post("/logo/generate/stream")
+async def logo_generate_stream(body: LogoGenerateRequest) -> StreamingResponse:
+    """Génération logo avec streaming SSE — émet les étapes en temps réel."""
+    emitter = StepEmitter()
+    _spawn(
+        BrandingService.generate_logo_stream(
+            idea_id=body.idea_id,
+            brand_name=body.brand_name,
+            slogan_hint=body.slogan_hint,
+            palette_color_hint=body.palette_color_hint,
+            previous_image_prompt=body.previous_image_prompt,
+            user_remarks=body.user_remarks,
+            access_token=body.access_token,
+            persist=body.persist,
+            persist_image_base64=body.persist_image_base64,
+            emitter=emitter,
+        )
+    )
+    return StreamingResponse(
+        sse_response_stream(emitter),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/logo/generate", response_model=LogoGenerateResponse)

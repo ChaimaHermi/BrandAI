@@ -52,7 +52,10 @@ def _hf_fatal_model_error(err: Exception) -> bool:
 def _nvidia_image_keys() -> list[str]:
     keys: list[str] = []
     seen: set[str] = set()
-    for raw in (os.getenv("NVIDIA_IMAGE_API") or os.getenv("NVIDEA_IMAGE_API"),):
+    for raw in (
+        os.getenv("NVIDIA_IMAGE_API"),
+        os.getenv("NVIDEA_IMAGE_API"),
+    ):
         v = (raw or "").strip()
         if v and v not in seen:
             seen.add(v)
@@ -208,7 +211,7 @@ async def fetch_logo_image_nvidia(
 
     keys = _nvidia_image_keys()
     if not keys:
-        raise RuntimeError("Aucune clé NVIDIA — définissez NVIDEA_IMAGE_API dans .env")
+        raise RuntimeError("Aucune clé NVIDIA — définissez qwen-image-nvidea dans .env")
 
     timeout = float(os.getenv("LOGO_NVIDIA_IMAGE_TIMEOUT_S", "90"))
     size = (os.getenv("LOGO_NVIDIA_IMAGE_SIZE") or "1024x1024").strip()
@@ -228,7 +231,6 @@ async def fetch_logo_image_nvidia(
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             }
-            # flux.2-klein-4b : negative_prompt non supporté
             body: dict[str, Any] = {
                 "prompt": img_p,
                 "seed": 0,
@@ -261,6 +263,41 @@ async def fetch_logo_image_nvidia(
                     raise RuntimeError(
                         f"NVIDIA : reponse non-JSON ({ctype}, {len(r.content)} octets) : {je}"
                     )
+
+                # Chemin rapide : format NVIDIA flux {"artifacts": [{"base64": "..."}]}
+                if isinstance(payload, dict) and "artifacts" in payload:
+                    artifacts_list = payload["artifacts"] or []
+                    _log.info(
+                        "[logo_image_client] NVIDIA artifacts: count=%d items_types=%s",
+                        len(artifacts_list),
+                        [type(a).__name__ for a in artifacts_list[:3]],
+                    )
+                    for idx, artifact in enumerate(artifacts_list):
+                        if not isinstance(artifact, dict):
+                            _log.warning("[logo_image_client] artifact[%d] n'est pas un dict: %s", idx, type(artifact).__name__)
+                            continue
+                        _log.info("[logo_image_client] artifact[%d] keys=%s", idx, list(artifact.keys()))
+                        b64_val = (
+                            artifact.get("base64")
+                            or artifact.get("b64_json")
+                            or artifact.get("image")
+                            or ""
+                        )
+                        if b64_val:
+                            _log.info(
+                                "[logo_image_client] artifact[%d] b64_val len=%d prefix=%r",
+                                idx, len(str(b64_val)), str(b64_val)[:40],
+                            )
+                            raw = _decode_b64_payload(str(b64_val))
+                            _log.info("[logo_image_client] artifact[%d] decoded=%d octets", idx, len(raw))
+                            if raw and len(raw) > 256:
+                                _log.info(
+                                    "[logo_image_client] NVIDIA — image via artifacts (%d octets)",
+                                    len(raw),
+                                )
+                                return raw, "image/png"
+                        else:
+                            _log.warning("[logo_image_client] artifact[%d] aucune cle image trouvee (keys=%s)", idx, list(artifact.keys()))
 
                 # Decodeur generique : explore toutes les chaines base64/URL du payload.
                 for kind, value in _walk_image_strings(payload):
@@ -313,36 +350,13 @@ async def fetch_logo_image_hf_with_pollinations_fallback(
     model: str | None = None,
     pollinations_fallback: bool = False,
 ) -> tuple[bytes, str, str]:
-    """Chaîne : Hugging Face → NVIDIA. Pollinations désactivé."""
-    from config.settings import HF_KEYS
-
-    hf_err: Exception | None = None
-
-    _log.info("[logo_image_client] ── Chaîne image : HF → NVIDIA ──")
-
-    # 1) Hugging Face
-    if HF_KEYS:
-        _log.info("[logo_image_client] [1/2] Tentative Hugging Face (model=%s)…", model or "Qwen/Qwen-Image")
-        try:
-            data, mime = await fetch_logo_image_huggingface(image_prompt, negative_prompt, model=model)
-            _log.info("[logo_image_client] ✓ [1/2] Hugging Face → %s %d octets", mime, len(data))
-            return data, mime, "huggingface"
-        except Exception as e:
-            hf_err = e
-            _log.warning("[logo_image_client] ✗ [1/2] Hugging Face échoué : %s → NVIDIA…", str(e)[:280])
-    else:
-        _log.warning("[logo_image_client] ✗ [1/2] Hugging Face ignoré : aucune clé HF_TOKEN dans .env")
-
-    # 2) NVIDIA — toujours son propre modèle (flux.2-klein-4b), pas le modèle HF
-    _log.info("[logo_image_client] [2/2] Tentative NVIDIA NIM (model=%s)…", _nvidia_image_model())
+    """Chaîne : NVIDIA Qwen uniquement (HuggingFace supprimé)."""
+    _log.info("[logo_image_client] ── Chaîne image : NVIDIA (Qwen) ──")
+    _log.info("[logo_image_client] Tentative NVIDIA (model=%s)…", _nvidia_image_model())
     try:
         data, mime = await fetch_logo_image_nvidia(image_prompt)
-        _log.info("[logo_image_client] ✓ [2/2] NVIDIA → %s %d octets", mime, len(data))
+        _log.info("[logo_image_client] ✓ NVIDIA → %s %d octets", mime, len(data))
         return data, mime, "nvidia"
     except Exception as e:
-        details = []
-        if hf_err:
-            details.append(f"HF: {hf_err}")
-        details.append(f"NVIDIA: {e}")
-        _log.error("[logo_image_client] ✗ Tous les providers ont échoué : %s", " ; ".join(details))
-        raise RuntimeError(" ; ".join(details)) from e
+        _log.error("[logo_image_client] ✗ NVIDIA échoué : %s", str(e)[:280])
+        raise RuntimeError(f"NVIDIA: {e}") from e

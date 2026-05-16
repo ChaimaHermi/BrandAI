@@ -2,6 +2,26 @@ import { useMemo, useState } from "react";
 import SectionHeader from "../SectionHeader";
 import RegenerateDialog from "../RegenerateDialog";
 
+const STEP_LABELS = {
+  context:     "Chargement du contexte",
+  prompt:      "Génération du prompt image",
+  image:       "Génération de l'image",
+  background:  "Suppression du fond",
+  originality: "Vérification d'originalité",
+  upload:      "Sauvegarde Cloudinary",
+  persist:     "Sauvegarde des résultats",
+};
+
+function StepIcon({ status }) {
+  if (status === "running")
+    return <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-brand border-t-transparent" />;
+  if (status === "done")
+    return <span className="text-emerald-500 text-sm font-bold">✓</span>;
+  if (status === "error")
+    return <span className="text-red-400 text-sm font-bold">✗</span>;
+  return <span className="inline-block h-3 w-3 rounded-full bg-ink-subtle/30" />;
+}
+
 export default function LogoStep({
   canGenerate,
   isGeneratingLogo,
@@ -11,6 +31,7 @@ export default function LogoStep({
   logoPreviewTransparentUrl = null,
   logoConcept = null,
   hasLogoResult = false,
+  logoSteps = [],
 }) {
   const [variant, setVariant] = useState("with_bg");
   const [regenOpen, setRegenOpen] = useState(false);
@@ -62,6 +83,30 @@ export default function LogoStep({
         >
           {primaryLabel}
         </button>
+
+        {/* Étapes SSE en temps réel */}
+        {logoSteps.length > 0 && (
+          <div className="w-full max-w-sm rounded-xl border border-brand-border bg-white/70 px-4 py-3 shadow-sm">
+            <ul className="space-y-2">
+              {logoSteps.map((step) => (
+                <li key={step.id} className="flex items-center gap-2.5">
+                  <StepIcon status={step.status} />
+                  <span
+                    className={`text-[13px] ${
+                      step.status === "running"
+                        ? "font-semibold text-ink"
+                        : step.status === "error"
+                        ? "text-red-500"
+                        : "text-ink-muted"
+                    }`}
+                  >
+                    {STEP_LABELS[step.id] ?? step.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {logoGenMessage ? (
           <p

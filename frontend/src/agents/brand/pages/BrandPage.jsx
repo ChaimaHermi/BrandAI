@@ -9,7 +9,7 @@ import {
   fetchBrandingBundle,
   hasSavedBrandIdentityPreview,
   generateBrandNames,
-  generateLogo,
+  generateLogoStream,
   generatePalettes,
   generateSlogans,
   patchBrandKit,
@@ -117,6 +117,7 @@ export default function BrandPage() {
   const [generatedLogoConcepts, setGeneratedLogoConcepts] = useState([]);
   const [isGeneratingLogo, setIsGeneratingLogo] = useState(false);
   const [logoGenMessage, setLogoGenMessage] = useState("");
+  const [logoSteps, setLogoSteps] = useState([]);
 
   /** Évite de réappliquer l’atterrissage (aperçu / assistant) à chaque refetch. */
   const appliedLandingForIdeaRef = useRef(null);
@@ -493,8 +494,8 @@ export default function BrandPage() {
     }
     setIsGeneratingLogo(true);
     setLogoGenMessage("");
+    setLogoSteps([]);
     try {
-      // Extraire les couleurs de la palette sélectionnée
       const selectedPalette = selectedPaletteId
         ? paletteListDisplayed.find(
             (p) =>
@@ -510,24 +511,43 @@ export default function BrandPage() {
             .slice(0, 6)
             .join("/")
         : null;
-
-      // Prompt du logo précédent — transmis au LLM pour éviter de régénérer la même chose
       const previousPrompt = generatedLogoConcepts?.[0]?.image_prompt || null;
 
-      const result = await generateLogo(idea.id, token, {
-        brand_name: displayBrandName,
-        slogan_hint: selectedSlogan || null,
-        palette_color_hint: paletteColors,
-        previous_image_prompt: previousPrompt,
-        user_remarks: remarks || null,
-        persist: true,
-        persist_image_base64: false,
-      });
-      if (result.status !== "logo_generated") {
+      let result = null;
+      await generateLogoStream(
+        idea.id,
+        token,
+        {
+          brand_name: displayBrandName,
+          slogan_hint: selectedSlogan || null,
+          palette_color_hint: paletteColors,
+          previous_image_prompt: previousPrompt,
+          user_remarks: remarks || null,
+          persist: true,
+          persist_image_base64: false,
+        },
+        {
+          onStep: (evt) => {
+            setLogoSteps((prev) => {
+              const idx = prev.findIndex((s) => s.id === evt.id);
+              if (idx >= 0) {
+                const next = [...prev];
+                next[idx] = evt;
+                return next;
+              }
+              return [...prev, evt];
+            });
+          },
+          onResult: (payload) => { result = payload; },
+          onError: (err) => { throw err; },
+        },
+      );
+
+      if (!result || result.status !== "logo_generated") {
         const err =
-          result.logo_error ||
-          result.logo_image_error ||
-          (Array.isArray(result.errors) && result.errors.length
+          result?.logo_error ||
+          result?.logo_image_error ||
+          (Array.isArray(result?.errors) && result.errors.length
             ? result.errors.join(" ")
             : null) ||
           "La génération du logo n’a pas abouti.";
@@ -543,26 +563,13 @@ export default function BrandPage() {
       if (result.logo_image_error || !hasImage) {
         const reason =
           result.logo_image_error ||
-          "Aucune image reçue (HF, NVIDIA et Pollinations ont tous échoué).";
+          "Aucune image reçue.";
         const warnMsg = `Prompt logo créé, mais l’image n’a pas pu être générée : ${reason}`;
         setLogoGenMessage(warnMsg);
         toast.warning(warnMsg);
       } else {
-        const sourceHint = (() => {
-          if (c0?.image_provider === "nvidia")
-            return " (NVIDIA flux.2-klein-4b)";
-          if (c0?.image_provider === "pollinations")
-            return " (Pollinations.AI)";
-          if (c0?.image_provider === "huggingface") {
-            const im = String(c0?.image_model || "").toLowerCase();
-            if (im.includes("qwen")) return " (Qwen via Hugging Face)";
-            return " (Hugging Face)";
-          }
-          return "";
-        })();
-        setLogoGenMessage(
-          `Logo généré${sourceHint}. Vous pouvez passer à l’aperçu final.`,
-        );
+        const sourceHint = c0?.image_provider === "nvidia" ? " (NVIDIA flux)" : "";
+        setLogoGenMessage(`Logo généré${sourceHint}. Vous pouvez passer à l’aperçu final.`);
         toast.success(`Logo généré${sourceHint} !`);
       }
       await refetchBrandRecord();
@@ -786,6 +793,7 @@ export default function BrandPage() {
             logoPreviewTransparentUrl={logoPreviewTransparentUrl}
             logoConcept={logoConceptsDisplayed[0] ?? null}
             hasLogoResult={Boolean(logoConceptsDisplayed[0]?.image_prompt)}
+            logoSteps={logoSteps}
           />
         )}
 

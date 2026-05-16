@@ -266,6 +266,80 @@ export async function generatePalettes(ideaId, token, { brand_name }) {
 }
 
 /**
+ * Génération logo avec streaming SSE — émet les étapes en temps réel.
+ * @param {number} ideaId
+ * @param {string} token
+ * @param {object} params
+ * @param {{ onStep, onResult, onError, onDone }} callbacks
+ */
+export async function generateLogoStream(
+  ideaId,
+  token,
+  {
+    brand_name = null,
+    slogan_hint = null,
+    palette_color_hint = null,
+    previous_image_prompt = null,
+    user_remarks = null,
+    persist = true,
+    persist_image_base64 = false,
+  } = {},
+  { onStep, onResult, onError, onDone } = {},
+) {
+  if (!ideaId || !token) throw new Error("ideaId et token requis");
+
+  const res = await fetch(`${AI_URL}/logo/generate/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify({
+      idea_id: ideaId,
+      brand_name,
+      slogan_hint,
+      palette_color_hint,
+      previous_image_prompt: previous_image_prompt || null,
+      user_remarks: user_remarks || null,
+      access_token: token,
+      persist,
+      persist_image_base64,
+    }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.detail || `Erreur HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let sepIdx;
+      while ((sepIdx = buffer.indexOf("\n\n")) >= 0) {
+        const raw = buffer.slice(0, sepIdx);
+        buffer = buffer.slice(sepIdx + 2);
+        const dataLine = raw.split(/\r?\n/).find((l) => l.startsWith("data:"));
+        if (!dataLine) continue;
+        try {
+          const evt = JSON.parse(dataLine.slice(5).trimStart());
+          if (evt.type === "step") onStep?.(evt);
+          else if (evt.type === "result") onResult?.(evt.payload);
+          else if (evt.type === "error") onError?.(new Error(evt.message || "Erreur SSE"));
+          else if (evt.type === "done") { onDone?.(); return; }
+        } catch { /* ignore lignes non-JSON */ }
+      }
+    }
+  } finally {
+    try { reader.releaseLock(); } catch { /* ignore */ }
+  }
+  onDone?.();
+}
+
+/**
  * Génération logo (backend-ai) : contexte idée + nom / slogan / palette → prompt LLM + image HF (Qwen).
  * Timeout client : VITE_LOGO_GENERATE_TIMEOUT_MS (défaut 11 min).
  */
