@@ -1,6 +1,10 @@
 /**
- * OAuth + publication Meta / LinkedIn — backend-ai (port 8001).
+ * OAuth Meta / LinkedIn  → backend-api (port 8000)
+ * Publication Facebook / Instagram / LinkedIn → backend-ai (port 8001)
  */
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 const AI_URL =
   import.meta.env.VITE_AI_URL || "http://localhost:8001/api/ai";
@@ -15,8 +19,10 @@ const AI_ORIGIN = (() => {
 
 export { AI_ORIGIN };
 
+// ── OAuth (connexion comptes) — backend-api ────────────────────
+
 export async function fetchMetaOAuthUrl() {
-  const res = await fetch(`${AI_URL}/social/meta/oauth-url`);
+  const res = await fetch(`${API_URL}/social/meta/oauth-url`);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(typeof data?.detail === "string" ? data.detail : "OAuth Meta indisponible");
@@ -25,7 +31,7 @@ export async function fetchMetaOAuthUrl() {
 }
 
 export async function fetchLinkedInOAuthUrl() {
-  const res = await fetch(`${AI_URL}/social/linkedin/oauth-url`);
+  const res = await fetch(`${API_URL}/social/linkedin/oauth-url`);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(typeof data?.detail === "string" ? data.detail : "OAuth LinkedIn indisponible");
@@ -33,8 +39,9 @@ export async function fetchLinkedInOAuthUrl() {
   return data;
 }
 
+// ── Publication — backend-ai ───────────────────────────────────
+
 /**
- * @param {object} body
  * @param {{ message: string, page_id?: string, page_access_token?: string, link?: string }} body
  */
 export async function postPublishFacebook(body) {

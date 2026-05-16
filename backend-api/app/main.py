@@ -51,6 +51,7 @@ from app.api.routes import (
     marketing_plans,
     branding_results,
     social_connections,
+    social_oauth,
     idea_scheduled_publications,
     notifications,
     website_projects,
@@ -95,13 +96,14 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     import asyncio
+    import os
     import threading
     from app.workers.scheduled_publisher import run_publisher_loop
+    from app.workers.linkedin_proxy import start_linkedin_proxy
 
     Base.metadata.create_all(bind=engine)
 
-    # Run publisher loop in a dedicated thread/event-loop to avoid
-    # blocking the FastAPI main event loop and HTTP responses.
+    # Publisher loop — publie les posts programmés toutes les 30s
     def _publisher_thread_target():
         asyncio.run(run_publisher_loop())
 
@@ -110,7 +112,13 @@ async def startup():
         name="scheduled-publisher",
         daemon=True,
     ).start()
-    print("✅ BrandAI API démarrée (+ publisher worker thread)")
+
+    # Proxy LinkedIn OAuth — redirige le callback local vers /api/social/linkedin/callback
+    from app.core.config import settings as _s
+    linkedin_redirect_uri = _s.LINKEDIN_REDIRECT_URI
+    start_linkedin_proxy(linkedin_redirect_uri)
+
+    print("✅ BrandAI API démarrée (+ publisher worker + LinkedIn OAuth proxy)")
 # ── Enregistrement des routers ────────────────────────────────
 # prefix="/api" → toutes les routes commencent par /api/...
 # Résultat :
@@ -124,6 +132,7 @@ app.include_router(market_analysis.router, prefix="/api")
 app.include_router(marketing_plans.router, prefix="/api")
 app.include_router(branding_results.router, prefix="/api")
 app.include_router(social_connections.router, prefix="/api")
+app.include_router(social_oauth.router, prefix="/api")
 app.include_router(optimizer.router, prefix="/api")
 app.include_router(idea_scheduled_publications.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
