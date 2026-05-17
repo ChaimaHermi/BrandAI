@@ -96,10 +96,8 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     import asyncio
-    import os
     import threading
     from app.workers.scheduled_publisher import run_publisher_loop
-    from app.workers.linkedin_proxy import start_linkedin_proxy
 
     Base.metadata.create_all(bind=engine)
 
@@ -113,12 +111,7 @@ async def startup():
         daemon=True,
     ).start()
 
-    # Proxy LinkedIn OAuth — redirige le callback local vers /api/social/linkedin/callback
-    from app.core.config import settings as _s
-    linkedin_redirect_uri = _s.LINKEDIN_REDIRECT_URI
-    start_linkedin_proxy(linkedin_redirect_uri)
-
-    print("✅ BrandAI API démarrée (+ publisher worker + LinkedIn OAuth proxy)")
+    print("✅ BrandAI API démarrée (+ publisher worker)")
 # ── Enregistrement des routers ────────────────────────────────
 # prefix="/api" → toutes les routes commencent par /api/...
 # Résultat :

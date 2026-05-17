@@ -246,20 +246,30 @@ function PlanningCard({ item, index, onPatch, onTogglePlatform, onRemove }) {
                       }}
                     />
                   </div>
-                  <select
-                    className="rounded-lg border border-brand-border bg-white px-2 py-1 text-xs"
-                    value={v.image_mode || "required"}
-                    onChange={(e) =>
-                      onPatch({
-                        variants: (item.variants || []).map((x) =>
-                          x.variant_id === v.variant_id ? { ...x, image_mode: e.target.value } : x
-                        ),
-                      })
-                    }
-                  >
-                    <option value="required">Avec image</option>
-                    <option value="none">Sans image</option>
-                  </select>
+                  {v.platform === "instagram" ? (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-lg border border-brand-border bg-brand-light/10 px-2 py-1 text-xs font-medium text-ink"
+                      title="Instagram nécessite toujours une image"
+                    >
+                      <FiImage className="h-3 w-3" />
+                      Avec image
+                    </span>
+                  ) : (
+                    <select
+                      className="rounded-lg border border-brand-border bg-white px-2 py-1 text-xs"
+                      value={v.image_mode || "required"}
+                      onChange={(e) =>
+                        onPatch({
+                          variants: (item.variants || []).map((x) =>
+                            x.variant_id === v.variant_id ? { ...x, image_mode: e.target.value } : x
+                          ),
+                        })
+                      }
+                    >
+                      <option value="required">Avec image</option>
+                      <option value="none">Sans image</option>
+                    </select>
+                  )}
                 </div>
               );
             })}
@@ -423,6 +433,8 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
       now.setDate(now.getDate() + 1 + itemIndex);
       const def = platform === "linkedin" ? 9 : platform === "facebook" ? 13 : 18;
       now.setHours(def, platform === "linkedin" ? 30 : platform === "instagram" ? 30 : 0, 0, 0);
+      // Instagram nécessite toujours une image, peu importe le toggle global.
+      const wantImage = platform === "instagram" ? true : includeImages;
       return {
         variant_id: `wp-${itemIndex + 1}-${platform}-${Date.now()}`,
         platform,
@@ -430,8 +442,8 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
         scheduled_at_utc: refVariant?.scheduled_at_utc || now.toISOString(),
         timing_source: refVariant?.timing_source || "ai_suggested",
         status: "added_by_user",
-        image_mode: includeImages ? "required" : "none",
-        image_status: includeImages ? "pending" : "skipped",
+        image_mode: wantImage ? "required" : "none",
+        image_status: wantImage ? "pending" : "skipped",
         image_url: null,
         image_error: null,
         content_generated: false,

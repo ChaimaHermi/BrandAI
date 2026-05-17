@@ -47,12 +47,6 @@ WEEKDAY_FR = {
     6: "dimanche",
 }
 
-PLATFORM_HOURS = {
-    "linkedin": (9, 30),
-    "facebook": (13, 0),
-    "instagram": (18, 30),
-}
-
 FR_MONTHS = {
     "janvier": 1,
     "fevrier": 2,
@@ -151,51 +145,10 @@ def _parse_json_object(raw: str) -> dict[str, Any]:
     raise RuntimeError("Réponse JSON invalide du modèle.")
 
 
-def _extract_post_count_fallback(prompt: str) -> int:
-    text = (prompt or "").lower()
-    m = re.search(r"\b([1-7])\s*post", text)
-    if m:
-        return int(m.group(1))
-    if "une seule" in text or "un seul" in text:
-        return 1
-    if "deux" in text:
-        return 2
-    if "trois" in text:
-        return 3
-    return 3
-
-
 def _next_monday(now: datetime) -> datetime:
     day_idx = now.weekday()
     delta = (7 - day_idx) % 7
     return (now + timedelta(days=delta)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-
-def _build_slots(
-    *,
-    count: int,
-    platforms: list[str],
-    user_prompt: str,
-) -> list[tuple[str, datetime, str]]:
-    now = datetime.now(UTC)
-    base = _next_monday(now)
-    mention_day = None
-    lower = user_prompt.lower()
-    for dword, idx in DAY_WORDS.items():
-        if dword in lower:
-            mention_day = idx
-            break
-
-    out: list[tuple[str, datetime, str]] = []
-    for i in range(count):
-        plat = platforms[i % len(platforms)]
-        day_offset = i if mention_day is None else ((mention_day + i) % 7)
-        hh, mm = PLATFORM_HOURS.get(plat, (10, 0))
-        dt = base + timedelta(days=day_offset)
-        dt = dt.replace(hour=hh, minute=mm)
-        source = "ai_suggested"
-        out.append((plat, dt, source))
-    return out
 
 
 def _next_weekday_from(now: datetime, weekday: int) -> datetime:
@@ -290,23 +243,31 @@ def _slot_for_post(
     user_prompt: str,
     post_day_hint: str | None,
     post_date_hint: str | None,
+    platform_time: str,
+    user_specified_time: bool,
     scheduled_date_iso: str | None = None,
-    scheduled_time: str | None = None,
 ) -> tuple[datetime, str]:
     """Détermine la date+heure proposée pour une variante.
 
-    Priorité :
-    1. `scheduled_date_iso` (déjà résolu par le LLM) + `scheduled_time` éventuel.
+    L'heure est imposée par `platform_time` (au format HH:MM), proposée par
+    le LLM pour cette plateforme (ou recopiée d'une heure utilisateur
+    explicite). Aucun défaut hardcodé : si `platform_time` est invalide,
+    on lève une erreur.
+
+    Priorité date :
+    1. `scheduled_date_iso` (déjà résolu par le LLM).
     2. Détection explicite dans `post_date_hint` puis `user_prompt`.
     3. Détection d'un jour de la semaine (`post_day_hint` ou prompt).
     4. Lundi prochain par défaut.
     """
     now = datetime.now(UTC)
-    default_hh, default_mm = PLATFORM_HOURS.get(platform, (10, 0))
-    hhmm = _parse_hhmm(scheduled_time)
-    hh = hhmm[0] if hhmm else default_hh
-    mm = hhmm[1] if hhmm else default_mm
-    time_source_user = bool(hhmm)
+    hhmm = _parse_hhmm(platform_time)
+    if not hhmm:
+        raise RuntimeError(
+            f"Heure invalide proposée pour la plateforme {platform}: '{platform_time}'"
+        )
+    hh, mm = hhmm
+    time_label = "user_time" if user_specified_time else "llm_time"
 
     if scheduled_date_iso:
         try:
@@ -316,7 +277,7 @@ def _slot_for_post(
             dt = base.replace(hour=hh, minute=mm, second=0, microsecond=0)
             if dt < now.replace(second=0, microsecond=0):
                 dt = dt + timedelta(days=7)
-            return dt, ("user_date+user_time" if time_source_user else "user_date+ai_time")
+            return dt, f"llm_date+{time_label}"
         except (ValueError, TypeError):
             pass
 
@@ -327,7 +288,7 @@ def _slot_for_post(
         dt = (explicit + timedelta(days=idx)).replace(hour=hh, minute=mm)
         if dt < now:
             dt = dt.replace(year=now.year + 1)
-        return dt, ("user_date+user_time" if time_source_user else "user_date+ai_time")
+        return dt, f"user_date+{time_label}"
 
     hint = (post_day_hint or "").strip().lower()
     if not hint:
@@ -339,11 +300,11 @@ def _slot_for_post(
     if hint in DAY_WORDS:
         base = _next_weekday_from(now, DAY_WORDS[hint])
         dt = (base + timedelta(days=idx)).replace(hour=hh, minute=mm)
-        return dt, ("user_day+user_time" if time_source_user else "user_day+ai_time")
+        return dt, f"user_day+{time_label}"
 
     base = _next_monday(now)
     dt = (base + timedelta(days=idx)).replace(hour=hh, minute=mm)
-    return dt, ("ai_suggested+user_time" if time_source_user else "ai_suggested")
+    return dt, f"llm_date+{time_label}"
 
 
 async def _generate_item_caption(
@@ -418,7 +379,6 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
     today_iso = now.date().isoformat()
     today_weekday_fr = WEEKDAY_FR.get(now.weekday(), "")
 
-    intent: dict[str, Any] = {}
     try:
         intent = await asyncio.wait_for(
             intent_llm.parse_intent(
@@ -429,19 +389,17 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
             ),
             timeout=INTENT_LLM_TIMEOUT_SECONDS,
         )
-    except TimeoutError:
-        logger.warning(
-            "[weekly_plan] parse_intent timeout after %ss, fallback parsing used",
-            INTENT_LLM_TIMEOUT_SECONDS,
-        )
+    except TimeoutError as exc:
+        raise RuntimeError(
+            f"Le planificateur LLM n'a pas répondu en {INTENT_LLM_TIMEOUT_SECONDS}s."
+        ) from exc
     except Exception as exc:
-        logger.warning("[weekly_plan] fallback parsing used: %s", exc)
+        raise RuntimeError(f"Le planificateur LLM a échoué : {exc}") from exc
 
-    requested = payload.requested_post_count
-    count = requested if requested is not None else int(intent.get("post_count") or 0)
-    if count < 1:
-        count = _extract_post_count_fallback(payload.user_prompt)
-    count = max(1, min(7, count))
+    if not isinstance(intent, dict):
+        raise RuntimeError("Le planificateur LLM a renvoyé une réponse invalide.")
+
+    user_specified_time = bool(_parse_hhmm(payload.user_prompt))
 
     parsed_posts = intent.get("posts") if isinstance(intent.get("posts"), list) else []
     normalized_posts: list[dict[str, Any]] = []
@@ -455,36 +413,78 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
         rec = [x for x in rec if x in payload.platforms]
         if not rec:
             rec = payload.platforms[:]
+        rec = rec[:3]
+
+        plat_times_raw = p.get("platform_times")
+        if not isinstance(plat_times_raw, dict):
+            raise RuntimeError(
+                f"Le planificateur LLM n'a pas proposé `platform_times` pour le post « {objective[:60]} »."
+            )
+        plat_times: dict[str, str] = {}
+        for plat in rec:
+            t = plat_times_raw.get(plat)
+            if not isinstance(t, str) or not _parse_hhmm(t):
+                raise RuntimeError(
+                    f"Le planificateur LLM n'a pas proposé d'heure valide pour {plat} sur le post « {objective[:60]} »."
+                )
+            plat_times[plat] = t
+
+        plat_images_raw = p.get("platform_images")
+        if not isinstance(plat_images_raw, dict):
+            raise RuntimeError(
+                f"Le planificateur LLM n'a pas proposé `platform_images` pour le post « {objective[:60]} »."
+            )
+        plat_images: dict[str, bool] = {}
+        for plat in rec:
+            v = plat_images_raw.get(plat)
+            if not isinstance(v, bool):
+                raise RuntimeError(
+                    f"Le planificateur LLM n'a pas proposé d'image (bool) pour {plat} sur le post « {objective[:60]} »."
+                )
+            plat_images[plat] = v
+        # Master kill switch : si l'utilisateur a globalement désactivé les images,
+        # on force false sur LinkedIn et Facebook. Instagram reste à true (règle
+        # non négociable : Instagram sans image n'a aucun sens).
+        if not payload.include_images:
+            plat_images = {k: False for k in plat_images}
+        # Garde-fou serveur Instagram : prime sur le master switch et le LLM.
+        if "instagram" in plat_images:
+            plat_images["instagram"] = True
+
         normalized_posts.append(
             {
                 "objective": objective,
-                "recommended_platforms": rec[:3],
+                "recommended_platforms": rec,
                 "scheduled_date": str(p.get("scheduled_date") or "").strip() or None,
-                "scheduled_time": str(p.get("scheduled_time") or "").strip() or None,
+                "platform_times": plat_times,
+                "platform_images": plat_images,
                 "date_hint": str(p.get("date_hint") or "").strip() or None,
                 "day_hint": str(p.get("day_hint") or "").strip() or None,
             }
         )
+
     if not normalized_posts:
-        normalized_posts = [
-            {
-                "objective": f"Post {i + 1}: {payload.user_prompt.strip()}",
-                "recommended_platforms": payload.platforms[:],
-                "scheduled_date": None,
-                "scheduled_time": None,
-                "date_hint": None,
-                "day_hint": None,
-            }
-            for i in range(count)
-        ]
-    while len(normalized_posts) < count:
-        normalized_posts.append(dict(normalized_posts[-1]))
-    normalized_posts = normalized_posts[:count]
+        raise RuntimeError(
+            "Le planificateur LLM n'a proposé aucun post exploitable. Reformule l'intention."
+        )
+
+    # Le nombre de posts effectif suit l'intention du LLM (qui suit l'utilisateur).
+    # Si l'utilisateur force `requested_post_count`, on tronque ou complète,
+    # sinon on garde TOUT ce que le LLM a proposé.
+    requested = payload.requested_post_count
+    if isinstance(requested, int) and requested > 0:
+        target = max(1, min(7, requested))
+        while len(normalized_posts) < target:
+            normalized_posts.append(dict(normalized_posts[-1]))
+        normalized_posts = normalized_posts[:target]
+    count = len(normalized_posts)
 
     items = []
     for idx, post in enumerate(normalized_posts):
         objective = post["objective"]
         rec_platforms = post["recommended_platforms"]
+        plat_times = post["platform_times"]
+        plat_images = post["platform_images"]
 
         variants = []
         for platform in rec_platforms:
@@ -495,8 +495,10 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
                 post_day_hint=post.get("day_hint"),
                 post_date_hint=post.get("date_hint"),
                 scheduled_date_iso=post.get("scheduled_date"),
-                scheduled_time=post.get("scheduled_time"),
+                platform_time=plat_times[platform],
+                user_specified_time=user_specified_time,
             )
+            want_image = bool(plat_images.get(platform, False))
             # Cost-aware UX: weekly generate returns only scheduling proposals.
             # Caption/image generation is deferred to approval time.
             variants.append(
@@ -507,8 +509,8 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
                     "scheduled_at_utc": slot_dt.isoformat(),
                     "timing_source": timing_source,
                     "status": "suggested",
-                    "image_mode": "required" if payload.include_images else "none",
-                    "image_status": "pending" if payload.include_images else "skipped",
+                    "image_mode": "required" if want_image else "none",
+                    "image_status": "pending" if want_image else "skipped",
                     "image_url": None,
                     "image_error": None,
                     "content_generated": False,
@@ -521,7 +523,8 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
                 "recommended_platforms": rec_platforms,
                 "status": "proposed",
                 "scheduled_date": post.get("scheduled_date"),
-                "scheduled_time": post.get("scheduled_time"),
+                "platform_times": post.get("platform_times"),
+                "platform_images": post.get("platform_images"),
                 "date_hint": post.get("date_hint"),
                 "day_hint": post.get("day_hint"),
                 "variants": variants,
@@ -566,6 +569,11 @@ async def generate_weekly_content_for_items(
 ) -> dict[str, Any]:
     runner = ContentLLMRunner()
     updated_items: list[dict[str, Any]] = []
+    logger.info(
+        "[weekly_content] start | include_images=%s | items=%d",
+        include_images,
+        len(items),
+    )
 
     for item in items:
         objective = str(item.get("objective") or "Post semaine").strip()
@@ -590,9 +598,23 @@ async def generate_weekly_content_for_items(
 
             image_url = variant.get("image_url")
             image_mode = str(variant.get("image_mode") or "none")
+            # Garde-fou serveur : Instagram doit TOUJOURS avoir une image.
+            # Si le frontend a envoyé image_mode="none" pour une variante Instagram,
+            # on force "required" — Instagram sans image n'a aucun sens.
+            if platform == "instagram":
+                image_mode = "required"
             image_status = variant.get("image_status")
             image_error = variant.get("image_error")
-            if include_images and image_mode != "none" and not image_url:
+            should_generate_image = include_images and image_mode != "none" and not image_url
+            logger.info(
+                "[weekly_content] variant=%s platform=%s image_mode=%s existing_url=%s → generate_image=%s",
+                variant.get("variant_id"),
+                platform,
+                image_mode,
+                bool(image_url),
+                should_generate_image,
+            )
+            if should_generate_image:
                 merged_for_img = {
                     "idea_id": idea_id,
                     "platform": platform,
@@ -608,6 +630,18 @@ async def generate_weekly_content_for_items(
                 image_url = img_url
                 image_error = img_err
                 image_status = "generated" if img_url else ("failed" if img_err else image_status)
+                if img_err:
+                    logger.warning(
+                        "[weekly_content] image gen failed | variant=%s | err=%s",
+                        variant.get("variant_id"),
+                        img_err,
+                    )
+                else:
+                    logger.info(
+                        "[weekly_content] image ok | variant=%s | url=%s",
+                        variant.get("variant_id"),
+                        (image_url or "")[:80],
+                    )
 
             next_variant = dict(variant)
             next_variant["caption"] = caption
@@ -673,6 +707,9 @@ async def approve_weekly_plan(
 
                 image_url = row.get("image_url")
                 image_mode = str(row.get("image_mode") or "none")
+                # Garde-fou Instagram : toujours une image.
+                if platform == "instagram":
+                    image_mode = "required"
                 if image_mode != "none" and not image_url:
                     merged_for_img = {
                         "idea_id": idea_id,
