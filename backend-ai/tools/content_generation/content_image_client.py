@@ -11,6 +11,8 @@ from typing import Any
 
 import httpx
 
+from observability.langsmith_tracing import agent_trace
+
 _log = logging.getLogger("brandai.content_image_client")
 
 
@@ -165,6 +167,7 @@ async def fetch_content_image_nvidia(
     raise RuntimeError(f"NVIDIA image indisponible: {last_err}")
 
 
+@agent_trace("content.fetch_image", tags=["content_generation", "image"])
 async def fetch_content_image(
     image_prompt: str,
     negative_prompt: str = "",

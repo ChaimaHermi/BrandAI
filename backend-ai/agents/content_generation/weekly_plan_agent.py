@@ -12,6 +12,7 @@ import httpx
 
 from agents.base_agent import BaseAgent, PipelineState
 from agents.content_generation.content_llm_runner import ContentLLMRunner
+from observability.langsmith_tracing import agent_trace
 from prompts.content_generation.prompt_weekly_plan import (
     WEEKLY_REGEN_SYSTEM,
     build_weekly_intent_system,
@@ -372,6 +373,7 @@ async def _generate_item_image(
         return None, str(exc)[:220]
 
 
+@agent_trace("weekly_plan.generate", tags=["content_generation", "weekly_plan"])
 async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
     intent_llm = WeeklyIntentLLM()
 
@@ -541,6 +543,7 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
     }
 
 
+@agent_trace("weekly_plan.regenerate_item", tags=["content_generation", "weekly_plan"])
 async def regenerate_weekly_item(
     *,
     item: dict[str, Any],
@@ -559,6 +562,7 @@ async def regenerate_weekly_item(
     return next_item
 
 
+@agent_trace("weekly_plan.generate_content", tags=["content_generation", "weekly_plan"])
 async def generate_weekly_content_for_items(
     *,
     idea_id: int,
@@ -662,6 +666,7 @@ async def generate_weekly_content_for_items(
     return {"items": updated_items}
 
 
+@agent_trace("weekly_plan.approve", tags=["content_generation", "weekly_plan"])
 async def approve_weekly_plan(
     *,
     idea_id: int,

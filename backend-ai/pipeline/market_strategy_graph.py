@@ -6,6 +6,7 @@ from langgraph.graph import END, START, StateGraph
 
 from agents.base_agent import PipelineState
 from agents.marketing.marketing_agent import MarketingAgent
+from observability.langsmith_tracing import graph_node_trace
 from pipeline.market_graph import (
     node_competitor,
     node_keyword_extractor,
@@ -24,6 +25,7 @@ class MarketStrategyGraphState(TypedDict, total=False):
     marketing_plan: dict
 
 
+@graph_node_trace("marketing_plan")
 async def node_marketing_plan(state: MarketStrategyGraphState) -> dict:
     ps = PipelineState(
         idea_id=state.get("idea_id"),

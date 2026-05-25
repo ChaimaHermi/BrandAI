@@ -59,6 +59,11 @@ class SocialOptimizerRecommendationAgent(BaseAgent):
             "recommendations": normalized,
         }
 
+    @traceable(
+        name="social_optimizer.llm_json",
+        run_type="llm",
+        tags=["social_optimizer", "llm"],
+    )
     async def _call_llm_json_object(self, system_prompt: str, user_prompt: str) -> dict:
         max_tokens = min(self.llm_max_tokens, 4096)
         key, lock = await self._acquire_free_key()

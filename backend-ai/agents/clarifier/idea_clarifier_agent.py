@@ -4,6 +4,7 @@ import logging
 
 from agents.base_agent import BaseAgent, PipelineState
 from guardrails.safety_checks import get_refusal_message, check_safety_with_llama_guard
+from observability.langsmith_tracing import agent_trace, enrich_run_metadata, pipeline_state_metadata
 from prompts.clarifier.prompt_idea_clarifier import ANSWER_PROMPT, ANALYSE_PROMPT
 from tools.idea_tools import validate_idea_input
 logger = logging.getLogger(__name__)
@@ -356,6 +357,7 @@ class IdeaClarifierAgent(BaseAgent):
     # Méthode 1 — Appel initial (description seule)
     # ─────────────────────────────────────────────────────────
 
+    @agent_trace("clarifier.run_start", tags=["clarifier", "idea_clarifier"])
     async def run_start(self, state: PipelineState) -> dict:
         """
         1er appel — déclenché quand l'utilisateur soumet son idée.
@@ -430,6 +432,7 @@ class IdeaClarifierAgent(BaseAgent):
     # Méthode 2 — Appel après réponses utilisateur
     # ─────────────────────────────────────────────────────────
 
+    @agent_trace("clarifier.run_answer", tags=["clarifier", "idea_clarifier"])
     async def run_answer(self, state: PipelineState, answers: dict) -> dict:
         """
         2ème appel — déclenché quand l'utilisateur répond aux questions.
@@ -481,6 +484,7 @@ class IdeaClarifierAgent(BaseAgent):
     # Compatibilité — méthodes conservées pour la route existante
     # ─────────────────────────────────────────────────────────
 
+    @agent_trace("clarifier.run_interactive", tags=["clarifier", "idea_clarifier"])
     async def run_interactive(self, state: PipelineState, answers: dict | None = None) -> dict:
         """
         Point d'entrée unique appelé par la route clarifier.py.
@@ -492,8 +496,10 @@ class IdeaClarifierAgent(BaseAgent):
         return await self.run_start(state)
 
     # ── Mode batch LangGraph — conservé pour ne pas casser le pipeline ──
+    @agent_trace("clarifier.run", tags=["clarifier", "idea_clarifier"])
     async def run(self, state: PipelineState) -> dict:
         self._log_start(state)
+        enrich_run_metadata(**pipeline_state_metadata(state))
         state.current_agent = "idea_clarifier"
 
         if not state.description or len(state.description.strip()) < 5:

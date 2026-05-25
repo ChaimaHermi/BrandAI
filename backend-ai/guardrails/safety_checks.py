@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 import httpx
+from langsmith import traceable
 
 REFUSAL_MESSAGES = {
     "fraud": "BrandAI ne peut pas vous accompagner dans ce projet. Il semble viser à tromper des personnes.",
@@ -81,6 +82,11 @@ def _is_unsafe(model_output: str) -> bool:
     return False
 
 
+@traceable(
+    name="guardrails.llama_guard",
+    run_type="llm",
+    tags=["brandai", "guardrails", "safety"],
+)
 async def check_safety_with_llama_guard(payload: dict[str, Any]) -> dict[str, Any]:
     """
     Safety gate using NVIDIA-hosted Llama Guard.

@@ -587,11 +587,15 @@ export function useSocialPublish(ideaId) {
         if (!selectedPage?.access_token || !selectedPage?.id) {
           throw new Error("Connectez Meta et choisissez la Page liée au compte Instagram pro.");
         }
+        if (!metaUserToken) {
+          throw new Error("Token Meta utilisateur manquant. Déconnectez puis reconnectez Meta.");
+        }
         return postPublishInstagram({
           caption: text,
           image_url: imageUrl,
           page_id: String(selectedPage.id),
           page_access_token: selectedPage.access_token,
+          user_access_token: metaUserToken,
         });
       }
 
@@ -610,7 +614,7 @@ export function useSocialPublish(ideaId) {
 
       throw new Error("Plateforme non supportée.");
     },
-    [selectedPage, linkedinToken, linkedinUrn],
+    [selectedPage, linkedinToken, linkedinUrn, metaUserToken],
   );
 
   const disconnectMeta = useCallback(() => {

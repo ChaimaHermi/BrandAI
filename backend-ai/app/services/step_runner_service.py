@@ -12,6 +12,7 @@ import httpx
 
 from agents.base_agent import PipelineState
 from agents.marketing.marketing_agent import MarketingAgent
+from observability.langsmith_tracing import agent_trace, enrich_run_metadata
 from app.services.persistence.market_marketing_persistence_service import (
     persist_market_result,
     persist_marketing_result,
@@ -98,6 +99,7 @@ class StepRunnerService:
             "budget_currency": (clarity_answers.get("budget_currency") or "").strip().upper(),
         }
 
+    @agent_trace("step_runner.run_market_step", tags=["market_analysis", "step_runner", "sse"])
     async def run_market_step(
         self,
         *,
@@ -105,6 +107,7 @@ class StepRunnerService:
         clarified_idea: dict[str, Any],
     ) -> AsyncIterator[tuple[str, dict[str, Any] | None]]:
         """Yield SSE progress events while running the market graph sequentially."""
+        enrich_run_metadata(idea_id=idea_id, sector=clarified_idea.get("sector"))
         first_name, first_msg, _ = MARKET_NODE_SEQUENCE[0]
         yield "step", {"status": "loading", "stage": first_name, "message": first_msg}
 
@@ -129,6 +132,7 @@ class StepRunnerService:
 
         yield "result", market_analysis
 
+    @agent_trace("step_runner.run_marketing_step", tags=["marketing", "step_runner"])
     async def run_marketing_step(
         self,
         *,
@@ -137,6 +141,7 @@ class StepRunnerService:
         clarified_idea: dict[str, Any],
         market_analysis: dict[str, Any],
     ) -> dict[str, Any]:
+        enrich_run_metadata(idea_id=idea_id)
         ps = PipelineState(
             idea_id=idea_id,
             name=idea_row.get("name") or clarified_idea.get("short_pitch") or "",
@@ -148,7 +153,9 @@ class StepRunnerService:
         ps.market_analysis = market_analysis
         return await self.marketing_agent.run(ps) or {}
 
+    @agent_trace("step_runner.stream_pipeline", tags=["market_analysis", "marketing", "step_runner", "sse"])
     async def stream_pipeline(self, *, idea_id: int, access_token: str) -> AsyncIterator[str]:
+        enrich_run_metadata(idea_id=idea_id)
         started_at = datetime.now(timezone.utc)
         t0 = time.time()
 

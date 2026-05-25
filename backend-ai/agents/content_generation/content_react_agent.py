@@ -25,6 +25,7 @@ from typing import Any, AsyncGenerator
 from langsmith import traceable
 
 from agents.content_generation.content_llm_runner import ContentLLMRunner
+from observability.langsmith_tracing import agent_trace, enrich_run_metadata
 from tools.content_generation.brief_helpers import should_include_image_in_post
 from tools.content_generation.cloudinary_upload import (
     cloudinary_configured,
@@ -88,6 +89,7 @@ def _build_generation_result(
 # ---------------------------------------------------------------------------
 # Pipeline séquentielle interne
 # ---------------------------------------------------------------------------
+@agent_trace("content_generation.pipeline", tags=["content_generation", "pipeline"])
 async def _run_pipeline(
     *,
     idea_id: int,
@@ -99,6 +101,7 @@ async def _run_pipeline(
     state: ContentPipelineState,
     runner: ContentLLMRunner,
 ) -> None:
+    enrich_run_metadata(idea_id=idea_id, platform=platform)
     t0 = time.monotonic()
 
     # 1 — merge_context
@@ -188,6 +191,7 @@ async def run_content_generation(
 # ---------------------------------------------------------------------------
 # Streaming SSE — route POST /content/generate/stream
 # ---------------------------------------------------------------------------
+@agent_trace("content_generation.stream", tags=["content_generation", "pipeline", "sse"])
 async def stream_content_generation(
     *,
     idea_id: int,

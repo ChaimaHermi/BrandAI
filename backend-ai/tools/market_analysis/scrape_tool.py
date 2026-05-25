@@ -2,10 +2,12 @@ import os
 import requests
 
 from config.market_analysis_config import MARKET_ANALYSIS_CONFIG
+from observability.langsmith_tracing import trace_sync_tool
 
 SCRAPE_DO_API_KEY = os.getenv("SCRAPE_DO_API_KEY")
 
 
+@trace_sync_tool("market.scrape_page", tags=["market_analysis", "scrape"])
 def scrape_page(url: str):
     try:
         scrape_cfg = MARKET_ANALYSIS_CONFIG["api"]["scrape"]

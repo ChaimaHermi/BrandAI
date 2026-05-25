@@ -59,7 +59,7 @@ export async function postPublishFacebook(body) {
 }
 
 /**
- * @param {{ caption: string, image_url: string, page_id: string, page_access_token: string }} body
+ * @param {{ caption: string, image_url: string, page_id: string, page_access_token: string, user_access_token: string }} body
  */
 export async function postPublishInstagram(body) {
   const res = await fetch(`${AI_URL}/social/publish/instagram`, {

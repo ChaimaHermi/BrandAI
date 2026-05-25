@@ -12,6 +12,7 @@ import json
 import logging
 from typing import Any
 
+from observability.langsmith_tracing import agent_trace
 from tools.content_generation.idea_fetch import fetch_idea_row, idea_to_content_context
 from tools.content_generation.platform_specs import get_spec_for_platform
 
@@ -34,6 +35,7 @@ class ContentPipelineState(dict[str, Any]):
             raise RuntimeError("Guard: get_platform_spec doit suivre merge_context.")
 
 
+@agent_trace("content.merge_context", tags=["content_generation", "tool"])
 async def merge_context_step(
     state: ContentPipelineState,
     *,
@@ -69,6 +71,7 @@ async def merge_context_step(
     return merged
 
 
+@agent_trace("content.get_platform_spec", tags=["content_generation", "tool"], run_type="tool")
 def get_platform_spec_step(state: ContentPipelineState, platform: str) -> dict[str, Any]:
     """Retourne les règles techniques pour la plateforme."""
     state.ensure_merged()

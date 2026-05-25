@@ -1,4 +1,5 @@
 from agents.base_agent import BaseAgent
+from observability.langsmith_tracing import agent_trace
 from prompts.market_analysis.prompt_strategy_analysis import PROMPT_STRATEGY_ANALYSIS
 
 import json
@@ -51,6 +52,7 @@ class StrategyAnalysisAgent(BaseAgent):
         context = json.dumps(context_data, indent=2, ensure_ascii=False)
         return context
 
+    @agent_trace("strategy_analysis.run", tags=["market_analysis", "strategy_analysis"])
     async def run(self, state):
 
         try:

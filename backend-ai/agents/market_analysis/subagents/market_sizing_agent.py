@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.market_analysis_config import MARKET_ANALYSIS_CONFIG, MARKET_SIZING_LLM_CONFIG
+from observability.langsmith_tracing import agent_trace
 
 from prompts.market_analysis.prompt_market_sizing import PROMPT_MARKET_SIZING
 from tools.market_analysis.news_tool import news_search
@@ -125,6 +126,7 @@ class MarketSizingAgent(BaseAgent):
 
         return out
 
+    @agent_trace("market_sizing.run", tags=["market_analysis", "market_sizing"])
     async def run(self, state: PipelineState) -> dict:
         self._log_start(state)
 

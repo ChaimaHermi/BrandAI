@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from observability.langsmith_tracing import agent_trace
+
 from agents.content_generation.content_react_agent import run_content_generation
 from agents.content_generation.weekly_plan_agent import (
     WeeklyGenerateInput,
@@ -11,6 +13,7 @@ from agents.content_generation.weekly_plan_agent import (
 )
 
 
+@agent_trace("content_orchestrator.run_flow", tags=["content_generation", "orchestrator"])
 async def run_content_flow(mode: str, payload: dict[str, Any]) -> dict[str, Any]:
     if mode == "single_post":
         return await run_content_generation(**payload)

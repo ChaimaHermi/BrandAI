@@ -49,7 +49,12 @@ async def publish_to_platform(
                 "image_url": image_url,
                 "page_id": str(page["id"]),
                 "page_access_token": str(page.get("access_token", "")),
+                "user_access_token": str(social_tokens.get("user_access_token", "")),
             }
+            if not body["user_access_token"]:
+                raise RuntimeError(
+                    "Token utilisateur Meta manquant. Reconnectez votre compte Meta."
+                )
             r = await client.post(f"{AI_BASE}/social/publish/instagram", json=body)
 
         elif platform == "linkedin":

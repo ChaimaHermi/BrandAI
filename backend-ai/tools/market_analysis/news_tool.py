@@ -4,6 +4,8 @@ import threading
 
 import requests
 
+from observability.langsmith_tracing import trace_sync_tool
+
 NEWS_API_KEY = os.getenv("NEWSAPI_KEY")
 logger = logging.getLogger("brandai.market_api")
 
@@ -11,6 +13,7 @@ logger = logging.getLogger("brandai.market_api")
 _NEWS_LOCK = threading.Semaphore(1)
 
 
+@trace_sync_tool("market.news_search", tags=["market_analysis", "newsapi"])
 def news_search(query: str) -> list:
     with _NEWS_LOCK:
         return _news_search_unlocked(query)

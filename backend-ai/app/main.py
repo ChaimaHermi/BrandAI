@@ -1,6 +1,8 @@
 import logging
 import sys
 
+import config.settings  # noqa: F401 — active LangSmith (LANGCHAIN_TRACING_V2) au démarrage
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

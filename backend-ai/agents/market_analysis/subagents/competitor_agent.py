@@ -1,6 +1,7 @@
 import asyncio
 
 from agents.base_agent import BaseAgent
+from observability.langsmith_tracing import agent_trace
 from prompts.market_analysis.prompt_competitor import PROMPT_COMPETITOR
 from tools.market_analysis.serpapi_tool import serpapi_search
 from tools.market_analysis.tavily_tool import tavily_search
@@ -65,6 +66,7 @@ class CompetitorAgent(BaseAgent):
                 for r in results[:_SERP_PER_QUERY]
             ]
 
+    @agent_trace("competitor.run", tags=["market_analysis", "competitor"])
     async def run(self, state):
         queries = (state.market_analysis or {}).get("competitor_queries", [])
 

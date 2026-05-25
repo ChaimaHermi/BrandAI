@@ -97,7 +97,7 @@ AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2025-01-01-pre
 # ─────────────────────────────────────────────
 # LANGSMITH
 # ─────────────────────────────────────────────
-LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
+LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY") or os.getenv("LANGSMITH_API_KEY")
 
 if LANGCHAIN_API_KEY:
     os.environ["LANGCHAIN_TRACING_V2"]  = "true"

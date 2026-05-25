@@ -10,6 +10,7 @@ from agents.market_analysis.subagents.market_sizing_agent import MarketSizingAge
 from agents.market_analysis.subagents.strategy_analysis_agent import StrategyAnalysisAgent
 from agents.market_analysis.subagents.trends_risks_agent import TrendsRisksAgent
 from agents.market_analysis.subagents.voc_agent import VOCAgent
+from observability.langsmith_tracing import graph_node_trace
 
 
 class MarketGraphState(TypedDict, total=False):
@@ -79,6 +80,7 @@ def _final_market_analysis(ma: dict) -> dict:
     }
 
 
+@graph_node_trace("keyword_extractor")
 async def node_keyword_extractor(state: MarketGraphState) -> dict:
     extractor = KeywordExtractor()
     ps = _to_pipeline(state)
@@ -100,6 +102,7 @@ async def node_keyword_extractor(state: MarketGraphState) -> dict:
     return {"market_analysis": ma}
 
 
+@graph_node_trace("market_sizing")
 async def node_market_sizing(state: MarketGraphState) -> dict:
     ps = _to_pipeline(state)
     agent = MarketSizingAgent()
@@ -110,6 +113,7 @@ async def node_market_sizing(state: MarketGraphState) -> dict:
     return {"market_analysis": ma}
 
 
+@graph_node_trace("competitor")
 async def node_competitor(state: MarketGraphState) -> dict:
     ps = _to_pipeline(state)
     agent = CompetitorAgent()
@@ -120,6 +124,7 @@ async def node_competitor(state: MarketGraphState) -> dict:
     return {"market_analysis": ma}
 
 
+@graph_node_trace("voc")
 async def node_voc(state: MarketGraphState) -> dict:
     ps = _to_pipeline(state)
     agent = VOCAgent()
@@ -130,6 +135,7 @@ async def node_voc(state: MarketGraphState) -> dict:
     return {"market_analysis": ma}
 
 
+@graph_node_trace("trends_risks")
 async def node_trends_risks(state: MarketGraphState) -> dict:
     ps = _to_pipeline(state)
     agent = TrendsRisksAgent()
@@ -140,6 +146,7 @@ async def node_trends_risks(state: MarketGraphState) -> dict:
     return {"market_analysis": ma}
 
 
+@graph_node_trace("strategy_analysis")
 async def node_strategy_analysis(state: MarketGraphState) -> dict:
     ps = _to_pipeline(state)
     agent = StrategyAnalysisAgent()
@@ -150,6 +157,7 @@ async def node_strategy_analysis(state: MarketGraphState) -> dict:
     return {"market_analysis": ma}
 
 
+@graph_node_trace("save_results")
 async def node_save_results(state: MarketGraphState) -> dict:
     ma = dict(state.get("market_analysis") or {})
     clean_ma = _final_market_analysis(ma)

@@ -23,6 +23,7 @@ from typing import Any
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.content_generation_config import CONTENT_LLM_CONFIG
+from observability.langsmith_tracing import agent_trace
 from prompts.content_generation.prompt_build_image import PROMPT_BUILD_IMAGE_SYSTEM
 from prompts.content_generation.prompt_draft_post import PROMPT_DRAFT_POST_SYSTEM
 
@@ -46,6 +47,7 @@ class ContentLLMRunner(BaseAgent):
     async def run(self, state: PipelineState) -> dict[str, Any]:
         return {}
 
+    @agent_trace("content_llm_runner.draft_post", tags=["content_generation", "llm"])
     async def draft_post(
         self,
         merged_json: str,
@@ -77,6 +79,7 @@ class ContentLLMRunner(BaseAgent):
         logger.info("[draft_post] len=%d", len(caption))
         return caption
 
+    @agent_trace("content_llm_runner.build_image_prompt", tags=["content_generation", "llm"])
     async def build_image_prompt(self, merged_json: str, spec_json: str, caption: str) -> tuple[str, str]:
         user = (
             "Contexte fusionné :\n"

@@ -1,6 +1,7 @@
 import asyncio
 
 from agents.base_agent import BaseAgent
+from observability.langsmith_tracing import agent_trace
 from prompts.market_analysis.prompt_voc import PROMPT_VOC
 from tools.market_analysis.tavily_tool import tavily_search
 from utils.text_cleaner import clean_text
@@ -80,6 +81,7 @@ CONTENT: {content}
     # ─────────────────────────
     # RUN
     # ─────────────────────────
+    @agent_trace("voc.run", tags=["market_analysis", "voc"])
     async def run(self, state):
 
         # GET QUERIES FROM STATE (IMPORTANT)

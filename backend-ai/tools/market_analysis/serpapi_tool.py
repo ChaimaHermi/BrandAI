@@ -4,6 +4,7 @@ import threading
 import requests
 
 from config.market_analysis_config import MARKET_ANALYSIS_CONFIG
+from observability.langsmith_tracing import trace_sync_tool
 
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 logger = logging.getLogger("brandai.market_api")
@@ -12,6 +13,7 @@ logger = logging.getLogger("brandai.market_api")
 _SERP_LOCK = threading.Semaphore(1)
 
 
+@trace_sync_tool("market.serpapi_search", tags=["market_analysis", "serpapi"])
 def serpapi_search(query: str):
     with _SERP_LOCK:
         return _serpapi_search_unlocked(query)

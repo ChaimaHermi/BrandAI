@@ -15,6 +15,7 @@ from typing import Any
 import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
 from llm.llm_rotator import LLMRotator
+from observability.langsmith_tracing import traced_llm_dispatch
 
 
 # ══════════════════════════════════════════════════════════════
@@ -191,18 +192,8 @@ class BaseAgent(ABC):
     # ─────────────────────────────────────────
 
     async def _call_llm(self, system_prompt: str, user_prompt: str) -> str:
-        # openai/gpt-oss-120b : NVIDIA NIM uniquement (contexte ~128k tokens, sortie max 65 536).
-        if self.llm_model in NVIDIA_MODELS:
-            if not self._nvidia_keys:
-                raise RuntimeError(
-                    "Modèle openai/gpt-oss-120b : définissez au moins une variable "
-                    "d'environnement NVIDIA_API_KEY_1 … NVIDIA_API_KEY_4. "
-                    "Le routage Groq n'est pas utilisé pour ce modèle."
-                )
-            return await self._call_nvidia_direct(system_prompt, user_prompt)
-
-        # Autres modèles (ex. hors gpt-oss) : LangChain + rotator Groq si configuré
-        return await self._call_langchain(system_prompt, user_prompt)
+        """Appel LLM tracé LangSmith (projet brand-ai si LANGCHAIN_API_KEY est défini)."""
+        return await traced_llm_dispatch(self, system_prompt, user_prompt)
 
     async def _call_nvidia_direct(self, system_prompt: str, user_prompt: str) -> str:
         """

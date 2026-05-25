@@ -79,6 +79,11 @@ class InstagramPublishBody(BaseModel):
     image_url: str = Field(..., min_length=12, description="URL HTTPS publique (ex. Cloudinary)")
     page_id: str = Field(..., min_length=1)
     page_access_token: str = Field(..., min_length=1)
+    user_access_token: str = Field(
+        ...,
+        min_length=1,
+        description="Token utilisateur Meta (requis pour vérifier le conteneur IG avant publication).",
+    )
 
 
 @router.post("/social/publish/instagram")
@@ -99,6 +104,7 @@ async def publish_instagram(body: InstagramPublishBody) -> dict[str, Any]:
             page_access_token=body.page_access_token.strip(),
             image_url=url,
             caption=body.caption.strip(),
+            user_access_token=body.user_access_token.strip(),
         )
         return {"ok": True, "platform": "instagram", "instagram_user_id": ig_id, "result": out}
     except MetaGraphError as e:

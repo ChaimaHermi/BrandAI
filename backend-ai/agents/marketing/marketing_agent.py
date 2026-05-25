@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from agents.base_agent import BaseAgent, PipelineState
 from config.marketing_config import MARKETING_LLM_CONFIG
+from observability.langsmith_tracing import agent_trace
 from prompts.marketing.prompt_marketing_plan import PROMPT_MARKETING_PLAN
 
 logger = logging.getLogger("brandai.marketing_agent")
@@ -65,6 +66,7 @@ class MarketingAgent(BaseAgent):
 
         return json.dumps(payload, ensure_ascii=False, indent=2)
 
+    @agent_trace("marketing_agent.run", tags=["marketing", "marketing_plan"])
     async def run(self, state: PipelineState) -> Dict[str, Any]:
         logger.info(f"[marketing_agent] ▶ START | idea_id={state.idea_id}")
 

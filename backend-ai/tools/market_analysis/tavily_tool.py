@@ -4,6 +4,7 @@ import threading
 import requests
 
 from config.market_analysis_config import MARKET_ANALYSIS_CONFIG
+from observability.langsmith_tracing import trace_sync_tool
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 logger = logging.getLogger("brandai.market_api")
@@ -12,6 +13,7 @@ logger = logging.getLogger("brandai.market_api")
 _TAVILY_LOCK = threading.Semaphore(1)
 
 
+@trace_sync_tool("market.tavily_search", tags=["market_analysis", "tavily"])
 def tavily_search(query: str):
     with _TAVILY_LOCK:
         return _tavily_search_unlocked(query)

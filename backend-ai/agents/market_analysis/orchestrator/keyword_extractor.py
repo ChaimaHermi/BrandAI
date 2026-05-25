@@ -18,6 +18,7 @@ from dataclasses import asdict, dataclass, field
 import httpx
 from agents.base_agent import BaseAgent, PipelineState
 from config.market_analysis_config import LLM_CONFIG
+from observability.langsmith_tracing import agent_trace, enrich_run_metadata
 from prompts.market_analysis.prompt_keyword_extractor import (
     SYSTEM_PROMPT,
     USER_PROMPT,
@@ -120,11 +121,17 @@ class KeywordExtractor(BaseAgent):
     async def run(self, state: PipelineState) -> PipelineState:
         raise NotImplementedError("Utiliser extract(idea).")
 
+    @agent_trace("keyword_extractor.extract", tags=["market_analysis", "keyword_extractor"])
     async def extract(self, idea: dict) -> KeywordBundle:
         """
         Point d'entrée principal.
         3 tentatives avant fallback bundle vide.
         """
+        enrich_run_metadata(
+            short_pitch=idea.get("short_pitch"),
+            sector=idea.get("sector"),
+            country_code=idea.get("country_code"),
+        )
         logger.info(f"[keyword_extractor] '{idea.get('short_pitch', '?')}'")
 
         country = (idea.get("country") or "").strip() or (idea.get("country_code") or "US")

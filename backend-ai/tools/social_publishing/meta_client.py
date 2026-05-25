@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import logging
 import time
 from typing import Any
 
@@ -12,7 +13,20 @@ import httpx
 
 from config.social_publish_config import GRAPH_API_VERSION
 
+logger = logging.getLogger("brandai.meta_client")
+
 BASE = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
+
+# Subcodes Meta retriables lors du polling conteneur IG (média pas encore prêt).
+_IG_STATUS_RETRY_SUBCODES = frozenset({2207027, 2207050})
+
+
+def _ig_status_auth_error_message(err: dict[str, Any]) -> str:
+    return (
+        "Erreur d'autorisation Meta pour la vérification Instagram (code 100/33). "
+        "Déconnectez puis reconnectez votre compte Meta dans l'application. "
+        f"Détail Meta : {err.get('message', 'Authorization Error')}"
+    )
 
 
 class MetaGraphError(RuntimeError):
@@ -27,10 +41,15 @@ async def _graph_get(path: str, params: dict[str, Any]) -> dict[str, Any]:
         data = r.json() if r.content else {}
     if r.status_code != 200:
         err = data.get("error") or {}
-        raise MetaGraphError(
-            err.get("message", f"Graph GET {r.status_code}"),
+        msg = err.get("message", f"Graph GET {r.status_code}")
+        logger.warning(
+            "[meta_client] Graph GET %s | code=%s subcode=%s | %s",
+            r.status_code,
             err.get("code"),
+            err.get("error_subcode"),
+            msg,
         )
+        raise MetaGraphError(msg, err.get("code"))
     return data
 
 
@@ -40,10 +59,15 @@ async def _graph_post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
         data = r.json() if r.content else {}
     if r.status_code != 200:
         err = data.get("error") or {}
-        raise MetaGraphError(
-            err.get("message", f"Graph POST {r.status_code}"),
+        msg = err.get("message", f"Graph POST {r.status_code}")
+        logger.warning(
+            "[meta_client] Graph POST %s | code=%s subcode=%s | %s",
+            r.status_code,
             err.get("code"),
+            err.get("error_subcode"),
+            msg,
         )
+        raise MetaGraphError(msg, err.get("code"))
     return data
 
 
@@ -136,23 +160,61 @@ async def get_instagram_business_account_id(
     return str(ig_id)
 
 
+async def _fetch_ig_container_status(
+    creation_id: str, status_access_token: str
+) -> dict[str, Any]:
+    """Interroge le conteneur IG. Lève MetaGraphError si erreur non retriable."""
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        r = await client.get(
+            f"{BASE}/{creation_id.lstrip('/')}",
+            params={"fields": "status_code", "access_token": status_access_token},
+        )
+        data = r.json() if r.content else {}
+    if r.status_code == 200:
+        return data
+    err = data.get("error") or {}
+    msg = err.get("message", f"Graph GET {r.status_code}")
+    subcode = err.get("error_subcode")
+    code = err.get("code")
+    logger.warning(
+        "[meta_client] IG container %s status GET %s | code=%s subcode=%s | %s",
+        creation_id,
+        r.status_code,
+        code,
+        subcode,
+        msg,
+    )
+    if subcode == 33:
+        raise MetaGraphError(_ig_status_auth_error_message(err), code)
+    if subcode in _IG_STATUS_RETRY_SUBCODES:
+        return {"status_code": "IN_PROGRESS"}
+    raise MetaGraphError(msg, code)
+
+
 async def _wait_ig_container_ready(
-    creation_id: str, page_access_token: str, *, timeout_s: float = 120.0
+    creation_id: str,
+    status_access_token: str,
+    *,
+    timeout_s: float = 120.0,
 ) -> None:
+    """Attend status_code FINISHED. Utiliser le user access token Meta (pas le page token)."""
+    await asyncio.sleep(5.0)
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
-        data = await _graph_get(
-            creation_id,
-            {"fields": "status_code,status", "access_token": page_access_token},
-        )
+        data = await _fetch_ig_container_status(creation_id, status_access_token)
         status = str(data.get("status_code") or "").upper()
         if status in ("FINISHED", "PUBLISHED"):
+            logger.info(
+                "[meta_client] IG container %s ready | status_code=%s",
+                creation_id,
+                status,
+            )
             return
         if status in ("ERROR", "EXPIRED"):
             raise MetaGraphError(
                 f"Conteneur Instagram en erreur: {data.get('status')!r}", status
             )
-        await asyncio.sleep(2.0)
+        await asyncio.sleep(5.0)
     raise MetaGraphError("Timeout attente traitement média Instagram")
 
 
@@ -162,6 +224,7 @@ async def publish_instagram_photo(
     page_access_token: str,
     image_url: str,
     caption: str,
+    user_access_token: str | None = None,
 ) -> dict[str, Any]:
     create = await _graph_post(
         f"{ig_user_id}/media",
@@ -174,7 +237,13 @@ async def publish_instagram_photo(
     creation_id = create.get("id")
     if not creation_id:
         raise MetaGraphError("Création conteneur Instagram sans id")
-    await _wait_ig_container_ready(str(creation_id), page_access_token)
+    status_token = (user_access_token or "").strip()
+    if not status_token:
+        raise MetaGraphError(
+            "user_access_token Meta requis pour publier sur Instagram "
+            "(reconnectez votre compte Meta dans l'application)."
+        )
+    await _wait_ig_container_ready(str(creation_id), status_token)
     published = await _graph_post(
         f"{ig_user_id}/media_publish",
         {
