@@ -126,3 +126,6 @@ docker-compose.override.yml
 # LangSmith / LangChain cache
 .langchain/
 langchain_cache/
+
+
+conception/
