@@ -29,11 +29,12 @@ PALETTE_TARGET_COUNT = 3
 PALETTE_AGENT_RECURSION_LIMIT = 40
 PALETTE_AGENT_VERBOSE_REACT = True
 
-# LogoAgent
+# LogoAgent — prompt image via NVIDIA NIM openai/gpt-oss-120b (clés NVIDIA_API_KEY_*)
 LOGO_LLM_CONFIG = {
-    "provider": "azure",
+    "provider": "nvidia",
+    "model": "openai/gpt-oss-120b",
     "temperature": 0.4,
-    "max_tokens": 900,
+    "max_tokens": 4096,
 }
 LOGO_AGENT_RECURSION_LIMIT = 10
 LOGO_AGENT_VERBOSE_REACT = True

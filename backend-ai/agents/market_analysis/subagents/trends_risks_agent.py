@@ -175,5 +175,6 @@ CONTENT: {content}
         return {
             "agent": "trends_risks",
             "status": "success",
-            "data": data
+            "data": data,
+            "collected_context": context,
         }

@@ -26,11 +26,11 @@ class MarketSizingAgent(BaseAgent):
 
         for r in results:
             text = (
-                "URL: " + (r.get("url", "") or r.get("link", "") or "") + "\n"
-                + r.get("title", "") + "\n"
-                + r.get("snippet", "") + "\n"
-                + r.get("content", "") + "\n"
-                + r.get("description", "") + "\n"
+                "URL: " + (r.get("url") or r.get("link") or "") + "\n"
+                + (r.get("title") or "") + "\n"
+                + (r.get("snippet") or "") + "\n"
+                + (r.get("content") or "") + "\n"
+                + (r.get("description") or "") + "\n"
             )
             texts.append(text)
 
@@ -177,4 +177,5 @@ class MarketSizingAgent(BaseAgent):
             "agent": "market_sizing",
             "status": "success",
             "data": data,
+            "collected_context": user_prompt,
         }

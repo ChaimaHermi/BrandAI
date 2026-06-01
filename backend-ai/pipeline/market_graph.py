@@ -17,6 +17,7 @@ class MarketGraphState(TypedDict, total=False):
     idea_id: Any
     clarified_idea: dict
     market_analysis: dict
+    collected_corpus: dict
 
 
 def _to_pipeline(state: MarketGraphState) -> PipelineState:
@@ -30,7 +31,11 @@ def _debug_ma(agent_name: str, ma: dict) -> None:
     print("\n====================")
     print(f"AFTER {agent_name}")
     snap = {k: ma.get(k) for k in ("keywords", "market", "competitor", "voc", "trends", "strategy")}
-    print(json.dumps(snap, indent=2, ensure_ascii=False))
+    text = json.dumps(snap, indent=2, ensure_ascii=False)
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        print(json.dumps(snap, indent=2, ensure_ascii=True))
 
 
 def _merge_trend_queries(bundle) -> list:
@@ -69,6 +74,13 @@ def _store_agent_data(ma: dict, key: str, result: dict) -> None:
         ma[key] = {}
 
 
+def _store_agent_corpus(corpus: dict, key: str, result: dict) -> None:
+    """Corpus web réellement passé au LLM agent (eval faithfulness — hors JSON prod)."""
+    ctx = result.get("collected_context")
+    if result.get("status") == "success" and isinstance(ctx, str) and ctx.strip():
+        corpus[key] = ctx
+
+
 def _final_market_analysis(ma: dict) -> dict:
     return {
         "keywords": ma.get("keywords") or {},
@@ -99,7 +111,7 @@ async def node_keyword_extractor(state: MarketGraphState) -> dict:
     ma["trend_queries"] = _merge_trend_queries(bundle)
     ma["risk_queries"] = _merge_risk_queries(bundle)
     _debug_ma("keyword_extractor", ma)
-    return {"market_analysis": ma}
+    return {"market_analysis": ma, "collected_corpus": dict(state.get("collected_corpus") or {})}
 
 
 @graph_node_trace("market_sizing")
@@ -108,9 +120,11 @@ async def node_market_sizing(state: MarketGraphState) -> dict:
     agent = MarketSizingAgent()
     result = await agent.run(ps)
     ma = dict(state.get("market_analysis") or {})
+    corpus = dict(state.get("collected_corpus") or {})
     _store_agent_data(ma, "market", result)
+    _store_agent_corpus(corpus, "market", result)
     _debug_ma("market_sizing", ma)
-    return {"market_analysis": ma}
+    return {"market_analysis": ma, "collected_corpus": corpus}
 
 
 @graph_node_trace("competitor")
@@ -119,9 +133,11 @@ async def node_competitor(state: MarketGraphState) -> dict:
     agent = CompetitorAgent()
     result = await agent.run(ps)
     ma = dict(state.get("market_analysis") or {})
+    corpus = dict(state.get("collected_corpus") or {})
     _store_agent_data(ma, "competitor", result)
+    _store_agent_corpus(corpus, "competitor", result)
     _debug_ma("competitor", ma)
-    return {"market_analysis": ma}
+    return {"market_analysis": ma, "collected_corpus": corpus}
 
 
 @graph_node_trace("voc")
@@ -130,9 +146,11 @@ async def node_voc(state: MarketGraphState) -> dict:
     agent = VOCAgent()
     result = await agent.run(ps)
     ma = dict(state.get("market_analysis") or {})
+    corpus = dict(state.get("collected_corpus") or {})
     _store_agent_data(ma, "voc", result)
+    _store_agent_corpus(corpus, "voc", result)
     _debug_ma("voc", ma)
-    return {"market_analysis": ma}
+    return {"market_analysis": ma, "collected_corpus": corpus}
 
 
 @graph_node_trace("trends_risks")
@@ -141,9 +159,11 @@ async def node_trends_risks(state: MarketGraphState) -> dict:
     agent = TrendsRisksAgent()
     result = await agent.run(ps)
     ma = dict(state.get("market_analysis") or {})
+    corpus = dict(state.get("collected_corpus") or {})
     _store_agent_data(ma, "trends", result)
+    _store_agent_corpus(corpus, "trends", result)
     _debug_ma("trends_risks", ma)
-    return {"market_analysis": ma}
+    return {"market_analysis": ma, "collected_corpus": corpus}
 
 
 @graph_node_trace("strategy_analysis")
@@ -154,14 +174,20 @@ async def node_strategy_analysis(state: MarketGraphState) -> dict:
     ma = dict(state.get("market_analysis") or {})
     _store_agent_data(ma, "strategy", result)
     _debug_ma("strategy_analysis", ma)
-    return {"market_analysis": ma}
+    return {
+        "market_analysis": ma,
+        "collected_corpus": dict(state.get("collected_corpus") or {}),
+    }
 
 
 @graph_node_trace("save_results")
 async def node_save_results(state: MarketGraphState) -> dict:
     ma = dict(state.get("market_analysis") or {})
     clean_ma = _final_market_analysis(ma)
-    return {"market_analysis": clean_ma}
+    return {
+        "market_analysis": clean_ma,
+        "collected_corpus": dict(state.get("collected_corpus") or {}),
+    }
 
 
 def build_market_graph():

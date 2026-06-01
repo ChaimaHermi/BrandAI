@@ -99,7 +99,8 @@ OBJECTIVE
 For EACH competitor, extract ONLY reliable and commonly available data:
 
 - name
-- website
+- website (URL HTTPS exacte du corpus, ou "")
+- evidence_snippet (OBLIGATOIRE — voir ci-dessous)
 - type (direct | indirect)
 - scope (local | global)
 - description
@@ -110,9 +111,20 @@ For EACH competitor, extract ONLY reliable and commonly available data:
 - weaknesses
 - differentiation
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EVIDENCE SNIPPET (OBLIGATOIRE PAR CONCURRENT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Each competitor MUST include "evidence_snippet":
+- Verbatim extract (10–200 characters) copied word-for-word from Content
+- MUST prove the company name exists in the corpus
+- If you cannot copy an exact snippet → DO NOT add the competitor
+- French paraphrase in description is OK only if evidence_snippet proves the fact
+
 Strengths/weaknesses extraction policy (CRITICAL):
 - strengths and weaknesses MUST be arrays (never null)
 - Use ONLY explicit evidence from the provided sources
+- If no explicit strength/weakness in text → return empty arrays []
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -142,6 +154,7 @@ Return ONLY JSON:
     {
       "name": "",
       "website": "",
+      "evidence_snippet": "",
       "type": "direct | indirect",
       "scope": "local | global",
 
@@ -168,14 +181,16 @@ FINAL CHECK (MANDATORY)
 - Ensure scope is ALWAYS present
 - Ensure scope is ONLY "local" or "global"
 - Ensure strengths/weaknesses are arrays (not null)
+- Ensure evidence_snippet is present for EVERY competitor
 - Ensure JSON is valid and clean
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 IMPORTANT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-- Extract the MAXIMUM number of UNIQUE competitors
+- Extract ONLY competitors with explicit evidence_snippet (max 8 unique)
 - Include both local and global competitors if available
 - Do NOT hallucinate missing companies
+- Empty competitors list [] is OK if no reliable match
 - Output ONLY JSON
 """

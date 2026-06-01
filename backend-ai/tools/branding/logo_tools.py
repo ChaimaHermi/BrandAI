@@ -17,7 +17,7 @@ from config.branding_config import (
     LOGO_IMAGE_PROVIDER,
 )
 from prompts.branding.logo_prompt import LOGO_IMAGE_PROMPT_SYSTEM, build_logo_user_message
-from shared.branding.validators import parse_llm_json_object
+from shared.branding.validators import parse_llm_json_object, sanitize_logo_image_prompt
 from tools.branding.logo_image_client import fetch_logo_image_hf_with_pollinations_fallback
 
 LOGO_IMAGE_PROMPT_MIN_LEN = 32
@@ -102,6 +102,8 @@ def make_validate_logo_prompt_tool(*, brand_name: str):
             )
 
         image_prompt, negative_prompt = normalize_logo_prompt_dict(data)
+        image_prompt = sanitize_logo_image_prompt(image_prompt)
+        negative_prompt = sanitize_logo_image_prompt(negative_prompt)
         if not image_prompt:
             return json.dumps(
                 {
@@ -152,18 +154,6 @@ def make_validate_logo_prompt_tool(*, brand_name: str):
                     "ok": False,
                     "error": f"The brand name « {brand_name} » must appear in image_prompt (readable text in the logo).",
                     "validation_hints": "Include the exact brand name in the prompt as visible typography.",
-                },
-                ensure_ascii=False,
-                indent=2,
-            )
-
-        # Prevent prompts that instruct rendering palette color codes in the logo text.
-        if re.search(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b", image_prompt):
-            return json.dumps(
-                {
-                    "ok": False,
-                    "error": "image_prompt must not contain hexadecimal color codes.",
-                    "validation_hints": "Keep palette for visual style only; never display #RRGGBB as text in the logo.",
                 },
                 ensure_ascii=False,
                 indent=2,

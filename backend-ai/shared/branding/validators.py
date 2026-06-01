@@ -8,6 +8,24 @@ from typing import Any
 
 from shared.branding.normalizers import normalize_palette_options, normalize_slogan_options
 
+_HEX_IN_PROMPT = re.compile(
+    r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b"
+)
+
+
+def sanitize_logo_image_prompt(text: str) -> str:
+    """Retire les codes #RRGGBB (souvent recopiés depuis palette_colors_hint)."""
+    s = (text or "").strip()
+    if not s:
+        return s
+    s = re.sub(
+        r"\s*\(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\)",
+        "",
+        s,
+    )
+    s = _HEX_IN_PROMPT.sub("", s)
+    return re.sub(r"\s{2,}", " ", s).strip()
+
 
 def parse_llm_json_object(raw: str) -> dict:
     """Parse model output; tolerates markdown fences and surrounding prose."""

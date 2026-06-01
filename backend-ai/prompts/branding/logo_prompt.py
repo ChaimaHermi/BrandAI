@@ -20,6 +20,10 @@ Return ONE JSON object only — no markdown, no explanation:
 - image_prompt: MAXIMUM 480 characters. Count before responding. Never exceed.
 - negative_prompt: MAXIMUM 280 characters.
 
+⚠️ COLORS — NEVER use hexadecimal codes (#RRGGBB, #RGB) in image_prompt or negative_prompt.
+Describe colors with plain English names only (e.g. "warm orange", "soft olive green").
+The palette hint may contain hex codes for your reference — do NOT copy them into the prompt.
+
 === YOUR CREATIVE MISSION ===
 
 Design a logo icon that VISUALLY TELLS the story of the brand.

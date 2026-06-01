@@ -78,6 +78,76 @@ CONTENT: {content}
 
         return out[:8]
 
+    _INSIGHT_LIST_KEYS = (
+        "pain_points",
+        "frustrations",
+        "desired_features",
+        "market_insights",
+    )
+
+    def _enrich_voc_queries(self, queries: list) -> list[str]:
+        out: list[str] = []
+        seen: set[str] = set()
+        for raw in queries:
+            s = str(raw).strip()
+            if not s:
+                continue
+            k = s.lower()
+            if k not in seen:
+                seen.add(k)
+                out.append(s)
+            if "reddit" not in k and "review" not in k and len(out) < 8:
+                alt = f"{s} user reviews reddit"
+                ak = alt.lower()
+                if ak not in seen:
+                    seen.add(ak)
+                    out.append(alt)
+        return out[:8]
+
+    def _filter_insights_by_corpus(self, data: dict, context: str, all_results: list) -> dict:
+        if not isinstance(data, dict):
+            return data
+        ctx_lower = (context or "").lower()
+        valid_urls = {
+            (r.get("url") or "").strip()
+            for r in (all_results or [])
+            if (r.get("url") or "").strip()
+        }
+
+        for key in self._INSIGHT_LIST_KEYS:
+            items = data.get(key)
+            if not isinstance(items, list):
+                data[key] = []
+                continue
+            kept = []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                snippet = str(item.get("evidence_snippet") or "").strip()
+                src = str(item.get("source") or "").strip()
+                if len(snippet) < 10:
+                    continue
+                if snippet.lower() not in ctx_lower:
+                    continue
+                if src.startswith("http") and valid_urls and src not in valid_urls:
+                    continue
+                kept.append(item)
+            data[key] = kept[:3]
+
+        quotes = data.get("user_quotes")
+        if isinstance(quotes, list):
+            kept_q = []
+            for q in quotes:
+                if not isinstance(q, dict):
+                    continue
+                quote = str(q.get("quote") or "").strip()
+                if len(quote) < 5 or quote.lower() not in ctx_lower:
+                    continue
+                kept_q.append(q)
+            data["user_quotes"] = kept_q[:3]
+
+        return data
+
     # ─────────────────────────
     # RUN
     # ─────────────────────────
@@ -94,6 +164,8 @@ CONTENT: {content}
                 "error": "No VOC queries provided",
                 "data": {}
             }
+
+        queries = self._enrich_voc_queries(queries)
 
         all_results = []
 
@@ -137,6 +209,8 @@ CONTENT: {content}
                 "data": {}
             }
 
+        data = self._filter_insights_by_corpus(data, context, all_results)
+
         data["sources"] = self._normalize_sources(
             all_results=all_results,
             llm_sources=data.get("sources", [])
@@ -145,5 +219,6 @@ CONTENT: {content}
         return {
             "agent": "voc",
             "status": "success",
-            "data": data
+            "data": data,
+            "collected_context": context,
         }

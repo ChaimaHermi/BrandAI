@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="zZI12IGe_poBYI7MeQl-">
+    <mxGraphModel dx="1847" dy="947" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=13;fontStyle=1;" value="&amp;nbsp;Diagramme de classes&amp;nbsp;" vertex="1">
+          <mxGeometry height="26" width="500" x="1620" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="55" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=2;fontSize=13;" value="&lt;b&gt;«enumeration» IdeaStatus&lt;/b&gt;&lt;hr&gt;pending&lt;br&gt;running&lt;br&gt;done&lt;br&gt;error" vertex="1">
+          <mxGeometry height="110" width="200" x="376" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=2;fontSize=13;" value="&lt;b&gt;«enumeration» BrandKitStatus&lt;/b&gt;&lt;hr&gt;DRAFT&lt;br&gt;IN_PROGRESS&lt;br&gt;COMPLETED&lt;br&gt;VALIDATED" vertex="1">
+          <mxGeometry height="128" width="200" x="376" y="552" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=2;fontSize=13;" value="&lt;b&gt;«enumeration» PublicationStatus&lt;/b&gt;&lt;hr&gt;scheduled&lt;br&gt;publishing&lt;br&gt;published&lt;br&gt;failed&lt;div&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="200" x="2590" y="1190" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;User&lt;/b&gt;&amp;nbsp;&lt;hr&gt;- id : Integer&lt;br&gt;- name : String&lt;br&gt;- email : String&lt;br&gt;- hashed_password : String&lt;br&gt;- google_id : String&lt;br&gt;- avatar_url : String&lt;br&gt;- created_at : DateTime&lt;hr&gt;" vertex="1">
+          <mxGeometry height="168" width="280" x="1540" y="472" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;Idea&lt;/b&gt;&lt;hr&gt;- id : Integer&lt;br&gt;- status : IdeaStatus&lt;br&gt;- name : String&lt;br&gt;- sector : String&lt;br&gt;- target_audience : String&lt;br&gt;- description : Text&lt;br&gt;- clarity_status : String&lt;br&gt;- clarity_score : Integer&lt;br&gt;- clarity_sector : String&lt;br&gt;- clarity_target_users : String&lt;br&gt;- clarity_problem : Text&lt;br&gt;- clarity_solution : Text&lt;br&gt;- clarity_short_pitch : String&lt;br&gt;- created_at : DateTime&lt;hr&gt;" vertex="1">
+          <mxGeometry height="308" width="320" x="1520" y="772" as="geometry" />
+        </mxCell>
+        <mxCell id="7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;BrandKit&lt;/b&gt;&lt;hr&gt;- id : UUID&lt;br&gt;- status : BrandKitStatus&lt;br&gt;- created_at : DateTime&lt;br&gt;- updated_at : DateTime&lt;br&gt;- validated_at : DateTime&lt;br&gt;- naming_status : String&lt;br&gt;- naming_preferences : JSONB&lt;br&gt;- naming_generated : JSONB&lt;br&gt;- chosen_name : String&lt;br&gt;- naming_chosen_at : DateTime&lt;br&gt;- slogan_status : String&lt;br&gt;- slogan_preferences : JSONB&lt;br&gt;- slogan_generated : JSONB&lt;br&gt;- chosen_slogan : String&lt;br&gt;- based_on_name : String&lt;br&gt;- slogan_chosen_at : DateTime&lt;br&gt;- palette_status : String&lt;br&gt;- palette_preferences : JSONB&lt;br&gt;- palette_generated : JSONB&lt;br&gt;- palette_chosen : JSONB&lt;br&gt;- palette_chosen_at : DateTime&lt;br&gt;- logo_status : String&lt;br&gt;- logo_preferences : JSONB&lt;br&gt;- logo_generated : JSONB&lt;br&gt;- logo_style : String&lt;br&gt;- logo_type : String&lt;br&gt;- svg_data : Text&lt;br&gt;- logo_variants : JSONB&lt;br&gt;- logo_chosen : JSONB&lt;br&gt;- logo_chosen_at : DateTime&lt;hr&gt;" vertex="1">
+          <mxGeometry height="520" width="300" x="630" y="552" as="geometry" />
+        </mxCell>
+        <mxCell id="8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;GeneratedContent&lt;/b&gt;&lt;hr&gt;- id : Integer&lt;br&gt;- platform : String&lt;br&gt;- caption : Text&lt;br&gt;- image_url : Text&lt;br&gt;- published_at : DateTime&lt;br&gt;- created_at : DateTime&lt;br&gt;- updated_at : DateTime&lt;hr&gt;" vertex="1">
+          <mxGeometry height="180" width="300" x="2230" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;ScheduledPublication&lt;/b&gt;&lt;hr&gt;- id : Integer&lt;br&gt;- platform : String&lt;br&gt;- caption_snapshot : Text&lt;br&gt;- image_url_snapshot : Text&lt;br&gt;- scheduled_at : DateTime&lt;br&gt;- status : PublicationStatus&lt;br&gt;- last_error : Text&lt;br&gt;- published_at : DateTime&lt;br&gt;- external_post_id : String&lt;br&gt;- title : String&lt;br&gt;- created_at : DateTime&lt;br&gt;- updated_at : DateTime&lt;hr&gt;" vertex="1">
+          <mxGeometry height="268" width="300" x="2230" y="1172" as="geometry" />
+        </mxCell>
+        <mxCell id="10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;Notification&lt;/b&gt;&lt;hr&gt;- id : Integer&lt;br&gt;- type : String&lt;br&gt;- title : String&lt;br&gt;- message : Text&lt;br&gt;- is_read : Boolean&lt;br&gt;- platform : String&lt;br&gt;- created_at : DateTime" vertex="1">
+          <mxGeometry height="200" width="300" x="2230" y="1670" as="geometry" />
+        </mxCell>
+        <mxCell id="11" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;MarketAnalysisResult&lt;/b&gt;&amp;nbsp;&lt;hr&gt;- id : Integer&lt;br&gt;- status : String&lt;br&gt;- result_json : JSON&lt;br&gt;- data_quality_json : JSON&lt;br&gt;- error_message : Text&lt;br&gt;- started_at : DateTime&lt;br&gt;- completed_at : DateTime&lt;br&gt;- created_at : DateTime&lt;br&gt;- updated_at : DateTime" vertex="1">
+          <mxGeometry height="208" width="280" x="200" y="902" as="geometry" />
+        </mxCell>
+        <mxCell id="12" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;MarketingPlan&lt;/b&gt;&amp;nbsp;&lt;hr&gt;- id : Integer&lt;br&gt;- status : String&lt;br&gt;- result_json : JSON&lt;br&gt;- created_at : DateTime&lt;br&gt;- updated_at : DateTime" vertex="1">
+          <mxGeometry height="138" width="260" x="400" y="1154" as="geometry" />
+        </mxCell>
+        <mxCell id="13" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;RecommendationResult&lt;/b&gt;&lt;hr&gt;- id : Integer&lt;br&gt;- platform : String&lt;br&gt;- content : Text&lt;br&gt;- generated_at : DateTime" vertex="1">
+          <mxGeometry height="130" width="260" x="1690" y="1720" as="geometry" />
+        </mxCell>
+        <mxCell id="14" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;WebsiteProject&lt;/b&gt;&lt;hr&gt;- id : UUID&lt;br&gt;- status : WebsiteProjectStatus&lt;br&gt;- description_json : JSONB&lt;br&gt;- current_html : Text&lt;br&gt;- current_version : Integer&lt;br&gt;- conversation_json : JSONB&lt;br&gt;- approved : Boolean&lt;br&gt;- approved_at : DateTime&lt;br&gt;- last_deployment_id : Text&lt;br&gt;- last_deployment_url : Text&lt;br&gt;- last_deployment_state : String&lt;br&gt;- created_at : DateTime&lt;br&gt;- updated_at : DateTime&lt;hr&gt;" vertex="1">
+          <mxGeometry height="260" width="320" x="700" y="1240" as="geometry" />
+        </mxCell>
+        <mxCell id="15" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;SocialConnection&lt;/b&gt;&lt;hr&gt;- id : Integer&lt;br&gt;- platform : String&lt;br&gt;- platform_account_id : String&lt;br&gt;- profile_url : Text&lt;br&gt;- access_token_encrypted : Text&lt;br&gt;- token_expires_at : DateTime&lt;br&gt;- account_name : String&lt;br&gt;- page_name : String&lt;br&gt;- created_at : DateTime&lt;br&gt;- updated_at : DateTime" vertex="1">
+          <mxGeometry height="250" width="300" x="670" y="1620" as="geometry" />
+        </mxCell>
+        <mxCell id="16" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;RawSocialPost&lt;/b&gt;&lt;hr&gt;- id : Integer&lt;br&gt;- post_external_id : String&lt;br&gt;- published_at : DateTime&lt;br&gt;- text : Text&lt;br&gt;- media_type : String&lt;br&gt;- media_url : Text&lt;br&gt;- permalink_url : Text&lt;br&gt;- likes : Integer&lt;br&gt;- comments : Integer&lt;br&gt;- shares : Integer&lt;br&gt;- reach : Integer&lt;br&gt;- impressions : Integer&lt;br&gt;- reactions_breakdown : JSONB&lt;br&gt;- created_at : DateTime&lt;br&gt;- updated_at : DateTime" vertex="1">
+          <mxGeometry height="300" width="240" x="1220" y="1390" as="geometry" />
+        </mxCell>
+        <mxCell id="17" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;fontSize=13;" value="&lt;b&gt;SocialKpiSummary&lt;/b&gt;&amp;nbsp;&lt;hr&gt;- id : Integer&lt;br&gt;- period_type : String&lt;br&gt;- period_start : Date&lt;br&gt;- period_end : Date&lt;br&gt;- followers_count : Integer&lt;br&gt;- posts_count : Integer&lt;br&gt;- total_engagement : Integer&lt;br&gt;- total_reach : Integer&lt;br&gt;- engagement_rate : Numeric&lt;br&gt;- clicks : Integer&lt;br&gt;- shares : Integer&lt;br&gt;- reactions_breakdown : JSONB&lt;br&gt;- top_posts : JSONB&lt;br&gt;- calculated_at : DateTime" vertex="1">
+          <mxGeometry height="308" width="240" x="1700" y="1292" as="geometry" />
+        </mxCell>
+        <mxCell id="18" edge="1" parent="1" source="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=2;fontSize=13;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="6" value="possède">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="19" connectable="0" parent="18" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.72" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="20" connectable="0" parent="18" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.72" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="21" edge="1" parent="1" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=2;fontSize=13;exitX=0;exitY=0.6;entryX=1;entryY=0.2;" target="7" value="possède">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" connectable="0" parent="21" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="23" connectable="0" parent="21" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.75" as="geometry">
+            <mxPoint x="-102" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="24" edge="1" parent="1" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=2;fontSize=13;exitX=1;exitY=0.35;entryX=0;entryY=0.4;" target="8" value="produit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="25" connectable="0" parent="24" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="26" connectable="0" parent="24" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="27" edge="1" parent="1" source="8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=2;fontSize=13;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="9" value="est planifié en">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="28" connectable="0" parent="27" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="29" connectable="0" parent="27" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.75" as="geometry">
+            <mxPoint x="8" y="-11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="30" edge="1" parent="1" source="9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=2;fontSize=13;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="10" value="génère">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="31" connectable="0" parent="30" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="32" connectable="0" parent="30" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.75" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="33" edge="1" parent="1" source="15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=1.5;fontSize=13;exitX=1;exitY=0.25;entryX=0;entryY=0.15;" target="9" value="utilise">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="1695" />
+              <mxPoint x="1050" y="1217" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="34" connectable="0" parent="33" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.7" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="35" connectable="0" parent="33" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.7" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="36" edge="1" parent="1" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=2;fontSize=13;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="14" value="possède">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="37" connectable="0" parent="36" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="38" connectable="0" parent="36" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..1" vertex="1">
+          <mxGeometry relative="1" x="0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="39" edge="1" parent="1" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=2;fontSize=13;exitX=0;exitY=0.85;entryX=1;entryY=0.5;" target="11" value="fait l'objet de">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1520" y="1012" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="40" connectable="0" parent="39" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="41" connectable="0" parent="39" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.75" as="geometry">
+            <mxPoint x="-69" y="8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="42" edge="1" parent="1" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=2;fontSize=13;exitX=0.15;exitY=1;entryX=0.5;entryY=0;" target="12" value="possède">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="43" connectable="0" parent="42" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="44" connectable="0" parent="42" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..1" vertex="1">
+          <mxGeometry relative="1" x="0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="45" edge="1" parent="1" source="17" style="rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=1.5;fontSize=13;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="13" value="produit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="46" connectable="0" parent="45" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="47" connectable="0" parent="45" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.75" as="geometry">
+            <mxPoint x="10" y="-18" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="48" edge="1" parent="1" source="15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=1.5;fontSize=13;entryX=0.5;entryY=0;" target="16" value="synchronise">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="49" connectable="0" parent="48" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.75" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="50" connectable="0" parent="48" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="46" y="-40" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="51" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=2;fontSize=13;" value="&lt;b&gt;«enumeration» WebsiteProjectStatus&lt;/b&gt;&lt;hr&gt;draft&lt;br&gt;generating&lt;br&gt;approved&lt;br&gt;&lt;b&gt;deployed&lt;/b&gt;&lt;br&gt;error" vertex="1">
+          <mxGeometry height="140" width="220" x="450" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="52" edge="1" parent="1" source="16" style="rounded=0;endArrow=none;endFill=0;endSize=10;strokeColor=#000000;strokeWidth=1.5;fontSize=13;exitX=1;exitY=0.15;entryX=0;entryY=0.85;" target="17" value="contribue à">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="53" connectable="0" parent="52" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="-0.7" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="54" connectable="0" parent="52" style="edgeLabel;html=1;fontSize=13;fontStyle=1;" value="0..*" vertex="1">
+          <mxGeometry relative="1" x="0.7" as="geometry">
+            <mxPoint x="2" y="-35" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="56" edge="1" parent="1" source="6" style="endArrow=none;endFill=0;edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=13;exitX=0;exitY=0.12;entryX=1;entryY=0.5;" target="55" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="57" edge="1" parent="1" source="7" style="endArrow=none;endFill=0;edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=13;exitX=0;exitY=0.06;entryX=1;entryY=0.5;" target="3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

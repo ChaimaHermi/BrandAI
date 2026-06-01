@@ -3,7 +3,6 @@ import base64
 import json
 import logging
 import os
-import re
 import sys
 import io
 from typing import Any
@@ -24,14 +23,14 @@ from config.branding_config import (
     LOGO_ORIGINALITY_MAX_RETRIES,
     LOGO_ORIGINALITY_MAX_SIMILAR,
 )
-from llm.llm_factory import create_azure_openai_client
+from llm.llm_factory import create_react_orchestrator_llm
 from prompts.branding.logo_prompt import (
     LOGO_IMAGE_PROMPT_SYSTEM_WITH_NAME,
     LOGO_REACT_SYSTEM_PROMPT,
     build_logo_react_user_message,
     build_logo_user_message_with_name,
 )
-from shared.branding.validators import parse_llm_json_object
+from shared.branding.validators import parse_llm_json_object, sanitize_logo_image_prompt
 from tools.branding.logo_image_client import fetch_logo_image_hf_with_pollinations_fallback
 from tools.branding.logo_originality_checker import verifier_originalite_logo_bytes
 from tools.branding.logo_tools import (
@@ -158,17 +157,18 @@ def _remove_light_background_to_transparent(
 
 
 class LogoAgent(BaseAgent):
-    """Prompt image via ReAct (draft -> render) puis kit logo (HF / NVIDIA / Pollinations)."""
+    """Prompt image via NVIDIA gpt-oss-120b, rendu image via NVIDIA Flux (flux.2-klein-4b)."""
 
     def __init__(self):
+        cfg = LOGO_LLM_CONFIG
         super().__init__(
             agent_name="logo_agent",
-            temperature=LOGO_LLM_CONFIG["temperature"],
-            llm_model="gpt-4.1",
-            llm_max_tokens=min(LOGO_LLM_CONFIG.get("max_tokens") or 900, 1200),
+            temperature=float(cfg.get("temperature", 0.4)),
+            llm_model=str(cfg.get("model", "openai/gpt-oss-120b")),
+            llm_max_tokens=int(cfg.get("max_tokens", 4096)),
         )
-        self._provider = LOGO_LLM_CONFIG.get("provider", "azure")
-        self._logo_max_tokens = min(LOGO_LLM_CONFIG.get("max_tokens") or 900, 1200)
+        self._provider = str(cfg.get("provider", "nvidia")).strip().lower()
+        self._logo_max_tokens = int(cfg.get("max_tokens", 4096))
 
     @staticmethod
     def _extract_drafted_logo_prompts(messages: list, brand_name: str) -> tuple[str, str] | None:
@@ -187,13 +187,11 @@ class LogoAgent(BaseAgent):
                 continue
             if not isinstance(data, dict):
                 continue
-            ip = str(data.get("image_prompt") or "").strip()
+            ip = sanitize_logo_image_prompt(str(data.get("image_prompt") or ""))
             if not ip:
                 continue
             np = str(data.get("negative_prompt") or "").strip()
             if brand_key and brand_key not in ip.lower():
-                continue
-            if re.search(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b", ip):
                 continue
             return ip, np
         return None
@@ -204,44 +202,48 @@ class LogoAgent(BaseAgent):
             data = parse_llm_json_object(raw)
         except Exception:
             return None
-        ip = str(data.get("image_prompt") or "").strip()
-        np = str(data.get("negative_prompt") or "").strip()
+        ip = sanitize_logo_image_prompt(str(data.get("image_prompt") or ""))
+        np = sanitize_logo_image_prompt(str(data.get("negative_prompt") or ""))
         if not ip:
             return None
         if (brand_name or "").strip().lower() not in ip.lower():
             return None
-        if re.search(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b", ip):
-            return None
         return ip, np
 
-    def _draft_logo_prompt_direct(
+    async def _draft_logo_prompt_direct(
         self,
         *,
-        llm,
         idea: dict,
         brand_name: str,
         palette_hint: str,
         validation_feedback: str,
     ) -> tuple[str, str] | None:
         user_prompt = build_logo_user_message_with_name(idea, brand_name, palette_hint)
-        fb = (validation_feedback or "").strip()
-        if fb:
-            user_prompt += "\n\n--- FEEDBACK (produce a new JSON prompt) ---\n" + fb
-        messages = [
-            SystemMessage(content=LOGO_IMAGE_PROMPT_SYSTEM_WITH_NAME),
-            HumanMessage(content=user_prompt),
-        ]
-        response = llm.invoke(messages)
-        content = response.content if response and getattr(response, "content", None) else ""
-        raw = content if isinstance(content, str) else str(content)
+        extra_fb = (validation_feedback or "").strip()
+        last_raw = ""
 
-        result = self._parse_logo_prompt_json(raw, brand_name)
-        if not result:
-            self.logger.warning(
-                "[logo_agent] Parse échoué | brand=%r | raw[:300]=%r",
-                brand_name, raw[:300],
+        for attempt in range(3):
+            user = user_prompt
+            if extra_fb:
+                user += "\n\n--- FEEDBACK (produce a new JSON prompt) ---\n" + extra_fb
+            raw = await self._call_llm(LOGO_IMAGE_PROMPT_SYSTEM_WITH_NAME, user)
+            last_raw = raw or ""
+            result = self._parse_logo_prompt_json(last_raw, brand_name)
+            if result:
+                return result
+            extra_fb = (
+                (extra_fb + "\n") if extra_fb else ""
+            ) + (
+                "Return ONE valid JSON object only. "
+                "Never use hexadecimal color codes (#RRGGBB). "
+                "Use English color names. Include the exact brand name in image_prompt."
             )
-        return result
+
+        self.logger.warning(
+            "[logo_agent] Parse échoué | brand=%r | raw[:300]=%r",
+            brand_name, last_raw[:300],
+        )
+        return None
 
     @staticmethod
     def _print(msg: str = "") -> None:
@@ -345,16 +347,17 @@ class LogoAgent(BaseAgent):
         return final_state
 
     def _make_llm_for_logo(self):
-        if self._provider == "azure":
-            from config.settings import AZURE_OPENAI_LOGO_DEPLOYMENT
-
-            deployment = (AZURE_OPENAI_LOGO_DEPLOYMENT or "").strip() or None
-            return create_azure_openai_client(
+        """LangChain client pour le flux ReAct (tools) — NVIDIA gpt-oss-120b uniquement."""
+        if self._provider == "nvidia":
+            return create_react_orchestrator_llm(
+                model=self.llm_model,
                 temperature=self.temperature,
-                max_tokens=self._logo_max_tokens,
-                azure_deployment=deployment,
+                max_tokens=min(self._logo_max_tokens, 4096),
             )
-        return self.llm_rotator.get_client(self.temperature)
+        raise RuntimeError(
+            f"logo_agent : provider « {self._provider} » non supporté. "
+            "Utilisez provider=nvidia et NVIDIA_API_KEY_1…4 dans .env."
+        )
 
     @traceable(name="logo_agent.react_invoke", tags=["branding", "logo_agent", "react"])
     async def _run_react_logo_agent(
@@ -461,18 +464,20 @@ class LogoAgent(BaseAgent):
     async def _generate_logo_concept(
         self,
         *,
-        llm,
         idea: dict,
         brand_name: str,
         palette_hint: str,
         originality_feedback: str = "",
         emitter: Any = None,
     ) -> dict[str, Any] | None:
-        """Génère un concept logo (avec nom de marque) via appel LLM direct."""
+        """Génère un concept logo (prompt LLM NVIDIA gpt-oss-120b → image NVIDIA Flux)."""
         if emitter:
-            await emitter.emit_step("prompt", "Génération du prompt image (LLM)…", status="running")
-        pair = self._draft_logo_prompt_direct(
-            llm=llm,
+            await emitter.emit_step(
+                "prompt",
+                "Génération du prompt image (NVIDIA gpt-oss-120b)…",
+                status="running",
+            )
+        pair = await self._draft_logo_prompt_direct(
             idea=idea,
             brand_name=brand_name,
             palette_hint=palette_hint,
@@ -585,13 +590,15 @@ class LogoAgent(BaseAgent):
             ])
 
         try:
-            llm = self._make_llm_for_logo()
             rt = get_current_run_tree()
             if rt:
-                rt.metadata.update({"provider": self._provider, "brand": brand_name})
+                rt.metadata.update({
+                    "provider": self._provider,
+                    "llm_model": self.llm_model,
+                    "brand": brand_name,
+                })
 
             concept = await self._generate_logo_concept(
-                llm=llm,
                 idea=idea,
                 brand_name=brand_name,
                 palette_hint=palette_hint,
@@ -651,7 +658,6 @@ class LogoAgent(BaseAgent):
                 )
                 try:
                     new_concept = await self._generate_logo_concept(
-                        llm=llm,
                         idea=idea,
                         brand_name=brand_name,
                         palette_hint=palette_hint,

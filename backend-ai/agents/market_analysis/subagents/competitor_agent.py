@@ -13,7 +13,8 @@ _SERP_PER_QUERY    = 5
 _TOTAL_RESULTS_MAX = 30
 _CONTENT_MAX       = 2_000
 _CONTEXT_MAX       = 500_000
-_CONCURRENCY       = 5   # requêtes API simultanées max (évite rate limit)
+_CONCURRENCY       = 5
+_MAX_COMPETITORS   = 8
 
 
 class CompetitorAgent(BaseAgent):
@@ -39,6 +40,72 @@ class CompetitorAgent(BaseAgent):
             )
         context = "\n\n".join(blocks)
         return context[:_CONTEXT_MAX] if len(context) > _CONTEXT_MAX else context
+
+    def _enrich_competitor_queries(self, queries: list, clarified: dict) -> list[str]:
+        country = str(clarified.get("country") or clarified.get("country_code") or "").strip()
+        out: list[str] = []
+        seen: set[str] = set()
+        for raw in queries:
+            s = str(raw).strip()
+            if not s:
+                continue
+            variants = [s]
+            if country and country.lower() not in s.lower():
+                variants.append(f"{s} {country}")
+            if "competitor" not in s.lower():
+                variants.append(f"{s} competitors market")
+            for v in variants:
+                k = v.lower()
+                if k not in seen:
+                    seen.add(k)
+                    out.append(v)
+        return out[:10]
+
+    def _filter_competitors_by_corpus(self, data: dict, context: str, all_results: list) -> dict:
+        if not isinstance(data, dict):
+            return data
+        ctx_lower = (context or "").lower()
+        valid_urls = {
+            (r.get("url") or "").strip()
+            for r in (all_results or [])
+            if (r.get("url") or "").strip()
+        }
+
+        items = data.get("competitors")
+        if not isinstance(items, list):
+            data["competitors"] = []
+            return data
+
+        kept = []
+        seen_names: set[str] = set()
+        for comp in items:
+            if not isinstance(comp, dict):
+                continue
+            name = str(comp.get("name") or "").strip()
+            snippet = str(comp.get("evidence_snippet") or "").strip()
+            website = str(comp.get("website") or "").strip()
+
+            if len(name) < 2:
+                continue
+            if len(snippet) < 10 or snippet.lower() not in ctx_lower:
+                if name.lower() not in ctx_lower:
+                    continue
+            if website.startswith("http") and valid_urls and website not in valid_urls:
+                comp["website"] = ""
+
+            nk = name.lower()
+            if nk in seen_names:
+                continue
+            seen_names.add(nk)
+
+            if comp.get("strengths") is None:
+                comp["strengths"] = []
+            if comp.get("weaknesses") is None:
+                comp["weaknesses"] = []
+            kept.append(comp)
+
+        data["competitors"] = kept[:_MAX_COMPETITORS]
+        return data
 
     async def _fetch_tavily(self, semaphore: asyncio.Semaphore, q: str) -> list:
         async with semaphore:
@@ -69,6 +136,13 @@ class CompetitorAgent(BaseAgent):
     @agent_trace("competitor.run", tags=["market_analysis", "competitor"])
     async def run(self, state):
         queries = (state.market_analysis or {}).get("competitor_queries", [])
+        clarified = getattr(state, "clarified_idea", None) or {}
+
+        if not queries:
+            return {"agent": "competitor", "status": "error",
+                    "error": "No competitor queries provided", "data": {}}
+
+        queries = self._enrich_competitor_queries(queries, clarified)
 
         semaphore = asyncio.Semaphore(_CONCURRENCY)
         tasks = (
@@ -100,19 +174,11 @@ class CompetitorAgent(BaseAgent):
             return {"agent": "competitor", "status": "error",
                     "error": f"Invalid competitor JSON: {e}; preview={preview!r}", "data": {}}
 
-        competitors = data.get("competitors")
-        if isinstance(competitors, list):
-            fallback_url = next(
-                (x.get("url") for x in final_results if (x.get("url") or "").strip()), ""
-            )
-            for comp in competitors:
-                if not isinstance(comp, dict):
-                    continue
-                if not (comp.get("website") or "").strip() and fallback_url:
-                    comp["website"] = fallback_url
-                if comp.get("strengths") is None:
-                    comp["strengths"] = []
-                if comp.get("weaknesses") is None:
-                    comp["weaknesses"] = []
+        data = self._filter_competitors_by_corpus(data, context, final_results)
 
-        return {"agent": "competitor", "status": "success", "data": data}
+        return {
+            "agent": "competitor",
+            "status": "success",
+            "data": data,
+            "collected_context": context,
+        }

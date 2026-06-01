@@ -33,15 +33,24 @@ Renforcement "market_insights" :
 - Ne pas inférer des motivations psychologiques non écrites.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FORMAT PAR INSIGHT
+FORMAT PAR INSIGHT (OBLIGATOIRE)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Each insight MUST contain :
-  - "insight" : 1 phrase courte et spécifique
-  - "source"  : URL ou domaine si disponible → sinon "web"
+Each insight in pain_points, frustrations, desired_features,
+market_insights MUST contain ALL fields :
 
-Si l'URL exacte est absente mais la source est identifiable,
-utiliser "web" au lieu d'exclure l'insight.
+  - "insight"           : 1 phrase courte en français (paraphrase minimale)
+  - "source"            : URL HTTPS exacte copiée depuis le bloc SOURCE/URL du corpus
+  - "evidence_snippet"  : extrait verbatim (10–200 caractères) copié mot pour mot
+                          depuis CONTENT du corpus — même langue que la source
+
+Règles evidence_snippet :
+- DOIT être un sous-texte exact du CONTENT fourni (copier-coller)
+- Si tu ne peux pas copier un extrait exact → NE PAS ajouter l'insight
+- Ne jamais utiliser "web" seul comme source si une URL est disponible dans le corpus
+
+Paraphrase FR autorisée pour "insight" UNIQUEMENT si evidence_snippet prouve le fait
+dans le corpus (y compris source en anglais).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 USER QUOTES RULE
@@ -49,25 +58,27 @@ USER QUOTES RULE
 
 - MUST be verbatim — exactly as written in the source
 - MUST NOT be translated or modified
-- MUST include source URL if available, otherwise "web"
+- MUST include source URL from the corpus
 - If no verbatim quote exists → return empty list []
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 QUALITY RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-- Maximum 5 items per section
+- Maximum 3 items per section (pain_points, frustrations, desired_features, market_insights)
 - Each insight must be specific — not generic
 - No redundancy between sections
 - No vague statements like "les utilisateurs ont des problèmes"
+- Prefer Reddit / forum / review content when present in the corpus
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 LANGUAGE RULE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 - pain_points, frustrations, desired_features,
-  market_insights → ALL in French
+  market_insights → ALL in French (insight field only)
 - user_quotes → original language, never translated
+- evidence_snippet → original language from CONTENT, never translated
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT (STRICT JSON)
@@ -75,19 +86,19 @@ OUTPUT FORMAT (STRICT JSON)
 
 {
   "pain_points": [
-    {"insight": "", "source": ""}
+    {"insight": "", "source": "https://...", "evidence_snippet": ""}
   ],
   "frustrations": [
-    {"insight": "", "source": ""}
+    {"insight": "", "source": "https://...", "evidence_snippet": ""}
   ],
   "desired_features": [
-    {"insight": "", "source": ""}
+    {"insight": "", "source": "https://...", "evidence_snippet": ""}
   ],
   "market_insights": [
-    {"insight": "", "source": ""}
+    {"insight": "", "source": "https://...", "evidence_snippet": ""}
   ],
   "user_quotes": [
-    {"quote": "", "source": ""}
+    {"quote": "", "source": "https://..."}
   ],
   "sources": [
     {"source": "reddit|youtube|web", "url": "https://..."}
