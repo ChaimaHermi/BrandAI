@@ -5,8 +5,8 @@ Content Pipeline — génération séquentielle (BrandAI)
 Pipeline fixe en 5 étapes (aucun agent LLM orchestrateur) :
   1. merge_context      — brief + contexte idée
   2. get_platform_spec  — contraintes techniques plateforme
-  3. draft_post         — légende (LLM NVIDIA gpt-oss-120b)
-  4. build_image_prompt — prompts image (LLM NVIDIA, si image demandée)
+  3. draft_post         — légende (Azure OpenAI GPT)
+  4. build_image_prompt — prompts image (Azure OpenAI, si image demandée)
   5. image_client       — NVIDIA flux.2-klein-4b → Cloudinary
 
 Points d'entrée publics (inchangés pour les routes FastAPI) :
@@ -64,7 +64,7 @@ def _build_generation_result(
 ) -> dict[str, Any]:
     caption = (state.get("caption") or "").strip()
     if not caption:
-        raise RuntimeError("Pipeline : légende vide — vérifiez les clés NVIDIA.")
+        raise RuntimeError("Pipeline : légende vide — vérifiez Azure OpenAI (AZURE_OPENAI_*).")
 
     want_image = should_include_image_in_post(platform, brief)
     image_url = state.get("image_url")

@@ -1,8 +1,8 @@
 """
 Configuration de l'agent Website Builder.
 
-L'agent utilise openai/gpt-oss-120b via NVIDIA NIM avec rotation des clés
-NVIDIA_API_KEY_1 … NVIDIA_API_KEY_4 (gérée par BaseAgent).
+Phases architecture/contenu : Azure GPT-4 via BaseAgent.
+Phase génération HTML : GLM via NVIDIA/SiliconFlow (WEBSITE_GENERATION_MODEL).
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import os
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Pipeline 3-tools : architecture → content → coder
-# Modèle : openai/gpt-oss-120b (NVIDIA NIM) — fenêtre 128k input / 65k output.
+# Phases 2A/2B : Azure GPT-4 (AZURE_OPENAI_DEPLOYMENT).
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Phase 2A — Architecture : structure JSON (sections, nav, animations).

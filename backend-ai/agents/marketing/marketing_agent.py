@@ -16,7 +16,7 @@ class MarketingAgent(BaseAgent):
         super().__init__(
             agent_name="marketing_agent",
             temperature=float(cfg.get("temperature", 0.2)),
-            llm_model=str(cfg.get("model", "openai/gpt-oss-120b")),
+            llm_model=str(cfg.get("model")),
             llm_max_tokens=int(cfg.get("max_tokens", 3500)),
         )
 

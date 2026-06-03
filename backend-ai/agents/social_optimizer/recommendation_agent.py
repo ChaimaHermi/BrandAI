@@ -1,14 +1,19 @@
-"""Social Optimizer recommendation agent."""
+"""Social Optimizer recommendation agent — recommandations stratégiques via Azure OpenAI."""
 
 from __future__ import annotations
 
 import json
 from datetime import datetime
 
-import httpx
 from langsmith import traceable
 
 from agents.base_agent import BaseAgent
+from agents.content_generation.content_azure_llm import call_azure_llm_json_object
+from config.social_optimizer_config import (
+    SOCIAL_OPTIMIZER_AZURE_DEPLOYMENT,
+    SOCIAL_OPTIMIZER_LLM_MAX_TOKENS,
+    SOCIAL_OPTIMIZER_LLM_TEMPERATURE,
+)
 from prompts.social_media_optimizer.prompt_optimizer_system import SOCIAL_OPTIMIZER_SYSTEM_PROMPT
 from prompts.social_media_optimizer.prompt_optimizer_user import build_optimizer_user_prompt
 from tools.social_optimizer.recommendation_tools import (
@@ -23,10 +28,11 @@ class SocialOptimizerRecommendationAgent(BaseAgent):
     def __init__(self) -> None:
         super().__init__(
             agent_name="social_optimizer_recommendation_agent",
-            temperature=0.35,
-            llm_model="openai/gpt-oss-120b",
-            llm_max_tokens=1600,
+            temperature=SOCIAL_OPTIMIZER_LLM_TEMPERATURE,
+            llm_model=SOCIAL_OPTIMIZER_AZURE_DEPLOYMENT,
+            llm_max_tokens=SOCIAL_OPTIMIZER_LLM_MAX_TOKENS,
         )
+        self._azure_deployment = SOCIAL_OPTIMIZER_AZURE_DEPLOYMENT
 
     @staticmethod
     def _normalize_priority(value: str | None) -> str:
@@ -59,41 +65,21 @@ class SocialOptimizerRecommendationAgent(BaseAgent):
             "recommendations": normalized,
         }
 
-    @traceable(
-        name="social_optimizer.llm_json",
-        run_type="llm",
-        tags=["social_optimizer", "llm"],
-    )
     async def _call_llm_json_object(self, system_prompt: str, user_prompt: str) -> dict:
-        max_tokens = min(self.llm_max_tokens, 4096)
-        key, lock = await self._acquire_free_key()
-        try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(180.0)) as client:
-                resp = await client.post(
-                    "https://integrate.api.nvidia.com/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {key}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": self.llm_model,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt},
-                        ],
-                        "temperature": self.temperature,
-                        "max_tokens": max_tokens,
-                        "response_format": {"type": "json_object"},
-                    },
-                )
-                resp.raise_for_status()
-                message = resp.json()["choices"][0]["message"]
-                content = (message.get("content") or "").strip()
-                return json.loads(content)
-        finally:
-            lock.release()
+        return await call_azure_llm_json_object(
+            agent_name=self.agent_name,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=self.temperature,
+            max_tokens=min(self.llm_max_tokens, 4096),
+            azure_deployment=self._azure_deployment,
+        )
 
-    @traceable(name="social_optimizer.agent.generate_recommendation", run_type="chain", tags=["social_optimizer", "agent"])
+    @traceable(
+        name="social_optimizer.agent.generate_recommendation",
+        run_type="chain",
+        tags=["social_optimizer", "agent", "azure"],
+    )
     async def generate_recommendation(
         self,
         *,
@@ -141,4 +127,3 @@ class SocialOptimizerRecommendationAgent(BaseAgent):
         Social optimizer uses explicit params in generate_recommendation.
         """
         return state
-

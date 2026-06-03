@@ -132,9 +132,12 @@ async def traced_llm_dispatch(agent: Any, system_prompt: str, user_prompt: str) 
         temperature=getattr(agent, "temperature", None),
     )
     from agents.base_agent import NVIDIA_MODELS
+    from config.settings import AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_KEY
 
     if agent.llm_model in NVIDIA_MODELS:
         return await agent._call_nvidia_direct(system_prompt, user_prompt)
+    if AZURE_OPENAI_KEY and AZURE_OPENAI_ENDPOINT:
+        return await agent._call_azure_direct(system_prompt, user_prompt)
     return await agent._call_langchain(system_prompt, user_prompt)
 
 

@@ -1,16 +1,12 @@
 """
 ================================================================================
-ContentLLMRunner — sous-couche LLM pour les tools ReAct
+ContentLLMRunner — sous-couche LLM pour les tools ReAct / pipeline contenu
 ================================================================================
 
-Utilisé **uniquement** depuis les outils `draft_post` et `build_image_prompt`
-(`content_react_agent.py`). Ne pilote pas l’ordre des étapes : c’est le rôle
-de l’agent ReAct.
+- `draft_post` : légende du post (Azure OpenAI).
+- `build_image_prompt` : JSON { image_prompt, negative_prompt } (Azure OpenAI).
 
-- `draft_post` : légende du post (texte libre, prompts dans `prompt_draft_post.py`).
-- `build_image_prompt` : JSON { image_prompt, negative_prompt } (`prompt_build_image.py`).
-
-Le modèle est `openai/gpt-oss-120b` via `BaseAgent._call_llm` (NVIDIA NIM uniquement).
+Génération d'image : NVIDIA Flux via `fetch_content_image` (hors de cette classe).
 ================================================================================
 """
 
@@ -22,7 +18,7 @@ import os
 import re
 from typing import Any
 
-from agents.base_agent import BaseAgent, PipelineState
+from agents.content_generation.content_azure_llm import ContentTextLLMBase
 from config.content_generation_config import CONTENT_LLM_CONFIG
 from observability.langsmith_tracing import agent_trace
 from prompts.content_generation.prompt_build_image import PROMPT_BUILD_IMAGE_SYSTEM
@@ -33,27 +29,23 @@ IMAGE_PROMPT_MAX_LEN = 520
 NEGATIVE_PROMPT_MAX_LEN = 180
 
 
-class ContentLLMRunner(BaseAgent):
-    """Deux appels LLM : légende + prompts image (JSON)."""
+class ContentLLMRunner(ContentTextLLMBase):
+    """Deux appels LLM texte : légende + prompts image (JSON)."""
 
     def __init__(self) -> None:
         c = CONTENT_LLM_CONFIG
-        max_retries = 5
-        raw = (os.getenv("NVIDIA_MAX_RETRIES") or "").strip()
+        max_retries = 3
+        raw = (os.getenv("CONTENT_AZURE_MAX_RETRIES") or os.getenv("AZURE_MAX_RETRIES") or "").strip()
         if raw.isdigit():
             max_retries = max(1, int(raw))
         super().__init__(
             "content_llm_runner",
             temperature=float(c.get("temperature", 0.35)),
+            llm_max_tokens=int(c.get("max_tokens", 4096)),
             max_retries=max_retries,
-            llm_model=c.get("model", "openai/gpt-oss-120b"),
-            llm_max_tokens=int(c.get("max_tokens", 65_536)),
         )
 
-    async def run(self, state: PipelineState) -> dict[str, Any]:
-        return {}
-
-    @agent_trace("content_llm_runner.draft_post", tags=["content_generation", "llm"])
+    @agent_trace("content_llm_runner.draft_post", tags=["content_generation", "llm", "azure"])
     async def draft_post(
         self,
         merged_json: str,
@@ -85,7 +77,7 @@ class ContentLLMRunner(BaseAgent):
         logger.info("[draft_post] len=%d", len(caption))
         return caption
 
-    @agent_trace("content_llm_runner.build_image_prompt", tags=["content_generation", "llm"])
+    @agent_trace("content_llm_runner.build_image_prompt", tags=["content_generation", "llm", "azure"])
     async def build_image_prompt(self, merged_json: str, spec_json: str, caption: str) -> tuple[str, str]:
         user = (
             "Contexte fusionné :\n"

@@ -36,16 +36,20 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
-# Contexte gpt-oss-120b ≈ 128k tokens ; la sortie **max** côté API NVIDIA est 65 536 tokens.
-# On aligne max_tokens sur cette plafond pour éviter une coupure de génération en milieu de phrase.
-_CONTENT_MAX_OUT = min(_int_env("CONTENT_LLM_MAX_OUTPUT_TOKENS", 65_536), 65_536)
+from config.llm_defaults import DEFAULT_AZURE_DEPLOYMENT
 
-# ── LLM texte (caption, prompts image) — NVIDIA NIM openai/gpt-oss-120b uniquement
+# ── LLM texte (caption, prompts image, weekly plan) — Azure OpenAI GPT-4
+# Images : NVIDIA Flux (content_image_client), inchangé.
+CONTENT_AZURE_DEPLOYMENT = (
+    (os.getenv("CONTENT_AZURE_DEPLOYMENT") or DEFAULT_AZURE_DEPLOYMENT).strip()
+)
+_CONTENT_MAX_OUT = _int_env("CONTENT_LLM_MAX_OUTPUT_TOKENS", 4096)
+
 CONTENT_LLM_CONFIG = {
-    "model": "openai/gpt-oss-120b",
+    "provider": "azure",
+    "deployment": CONTENT_AZURE_DEPLOYMENT,
     "temperature": 0.35,
     "max_tokens": _CONTENT_MAX_OUT,
-    "reasoning": "medium",
 }
 
 def _env_flag(name: str, default: str = "1") -> bool:

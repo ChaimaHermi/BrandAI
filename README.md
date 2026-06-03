@@ -81,7 +81,8 @@ Génération séquentielle d’un brand kit :
 | API métier       | FastAPI, SQLAlchemy, Alembic — `backend-api` (port 8000)  |
 | Serveur IA       | FastAPI, LangChain, LangGraph — `backend-ai` (port 8001)  |
 | Base de données  | PostgreSQL                                                |
-| LLM              | NVIDIA NIM (`gpt-oss-120b`), Groq (fallback / garde-fous) |
+| LLM texte        | Azure OpenAI (`AZURE_OPENAI_DEPLOYMENT`, ex. `gpt-4.1`) |
+| Images / Flux    | NVIDIA NIM (logo, posts) ; Website HTML : GLM (NVIDIA/SiliconFlow) |
 | Images           | Hugging Face, Pollinations, Cloudinary                    |
 | Déploiement site | Vercel API                                                |
 | Auth sociale     | Meta Graph API, LinkedIn API, Google OAuth                |

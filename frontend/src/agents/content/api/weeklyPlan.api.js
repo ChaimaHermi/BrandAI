@@ -26,14 +26,26 @@ export async function apiGenerateWeeklyPlan(token, body) {
   return handleResponse(res);
 }
 
-export async function apiRegenerateWeeklyItem(token, item, feedback) {
+export async function apiRegenerateWeeklyItem(token, body) {
   const res = await fetch(`${AI_URL}/content/weekly-plan/regenerate-item`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ item, feedback }),
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res);
+}
+
+export async function apiRetryWeeklyVariantImage(token, body) {
+  const res = await fetch(`${AI_URL}/content/weekly-plan/retry-image`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
   });
   return handleResponse(res);
 }

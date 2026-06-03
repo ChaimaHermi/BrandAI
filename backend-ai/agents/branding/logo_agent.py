@@ -23,7 +23,7 @@ from config.branding_config import (
     LOGO_ORIGINALITY_MAX_RETRIES,
     LOGO_ORIGINALITY_MAX_SIMILAR,
 )
-from llm.llm_factory import create_react_orchestrator_llm
+from llm.llm_factory import create_azure_openai_client, create_react_orchestrator_llm
 from prompts.branding.logo_prompt import (
     LOGO_IMAGE_PROMPT_SYSTEM_WITH_NAME,
     LOGO_REACT_SYSTEM_PROMPT,
@@ -157,17 +157,17 @@ def _remove_light_background_to_transparent(
 
 
 class LogoAgent(BaseAgent):
-    """Prompt image via NVIDIA gpt-oss-120b, rendu image via NVIDIA Flux (flux.2-klein-4b)."""
+    """Prompt texte Azure GPT-4, rendu image via NVIDIA Flux (flux.2-klein-4b)."""
 
     def __init__(self):
         cfg = LOGO_LLM_CONFIG
         super().__init__(
             agent_name="logo_agent",
             temperature=float(cfg.get("temperature", 0.4)),
-            llm_model=str(cfg.get("model", "openai/gpt-oss-120b")),
+            llm_model=str(cfg.get("model")),
             llm_max_tokens=int(cfg.get("max_tokens", 4096)),
         )
-        self._provider = str(cfg.get("provider", "nvidia")).strip().lower()
+        self._provider = str(cfg.get("provider", "azure")).strip().lower()
         self._logo_max_tokens = int(cfg.get("max_tokens", 4096))
 
     @staticmethod
@@ -347,7 +347,13 @@ class LogoAgent(BaseAgent):
         return final_state
 
     def _make_llm_for_logo(self):
-        """LangChain client pour le flux ReAct (tools) — NVIDIA gpt-oss-120b uniquement."""
+        """LangChain client pour le flux ReAct (tools) — Azure GPT-4."""
+        if self._provider == "azure":
+            return create_azure_openai_client(
+                temperature=self.temperature,
+                max_tokens=min(self._logo_max_tokens, 4096),
+                azure_deployment=self.llm_model,
+            )
         if self._provider == "nvidia":
             return create_react_orchestrator_llm(
                 model=self.llm_model,
@@ -356,7 +362,7 @@ class LogoAgent(BaseAgent):
             )
         raise RuntimeError(
             f"logo_agent : provider « {self._provider} » non supporté. "
-            "Utilisez provider=nvidia et NVIDIA_API_KEY_1…4 dans .env."
+            "Utilisez provider=azure (AZURE_OPENAI_* dans .env)."
         )
 
     @traceable(name="logo_agent.react_invoke", tags=["branding", "logo_agent", "react"])
@@ -470,11 +476,11 @@ class LogoAgent(BaseAgent):
         originality_feedback: str = "",
         emitter: Any = None,
     ) -> dict[str, Any] | None:
-        """Génère un concept logo (prompt LLM NVIDIA gpt-oss-120b → image NVIDIA Flux)."""
+        """Génère un concept logo (prompt LLM Azure GPT-4 → image NVIDIA Flux)."""
         if emitter:
             await emitter.emit_step(
                 "prompt",
-                "Génération du prompt image (NVIDIA gpt-oss-120b)…",
+                "Génération du prompt image (Azure GPT-4)…",
                 status="running",
             )
         pair = await self._draft_logo_prompt_direct(

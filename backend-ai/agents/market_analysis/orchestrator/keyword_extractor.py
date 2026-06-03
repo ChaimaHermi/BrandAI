@@ -104,8 +104,7 @@ class KeywordExtractor(BaseAgent):
     """
     1 appel LLM → KeywordBundle contextuel.
 
-    Utilise _call_groq_reasoning car gpt-oss-120b retourne
-    content="" avec le JSON dans reasoning_content.
+    Appel LLM via Azure GPT-4 (BaseAgent._call_llm).
     """
 
     def __init__(self):
@@ -116,7 +115,6 @@ class KeywordExtractor(BaseAgent):
             llm_max_tokens = 4096,
             temperature    = 0.1,
         )
-        # _nvidia_keys déjà initialisé par BaseAgent (gpt-oss-120b via NVIDIA uniquement)
 
     async def run(self, state: PipelineState) -> PipelineState:
         raise NotImplementedError("Utiliser extract(idea).")
@@ -151,7 +149,6 @@ class KeywordExtractor(BaseAgent):
 
         for attempt in range(3):
             try:
-                # _call_llm : openai/gpt-oss-120b via NVIDIA NIM uniquement
                 raw    = await self._call_llm(SYSTEM_PROMPT, user_prompt)
                 data   = self._parse_json_robust(raw)
                 bundle = self._build_bundle(data)

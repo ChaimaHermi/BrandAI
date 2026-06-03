@@ -1,19 +1,13 @@
 # ─────────────────────────────────────────
-# MARKETING AGENT LLM CONFIG
+# MARKETING AGENT LLM CONFIG — Azure GPT-4
 # ─────────────────────────────────────────
 
+from config.llm_defaults import DEFAULT_AZURE_DEPLOYMENT
+
 MARKETING_LLM_CONFIG = {
-    "model": "openai/gpt-oss-120b",
-
-    # marketing = raisonnement + créativité contrôlée
+    "provider": "azure",
+    "model": DEFAULT_AZURE_DEPLOYMENT,
     "temperature": 0.2,
-
-    # output structuré mais long (JSON complet)
     "max_tokens": 3500,
-
-    # optionnel (actuellement non branché dans MarketingAgent/BaseAgent)
-    "reasoning": "medium",
-
-    # optionnel (documentaire: le prompt force déjà du JSON strict)
-    "response_format": "json"
+    "response_format": "json",
 }

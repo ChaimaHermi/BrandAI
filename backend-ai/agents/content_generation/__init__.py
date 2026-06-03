@@ -2,7 +2,7 @@
 Génération de contenu social — pipeline séquentielle.
 
 - `run_content_generation` : point d'entrée API (pipeline + validation).
-- `ContentLLMRunner` : appels LLM pour draft_post / build_image_prompt.
+- `ContentLLMRunner` : texte Azure (draft_post / build_image_prompt) ; images NVIDIA.
 """
 
 from agents.content_generation.content_llm_runner import ContentLLMRunner

@@ -186,7 +186,7 @@ class WebsiteBuilderOrchestrator(BaseAgent):
         if timeout_seconds > 0:
             self._override_timeout = timeout_seconds
         try:
-            return await self._call_nvidia_direct(system_prompt, user_prompt)
+            return await self._call_azure_direct(system_prompt, user_prompt)
         finally:
             self.temperature, self.llm_max_tokens = old_temp, old_tokens
             if old_timeout is None and hasattr(self, '_override_timeout'):

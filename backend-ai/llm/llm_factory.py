@@ -1,7 +1,7 @@
 # ══════════════════════════════════════════════════════════════
 #  llm/llm_factory.py
 #  Factory simple et propre
-#  → Groq (GPT OSS + LLaMA possible) + Azure OpenAI + NVIDIA (OpenAI-compatible)
+#  → Azure OpenAI (GPT-4 texte par défaut) + Groq (fallback) + NVIDIA (images / GLM)
 # ══════════════════════════════════════════════════════════════
 
 import os
@@ -9,6 +9,7 @@ import os
 from langchain_groq import ChatGroq
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
+from config.llm_defaults import DEFAULT_AZURE_DEPLOYMENT
 from config.settings import (
     GROQ_KEYS,
     AZURE_OPENAI_ENDPOINT,
@@ -30,8 +31,7 @@ def create_groq_clients(model: str = None, max_tokens: int | None = None) -> lis
     """
     clients = []
 
-    # modèle par défaut
-    model_name = model if model else "openai/gpt-oss-120b"
+    model_name = model if model else DEFAULT_AZURE_DEPLOYMENT
 
     for key in GROQ_KEYS:
         kwargs = {
@@ -47,21 +47,27 @@ def create_groq_clients(model: str = None, max_tokens: int | None = None) -> lis
 
 
 # ─────────────────────────────────────────────
-# REACT ORCHESTRATOR — NVIDIA NIM uniquement pour openai/gpt-oss-120b (aligné BaseAgent._call_llm)
+# REACT ORCHESTRATOR — Azure GPT-4 par défaut ; legacy NVIDIA si clés présentes
 # ─────────────────────────────────────────────
 _NVIDIA_OPENAI_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 
 def create_react_orchestrator_llm(
     *,
-    model: str = "openai/gpt-oss-120b",
+    model: str | None = None,
     temperature: float = 0.35,
     max_tokens: int = 4096,
+    azure_deployment: str | None = None,
 ):
-    """
-    LLM pour `create_react_agent` : ChatOpenAI vers l’API NVIDIA uniquement
-    (pas de Groq pour ce flux).
-    """
+    """LLM pour `create_react_agent` : Azure OpenAI (GPT-4) par défaut."""
+    deployment = (azure_deployment or model or DEFAULT_AZURE_DEPLOYMENT).strip()
+    if AZURE_OPENAI_KEY and AZURE_OPENAI_ENDPOINT:
+        return create_azure_openai_client(
+            temperature=temperature,
+            max_tokens=max_tokens,
+            azure_deployment=deployment,
+        )
+
     nvidia_keys = [
         k.strip()
         for k in (
@@ -76,14 +82,13 @@ def create_react_orchestrator_llm(
         return ChatOpenAI(
             base_url=_NVIDIA_OPENAI_BASE_URL,
             api_key=api_key,
-            model=model,
+            model=model or "openai/gpt-oss-120b",
             temperature=temperature,
             max_tokens=max_tokens,
         )
 
     raise RuntimeError(
-        "Orchestrateur ReAct : définissez au moins une variable NVIDIA_API_KEY_1 … "
-        f"NVIDIA_API_KEY_4 (modèle {model}, Groq non utilisé)."
+        "Orchestrateur ReAct : configurez AZURE_OPENAI_* ou NVIDIA_API_KEY_1…4 dans .env."
     )
 
 

@@ -16,7 +16,8 @@ except ImportError:  # pragma: no cover
 
 import httpx
 
-from agents.base_agent import BaseAgent, PipelineState
+from agents.base_agent import PipelineState
+from agents.content_generation.content_azure_llm import ContentTextLLMBase
 from agents.content_generation.content_llm_runner import ContentLLMRunner
 from observability.langsmith_tracing import agent_trace
 from prompts.content_generation.prompt_weekly_plan import (
@@ -48,22 +49,18 @@ WEEKDAY_FR = {
     6: "dimanche",
 }
 
-class WeeklyIntentLLM(BaseAgent):
+class WeeklyIntentLLM(ContentTextLLMBase):
     def __init__(self) -> None:
-        max_retries = 5
-        raw = (os.getenv("NVIDIA_MAX_RETRIES") or "").strip()
+        max_retries = 3
+        raw = (os.getenv("CONTENT_AZURE_MAX_RETRIES") or os.getenv("AZURE_MAX_RETRIES") or "").strip()
         if raw.isdigit():
             max_retries = max(1, int(raw))
         super().__init__(
             "weekly_intent_llm",
             temperature=0.2,
-            max_retries=max_retries,
-            llm_model="openai/gpt-oss-120b",
             llm_max_tokens=2048,
+            max_retries=max_retries,
         )
-
-    async def run(self, state: PipelineState) -> dict[str, Any]:
-        return {}
 
     async def parse_intent(
         self,

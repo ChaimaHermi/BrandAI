@@ -4,15 +4,16 @@
 
 import logging
 
+from config.llm_defaults import DEFAULT_AZURE_DEPLOYMENT
 from llm.llm_factory import create_groq_clients
 
 logger = logging.getLogger("brandai.llm_rotator")
 
 class LLMRotator:
 
-    def __init__(self, model: str = "openai/gpt-oss-120b", max_tokens: int | None = None):
+    def __init__(self, model: str | None = None, max_tokens: int | None = None):
         self._provider = "groq"
-        self._model = model
+        self._model = (model or DEFAULT_AZURE_DEPLOYMENT).strip()
         self._clients = {"groq": create_groq_clients(model=model, max_tokens=max_tokens)}
         self._index = 0
 
@@ -29,14 +30,14 @@ class LLMRotator:
     # ─────────────────────────────────────────────
     @classmethod
     def groq_only(cls):
-        return cls(model="openai/gpt-oss-120b")
+        return cls(model=DEFAULT_AZURE_DEPLOYMENT)
 
     # ─────────────────────────────────────────────
-    # GROQ GPT ONLY (TON CAS EXACT)
+    # GROQ GPT ONLY (legacy)
     # ─────────────────────────────────────────────
     @classmethod
     def groq_gpt_only(cls):
-        return cls(model="openai/gpt-oss-120b")
+        return cls(model=DEFAULT_AZURE_DEPLOYMENT)
 
     # ─────────────────────────────────────────────
     # Generic model selector for future agents

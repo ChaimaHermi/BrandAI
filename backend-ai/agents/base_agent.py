@@ -14,6 +14,9 @@ from typing import Any
 
 import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
+from config.llm_defaults import DEFAULT_AZURE_DEPLOYMENT, DEFAULT_AZURE_MAX_TOKENS
+from config.settings import AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_KEY
+from llm.llm_factory import create_azure_openai_client
 from llm.llm_rotator import LLMRotator
 from observability.langsmith_tracing import traced_llm_dispatch
 
@@ -77,11 +80,10 @@ class PipelineState:
 
 
 # ══════════════════════════════════════════════════════════════
-# Modèles servis exclusivement par NVIDIA NIM (openai/gpt-oss-120b) — pas de Groq
+# Modèles NVIDIA NIM encore routés via _call_nvidia_direct (legacy / GLM stream).
+# gpt-oss-120b retiré : le texte passe par Azure GPT-4 (voir traced_llm_dispatch).
 # ══════════════════════════════════════════════════════════════
-NVIDIA_MODELS = {
-    "openai/gpt-oss-120b",
-}
+NVIDIA_MODELS: frozenset[str] = frozenset()
 
 NVIDIA_API_BASE = "https://integrate.api.nvidia.com/v1/chat/completions"
 NVIDIA_MAX_TOKENS_CAP = 65_536  # limite max output NVIDIA gpt-oss-120b
@@ -154,19 +156,19 @@ class BaseAgent(ABC):
         agent_name: str,
         temperature: float = 0.2,
         max_retries: int = 3,
-        llm_model: str = "openai/gpt-oss-120b",
+        llm_model: str | None = None,
         llm_max_tokens: int | None = None,
     ):
         self.agent_name = agent_name
         self.temperature = temperature
         self.max_retries = max_retries
-        self.llm_model = llm_model
-        self.llm_max_tokens = llm_max_tokens or 65_536  # max output NVIDIA gpt-oss-120b
+        self.llm_model = (llm_model or DEFAULT_AZURE_DEPLOYMENT).strip()
+        self.llm_max_tokens = llm_max_tokens or DEFAULT_AZURE_MAX_TOKENS
 
         self.logger = logging.getLogger(f"brandai.{agent_name}")
-        self.llm_rotator = LLMRotator.groq_model(llm_model, max_tokens=llm_max_tokens)
+        self.llm_rotator = LLMRotator.groq_model(self.llm_model, max_tokens=llm_max_tokens)
 
-        # Clés NVIDIA NIM (rotation) — seul fournisseur pour openai/gpt-oss-120b
+        # Clés NVIDIA NIM (images Flux, GLM website builder, etc.)
         self._nvidia_keys = [
             k for k in [
                 os.getenv("NVIDIA_API_KEY_1", ""),
@@ -468,12 +470,40 @@ class BaseAgent(ABC):
             f"NVIDIA stream failed apres {self.max_retries} tentatives : {last_error}"
         )
 
+    async def _call_azure_direct(self, system_prompt: str, user_prompt: str) -> str:
+        """Appel Azure OpenAI (déploiement = self.llm_model, ex. gpt-4.1)."""
+        if not AZURE_OPENAI_KEY or not AZURE_OPENAI_ENDPOINT:
+            raise RuntimeError(
+                "Azure OpenAI non configuré. "
+                "Renseignez AZURE_OPENAI_KEY et AZURE_OPENAI_ENDPOINT dans .env"
+            )
+        deployment = (self.llm_model or DEFAULT_AZURE_DEPLOYMENT).strip()
+        max_tokens = min(self.llm_max_tokens, 16_384)
+        llm = create_azure_openai_client(
+            temperature=self.temperature,
+            max_tokens=max_tokens,
+            azure_deployment=deployment,
+            max_retries=2,
+        )
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt),
+        ]
+        self.logger.info(f"[{self.agent_name}] Azure → {deployment} | max_tokens={max_tokens}")
+        response = await llm.ainvoke(messages)
+        content = response.content if response and getattr(response, "content", None) else ""
+        text = (content if isinstance(content, str) else str(content)).strip()
+        if not text:
+            raise RuntimeError(f"Réponse Azure vide ({deployment}).")
+        self.logger.info(f"[{self.agent_name}] Azure OK | chars≈{len(text)}")
+        return text
+
     async def _call_langchain(self, system_prompt: str, user_prompt: str) -> str:
 
         if not self.llm_rotator or not self.llm_rotator._clients.get("groq"):
             raise RuntimeError(
                 "LangChain indisponible : aucune clé GROQ_API_KEY configurée "
-                "(rotator Groq requis pour ce modèle hors openai/gpt-oss-120b)."
+                "(fallback Groq si Azure n'est pas configuré)."
             )
 
         messages = [

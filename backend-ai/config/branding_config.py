@@ -4,9 +4,11 @@
 
 import os
 
+from config.llm_defaults import DEFAULT_AZURE_DEPLOYMENT, LOGO_AZURE_DEPLOYMENT
+
 LLM_CONFIG = {
     "provider": "azure",
-    "model": "gpt-4o",
+    "model": DEFAULT_AZURE_DEPLOYMENT,
     "temperature": 0.65,
     "max_tokens": 4000,
 }
@@ -29,10 +31,10 @@ PALETTE_TARGET_COUNT = 3
 PALETTE_AGENT_RECURSION_LIMIT = 40
 PALETTE_AGENT_VERBOSE_REACT = True
 
-# LogoAgent — prompt image via NVIDIA NIM openai/gpt-oss-120b (clés NVIDIA_API_KEY_*)
+# LogoAgent — prompt texte Azure GPT-4 ; rendu image NVIDIA Flux
 LOGO_LLM_CONFIG = {
-    "provider": "nvidia",
-    "model": "openai/gpt-oss-120b",
+    "provider": "azure",
+    "model": LOGO_AZURE_DEPLOYMENT,
     "temperature": 0.4,
     "max_tokens": 4096,
 }

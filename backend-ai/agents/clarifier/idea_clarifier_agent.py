@@ -98,7 +98,7 @@ class IdeaClarifierAgent(BaseAgent):
             agent_name="idea_clarifier",
             temperature=0.3,
             max_retries=3,
-            llm_model="openai/gpt-oss-120b",
+            llm_model=None,
         )
         self._safety_meta: dict = {}
 

@@ -2,10 +2,12 @@
 # config/market_analysis_config.py
 # ══════════════════════════════════════════════════════════════
 
+from config.llm_defaults import DEFAULT_AZURE_DEPLOYMENT, DEFAULT_AZURE_MAX_TOKENS
 
-# ── LLM GLOBAL ────────────────────────────────────────────────
+# ── LLM GLOBAL — Azure GPT-4 ──────────────────────────────────
 LLM_CONFIG = {
-    "model": "openai/gpt-oss-120b",
+    "provider": "azure",
+    "model": DEFAULT_AZURE_DEPLOYMENT,
     "max_tokens": 8000,
     "temperature": 0.1,
 }
@@ -15,7 +17,7 @@ LLM_CONFIG = {
 MARKET_SIZING_LLM_CONFIG = {
     "model": LLM_CONFIG["model"],
     "temperature": 0.1,
-    "max_tokens": 65_536,  # max NVIDIA gpt-oss-120b
+    "max_tokens": min(DEFAULT_AZURE_MAX_TOKENS * 2, 8192),
 }
 
 

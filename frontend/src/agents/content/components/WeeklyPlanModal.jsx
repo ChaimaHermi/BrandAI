@@ -21,13 +21,34 @@ import {
   apiGenerateWeeklyPlan,
   apiGenerateWeeklyPlanContent,
   apiRegenerateWeeklyItem,
+  apiRetryWeeklyVariantImage,
 } from "../api/weeklyPlan.api";
 
 const PLATFORMS = {
-  linkedin: { label: "LinkedIn", color: "#0a66c2", hour: "09:30" },
-  facebook: { label: "Facebook", color: "#1877f2", hour: "13:00" },
-  instagram: { label: "Instagram", color: "#e1306c", hour: "18:30" },
+  linkedin: { label: "LinkedIn", color: "#0a66c2" },
+  facebook: { label: "Facebook", color: "#1877f2" },
+  instagram: { label: "Instagram", color: "#e1306c" },
 };
+
+/** Construit une date ISO à partir de scheduled_date + HH:MM (fuseau local navigateur). */
+function localSlotFromPlan(item, platform, refVariant) {
+  const times = item?.platform_times || {};
+  const dateStr = item?.scheduled_date;
+  const hhmm = times[platform] || times[refVariant?.platform];
+  if (dateStr && hhmm && /^\d{1,2}:\d{2}$/.test(String(hhmm))) {
+    const [h, m] = String(hhmm).split(":").map(Number);
+    const d = new Date(`${dateStr}T00:00:00`);
+    if (!Number.isNaN(d.getTime())) {
+      d.setHours(h, m || 0, 0, 0);
+      if (d.getTime() > Date.now()) return d.toISOString();
+    }
+  }
+  if (refVariant?.scheduled_at_utc) return refVariant.scheduled_at_utc;
+  const d = new Date();
+  d.setMinutes(d.getMinutes() + 90);
+  d.setSeconds(0, 0);
+  return d.toISOString();
+}
 
 function toLocalDatetimeInputValue(iso) {
   const d = new Date(iso);
@@ -172,6 +193,7 @@ function PlatformBadge({ platform, active, onClick }) {
 function PlanningCard({ item, index, onPatch, onTogglePlatform, onRemove }) {
   const activeVariants = (item.variants || []).filter((v) => v.status !== "removed_by_user");
   const detectedDate = item.scheduled_date || item.date_hint || item.day_hint;
+  const rationale = item.platform_rationale || {};
 
   return (
     <div className="overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm">
@@ -203,8 +225,29 @@ function PlanningCard({ item, index, onPatch, onTogglePlatform, onRemove }) {
         {detectedDate && (
           <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
             <FiCalendar className="h-3.5 w-3.5" />
-            AI a détecté : <span className="font-bold">{detectedDate}</span>
+            {item.user_time_specified ? "Créneau demandé" : "Date proposée"} :{" "}
+            <span className="font-bold">{detectedDate}</span>
           </div>
+        )}
+
+        {item.content_type && (
+          <p className="mb-2 text-xs text-ink-muted">
+            Type : <span className="font-semibold text-ink">{item.content_type}</span>
+          </p>
+        )}
+
+        {Object.keys(rationale).length > 0 && (
+          <ul className="mb-3 space-y-1 rounded-lg border border-brand-border/60 bg-brand-light/10 px-3 py-2 text-xs text-ink-muted">
+            {activeVariants.map((v) =>
+              rationale[v.platform] ? (
+                <li key={v.variant_id}>
+                  <span className="font-semibold text-ink">{PLATFORMS[v.platform]?.label || v.platform}</span>
+                  {" — "}
+                  {rationale[v.platform]}
+                </li>
+              ) : null
+            )}
+          </ul>
         )}
 
         {activeVariants.length === 0 ? (
@@ -280,7 +323,15 @@ function PlanningCard({ item, index, onPatch, onTogglePlatform, onRemove }) {
   );
 }
 
-function ContentCard({ item, index, onPatchVariant, onRegenerate, onToggleRemoved }) {
+function ContentCard({
+  item,
+  index,
+  onPatchVariant,
+  onRegenerate,
+  onRetryImage,
+  retryingVariantId,
+  onToggleRemoved,
+}) {
   const activeVariants = (item.variants || []).filter((v) => v.status !== "removed_by_user");
 
   return (
@@ -340,7 +391,11 @@ function ContentCard({ item, index, onPatchVariant, onRegenerate, onToggleRemove
                     onClick={() => onRegenerate(v)}
                     disabled={!v.content_generated}
                     className="rounded-full p-1.5 text-ink-muted hover:bg-brand-light hover:text-brand disabled:opacity-40"
-                    title="Régénérer"
+                    title={
+                      v.image_mode !== "none" || v.platform === "instagram"
+                        ? "Régénérer texte et image"
+                        : "Régénérer le texte"
+                    }
                   >
                     <FiRefreshCw className="h-4 w-4" />
                   </button>
@@ -373,8 +428,21 @@ function ContentCard({ item, index, onPatchVariant, onRegenerate, onToggleRemove
                         className="h-32 w-full rounded-lg border border-brand-border object-cover"
                       />
                     ) : v.image_error ? (
-                      <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-red-300 bg-red-50 text-center text-[10px] text-red-600">
-                        {v.image_error}
+                      <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-red-300 bg-red-50 px-2 text-center text-[10px] text-red-600">
+                        <p className="line-clamp-3">{v.image_error}</p>
+                        <button
+                          type="button"
+                          disabled={retryingVariantId === v.variant_id}
+                          onClick={() => onRetryImage?.(v)}
+                          className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-brand shadow-sm hover:bg-brand-light disabled:opacity-50"
+                        >
+                          {retryingVariantId === v.variant_id ? (
+                            <FiLoader className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <FiRefreshCw className="h-3 w-3" />
+                          )}
+                          Réessayer l&apos;image
+                        </button>
                       </div>
                     ) : (
                       <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-brand-border bg-brand-light/10 text-center text-[10px] text-ink-muted">
@@ -409,6 +477,7 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
 
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackVariant, setFeedbackVariant] = useState(null);
+  const [retryingVariantId, setRetryingVariantId] = useState(null);
 
   const timezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", []);
 
@@ -425,28 +494,25 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
     [plan]
   );
 
-  const buildVariant = useCallback(
-    (itemIndex, platform, refVariant) => {
-      const now = new Date();
-      now.setDate(now.getDate() + 1 + itemIndex);
-      const def = platform === "linkedin" ? 9 : platform === "facebook" ? 13 : 18;
-      now.setHours(def, platform === "linkedin" ? 30 : platform === "instagram" ? 30 : 0, 0, 0);
-      return {
-        variant_id: `wp-${itemIndex + 1}-${platform}-${Date.now()}`,
-        platform,
-        caption: "",
-        scheduled_at_utc: refVariant?.scheduled_at_utc || now.toISOString(),
-        timing_source: refVariant?.timing_source || "ai_suggested",
-        status: "added_by_user",
-        image_mode: "required",
-        image_status: "pending",
-        image_url: null,
-        image_error: null,
-        content_generated: false,
-      };
-    },
-    []
-  );
+  const buildVariant = useCallback((itemIndex, platform, refVariant, item) => {
+    const scheduled = localSlotFromPlan(item, platform, refVariant);
+    const wantImage =
+      platform === "instagram" ||
+      Boolean((item?.platform_images || {})[platform]);
+    return {
+      variant_id: `wp-${itemIndex + 1}-${platform}-${Date.now()}`,
+      platform,
+      caption: "",
+      scheduled_at_utc: scheduled,
+      timing_source: "user_added",
+      status: "added_by_user",
+      image_mode: wantImage ? "required" : "none",
+      image_status: wantImage ? "pending" : "skipped",
+      image_url: null,
+      image_error: null,
+      content_generated: false,
+    };
+  }, []);
 
   if (!open) return null;
 
@@ -459,6 +525,9 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
         idea_id: ideaId,
         user_prompt: prompt.trim(),
         timezone,
+        platforms: ["linkedin", "facebook", "instagram"],
+        align_with_project: true,
+        include_images: true,
         distribution_mode: "auto",
         requested_post_count: null,
         access_token: token,
@@ -500,7 +569,7 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
             };
           }
           const ref = (it.variants || []).find((v) => v.status !== "removed_by_user");
-          return { ...it, variants: [...(it.variants || []), buildVariant(idx, platform, ref)] };
+          return { ...it, variants: [...(it.variants || []), buildVariant(idx, platform, ref, it)] };
         }),
       };
     });
@@ -521,13 +590,14 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
           {
             item_id: `wp-new-${Date.now()}`,
             objective: "",
-            recommended_platforms: ["linkedin"],
+            recommended_platforms: [],
+            platform_rationale: {},
+            content_type: "other",
             status: "added_by_user",
             scheduled_date: null,
-            scheduled_time: null,
             date_hint: null,
             day_hint: null,
-            variants: [buildVariant(idx, "linkedin", null)],
+            variants: [],
           },
         ],
       };
@@ -671,14 +741,70 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
     setFeedbackOpen(true);
   }
 
-  async function handleRegenerate(feedback) {
-    if (!feedbackVariant) return;
-    const out = await apiRegenerateWeeklyItem(token, feedbackVariant, feedback);
-    const itemId = plan?.items?.find((it) => (it.variants || []).some((v) => v.variant_id === feedbackVariant.variant_id))?.item_id;
-    if (itemId) {
-      patchVariant(itemId, feedbackVariant.variant_id, out.item);
+  async function handleRetryImage(variant) {
+    if (!variant || !ideaId) return;
+    const parentItem = plan?.items?.find((it) =>
+      (it.variants || []).some((v) => v.variant_id === variant.variant_id),
+    );
+    setRetryingVariantId(variant.variant_id);
+    setLoading(true);
+    try {
+      const out = await apiRetryWeeklyVariantImage(token, {
+        variant,
+        objective: parentItem?.objective || "",
+        idea_id: ideaId,
+        access_token: token,
+        align_with_project: true,
+      });
+      const itemId = parentItem?.item_id;
+      if (itemId && out?.variant) {
+        patchVariant(itemId, variant.variant_id, out.variant);
+      }
+      if (out?.variant?.image_url) {
+        toast.success("Image régénérée.");
+      } else {
+        toast.warning(out?.variant?.image_error || "L'image n'a pas pu être générée.");
+      }
+    } catch (e) {
+      toast.error(e?.message || "Retry image impossible.");
+    } finally {
+      setRetryingVariantId(null);
+      setLoading(false);
     }
-    toast.success("Variante régénérée !");
+  }
+
+  async function handleRegenerate(feedback) {
+    if (!feedbackVariant || !ideaId) return;
+    const parentItem = plan?.items?.find((it) =>
+      (it.variants || []).some((v) => v.variant_id === feedbackVariant.variant_id),
+    );
+    setLoading(true);
+    try {
+      const out = await apiRegenerateWeeklyItem(token, {
+        item: {
+          ...feedbackVariant,
+          objective: parentItem?.objective || "",
+        },
+        feedback,
+        idea_id: ideaId,
+        access_token: token,
+        align_with_project: true,
+      });
+      const itemId = parentItem?.item_id;
+      if (itemId) {
+        patchVariant(itemId, feedbackVariant.variant_id, out.item);
+      }
+      toast.success(
+        feedbackVariant.image_mode !== "none" || feedbackVariant.platform === "instagram"
+          ? "Texte et image régénérés."
+          : "Texte régénéré.",
+      );
+    } catch (e) {
+      toast.error(e?.message || "Régénération impossible.");
+    } finally {
+      setLoading(false);
+      setFeedbackOpen(false);
+    }
   }
 
   return (
@@ -747,9 +873,18 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
 
             {plan?.items?.length ? (
               <>
+                {(plan.notes || []).length > 0 && (
+                  <ul className="mb-3 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-900">
+                    {plan.notes.map((n, i) => (
+                      <li key={i}>{n}</li>
+                    ))}
+                  </ul>
+                )}
+
                 <div className="mb-3 flex items-center gap-4">
                   <span className="text-xs font-semibold text-ink-muted">
                     {plan.items.length} post(s) · {activeVariantsCount} variante(s)
+                    {plan.project_context_used ? " · contexte projet" : ""}
                     {stage === "content_ready" && ` · ${generatedCount} générée(s)`}
                   </span>
                   {stage === "planning" && (
@@ -782,6 +917,8 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
                         index={idx}
                         onPatchVariant={(vid, patch) => patchVariant(item.item_id, vid, patch)}
                         onRegenerate={(v) => openRegenerate(v)}
+                        onRetryImage={(v) => handleRetryImage(v)}
+                        retryingVariantId={retryingVariantId}
                         onToggleRemoved={(vid) => toggleVariantRemoved(item.item_id, vid)}
                       />
                     )
