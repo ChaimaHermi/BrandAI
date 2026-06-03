@@ -239,6 +239,9 @@ export default function BrandPage() {
 
   const logoPreviewUrl = useMemo(() => {
     const c0 = logoConceptsDisplayed[0];
+    if (!c0) return null;
+    const url = String(c0?.image_url || "").trim();
+    if (url) return url;
     if (c0?.image_base64 && c0?.image_mime) {
       return `data:${c0.image_mime};base64,${c0.image_base64}`;
     }
@@ -247,9 +250,14 @@ export default function BrandPage() {
 
   const logoPreviewTransparentUrl = useMemo(() => {
     const c0 = logoConceptsDisplayed[0];
+    if (!c0) return null;
     if (c0?.image_base64_transparent && c0?.image_mime_transparent) {
       return `data:${c0.image_mime_transparent};base64,${c0.image_base64_transparent}`;
     }
+    const transparentUrl = String(c0?.image_url_transparent || "").trim();
+    if (transparentUrl) return transparentUrl;
+    const mainUrl = String(c0?.image_url || "").trim();
+    if (mainUrl) return mainUrl;
     return null;
   }, [logoConceptsDisplayed]);
 

@@ -45,6 +45,9 @@ def _env_flag(name: str, default: str = "1") -> bool:
     v = (os.getenv(name) or default).strip().lower()
     return v not in ("0", "false", "no", "off")
 
+# Démo rapport / vidéo : noms Repido, slogan, palette Méditerranée, logo Cloudinary fixe
+BRANDING_DEMO_MODE = _env_flag("BRANDING_DEMO_MODE", "0")
+
 # Vérification originalité via SerpApi Google Lens + Cloudinary (100 req/mois gratuit)
 LOGO_ORIGINALITY_CHECK_ENABLED = _env_flag("LOGO_ORIGINALITY_CHECK_ENABLED", "1")
 LOGO_ORIGINALITY_MAX_RETRIES = int((os.getenv("LOGO_ORIGINALITY_MAX_RETRIES") or "2").strip())

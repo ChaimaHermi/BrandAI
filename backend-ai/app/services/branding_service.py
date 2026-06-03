@@ -5,6 +5,7 @@ Les étapes suivantes peuvent résoudre nom / slogan depuis la base (GET brandin
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from datetime import datetime, timezone
@@ -21,6 +22,13 @@ from agents.branding.slogan_agent import SloganAgent
 from app.services.persistence.branding_persistence_service import (
     fetch_branding_merged_generated,
     persist_brand_identity_row,
+)
+from config.branding_config import BRANDING_DEMO_MODE
+from shared.branding.demo_branding_data import (
+    build_demo_logo_identity,
+    build_demo_naming_identity,
+    build_demo_palette_identity,
+    build_demo_slogan_identity,
 )
 
 logger = logging.getLogger(__name__)
@@ -175,6 +183,36 @@ class BrandingService:
         access_token: str,
         persist: bool,
     ) -> dict[str, Any]:
+        if BRANDING_DEMO_MODE:
+            logger.info("[branding_service] DEMO naming idea_id=%s", idea_id)
+            bi = build_demo_naming_identity()
+            name_options = bi.get("name_options") or []
+            out: dict[str, Any] = {
+                "idea_id": idea_id,
+                "status": "name_generated",
+                "name_options": name_options,
+                "branding_status": bi.get("branding_status"),
+                "name_error": None,
+                "agent_errors": {},
+                "errors": [],
+                "persisted": False,
+            }
+            if persist and name_options and access_token:
+                try:
+                    now = datetime.now(timezone.utc)
+                    await persist_brand_identity_row(
+                        idea_id=idea_id,
+                        brand_identity=bi,
+                        started_at=now,
+                        completed_at=now,
+                        access_token=access_token,
+                    )
+                    out["persisted"] = True
+                except Exception as e:
+                    logger.exception("DEMO — échec persistance naming")
+                    out["errors"] = [f"persist: {e}"]
+            return out
+
         row = await cls.fetch_idea_row(idea_id, access_token.strip())
         clarified = cls.idea_api_to_clarified(row)
         st = cls._base_state(idea_id, row, clarified)
@@ -232,6 +270,41 @@ class BrandingService:
         access_token: str,
         persist: bool,
     ) -> dict[str, Any]:
+        if BRANDING_DEMO_MODE:
+            resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
+            logger.info("[branding_service] DEMO slogan idea_id=%s name=%r", idea_id, resolved_name)
+            bi = build_demo_slogan_identity(resolved_name)
+            slogans = bi.get("slogan_options") or []
+            out: dict[str, Any] = {
+                "idea_id": idea_id,
+                "status": "slogan_generated",
+                "slogan_options": slogans,
+                "branding_status": bi.get("branding_status"),
+                "slogan_error": None,
+                "errors": [],
+                "persisted": False,
+                "resolved_brand_name": resolved_name,
+            }
+            if persist and slogans and access_token:
+                try:
+                    prev = await fetch_branding_merged_generated(idea_id, access_token)
+                    merged: dict[str, Any] = dict(prev) if prev else {}
+                    merged.update(bi)
+                    merged["branding_status"] = "partial"
+                    now = datetime.now(timezone.utc)
+                    await persist_brand_identity_row(
+                        idea_id=idea_id,
+                        brand_identity=merged,
+                        started_at=now,
+                        completed_at=now,
+                        access_token=access_token,
+                    )
+                    out["persisted"] = True
+                except Exception as e:
+                    logger.exception("DEMO — échec persistance slogan")
+                    out["errors"] = [f"persist: {e}"]
+            return out
+
         resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
         row = await cls.fetch_idea_row(idea_id, access_token.strip())
         clarified = cls.idea_api_to_clarified(row)
@@ -301,6 +374,45 @@ class BrandingService:
         access_token: str,
         persist: bool,
     ) -> dict[str, Any]:
+        if BRANDING_DEMO_MODE:
+            resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
+            logger.info("[branding_service] DEMO palette idea_id=%s name=%r", idea_id, resolved_name)
+            bi = build_demo_palette_identity(resolved_name)
+            palettes = bi.get("palette_options") or []
+            color_palette = bi.get("color_palette") if isinstance(bi.get("color_palette"), dict) else {}
+            out: dict[str, Any] = {
+                "idea_id": idea_id,
+                "status": "palette_generated",
+                "palette_options": palettes,
+                "color_palette": color_palette,
+                "branding_status": bi.get("branding_status"),
+                "palette_error": None,
+                "errors": [],
+                "persisted": False,
+                "resolved_brand_name": resolved_name,
+            }
+            if persist and palettes and access_token:
+                try:
+                    prev = await fetch_branding_merged_generated(idea_id, access_token)
+                    merged: dict[str, Any] = dict(prev) if prev else {}
+                    merged["palette_options"] = palettes
+                    merged["color_palette"] = color_palette
+                    merged["chosen_brand_name"] = merged.get("chosen_brand_name") or resolved_name
+                    merged["branding_status"] = "partial"
+                    now = datetime.now(timezone.utc)
+                    await persist_brand_identity_row(
+                        idea_id=idea_id,
+                        brand_identity=merged,
+                        started_at=now,
+                        completed_at=now,
+                        access_token=access_token,
+                    )
+                    out["persisted"] = True
+                except Exception as e:
+                    logger.exception("DEMO — échec persistance palette")
+                    out["errors"] = [f"persist: {e}"]
+            return out
+
         resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
         row = await cls.fetch_idea_row(idea_id, access_token.strip())
         clarified = cls.idea_api_to_clarified(row)
@@ -380,6 +492,72 @@ class BrandingService:
     ) -> None:
         """Même pipeline que generate_logo mais émet des événements SSE via emitter."""
         from tools.website_builder.infra.step_streamer import event_result, event_error
+
+        if BRANDING_DEMO_MODE:
+            try:
+                await emitter.emit_step("context", "Chargement du contexte…", status="running")
+                resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
+                await asyncio.sleep(0.25)
+                await emitter.emit_step(
+                    "context",
+                    f"Contexte chargé — marque : {resolved_name}",
+                    status="done",
+                )
+                await emitter.emit_step("prompt", "Brief logo (démo)…", status="running")
+                await asyncio.sleep(0.2)
+                await emitter.emit_step("prompt", "Brief logo prêt", status="done")
+                await emitter.emit_step("image", "Logo de démonstration", status="done")
+                await emitter.emit_step("upload", "Logo Cloudinary (démo)", status="done")
+                bi = build_demo_logo_identity(resolved_name)
+                concepts = bi.get("logo_concepts") or []
+                out: dict[str, Any] = {
+                    "idea_id": idea_id,
+                    "status": "logo_generated",
+                    "logo_concepts": concepts,
+                    "branding_status": bi.get("branding_status"),
+                    "logo_error": None,
+                    "logo_image_error": None,
+                    "errors": [],
+                    "persisted": False,
+                    "resolved_brand_name": resolved_name,
+                    "resolved_slogan_hint": await cls.resolve_slogan_hint(
+                        idea_id, access_token, slogan_hint
+                    ),
+                    "resolved_palette_hint": await cls.resolve_palette_hint_for_logo(
+                        idea_id, access_token, palette_color_hint
+                    ),
+                }
+                if persist and access_token:
+                    await emitter.emit_step("persist", "Sauvegarde des résultats…", status="running")
+                    try:
+                        prev = await fetch_branding_merged_generated(idea_id, access_token)
+                        merged: dict[str, Any] = dict(prev) if prev else {}
+                        merged["logo_concepts"] = concepts
+                        merged["cloudinary_url"] = bi.get("cloudinary_url")
+                        merged["chosen_brand_name"] = merged.get("chosen_brand_name") or resolved_name
+                        merged["branding_status"] = "partial"
+                        now = datetime.now(timezone.utc)
+                        await persist_brand_identity_row(
+                            idea_id=idea_id,
+                            brand_identity=merged,
+                            started_at=now,
+                            completed_at=now,
+                            access_token=access_token,
+                        )
+                        out["persisted"] = True
+                        await emitter.emit_step("persist", "Résultats sauvegardés", status="done")
+                    except Exception as e:
+                        logger.exception("DEMO — échec persistance logo (stream)")
+                        out["errors"] = [f"persist: {e}"]
+                        await emitter.emit_step("persist", "Sauvegarde échouée (non bloquant)", status="error")
+                await emitter.emit(event_result(out))
+            except Exception as exc:
+                logger.exception("[branding_service] DEMO generate_logo_stream")
+                await emitter.emit(event_error(str(exc)))
+            finally:
+                await emitter.close()
+            return
+
         try:
             await emitter.emit_step("context", "Chargement du contexte…", status="running")
             resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
@@ -488,6 +666,50 @@ class BrandingService:
         persist_image_base64: bool = False,
     ) -> dict[str, Any]:
         """LLM → prompt image → Hugging Face Replicate / Qwen Image (ou none). Retourne image_base64 si généré."""
+        if BRANDING_DEMO_MODE:
+            resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
+            logger.info("[branding_service] DEMO logo idea_id=%s name=%r", idea_id, resolved_name)
+            bi = build_demo_logo_identity(resolved_name)
+            concepts = bi.get("logo_concepts") or []
+            out: dict[str, Any] = {
+                "idea_id": idea_id,
+                "status": "logo_generated",
+                "logo_concepts": concepts,
+                "branding_status": bi.get("branding_status"),
+                "logo_error": None,
+                "logo_image_error": None,
+                "errors": [],
+                "persisted": False,
+                "resolved_brand_name": resolved_name,
+                "resolved_slogan_hint": await cls.resolve_slogan_hint(
+                    idea_id, access_token, slogan_hint
+                ),
+                "resolved_palette_hint": await cls.resolve_palette_hint_for_logo(
+                    idea_id, access_token, palette_color_hint
+                ),
+            }
+            if persist and access_token:
+                try:
+                    prev = await fetch_branding_merged_generated(idea_id, access_token)
+                    merged: dict[str, Any] = dict(prev) if prev else {}
+                    merged["logo_concepts"] = concepts
+                    merged["cloudinary_url"] = bi.get("cloudinary_url")
+                    merged["chosen_brand_name"] = merged.get("chosen_brand_name") or resolved_name
+                    merged["branding_status"] = "partial"
+                    now = datetime.now(timezone.utc)
+                    await persist_brand_identity_row(
+                        idea_id=idea_id,
+                        brand_identity=merged,
+                        started_at=now,
+                        completed_at=now,
+                        access_token=access_token,
+                    )
+                    out["persisted"] = True
+                except Exception as e:
+                    logger.exception("DEMO — échec persistance logo")
+                    out["errors"] = [f"persist: {e}"]
+            return out
+
         resolved_name = await cls.resolve_chosen_brand_name(idea_id, access_token, brand_name)
         resolved_slogan = await cls.resolve_slogan_hint(idea_id, access_token, slogan_hint)
         palette_hint = await cls.resolve_palette_hint_for_logo(
