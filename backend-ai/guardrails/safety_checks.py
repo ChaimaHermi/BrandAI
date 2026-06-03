@@ -126,7 +126,7 @@ async def check_safety_with_llama_guard(payload: dict[str, Any]) -> dict[str, An
     last_error: Exception | None = None
     for api_key in keys:
         try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(45.0)) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(None, connect=30.0)) as client:
                 response = await client.post(
                     _NVIDIA_OPENAI_BASE,
                     headers={

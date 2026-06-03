@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import os
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone as dt_timezone
 from typing import Any
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    from backports.zoneinfo import ZoneInfo  # type: ignore[no-redef]
 
 import httpx
 
@@ -21,20 +28,15 @@ from tools.content_generation.cloudinary_upload import (
     upload_image_bytes,
 )
 from tools.content_generation.content_image_client import fetch_content_image
-from tools.content_generation.idea_fetch import fetch_idea_row, idea_to_content_context
+from tools.content_generation.idea_fetch import (
+    fetch_idea_row,
+    idea_to_content_context,
+    idea_to_planning_context,
+)
+from config.content_generation_config import content_http_timeout
 from tools.content_generation.platform_specs import get_spec_for_platform
 
 logger = logging.getLogger("brandai.weekly_plan_agent")
-
-DAY_WORDS = {
-    "lundi": 0,
-    "mardi": 1,
-    "mercredi": 2,
-    "jeudi": 3,
-    "vendredi": 4,
-    "samedi": 5,
-    "dimanche": 6,
-}
 
 WEEKDAY_FR = {
     0: "lundi",
@@ -46,30 +48,16 @@ WEEKDAY_FR = {
     6: "dimanche",
 }
 
-FR_MONTHS = {
-    "janvier": 1,
-    "fevrier": 2,
-    "février": 2,
-    "mars": 3,
-    "avril": 4,
-    "mai": 5,
-    "juin": 6,
-    "juillet": 7,
-    "aout": 8,
-    "août": 8,
-    "septembre": 9,
-    "octobre": 10,
-    "novembre": 11,
-    "decembre": 12,
-    "décembre": 12,
-}
-
-
 class WeeklyIntentLLM(BaseAgent):
     def __init__(self) -> None:
+        max_retries = 5
+        raw = (os.getenv("NVIDIA_MAX_RETRIES") or "").strip()
+        if raw.isdigit():
+            max_retries = max(1, int(raw))
         super().__init__(
             "weekly_intent_llm",
             temperature=0.2,
+            max_retries=max_retries,
             llm_model="openai/gpt-oss-120b",
             llm_max_tokens=2048,
         )
@@ -79,18 +67,23 @@ class WeeklyIntentLLM(BaseAgent):
 
     async def parse_intent(
         self,
-        prompt: str,
+        user_message: str,
         *,
         today_iso: str,
         today_weekday_fr: str,
         timezone: str,
+        now_local_hhmm: str,
+        allowed_platforms: list[str],
     ) -> dict[str, Any]:
+        allowed = ", ".join(allowed_platforms) if allowed_platforms else "linkedin, facebook, instagram"
         system = build_weekly_intent_system(
             today_iso=today_iso,
             today_weekday_fr=today_weekday_fr,
             timezone=timezone,
+            now_local_hhmm=now_local_hhmm,
+            allowed_platforms=allowed,
         )
-        raw = await self._call_llm(system, prompt.strip())
+        raw = await self._call_llm(system, user_message.strip())
         return _parse_json_object(raw)
 
     async def regenerate_caption(
@@ -126,6 +119,52 @@ class WeeklyGenerateInput:
     distribution_mode: str | None = None
 
 
+_TZ_OFFSET_FALLBACKS: dict[str, timedelta] = {
+    "Africa/Tunis": timedelta(hours=1),
+    "Europe/Paris": timedelta(hours=1),
+    "Europe/Brussels": timedelta(hours=1),
+    "Europe/Berlin": timedelta(hours=1),
+}
+
+
+def _resolve_tz(timezone_name: str):
+    """Retourne ZoneInfo ou datetime.timezone (fallback Windows sans tzdata)."""
+    name = (timezone_name or "UTC").strip()
+    if name in ("UTC", "Etc/UTC", "GMT", "Zulu"):
+        return dt_timezone.utc
+    try:
+        return ZoneInfo(name)
+    except Exception:
+        offset = _TZ_OFFSET_FALLBACKS.get(name)
+        if offset is not None:
+            logger.warning(
+                "[weekly_plan] fuseau %s via offset fixe %s (installez tzdata pour l'heure d'ete)",
+                name,
+                offset,
+            )
+            return dt_timezone(offset)
+        logger.warning("[weekly_plan] fuseau %s inconnu, fallback UTC", name)
+        return dt_timezone.utc
+
+
+def _user_now(timezone_name: str) -> datetime:
+    return datetime.now(_resolve_tz(timezone_name))
+
+
+def _utc_from_local_date_time(
+    year: int,
+    month: int,
+    day: int,
+    hh: int,
+    mm: int,
+    timezone_name: str,
+) -> datetime:
+    """Interprète date+heure dans le fuseau utilisateur, retourne UTC."""
+    tz = _resolve_tz(timezone_name)
+    local = datetime(year, month, day, hh, mm, 0, 0, tzinfo=tz)
+    return local.astimezone(UTC)
+
+
 def _parse_json_object(raw: str) -> dict[str, Any]:
     s = (raw or "").strip()
     s = re.sub(r"```(?:json)?\s*|\s*```", "", s, flags=re.IGNORECASE).strip()
@@ -144,79 +183,35 @@ def _parse_json_object(raw: str) -> dict[str, Any]:
     raise RuntimeError("Réponse JSON invalide du modèle.")
 
 
-def _next_monday(now: datetime) -> datetime:
-    day_idx = now.weekday()
-    delta = (7 - day_idx) % 7
-    return (now + timedelta(days=delta)).replace(hour=0, minute=0, second=0, microsecond=0)
+def _normalize_platform_rationale(raw: Any, platforms: list[str]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    if not isinstance(raw, dict):
+        return out
+    for plat in platforms:
+        v = raw.get(plat)
+        if isinstance(v, str) and v.strip():
+            out[plat] = v.strip()
+    return out
 
 
-def _next_weekday_from(now: datetime, weekday: int) -> datetime:
-    delta = (weekday - now.weekday()) % 7
-    if delta == 0:
-        delta = 7
-    return (now + timedelta(days=delta)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-
-def _extract_explicit_date(text: str, *, now: datetime | None = None) -> datetime | None:
-    """Extrait une date explicite ou relative depuis du texte libre.
-
-    Supporte :
-    - ISO `YYYY-MM-DD`
-    - `aujourd'hui`, `aujourd hui`, `today`
-    - `demain`, `tomorrow`
-    - `après-demain`, `apres-demain`, `apres demain`
-    - `1er mai`, `1 mai`, `1 mai 2026`
-    - `dd/mm`, `dd/mm/yyyy`, `dd-mm`, `dd-mm-yyyy`
-    """
-    if not text:
-        return None
-    base_now = (now or datetime.now(UTC)).replace(hour=0, minute=0, second=0, microsecond=0)
-    lower = text.lower().strip()
-
-    iso = re.search(r"\b(\d{4})-(\d{2})-(\d{2})\b", lower)
-    if iso:
-        try:
-            return datetime(int(iso.group(1)), int(iso.group(2)), int(iso.group(3)), tzinfo=UTC)
-        except ValueError:
-            return None
-
-    if re.search(r"\baujourd['\s]?hui\b|\btoday\b", lower):
-        return base_now
-    if re.search(r"\bapr[eè]s[\s-]demain\b", lower):
-        return base_now + timedelta(days=2)
-    if re.search(r"\bdemain\b|\btomorrow\b", lower):
-        return base_now + timedelta(days=1)
-
-    m = re.search(
-        r"\b(\d{1,2})(?:er)?\s+(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)(?:\s+(\d{4}))?\b",
-        lower,
-    )
-    if m:
-        day = int(m.group(1))
-        month = FR_MONTHS.get(m.group(2), 0)
-        year = int(m.group(3)) if m.group(3) else base_now.year
-        if month:
-            try:
-                dt = datetime(year, month, day, tzinfo=UTC)
-                if not m.group(3) and dt.date() < base_now.date():
-                    dt = dt.replace(year=year + 1)
-                return dt
-            except ValueError:
-                return None
-
-    m2 = re.search(r"\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?\b", lower)
-    if m2:
-        day = int(m2.group(1))
-        month = int(m2.group(2))
-        year = int(m2.group(3)) if m2.group(3) else base_now.year
-        try:
-            dt = datetime(year, month, day, tzinfo=UTC)
-            if not m2.group(3) and dt.date() < base_now.date():
-                dt = dt.replace(year=year + 1)
-            return dt
-        except ValueError:
-            return None
-    return None
+def _build_planning_user_message(
+    *,
+    user_prompt: str,
+    project_context: dict[str, Any] | None,
+    align_with_project: bool,
+) -> str:
+    parts = []
+    if align_with_project and project_context:
+        parts.append(
+            "Contexte projet (données réelles API — ne rien inventer hors de ce bloc) :\n"
+            + json.dumps(project_context, ensure_ascii=False, indent=2)
+        )
+    elif align_with_project:
+        parts.append(
+            "Contexte projet : indisponible (token ou API). Raisonne uniquement sur l'intention ci-dessous."
+        )
+    parts.append("Intention utilisateur (planification) :\n" + user_prompt.strip())
+    return "\n\n".join(parts)
 
 
 def _parse_hhmm(text: str | None) -> tuple[int, int] | None:
@@ -237,73 +232,34 @@ def _parse_hhmm(text: str | None) -> tuple[int, int] | None:
 
 def _slot_for_post(
     *,
-    idx: int,
     platform: str,
-    user_prompt: str,
-    post_day_hint: str | None,
-    post_date_hint: str | None,
     platform_time: str,
     user_specified_time: bool,
-    scheduled_date_iso: str | None = None,
+    scheduled_date_iso: str | None,
+    timezone_name: str = "UTC",
+    post_objective: str = "",
 ) -> tuple[datetime, str]:
-    """Détermine la date+heure proposée pour une variante.
-
-    L'heure est imposée par `platform_time` (au format HH:MM), proposée par
-    le LLM pour cette plateforme (ou recopiée d'une heure utilisateur
-    explicite). Aucun défaut hardcodé : si `platform_time` est invalide,
-    on lève une erreur.
-
-    Priorité date :
-    1. `scheduled_date_iso` (déjà résolu par le LLM).
-    2. Détection explicite dans `post_date_hint` puis `user_prompt`.
-    3. Détection d'un jour de la semaine (`post_day_hint` ou prompt).
-    4. Lundi prochain par défaut.
-    """
-    now = datetime.now(UTC)
+    """Convertit la date/heure proposées par le LLM (fuseau utilisateur) en UTC."""
+    if not scheduled_date_iso:
+        raise RuntimeError(
+            f"Le planificateur n'a pas fourni scheduled_date pour le post « {post_objective[:60]} »."
+        )
     hhmm = _parse_hhmm(platform_time)
     if not hhmm:
         raise RuntimeError(
-            f"Heure invalide proposée pour la plateforme {platform}: '{platform_time}'"
+            f"Heure invalide pour {platform} sur « {post_objective[:60]} » : '{platform_time}'"
         )
     hh, mm = hhmm
-    time_label = "user_time" if user_specified_time else "llm_time"
-
-    if scheduled_date_iso:
-        try:
-            base = datetime.fromisoformat(scheduled_date_iso)
-            if base.tzinfo is None:
-                base = base.replace(tzinfo=UTC)
-            dt = base.replace(hour=hh, minute=mm, second=0, microsecond=0)
-            if dt < now.replace(second=0, microsecond=0):
-                dt = dt + timedelta(days=7)
-            return dt, f"llm_date+{time_label}"
-        except (ValueError, TypeError):
-            pass
-
-    explicit = _extract_explicit_date(post_date_hint or "", now=now) or _extract_explicit_date(
-        user_prompt, now=now
-    )
-    if explicit:
-        dt = (explicit + timedelta(days=idx)).replace(hour=hh, minute=mm)
-        if dt < now:
-            dt = dt.replace(year=now.year + 1)
-        return dt, f"user_date+{time_label}"
-
-    hint = (post_day_hint or "").strip().lower()
-    if not hint:
-        lower = user_prompt.lower()
-        for dword in DAY_WORDS:
-            if dword in lower:
-                hint = dword
-                break
-    if hint in DAY_WORDS:
-        base = _next_weekday_from(now, DAY_WORDS[hint])
-        dt = (base + timedelta(days=idx)).replace(hour=hh, minute=mm)
-        return dt, f"user_day+{time_label}"
-
-    base = _next_monday(now)
-    dt = (base + timedelta(days=idx)).replace(hour=hh, minute=mm)
-    return dt, f"llm_date+{time_label}"
+    try:
+        parts = scheduled_date_iso.strip().split("-")
+        y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
+    except (ValueError, TypeError, IndexError) as exc:
+        raise RuntimeError(
+            f"scheduled_date invalide pour « {post_objective[:60]} » : {scheduled_date_iso!r}"
+        ) from exc
+    dt_utc = _utc_from_local_date_time(y, m, d, hh, mm, timezone_name)
+    label = "user_time" if user_specified_time else "llm_time"
+    return dt_utc, f"llm_schedule+{label}"
 
 
 async def _generate_item_caption(
@@ -348,6 +304,63 @@ async def _generate_item_caption(
     )
 
 
+async def _build_merged_for_image(
+    *,
+    idea_id: int,
+    platform: str,
+    objective: str,
+    align_with_project: bool,
+    access_token: str | None,
+) -> dict[str, Any]:
+    brief = {
+        "subject": objective,
+        "tone": "professional",
+        "content_type": "feed_post",
+        "hashtags": platform == "instagram",
+        "include_image": True,
+        "call_to_action": "learn_more" if platform in ("facebook", "linkedin") else None,
+        "align_with_project": align_with_project,
+    }
+    idea_block: dict[str, Any] = {}
+    if align_with_project and access_token:
+        try:
+            row = await fetch_idea_row(idea_id, access_token)
+            idea_block = idea_to_content_context(row)
+        except Exception as exc:
+            logger.warning("[weekly_plan] contexte idée image indisponible: %s", exc)
+    return {
+        "idea_id": idea_id,
+        "platform": platform,
+        "brief": brief,
+        "align_with_project": align_with_project,
+        "idea": idea_block,
+    }
+
+
+def _image_gen_max_attempts() -> int:
+    raw = (os.getenv("CONTENT_IMAGE_GEN_ATTEMPTS") or "3").strip()
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 3
+
+
+def _image_gen_retry_delay_s(attempt: int) -> float:
+    base = float(os.getenv("CONTENT_IMAGE_GEN_RETRY_DELAY_S") or "30")
+    return base * max(1, attempt + 1)
+
+
+def _is_retryable_image_error(exc: BaseException) -> bool:
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code if exc.response is not None else 0
+        return status in (429, 502, 503, 504)
+    msg = str(exc).lower()
+    return any(
+        token in msg
+        for token in ("504", "502", "503", "429", "gateway timeout", "gateway time-out")
+    )
+
+
 async def _generate_item_image(
     *,
     runner: ContentLLMRunner,
@@ -357,34 +370,79 @@ async def _generate_item_image(
 ) -> tuple[str | None, str | None]:
     if not cloudinary_configured():
         return None, "cloudinary_not_configured"
-    try:
-        spec = get_spec_for_platform(platform)
-        ip, np = await runner.build_image_prompt(
-            json.dumps(merged, ensure_ascii=False, indent=2),
-            json.dumps(spec, ensure_ascii=False, indent=2),
-            caption,
-        )
-        data, mime, _ = await fetch_content_image(ip, np)
-        url = upload_image_bytes(data, mime=mime)
-        return url, None
-    except Exception as exc:
-        return None, str(exc)[:220]
+
+    max_attempts = _image_gen_max_attempts()
+    last_err: str | None = None
+    for attempt in range(max_attempts):
+        try:
+            spec = get_spec_for_platform(platform)
+            ip, np = await runner.build_image_prompt(
+                json.dumps(merged, ensure_ascii=False, indent=2),
+                json.dumps(spec, ensure_ascii=False, indent=2),
+                caption,
+            )
+            data, mime, _ = await fetch_content_image(ip, np)
+            url = upload_image_bytes(data, mime=mime)
+            if attempt > 0:
+                logger.info(
+                    "[weekly_plan] image OK apres %d tentative(s) | platform=%s",
+                    attempt + 1,
+                    platform,
+                )
+            return url, None
+        except Exception as exc:
+            last_err = str(exc)[:220]
+            if _is_retryable_image_error(exc) and attempt < max_attempts - 1:
+                delay = _image_gen_retry_delay_s(attempt)
+                logger.warning(
+                    "[weekly_plan] image retry %d/%d dans %.0fs | platform=%s | %s",
+                    attempt + 1,
+                    max_attempts,
+                    delay,
+                    platform,
+                    last_err[:120],
+                )
+                await asyncio.sleep(delay)
+                continue
+            return None, last_err
+    return None, last_err or "image_generation_failed"
 
 
 @agent_trace("weekly_plan.generate", tags=["content_generation", "weekly_plan"])
 async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
     intent_llm = WeeklyIntentLLM()
 
-    now = datetime.now(UTC)
-    today_iso = now.date().isoformat()
-    today_weekday_fr = WEEKDAY_FR.get(now.weekday(), "")
+    tz_name = (payload.timezone or "UTC").strip()
+    user_now = _user_now(tz_name)
+    today_iso = user_now.date().isoformat()
+    today_weekday_fr = WEEKDAY_FR.get(user_now.weekday(), "")
+    now_local_hhmm = user_now.strftime("%H:%M")
+    allowed = [p for p in (payload.platforms or []) if p in ("linkedin", "facebook", "instagram")]
+    if not allowed:
+        allowed = ["linkedin", "facebook", "instagram"]
+
+    project_context: dict[str, Any] | None = None
+    if payload.align_with_project and payload.access_token:
+        try:
+            row = await fetch_idea_row(payload.idea_id, payload.access_token)
+            project_context = idea_to_planning_context(row)
+        except Exception as exc:
+            logger.warning("[weekly_plan] contexte projet indisponible: %s", exc)
+
+    user_message = _build_planning_user_message(
+        user_prompt=payload.user_prompt,
+        project_context=project_context,
+        align_with_project=payload.align_with_project,
+    )
 
     try:
         intent = await intent_llm.parse_intent(
-            payload.user_prompt,
+            user_message,
             today_iso=today_iso,
             today_weekday_fr=today_weekday_fr,
-            timezone=payload.timezone or "UTC",
+            timezone=tz_name,
+            now_local_hhmm=now_local_hhmm,
+            allowed_platforms=allowed,
         )
     except Exception as exc:
         raise RuntimeError(f"Le planificateur LLM a échoué : {exc}") from exc
@@ -392,7 +450,9 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
     if not isinstance(intent, dict):
         raise RuntimeError("Le planificateur LLM a renvoyé une réponse invalide.")
 
-    user_specified_time = bool(_parse_hhmm(payload.user_prompt))
+    plan_notes: list[str] = []
+    if isinstance(intent.get("notes"), list):
+        plan_notes.extend(str(n) for n in intent["notes"] if n)
 
     parsed_posts = intent.get("posts") if isinstance(intent.get("posts"), list) else []
     normalized_posts: list[dict[str, Any]] = []
@@ -402,11 +462,26 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
         objective = str(p.get("objective") or "").strip()
         if not objective:
             continue
-        rec = p.get("recommended_platforms") or []
-        rec = [x for x in rec if x in payload.platforms]
+
+        content_type = str(p.get("content_type") or "other").strip() or "other"
+        rec = [x for x in (p.get("recommended_platforms") or []) if x in allowed]
         if not rec:
-            rec = payload.platforms[:]
+            raise RuntimeError(
+                f"Le planificateur n'a proposé aucune plateforme valide pour « {objective[:60]} »."
+            )
         rec = rec[:3]
+        rationale = _normalize_platform_rationale(p.get("platform_rationale"), rec)
+
+        post_user_time = (
+            p.get("user_time_specified") is True
+            if isinstance(p.get("user_time_specified"), bool)
+            else False
+        )
+        scheduled_date = str(p.get("scheduled_date") or "").strip()
+        if not scheduled_date:
+            raise RuntimeError(
+                f"Le planificateur n'a pas fourni scheduled_date pour « {objective[:60]} »."
+            )
 
         plat_times_raw = p.get("platform_times")
         if not isinstance(plat_times_raw, dict):
@@ -414,8 +489,13 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
                 f"Le planificateur LLM n'a pas proposé `platform_times` pour le post « {objective[:60]} »."
             )
         plat_times: dict[str, str] = {}
+        fallback_time = None
+        for _plat, _t in plat_times_raw.items():
+            if isinstance(_t, str) and _parse_hhmm(_t):
+                fallback_time = _t
+                break
         for plat in rec:
-            t = plat_times_raw.get(plat)
+            t = plat_times_raw.get(plat) or fallback_time
             if not isinstance(t, str) or not _parse_hhmm(t):
                 raise RuntimeError(
                     f"Le planificateur LLM n'a pas proposé d'heure valide pour {plat} sur le post « {objective[:60]} »."
@@ -440,15 +520,15 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
         # non négociable : Instagram sans image n'a aucun sens).
         if not payload.include_images:
             plat_images = {k: False for k in plat_images}
-        # Garde-fou serveur Instagram : prime sur le master switch et le LLM.
-        if "instagram" in plat_images:
-            plat_images["instagram"] = True
 
         normalized_posts.append(
             {
                 "objective": objective,
+                "content_type": content_type,
                 "recommended_platforms": rec,
-                "scheduled_date": str(p.get("scheduled_date") or "").strip() or None,
+                "platform_rationale": rationale,
+                "user_time_specified": post_user_time,
+                "scheduled_date": scheduled_date,
                 "platform_times": plat_times,
                 "platform_images": plat_images,
                 "date_hint": str(p.get("date_hint") or "").strip() or None,
@@ -482,14 +562,12 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
         variants = []
         for platform in rec_platforms:
             slot_dt, timing_source = _slot_for_post(
-                idx=idx,
                 platform=platform,
-                user_prompt=payload.user_prompt,
-                post_day_hint=post.get("day_hint"),
-                post_date_hint=post.get("date_hint"),
-                scheduled_date_iso=post.get("scheduled_date"),
                 platform_time=plat_times[platform],
-                user_specified_time=user_specified_time,
+                user_specified_time=bool(post.get("user_time_specified")),
+                scheduled_date_iso=post.get("scheduled_date"),
+                timezone_name=tz_name,
+                post_objective=objective,
             )
             want_image = bool(plat_images.get(platform, False))
             # Cost-aware UX: weekly generate returns only scheduling proposals.
@@ -513,13 +591,16 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
             {
                 "item_id": f"wp-{idx+1}",
                 "objective": objective,
+                "content_type": post.get("content_type"),
                 "recommended_platforms": rec_platforms,
+                "platform_rationale": post.get("platform_rationale") or {},
                 "status": "proposed",
                 "scheduled_date": post.get("scheduled_date"),
                 "platform_times": post.get("platform_times"),
                 "platform_images": post.get("platform_images"),
                 "date_hint": post.get("date_hint"),
                 "day_hint": post.get("day_hint"),
+                "user_time_specified": post.get("user_time_specified"),
                 "variants": variants,
             }
         )
@@ -529,7 +610,8 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
         "detected_post_count": count,
         "timezone": payload.timezone,
         "align_with_project": payload.align_with_project,
-        "notes": intent.get("notes") or [],
+        "project_context_used": bool(project_context),
+        "notes": plan_notes,
         "items": items,
     }
 
@@ -539,18 +621,111 @@ async def regenerate_weekly_item(
     *,
     item: dict[str, Any],
     feedback: str,
+    idea_id: int,
+    access_token: str | None = None,
+    align_with_project: bool = True,
 ) -> dict[str, Any]:
+    """Régénère la légende puis l'image si le variant est en mode visuel."""
     llm = WeeklyIntentLLM()
+    runner = ContentLLMRunner()
+    platform = str(item.get("platform") or "linkedin")
+    objective = str(item.get("objective") or "Post semaine").strip()
+
     caption = await llm.regenerate_caption(
         current_caption=str(item.get("caption") or ""),
         feedback=feedback,
-        platform=str(item.get("platform") or "linkedin"),
+        platform=platform,
     )
     next_item = dict(item)
     next_item["caption"] = caption
+
+    image_mode = str(item.get("image_mode") or "none")
+    if platform == "instagram":
+        image_mode = "required"
+
+    if image_mode != "none":
+        logger.info(
+            "[weekly_plan] regenerate image | variant=%s platform=%s",
+            item.get("variant_id"),
+            platform,
+        )
+        merged = await _build_merged_for_image(
+            idea_id=idea_id,
+            platform=platform,
+            objective=objective,
+            align_with_project=align_with_project,
+            access_token=access_token,
+        )
+        img_url, img_err = await _generate_item_image(
+            runner=runner,
+            merged=merged,
+            platform=platform,
+            caption=caption,
+        )
+        next_item["image_url"] = img_url
+        next_item["image_error"] = img_err
+        if img_url:
+            next_item["image_status"] = "generated"
+        elif img_err:
+            next_item["image_status"] = "failed"
+    else:
+        next_item["image_status"] = "skipped"
+
     next_item["status"] = "regenerated"
     next_item["content_generated"] = True
     return next_item
+
+
+@agent_trace("weekly_plan.retry_image", tags=["content_generation", "weekly_plan"])
+async def retry_weekly_variant_image(
+    *,
+    variant: dict[str, Any],
+    objective: str,
+    idea_id: int,
+    access_token: str | None = None,
+    align_with_project: bool = True,
+) -> dict[str, Any]:
+    """Regenere uniquement l'image (caption conservee)."""
+    runner = ContentLLMRunner()
+    platform = str(variant.get("platform") or "linkedin")
+    caption = str(variant.get("caption") or "").strip()
+    if not caption:
+        raise ValueError("Caption manquante : impossible de regenerer l'image.")
+
+    image_mode = str(variant.get("image_mode") or "none")
+    if platform == "instagram":
+        image_mode = "required"
+    if image_mode == "none":
+        raise ValueError("Ce variant est configure sans image.")
+
+    logger.info(
+        "[weekly_plan] retry image | variant=%s platform=%s",
+        variant.get("variant_id"),
+        platform,
+    )
+    merged = await _build_merged_for_image(
+        idea_id=idea_id,
+        platform=platform,
+        objective=objective.strip() or "Post semaine",
+        align_with_project=align_with_project,
+        access_token=access_token,
+    )
+    next_variant = dict(variant)
+    next_variant["image_error"] = None
+    next_variant["image_status"] = "pending"
+    img_url, img_err = await _generate_item_image(
+        runner=runner,
+        merged=merged,
+        platform=platform,
+        caption=caption,
+    )
+    next_variant["image_url"] = img_url
+    next_variant["image_error"] = img_err
+    if img_url:
+        next_variant["image_status"] = "generated"
+    elif img_err:
+        next_variant["image_status"] = "failed"
+    return next_variant
 
 
 @agent_trace("weekly_plan.generate_content", tags=["content_generation", "weekly_plan"])
@@ -600,7 +775,11 @@ async def generate_weekly_content_for_items(
                 image_mode = "required"
             image_status = variant.get("image_status")
             image_error = variant.get("image_error")
-            should_generate_image = include_images and image_mode != "none" and not image_url
+            should_generate_image = (
+                include_images
+                and image_mode != "none"
+                and (not image_url or bool(image_error))
+            )
             logger.info(
                 "[weekly_content] variant=%s platform=%s image_mode=%s existing_url=%s → generate_image=%s",
                 variant.get("variant_id"),
@@ -610,12 +789,13 @@ async def generate_weekly_content_for_items(
                 should_generate_image,
             )
             if should_generate_image:
-                merged_for_img = {
-                    "idea_id": idea_id,
-                    "platform": platform,
-                    "brief": {"subject": objective, "include_image": True},
-                    "idea": {},
-                }
+                merged_for_img = await _build_merged_for_image(
+                    idea_id=idea_id,
+                    platform=platform,
+                    objective=objective,
+                    align_with_project=align_with_project,
+                    access_token=access_token,
+                )
                 img_url, img_err = await _generate_item_image(
                     runner=runner,
                     merged=merged_for_img,
@@ -672,7 +852,7 @@ async def approve_weekly_plan(
 
     created = []
     runner = ContentLLMRunner()
-    async with httpx.AsyncClient(timeout=httpx.Timeout(None, connect=10.0)) as client:
+    async with httpx.AsyncClient(timeout=content_http_timeout()) as client:
         for item in items:
             variants = item.get("variants")
             if isinstance(variants, list) and variants:
@@ -707,12 +887,13 @@ async def approve_weekly_plan(
                 if platform == "instagram":
                     image_mode = "required"
                 if image_mode != "none" and not image_url:
-                    merged_for_img = {
-                        "idea_id": idea_id,
-                        "platform": platform,
-                        "brief": {"subject": objective, "include_image": True},
-                        "idea": {},
-                    }
+                    merged_for_img = await _build_merged_for_image(
+                        idea_id=idea_id,
+                        platform=platform,
+                        objective=objective,
+                        align_with_project=align_with_project,
+                        access_token=access_token,
+                    )
                     img_url, _img_err = await _generate_item_image(
                         runner=runner,
                         merged=merged_for_img,

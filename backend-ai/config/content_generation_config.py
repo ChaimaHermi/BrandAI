@@ -5,10 +5,26 @@
 import os
 from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
 
 # Même racine que `config/settings.py` : ce module peut être importé avant settings.
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
+def content_http_timeout() -> httpx.Timeout:
+    """
+    Timeout HTTP pour tout le pipeline contenu / weekly plan.
+    Par défaut : aucune limite (attendre la fin des appels NVIDIA, Cloudinary, API idée).
+    Pour un plafond optionnel : CONTENT_HTTP_TIMEOUT_S=600
+    """
+    raw = (os.getenv("CONTENT_HTTP_TIMEOUT_S") or "").strip()
+    if raw in ("0", "none", "off", ""):
+        return httpx.Timeout(None)
+    try:
+        return httpx.Timeout(float(raw))
+    except ValueError:
+        return httpx.Timeout(None)
+
 
 def _int_env(name: str, default: int) -> int:
     raw = (os.getenv(name) or "").strip()

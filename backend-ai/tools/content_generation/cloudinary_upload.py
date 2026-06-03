@@ -16,6 +16,7 @@ from config.content_generation_config import (
     CONTENT_CLOUDINARY_API_SECRET,
     CONTENT_CLOUDINARY_CLOUD_NAME,
     CONTENT_CLOUDINARY_UPLOAD_FOLDER,
+    content_http_timeout,
 )
 
 logger = logging.getLogger("brandai.content_cloudinary")
@@ -55,7 +56,7 @@ async def ensure_cloudinary_public_url(image_url: str) -> str:
             "Cloudinary non configuré : impossible d’obtenir une URL publique pour cette image. "
             "Définissez CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET."
         )
-    async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=content_http_timeout(), follow_redirects=True) as client:
         r = await client.get(u)
         if r.status_code != 200:
             raise RuntimeError(f"Téléchargement image impossible : HTTP {r.status_code}")

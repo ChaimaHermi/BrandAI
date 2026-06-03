@@ -86,17 +86,36 @@ NVIDIA_MODELS = {
 NVIDIA_API_BASE = "https://integrate.api.nvidia.com/v1/chat/completions"
 NVIDIA_MAX_TOKENS_CAP = 65_536  # limite max output NVIDIA gpt-oss-120b
 
-# Timeout HTTP NVIDIA (génération longue). Défaut 600 s ; 0 / none / off = pas de limite.
+# Timeout HTTP NVIDIA. Défaut : pas de limite (NVIDIA peut être lent).
+# Définir NVIDIA_HTTP_TIMEOUT_S=600 pour imposer un plafond en secondes.
 def _nvidia_http_timeout() -> float | None:
     raw = (os.getenv("NVIDIA_HTTP_TIMEOUT_S") or "").strip()
-    if raw in ("0", "none", "off"):
+    if raw in ("0", "none", "off", ""):
         return None
-    if not raw:
-        return 600.0
     try:
         return float(raw)
     except ValueError:
-        return 600.0
+        return None
+
+def _nvidia_retryable_status(status: int | str) -> bool:
+    try:
+        code = int(status)
+    except (TypeError, ValueError):
+        return False
+    return code in (429, 502, 503, 504)
+
+
+def _nvidia_retryable_message(msg: str) -> bool:
+    m = (msg or "").lower()
+    return any(
+        token in m
+        for token in ("504", "502", "503", "429", "gateway timeout", "gateway time-out")
+    )
+
+
+def _nvidia_retry_wait_seconds(status: int) -> float:
+    return 60.0 if status == 429 else 45.0
+
 
 def _nvidia_reasoning_effort() -> str | None:
     """
@@ -260,20 +279,21 @@ class BaseAgent(ABC):
                     f"[API_KO] provider=NVIDIA status={status} "
                     f"agent={self.agent_name} err={str(e)[:200]}"
                 )
-                if status == 429:
+                if _nvidia_retryable_status(status):
                     self.logger.warning(
-                        f"[{self.agent_name}] NVIDIA 429 sur clé …{key[-6:]} "
+                        f"[{self.agent_name}] NVIDIA {status} sur clé …{key[-6:]} "
                         f"→ retry cycle {cycle+1}"
                     )
-                    # libère immédiatement et attend avant de réessayer
                     if cycle < self.max_retries - 1:
-                        await asyncio.sleep(60)
+                        await asyncio.sleep(_nvidia_retry_wait_seconds(int(status)))
                     continue
                 raise
 
             except Exception as e:
                 last_error = e
                 self.logger.warning(f"[{self.agent_name}] NVIDIA erreur → {str(e)[:120]}")
+                if _nvidia_retryable_message(str(e)) and cycle < self.max_retries - 1:
+                    await asyncio.sleep(45)
                 continue
 
             finally:
@@ -351,16 +371,18 @@ class BaseAgent(ABC):
                         },
                         json=payload,
                     ) as resp:
-                        if resp.status_code == 429:
+                        if _nvidia_retryable_status(resp.status_code):
                             self.logger.warning(
-                                f"[{self.agent_name}] NVIDIA-STREAM 429 cle …{key[-6:]} "
+                                f"[{self.agent_name}] NVIDIA-STREAM {resp.status_code} cle …{key[-6:]} "
                                 f"→ retry cycle {cycle+1}"
                             )
                             last_error = httpx.HTTPStatusError(
-                                "429", request=resp.request, response=resp
+                                str(resp.status_code), request=resp.request, response=resp
                             )
                             if cycle < self.max_retries - 1:
-                                await asyncio.sleep(60)
+                                await asyncio.sleep(
+                                    _nvidia_retry_wait_seconds(resp.status_code)
+                                )
                             continue
                         if resp.status_code >= 400:
                             err_body = (await resp.aread()).decode("utf-8", errors="ignore")

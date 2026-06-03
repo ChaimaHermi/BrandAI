@@ -11,6 +11,7 @@ from agents.content_generation.weekly_plan_agent import (
     generate_weekly_content_for_items,
     generate_weekly_plan,
     regenerate_weekly_item,
+    retry_weekly_variant_image,
 )
 
 router = APIRouter(tags=["Content Weekly Plan"])
@@ -33,6 +34,17 @@ class WeeklyPlanGenerateIn(BaseModel):
 class WeeklyPlanRegenerateIn(BaseModel):
     item: dict
     feedback: str = Field(..., min_length=3)
+    idea_id: int = Field(..., ge=1)
+    access_token: str | None = None
+    align_with_project: bool = True
+
+
+class WeeklyPlanRetryImageIn(BaseModel):
+    variant: dict
+    objective: str = Field(default="", max_length=500)
+    idea_id: int = Field(..., ge=1)
+    access_token: str | None = None
+    align_with_project: bool = True
 
 
 class WeeklyPlanApproveIn(BaseModel):
@@ -75,10 +87,33 @@ async def weekly_plan_generate(body: WeeklyPlanGenerateIn):
 @router.post("/content/weekly-plan/regenerate-item")
 async def weekly_plan_regenerate_item(body: WeeklyPlanRegenerateIn):
     try:
-        item = await regenerate_weekly_item(item=body.item, feedback=body.feedback)
+        item = await regenerate_weekly_item(
+            item=body.item,
+            feedback=body.feedback,
+            idea_id=body.idea_id,
+            access_token=body.access_token,
+            align_with_project=body.align_with_project,
+        )
         return {"item": item}
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Régénération indisponible: {exc}") from exc
+
+
+@router.post("/content/weekly-plan/retry-image")
+async def weekly_plan_retry_image(body: WeeklyPlanRetryImageIn):
+    try:
+        variant = await retry_weekly_variant_image(
+            variant=body.variant,
+            objective=body.objective,
+            idea_id=body.idea_id,
+            access_token=body.access_token,
+            align_with_project=body.align_with_project,
+        )
+        return {"variant": variant}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Retry image indisponible: {exc}") from exc
 
 
 @router.post("/content/weekly-plan/approve")

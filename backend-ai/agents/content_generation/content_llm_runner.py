@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from typing import Any
 
@@ -37,9 +38,14 @@ class ContentLLMRunner(BaseAgent):
 
     def __init__(self) -> None:
         c = CONTENT_LLM_CONFIG
+        max_retries = 5
+        raw = (os.getenv("NVIDIA_MAX_RETRIES") or "").strip()
+        if raw.isdigit():
+            max_retries = max(1, int(raw))
         super().__init__(
             "content_llm_runner",
             temperature=float(c.get("temperature", 0.35)),
+            max_retries=max_retries,
             llm_model=c.get("model", "openai/gpt-oss-120b"),
             llm_max_tokens=int(c.get("max_tokens", 65_536)),
         )
