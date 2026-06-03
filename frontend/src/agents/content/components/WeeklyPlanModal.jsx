@@ -398,8 +398,6 @@ function ContentCard({ item, index, onPatchVariant, onRegenerate, onToggleRemove
 
 export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApproved }) {
   const [prompt, setPrompt] = useState("");
-  const [alignWithProject, setAlignWithProject] = useState(true);
-  const [includeImages, setIncludeImages] = useState(true);
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState(null);
   const [stage, setStage] = useState("planning");
@@ -433,8 +431,6 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
       now.setDate(now.getDate() + 1 + itemIndex);
       const def = platform === "linkedin" ? 9 : platform === "facebook" ? 13 : 18;
       now.setHours(def, platform === "linkedin" ? 30 : platform === "instagram" ? 30 : 0, 0, 0);
-      // Instagram nécessite toujours une image, peu importe le toggle global.
-      const wantImage = platform === "instagram" ? true : includeImages;
       return {
         variant_id: `wp-${itemIndex + 1}-${platform}-${Date.now()}`,
         platform,
@@ -442,14 +438,14 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
         scheduled_at_utc: refVariant?.scheduled_at_utc || now.toISOString(),
         timing_source: refVariant?.timing_source || "ai_suggested",
         status: "added_by_user",
-        image_mode: wantImage ? "required" : "none",
-        image_status: wantImage ? "pending" : "skipped",
+        image_mode: "required",
+        image_status: "pending",
         image_url: null,
         image_error: null,
         content_generated: false,
       };
     },
-    [includeImages]
+    []
   );
 
   if (!open) return null;
@@ -463,8 +459,6 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
         idea_id: ideaId,
         user_prompt: prompt.trim(),
         timezone,
-        align_with_project: alignWithProject,
-        include_images: includeImages,
         distribution_mode: "auto",
         requested_post_count: null,
         access_token: token,
@@ -604,8 +598,6 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
       const out = await apiGenerateWeeklyPlanContent(token, {
         idea_id: ideaId,
         access_token: token,
-        align_with_project: alignWithProject,
-        include_images: includeImages,
         items: plan.items,
       });
 
@@ -656,7 +648,6 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
         idea_id: ideaId,
         access_token: token,
         timezone,
-        align_with_project: alignWithProject,
         items: plan.items,
       });
 
@@ -737,22 +728,14 @@ export default function WeeklyPlanModal({ open, onClose, ideaId, token, onApprov
             <div className="mb-4 rounded-2xl border border-brand-border bg-brand-light/10 p-4">
               <label className="mb-2 block text-xs font-bold uppercase text-ink-muted">Décrivez vos posts</label>
               <textarea
-                rows={2}
+                rows={5}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Ex: Demain lancement produit, vendredi promo -20%, 1er mai témoignage client"
-                className="mb-3 w-full resize-none rounded-xl border border-brand-border px-3 py-2 text-sm focus:border-brand focus:outline-none"
+                className="mb-3 min-h-[120px] w-full resize-y rounded-xl border border-brand-border px-3 py-3 text-sm leading-relaxed focus:border-brand focus:outline-none"
               />
               <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex items-center gap-2 text-xs font-medium text-ink">
-                  <input type="checkbox" checked={alignWithProject} onChange={(e) => setAlignWithProject(e.target.checked)} />
-                  Aligné projet
-                </label>
-                <label className="inline-flex items-center gap-2 text-xs font-medium text-ink">
-                  <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)} />
-                  Avec images
-                </label>
-                <span className="text-xs text-ink-muted">Fuseau: {timezone}</span>
+                <span className="text-xs text-ink-muted">Fuseau : {timezone}</span>
                 <div className="ml-auto">
                   <Button type="button" variant="secondary" size="sm" onClick={handleGenerate} disabled={loading}>
                     {loading ? <FiLoader className="h-4 w-4 animate-spin" /> : <FiSend className="h-4 w-4" />}

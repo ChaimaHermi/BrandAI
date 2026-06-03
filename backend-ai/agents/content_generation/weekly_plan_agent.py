@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
@@ -26,7 +25,6 @@ from tools.content_generation.idea_fetch import fetch_idea_row, idea_to_content_
 from tools.content_generation.platform_specs import get_spec_for_platform
 
 logger = logging.getLogger("brandai.weekly_plan_agent")
-INTENT_LLM_TIMEOUT_SECONDS = 20
 
 DAY_WORDS = {
     "lundi": 0,
@@ -382,19 +380,12 @@ async def generate_weekly_plan(payload: WeeklyGenerateInput) -> dict[str, Any]:
     today_weekday_fr = WEEKDAY_FR.get(now.weekday(), "")
 
     try:
-        intent = await asyncio.wait_for(
-            intent_llm.parse_intent(
-                payload.user_prompt,
-                today_iso=today_iso,
-                today_weekday_fr=today_weekday_fr,
-                timezone=payload.timezone or "UTC",
-            ),
-            timeout=INTENT_LLM_TIMEOUT_SECONDS,
+        intent = await intent_llm.parse_intent(
+            payload.user_prompt,
+            today_iso=today_iso,
+            today_weekday_fr=today_weekday_fr,
+            timezone=payload.timezone or "UTC",
         )
-    except TimeoutError as exc:
-        raise RuntimeError(
-            f"Le planificateur LLM n'a pas répondu en {INTENT_LLM_TIMEOUT_SECONDS}s."
-        ) from exc
     except Exception as exc:
         raise RuntimeError(f"Le planificateur LLM a échoué : {exc}") from exc
 
@@ -681,7 +672,7 @@ async def approve_weekly_plan(
 
     created = []
     runner = ContentLLMRunner()
-    async with httpx.AsyncClient(timeout=httpx.Timeout(40.0, connect=5.0)) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(None, connect=10.0)) as client:
         for item in items:
             variants = item.get("variants")
             if isinstance(variants, list) and variants:
