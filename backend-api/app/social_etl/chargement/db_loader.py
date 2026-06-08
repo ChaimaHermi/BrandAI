@@ -83,7 +83,22 @@ async def upsert_posts(
             $1,  $2,  $3,  $4,  $5,  $6,  $7,  $8,  $9,  $10, $11,
             $12, $13, $14, $15, $16::jsonb, NOW()
         )
-        ON CONFLICT (post_external_id) DO NOTHING
+        ON CONFLICT (connection_id, post_external_id) DO UPDATE SET
+            published_at = EXCLUDED.published_at,
+            text = EXCLUDED.text,
+            media_type = EXCLUDED.media_type,
+            media_url = EXCLUDED.media_url,
+            permalink_url = EXCLUDED.permalink_url,
+            likes = EXCLUDED.likes,
+            comments = EXCLUDED.comments,
+            shares = EXCLUDED.shares,
+            saves = EXCLUDED.saves,
+            clicks = EXCLUDED.clicks,
+            reach = EXCLUDED.reach,
+            impressions = EXCLUDED.impressions,
+            video_views = EXCLUDED.video_views,
+            reactions_breakdown = EXCLUDED.reactions_breakdown,
+            updated_at = NOW()
     """
 
     records: list[tuple[Any, ...]] = []

@@ -102,7 +102,7 @@ export function TopPostsTable({ posts, loading, activePlatform }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-ink">Top publications</p>
-            <p className="text-2xs text-ink-muted">Posts les plus performants sur la période</p>
+            <p className="text-2xs text-ink-muted">Top 5 — posts les plus performants (publications synchronisées)</p>
           </div>
         </div>
 

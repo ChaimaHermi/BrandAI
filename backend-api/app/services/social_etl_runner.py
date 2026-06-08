@@ -70,12 +70,41 @@ def build_social_etl_config(
                     {"ids": conn_ids},
                 ).fetchall()
                 latest_status_by_connection = {int(r[0]): str(r[1] or "").strip().lower() for r in rows}
+                post_counts = {
+                    int(r[0]): int(r[1] or 0)
+                    for r in db.execute(
+                        text(
+                            """
+                            SELECT connection_id, COUNT(*)::int
+                            FROM social_posts
+                            WHERE connection_id = ANY(:ids)
+                            GROUP BY connection_id
+                            """
+                        ),
+                        {"ids": conn_ids},
+                    ).fetchall()
+                }
                 filtered_accounts: list[dict[str, Any]] = []
                 skipped = 0
                 for acc in accounts:
                     cid = acc.get("connection_id")
-                    status = latest_status_by_connection.get(int(cid)) if isinstance(cid, int) else None
-                    if status == "success":
+                    if not isinstance(cid, int):
+                        filtered_accounts.append(acc)
+                        continue
+                    status = latest_status_by_connection.get(cid)
+                    has_posts = post_counts.get(cid, 0) > 0
+                    stored_posts = post_counts.get(cid, 0)
+                    is_linkedin = str(acc.get("platform") or "").strip().lower() == "linkedin"
+                    if status == "success" and has_posts:
+                        if is_linkedin and stored_posts < limit:
+                            logger.info(
+                                "social_etl account retry connection_id=%s platform=linkedin reason=incomplete_posts stored=%s limit=%s",
+                                cid,
+                                stored_posts,
+                                limit,
+                            )
+                            filtered_accounts.append(acc)
+                            continue
                         skipped += 1
                         logger.info(
                             "social_etl account skipped connection_id=%s platform=%s reason=already_success",
@@ -83,6 +112,12 @@ def build_social_etl_config(
                             acc.get("platform"),
                         )
                         continue
+                    if status == "success" and not has_posts:
+                        logger.info(
+                            "social_etl account retry connection_id=%s platform=%s reason=success_without_posts",
+                            cid,
+                            acc.get("platform"),
+                        )
                     filtered_accounts.append(acc)
                 if skipped > 0:
                     warnings.append(

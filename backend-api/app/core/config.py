@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     # Social ETL — extraction + normalisation + KPIs
     SOCIAL_ETL_POST_LIMIT: int = 10
+    SOCIAL_ETL_TOP_POSTS_DISPLAY: int = 5
     SOCIAL_ETL_COMMENTS_LIMIT: int = 100
     APIFY_TOKEN: str = ""
     APIFY_LINKEDIN_ACTOR_ID: str = ""

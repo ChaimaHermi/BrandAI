@@ -6,56 +6,42 @@ import asyncpg
 
 logger = logging.getLogger(__name__)
 
-PERIOD_TYPE = "30days"
+PERIOD_TYPE = "synced"
+
+SYNCED_PERIOD_CTE = """
+        WITH posts_scope AS (
+            SELECT sp.*
+            FROM social_posts sp
+            WHERE sp.connection_id = $1
+        ),
+        period AS (
+            SELECT
+                COALESCE(MIN(DATE(published_at)), CURRENT_DATE)::date AS start_date,
+                COALESCE(MAX(DATE(published_at)), CURRENT_DATE)::date AS end_date
+            FROM posts_scope
+        ),
+"""
 
 
 async def update_daily_engagement(
     conn: asyncpg.Connection,
     connection_id: int,
-    *,
-    last_30_days_only: bool = True,
 ) -> None:
-    if last_30_days_only:
-        await conn.execute(
-            """
-            DELETE FROM social_daily_engagement
-            WHERE connection_id = $1
-              AND date >= (CURRENT_DATE - INTERVAL '30 days')::date
-            """,
-            connection_id,
-        )
-        await conn.execute(
-            """
-            INSERT INTO social_daily_engagement (connection_id, date, total_engagement)
-            SELECT
-                $1 AS connection_id,
-                DATE(published_at) AS date,
-                COALESCE(SUM(COALESCE(likes, 0) + COALESCE(comments, 0) + COALESCE(shares, 0)), 0)::int AS total_engagement
-            FROM social_posts
-            WHERE connection_id = $1
-              AND published_at >= (CURRENT_DATE - INTERVAL '30 days')
-            GROUP BY DATE(published_at)
-            ON CONFLICT (connection_id, date) DO UPDATE SET
-                total_engagement = EXCLUDED.total_engagement
-            """,
-            connection_id,
-        )
-    else:
-        await conn.execute(
-            """
-            INSERT INTO social_daily_engagement (connection_id, date, total_engagement)
-            SELECT
-                $1 AS connection_id,
-                DATE(published_at) AS date,
-                COALESCE(SUM(COALESCE(likes, 0) + COALESCE(comments, 0) + COALESCE(shares, 0)), 0)::int AS total_engagement
-            FROM social_posts
-            WHERE connection_id = $1
-            GROUP BY DATE(published_at)
-            ON CONFLICT (connection_id, date) DO UPDATE SET
-                total_engagement = EXCLUDED.total_engagement
-            """,
-            connection_id,
-        )
+    await conn.execute(
+        """
+        INSERT INTO social_daily_engagement (connection_id, date, total_engagement)
+        SELECT
+            $1 AS connection_id,
+            DATE(published_at) AS date,
+            COALESCE(SUM(COALESCE(likes, 0) + COALESCE(comments, 0) + COALESCE(shares, 0)), 0)::int AS total_engagement
+        FROM social_posts
+        WHERE connection_id = $1
+        GROUP BY DATE(published_at)
+        ON CONFLICT (connection_id, date) DO UPDATE SET
+            total_engagement = EXCLUDED.total_engagement
+        """,
+        connection_id,
+    )
 
 
 async def _fetch_active_connection_ids(conn: asyncpg.Connection) -> list[int]:
@@ -90,18 +76,12 @@ async def _fetch_active_connection_ids(conn: asyncpg.Connection) -> list[int]:
 
 
 async def compute_facebook_kpis(pool: asyncpg.Pool) -> int:
-    aggregate_query = """
-        WITH period AS (
-            SELECT
-                (CURRENT_DATE - INTERVAL '30 days')::date AS start_date,
-                CURRENT_DATE::date AS end_date
-        ),
-        posts_scope AS (
+    aggregate_query = f"""
+{SYNCED_PERIOD_CTE}
+        posts_with_reach AS (
             SELECT sp.*
-            FROM social_posts sp
-            CROSS JOIN period p
-            WHERE sp.connection_id = $1
-              AND sp.published_at >= p.start_date
+            FROM posts_scope sp
+            WHERE COALESCE(sp.reach, 0) > 0
         ),
         top_posts_source AS (
             SELECT
@@ -111,11 +91,11 @@ async def compute_facebook_kpis(pool: asyncpg.Pool) -> int:
                 permalink_url
             FROM posts_scope
             ORDER BY engagement_total DESC, published_at DESC
-            LIMIT 3
+            LIMIT 5
         ),
         posts_data AS (
             SELECT
-                COUNT(*)::int AS posts_count,
+                (SELECT COUNT(*)::int FROM posts_scope) AS posts_count,
                 COALESCE(SUM(COALESCE(likes, 0) + COALESCE(comments, 0) + COALESCE(shares, 0)), 0)::int AS total_engagement,
                 CASE
                     WHEN COUNT(*) = 0 THEN NULL
@@ -137,7 +117,7 @@ async def compute_facebook_kpis(pool: asyncpg.Pool) -> int:
                         'angry', COALESCE(SUM(COALESCE((reactions_breakdown->>'angry')::int, 0)), 0)
                     )
                 END AS reactions_breakdown
-            FROM posts_scope
+            FROM posts_with_reach
         ),
         top_posts AS (
             SELECT
@@ -178,7 +158,7 @@ async def compute_facebook_kpis(pool: asyncpg.Pool) -> int:
         LEFT JOIN top_posts tp ON TRUE
     """
 
-    upsert_query = """
+    upsert_query = f"""
         INSERT INTO social_kpi_summary (
             connection_id,
             period_type,
@@ -196,7 +176,7 @@ async def compute_facebook_kpis(pool: asyncpg.Pool) -> int:
         )
         VALUES (
             $1,
-            '30days',
+            '{PERIOD_TYPE}',
             $2,
             $3,
             $4,
@@ -233,18 +213,12 @@ async def compute_facebook_kpis(pool: asyncpg.Pool) -> int:
 
 
 async def compute_facebook_kpis_for_connection(pool: asyncpg.Pool, connection_id: int) -> None:
-    aggregate_query = """
-        WITH period AS (
-            SELECT
-                (CURRENT_DATE - INTERVAL '30 days')::date AS start_date,
-                CURRENT_DATE::date AS end_date
-        ),
-        posts_scope AS (
+    aggregate_query = f"""
+{SYNCED_PERIOD_CTE}
+        posts_with_reach AS (
             SELECT sp.*
-            FROM social_posts sp
-            CROSS JOIN period p
-            WHERE sp.connection_id = $1
-              AND sp.published_at >= p.start_date
+            FROM posts_scope sp
+            WHERE COALESCE(sp.reach, 0) > 0
         ),
         top_posts_source AS (
             SELECT
@@ -254,11 +228,11 @@ async def compute_facebook_kpis_for_connection(pool: asyncpg.Pool, connection_id
                 permalink_url
             FROM posts_scope
             ORDER BY engagement_total DESC, published_at DESC
-            LIMIT 3
+            LIMIT 5
         ),
         posts_data AS (
             SELECT
-                COUNT(*)::int AS posts_count,
+                (SELECT COUNT(*)::int FROM posts_scope) AS posts_count,
                 COALESCE(SUM(COALESCE(likes, 0) + COALESCE(comments, 0) + COALESCE(shares, 0)), 0)::int AS total_engagement,
                 CASE
                     WHEN COUNT(*) = 0 THEN NULL
@@ -280,7 +254,7 @@ async def compute_facebook_kpis_for_connection(pool: asyncpg.Pool, connection_id
                         'angry', COALESCE(SUM(COALESCE((reactions_breakdown->>'angry')::int, 0)), 0)
                     )
                 END AS reactions_breakdown
-            FROM posts_scope
+            FROM posts_with_reach
         ),
         top_posts AS (
             SELECT
@@ -320,11 +294,11 @@ async def compute_facebook_kpis_for_connection(pool: asyncpg.Pool, connection_id
         LEFT JOIN posts_data pd ON TRUE
         LEFT JOIN top_posts tp ON TRUE
     """
-    upsert_query = """
+    upsert_query = f"""
         INSERT INTO social_kpi_summary (
             connection_id, period_type, period_start, period_end, followers_count, posts_count,
             total_engagement, total_reach, engagement_rate, clicks, shares, reactions_breakdown, top_posts
-        ) VALUES ($1, '30days', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, '{PERIOD_TYPE}', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         ON CONFLICT (connection_id, period_type, period_start) DO UPDATE SET
             period_end = EXCLUDED.period_end,
             followers_count = EXCLUDED.followers_count,
@@ -368,5 +342,5 @@ async def _compute_facebook_kpis_for_connection(
         result["reactions_breakdown"],
         result["top_posts"],
     )
-    await update_daily_engagement(conn, connection_id, last_30_days_only=True)
+    await update_daily_engagement(conn, connection_id)
     logger.info("facebook_kpis upserted connection_id=%s", connection_id)

@@ -16,7 +16,7 @@
 
 /**
  * @typedef {Object} EvolutionPoint
- * @property {string} date
+ * @property {string} date — clé mois au format YYYY-MM
  * @property {number} value
  */
 

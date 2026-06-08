@@ -100,8 +100,11 @@ async def extract_linkedin(
     profile_url = _profile_url_from_account_id(account_id)
     run_input: dict[str, Any] = {
         "profileUrls": [profile_url],
+        "urls": [profile_url],
+        "startUrls": [{"url": profile_url}],
         "maxPosts": limit,
         "maxItems": limit,
+        "resultsLimit": limit,
     }
 
     items = await _apify_run_sync_get_items(
@@ -111,7 +114,7 @@ async def extract_linkedin(
         timeout_s=timeout,
     )
     posts = normalize_linkedin_apify_items(items, limit=limit)
-    profile_counters = extract_linkedin_profile_counters(items)
+    profile_counters = extract_linkedin_profile_counters(items, profile_url=profile_url)
 
     return {
         "platform": "linkedin",

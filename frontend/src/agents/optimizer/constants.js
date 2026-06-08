@@ -42,13 +42,16 @@ export const KPI_CONFIG = [
   {
     key: "followers",
     label: "Abonnés",
+    linkedinLabel: "Relations",
     icon: "users",
   },
   {
     key: "engagement_rate",
     label: "Taux d'engagement",
+    linkedinLabel: "Engagement moyen / post",
     icon: "activity",
     isPercent: true,
+    linkedinIsPercent: false,
   },
   {
     key: "reach",
@@ -58,7 +61,7 @@ export const KPI_CONFIG = [
   },
   {
     key: "post_count",
-    label: "Publications",
+    label: "Publications synchronisées",
     icon: "file",
   },
   {

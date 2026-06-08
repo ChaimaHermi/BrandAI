@@ -38,15 +38,19 @@ export function KpiCards({ kpis, loading, activePlatform }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-      {visibleConfig.map(({ key, label, icon, isPercent }) => {
+      {visibleConfig.map(({ key, label, linkedinLabel, icon, isPercent, linkedinIsPercent }) => {
         const Icon = ICONS[icon];
         const value = kpis?.[key] ?? null;
+        const displayLabel =
+          activePlatform === "linkedin" && linkedinLabel ? linkedinLabel : label;
+        const displayPercent =
+          activePlatform === "linkedin" && linkedinIsPercent === false ? false : isPercent;
 
         return (
           <Card key={key} padding="p-4" className="flex flex-col gap-2 border border-brand-border bg-gradient-to-b from-white to-brand-light/10">
             <div className="flex items-center justify-between">
               <p className="text-2xs font-bold uppercase tracking-wider text-ink-muted">
-                {label}
+                {displayLabel}
               </p>
               <span
                 className="flex h-7 w-7 items-center justify-center rounded-xl"
@@ -60,7 +64,7 @@ export function KpiCards({ kpis, loading, activePlatform }) {
               <SkeletonValue />
             ) : (
               <p className="text-3xl font-black text-ink">
-                {formatKpi(value, isPercent)}
+                {formatKpi(value, displayPercent)}
               </p>
             )}
           </Card>

@@ -3,6 +3,22 @@ import { useState } from "react";
 import { Card } from "@/shared/ui/Card";
 import { PLATFORMS } from "../constants";
 
+function formatMonthLabel(monthKey) {
+  const raw = String(monthKey || "").slice(0, 7);
+  const match = /^(\d{4})-(\d{2})$/.exec(raw);
+  if (!match) return raw;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+  return new Intl.DateTimeFormat("fr-FR", { month: "short", year: "numeric" }).format(date);
+}
+
+function formatMonthShort(monthKey) {
+  const raw = String(monthKey || "").slice(0, 7);
+  const match = /^(\d{4})-(\d{2})$/.exec(raw);
+  if (!match) return raw.slice(5);
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+  return new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(date);
+}
+
 /**
  * Zone graphique d'évolution.
  * Structure prête à recevoir recharts ou chart.js.
@@ -19,7 +35,10 @@ export function EvolutionChart({ evolution, loading, activePlatform }) {
   const points = Array.isArray(evolution)
     ? evolution
       .filter((p) => p?.date && p?.value !== null && p?.value !== undefined)
-      .map((p) => ({ date: String(p.date).slice(0, 10), value: Number(p.value) }))
+      .map((p) => ({
+        date: String(p.date).slice(0, 7),
+        value: Number(p.value),
+      }))
       .sort((a, b) => a.date.localeCompare(b.date))
     : [];
   const maxValue = points.reduce((m, p) => Math.max(m, p.value), 0);
@@ -70,7 +89,7 @@ export function EvolutionChart({ evolution, loading, activePlatform }) {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-ink">Évolution de l'engagement</p>
             <p className="text-2xs text-ink-muted">
-              {platform.label} · au fil du temps (données réelles)
+              {platform.label} · engagement par mois (tous les posts synchronisés)
             </p>
           </div>
         </div>
@@ -130,10 +149,10 @@ export function EvolutionChart({ evolution, loading, activePlatform }) {
                 {areaPath && <path d={areaPath} fill="url(#engagementArea)" />}
                 {linePath && <path d={linePath} fill="none" stroke={platform.color} strokeWidth="2.5" strokeLinecap="round" />}
 
-                {linePoints.filter((_, idx) => idx % 2 === 0 || idx === linePoints.length - 1).map((p) => (
+                {linePoints.map((p, idx) => (
                   <g key={p.date}>
                     <text x={p.x} y={chartH - 2} textAnchor="middle" fontSize="8" fill="#6B7280">
-                      {p.date.slice(5)}
+                      {formatMonthShort(p.date)}
                     </text>
                   </g>
                 ))}
@@ -180,7 +199,7 @@ export function EvolutionChart({ evolution, loading, activePlatform }) {
                             stroke="#D1D5DB"
                           />
                           <text x={x + 8} y={y + 16} fontSize="9" fill="#6B7280">
-                            Date: {hoveredPoint.date}
+                            Mois : {formatMonthLabel(hoveredPoint.date)}
                           </text>
                           <text x={x + 8} y={y + 31} fontSize="10" fill="#111827" fontWeight="700">
                             Engagement: {new Intl.NumberFormat("fr-FR").format(Math.round(hoveredPoint.value))}
@@ -200,7 +219,7 @@ export function EvolutionChart({ evolution, loading, activePlatform }) {
                   ))}
               </svg>
               <p className="mt-2 text-right text-[11px] text-ink-subtle">
-                Pics affichés: {peakPoints.length} · points: {points.length}
+                Mois affichés : {points.length} · pics : {peakPoints.length}
               </p>
             </div>
           )}

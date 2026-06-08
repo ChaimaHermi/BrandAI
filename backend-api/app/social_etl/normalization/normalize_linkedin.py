@@ -12,7 +12,27 @@ from app.social_etl.normalization.normalize_common import (
 )
 
 
-def _extract_reactions_map(raw_post: dict[str, Any]) -> dict[str, int]:
+from app.social_etl.extraction.linkedin_apify_normalize import post_id_from_url
+
+
+def _post_external_id(post: dict[str, Any]) -> str | None:
+    pid = post.get("id")
+    if pid is not None and str(pid).strip():
+        text = str(pid).strip()
+        from_url = post_id_from_url(text)
+        if from_url:
+            return from_url
+        if text.isdigit() or len(text) >= 8:
+            return text
+    url = post.get("post_url") or post.get("url")
+    if isinstance(url, str) and url.strip():
+        derived = post_id_from_url(url.strip())
+        if derived:
+            return derived
+    return None
+
+
+def _extract_reactions_map(raw_post: dict[str, Any], likes: int | None = None) -> dict[str, int]:
     engagement = raw_post.get("engagement") if isinstance(raw_post.get("engagement"), dict) else {}
     reactions = engagement.get("reactions") if isinstance(engagement.get("reactions"), list) else []
     out: dict[str, int] = {}
@@ -22,7 +42,9 @@ def _extract_reactions_map(raw_post: dict[str, Any]) -> dict[str, int]:
         label = str(reaction.get("type") or reaction.get("reactionType") or "").strip().lower()
         count = safe_int(reaction.get("count"))
         if label:
-            out[label] = out.get(label, 0) + count
+            out[label] = out.get(label, 0) + (count or 0)
+    if not out and likes and likes > 0:
+        out["like"] = likes
     return out
 
 
@@ -70,7 +92,7 @@ def normalize_linkedin_data(raw: dict[str, Any]) -> dict[str, Any]:
         raw_post = post.get("raw") if isinstance(post.get("raw"), dict) else {}
         engagement = raw_post.get("engagement") if isinstance(raw_post.get("engagement"), dict) else {}
 
-        pid = post.get("id")
+        pid = _post_external_id(post)
         if pid is None:
             continue
 
@@ -79,22 +101,16 @@ def normalize_linkedin_data(raw: dict[str, Any]) -> dict[str, Any]:
         if text == "":
             text = None
 
-        likes = (
-            safe_int(post.get("likes"))
-            if post.get("likes") is not None
-            else safe_int(engagement.get("likes"))
-        )
-        comments = (
-            safe_int(post.get("comments"))
-            if post.get("comments") is not None
-            else safe_int(engagement.get("comments"))
-        )
-        shares = (
-            safe_int(post.get("reposts"))
-            if post.get("reposts") is not None
-            else safe_int(engagement.get("shares"))
-        )
-        reactions_breakdown = _extract_reactions_map(raw_post)
+        likes = safe_int(post.get("likes"))
+        if likes is None:
+            likes = safe_int(engagement.get("likes"))
+        comments = safe_int(post.get("comments"))
+        if comments is None:
+            comments = safe_int(engagement.get("comments"))
+        shares = safe_int(post.get("reposts"))
+        if shares is None:
+            shares = safe_int(engagement.get("shares"))
+        reactions_breakdown = _extract_reactions_map(raw_post, likes=likes)
 
         url = post.get("post_url") or post.get("url")
         permalink_url = url.strip() if isinstance(url, str) and url.strip() else None
@@ -107,9 +123,9 @@ def normalize_linkedin_data(raw: dict[str, Any]) -> dict[str, Any]:
                 "media_type": str(post.get("post_type_api") or "unknown"),
                 "media_url": _linkedin_media_url(raw_post),
                 "permalink_url": permalink_url,
-                "likes": likes,
-                "comments": comments,
-                "shares": shares,
+                "likes": likes or 0,
+                "comments": comments or 0,
+                "shares": shares or 0,
                 "saves": None,
                 "clicks": None,
                 "reach": None,

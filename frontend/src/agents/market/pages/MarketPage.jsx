@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   FiBarChart2, FiUsers, FiMessageSquare, FiTrendingUp,
-  FiCompass, FiSearch, FiDatabase,
+  FiCompass, FiSearch,
 } from "react-icons/fi";
 import { useMarketAgent } from "../hooks/useMarketAgent";
 import { CLARITY_SCORE_MIN_PIPELINE } from "@/agents/clarifier/constants";
@@ -14,7 +14,6 @@ import { Loader } from "@/shared/ui/Loader";
 import { AgentPageHeader } from "@/agents/shared/components/AgentPageHeader";
 import { usePipeline } from "@/context/PipelineContext";
 import MarketDashboardHeader from "../components/MarketDashboardHeader";
-import MarketRawDataViewer from "../components/MarketRawDataViewer";
 import MarketApercu from "../components/MarketApercu";
 import MarketCompetitors from "../components/MarketCompetitors";
 import MarketVOC from "../components/MarketVOC";
@@ -31,7 +30,6 @@ const MARKET_TABS = [
   { id: "tendances",    label: "Tendances" },
   { id: "strategie",    label: "Stratégie" },
   { id: "mots-cles",    label: "Mots-clés" },
-  { id: "raw",          label: "Données brutes" },
 ];
 
 const TAB_INTROS = {
@@ -41,7 +39,6 @@ const TAB_INTROS = {
   tendances:    { icon: FiTrendingUp,   title: "Tendances & Risques",      description: "Évolutions marché, technologiques, réglementaires et risques identifiés." },
   strategie:    { icon: FiCompass,      title: "Stratégie — SWOT & PESTEL",description: "Analyse stratégique complète : forces, faiblesses, opportunités, menaces." },
   "mots-cles":  { icon: FiSearch,       title: "Mots-clés",                description: "Mots-clés primaires, marché, VOC, compétiteurs et tendances." },
-  raw:          { icon: FiDatabase,     title: "Données brutes",           description: "Réponse JSON complète de l'agent d'analyse de marché." },
 };
 
 const marketAgent = AGENTS.find((a) => a.id === "market");
@@ -139,7 +136,6 @@ export default function MarketPage() {
       <SectionIntro icon={intro.icon} title={intro.title} description={intro.description} />
     ) : null;
 
-    if (activeTab === "raw")          return <>{introNode}<MarketRawDataViewer data={normalizedReport} /></>;
     if (activeTab === "apercu")       return <>{introNode}<MarketApercu market={normalizedReport?.market} /></>;
     if (activeTab === "competiteurs") return (
       <>
